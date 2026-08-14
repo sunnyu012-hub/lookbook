@@ -751,31 +751,37 @@ async function geminiRecommend(situation){
   const prompt=`너는 센스 있는 패션 스타일리스트야. 아래는 사용자 옷장의 옷 목록이야:\n${items}\n\n${situation?`상황/요청: ${situation}\n`:''}이 옷장에 있는 아이템만 조합해서 어울리는 코디 3개를 제안해줘. 반드시 위 목록에 있는 이름만 그대로 사용해. JSON 배열로만 답해(그 외 텍스트 금지). 각 원소 형식: {"name":"코디 이름","items":["아이템 이름", ...],"tags":["상황이나 스타일 태그"],"reason":"왜 어울리는지 한 줄"}`;
   let lastErr='';
   for(const m of GEMINI_MODELS){
-    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(getKey())}`,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.9,responseMimeType:'application/json'}})});
-    if(res.status===404){lastErr='404 '+m;continue;}
-    if(!res.ok)throw new Error('API '+res.status+' — '+(await res.text()).slice(0,160));
-    const data=await res.json();
-    const txt=(((data.candidates||[])[0]||{}).content||{}).parts?.[0]?.text||'';
-    try{return JSON.parse(txt);}catch(e){return JSON.parse(txt.replace(/```json|```/g,'').trim());}
+    for(let attempt=0;attempt<3;attempt++){
+      const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(getKey())}`,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.9,responseMimeType:'application/json'}})});
+      if(res.status===404){lastErr='404 '+m;break;}
+      if([429,500,502,503].includes(res.status)){lastErr=res.status+' '+m;await new Promise(r=>setTimeout(r,900*(attempt+1)));continue;}
+      if(!res.ok)throw new Error('API '+res.status+' — '+(await res.text()).slice(0,160));
+      const data=await res.json();
+      const txt=(((data.candidates||[])[0]||{}).content||{}).parts?.[0]?.text||'';
+      try{return JSON.parse(txt);}catch(e){return JSON.parse(txt.replace(/```json|```/g,'').trim());}
+    }
   }
-  throw new Error('사용 가능한 모델을 찾지 못했어요 ('+lastErr+')');
+  throw new Error('AI 서버가 잠시 바빠요 ('+lastErr+'). 잠시 후 다시 시도해 주세요');
 }
 async function geminiVision(photoId,prompt){
   const p=await getOne('photos',photoId);if(!p)throw new Error('사진 없음');
   const b64=(await blobToB64(p.blob)).split(',')[1];
   let lastErr='';
   for(const m of GEMINI_MODELS){
-    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(getKey())}`,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({contents:[{parts:[{inlineData:{mimeType:p.blob.type||'image/jpeg',data:b64}},{text:prompt}]}],generationConfig:{temperature:.4,responseMimeType:'application/json'}})});
-    if(res.status===404){lastErr='404 '+m;continue;}
-    if(!res.ok)throw new Error(res.status+' — '+(await res.text()).slice(0,140));
-    const data=await res.json();const txt=(((data.candidates||[])[0]||{}).content||{}).parts?.[0]?.text||'';
-    try{return JSON.parse(txt);}catch(e){return JSON.parse(txt.replace(/```json|```/g,'').trim());}
+    for(let attempt=0;attempt<3;attempt++){
+      const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(getKey())}`,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({contents:[{parts:[{inlineData:{mimeType:p.blob.type||'image/jpeg',data:b64}},{text:prompt}]}],generationConfig:{temperature:.4,responseMimeType:'application/json'}})});
+      if(res.status===404){lastErr='404 '+m;break;}
+      if([429,500,502,503].includes(res.status)){lastErr=res.status+' '+m;await new Promise(r=>setTimeout(r,900*(attempt+1)));continue;}
+      if(!res.ok)throw new Error(res.status+' — '+(await res.text()).slice(0,140));
+      const data=await res.json();const txt=(((data.candidates||[])[0]||{}).content||{}).parts?.[0]?.text||'';
+      try{return JSON.parse(txt);}catch(e){return JSON.parse(txt.replace(/```json|```/g,'').trim());}
+    }
   }
-  throw new Error('사용 가능한 모델 없음 ('+lastErr+')');
+  throw new Error('AI 서버가 잠시 바빠요 ('+lastErr+'). 잠시 후 다시 시도해 주세요');
 }
 function classifyPhoto(photoId){return geminiVision(photoId,`이 옷/패션아이템 사진을 분석해 JSON으로만 답해.
 name: 자세하고 구체적인 한글 이름 (색+소재+핏/디테일+종류를 조합, 예: "베이지 울 라운드넥 오버핏 니트", "화이트 코튼 옥스포드 셔츠", "블랙 스웨이드 첼시 부츠", "카멜 캐시미어 더블 코트").
