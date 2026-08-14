@@ -157,6 +157,8 @@
   .wk-plus{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#cdc3ba; font-size:30px; font-weight:200}
   .wk-cell.today{border-color:var(--pink); border-width:2px}
   .wk-cell.today .wk-day{color:var(--pink-ink)}
+  .wk-wx{position:absolute; bottom:4px; left:0; right:0; text-align:center; font-size:10px; font-weight:700; color:var(--ink-2); z-index:1}
+  .wk-cell.has .wk-wx{color:#fff; text-shadow:0 1px 3px rgba(0,0,0,.6)}
   #onboarding:empty{display:none}
   .ob-wrap{position:fixed; inset:0; z-index:60; background:var(--bg); display:flex; flex-direction:column; animation:fade .3s ease-out}
   .ob-skip{position:absolute; top:calc(12px + env(safe-area-inset-top)); right:18px; z-index:2; background:none; border:none; color:var(--muted); font-size:14px; cursor:pointer}
@@ -289,7 +291,7 @@ const WD=['월','화','수','목','금','토','일'];
 const TPO_TAGS=['데일리룩','출근룩','데이트룩','하객룩','여행룩','캠퍼스룩','운동룩','파티룩','면접룩','소개팅룩','나들이룩','집콕룩','휴양지룩','페스티벌룩','졸업/입학룩'];
 const STYLE_TAGS=['미니멀','캐주얼','포멀','클래식','러블리','걸리시','시크','페미닌','보이시','스트릿','락시크','빈티지','스포티','아메카지','프레피','Y2K','고프코어','청순','모던','에스닉'];
 const TAG_PRESETS=[...TPO_TAGS,...STYLE_TAGS];
-const state={tab:'closet', items:[], looks:[], days:[], wish:[], albumBy:'category', album:null, selectMode:false, selected:new Set(), wishStatus:null, catFilter:null, ownerFilter:null, favOnly:false, tagFilter:null, search:'', lookSearch:'', sortWear:false, backupDismissed:false,
+const state={tab:'closet', items:[], looks:[], days:[], wish:[], albumBy:'category', album:null, selectMode:false, selected:new Set(), wishStatus:null, weekWeather:null, catFilter:null, ownerFilter:null, favOnly:false, tagFilter:null, search:'', lookSearch:'', sortWear:false, backupDismissed:false,
   week:mondayOf(new Date()), month:startOfMonth(new Date())};
 function ymd(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function mondayOf(d){const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x;}
@@ -459,14 +461,17 @@ async function viewWeek(){
   const tstr=ymd(new Date());
   let worn=0,cells='';
   for(let k=0;k<7;k++){const dt=addDays(state.week,k);const id=ymd(dt);const d=byId[id];const thumb=dayThumb(d);const today=id===tstr;if(d)worn++;
+    const wx=state.weekWeather&&state.weekWeather[id];
     cells+=`<div class="wk-cell ${thumb?'has':''} ${today?'today':''}" data-action="day" data-date="${id}">
       ${thumb?`<img data-photo="${thumb}" alt="">`:'<span class="wk-plus">＋</span>'}
-      <span class="wk-day">${WD[k]}</span><span class="wk-num">${dt.getDate()}</span></div>`;}
+      <span class="wk-day">${WD[k]}</span><span class="wk-num">${dt.getDate()}</span>
+      ${wx?`<span class="wk-wx">${wmoEmoji(wx.code)} ${wx.max}°</span>`:''}</div>`;}
   const e=addDays(state.week,6);
   const head=pageHead('이번 주',worn?`${worn} 착장`:'','');
+  const wxBtn=state.weekWeather?'':`<button class="textcta" data-action="weekweather">🌤️ 이번 주 날씨 보기 (위치)</button>`;
   return head+`<div class="navrow"><button data-action="weeknav" data-d="-7">‹</button>
     <span class="title" style="font-size:15px">${state.week.getMonth()+1}/${state.week.getDate()} – ${e.getMonth()+1}/${e.getDate()}</span>
-    <button data-action="weeknav" data-d="7">›</button></div><div class="wk-grid">${cells}</div>`;
+    <button data-action="weeknav" data-d="7">›</button></div>${wxBtn}<div class="wk-grid">${cells}</div>`;
 }
 async function viewMonth(){
   const days=await all('days');const byId={};days.forEach(d=>byId[d.id]=d);
@@ -797,6 +802,13 @@ tags: 다음 중 어울리는 것 1~4개만 배열로 — ${[...TPO_TAGS,...STYL
 function getGeo(){return new Promise((res,rej)=>{if(!navigator.geolocation)return rej(new Error('위치 미지원'));navigator.geolocation.getCurrentPosition(p=>res(p.coords),e=>rej(e),{timeout:8000,maximumAge:600000});});}
 function wmoDesc(c){if(c===0)return'맑음';if(c<=2)return'대체로 맑음';if(c===3)return'흐림';if(c===45||c===48)return'안개';if(c>=51&&c<=57)return'이슬비';if(c>=61&&c<=67)return'비';if(c>=71&&c<=77)return'눈';if(c>=80&&c<=82)return'소나기';if(c>=85&&c<=86)return'눈';if(c>=95)return'뇌우';return'흐림';}
 async function getWeather(){const c=await getGeo();const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${c.latitude}&longitude=${c.longitude}&current=temperature_2m,weather_code&timezone=auto`);if(!r.ok)throw new Error('날씨 조회 실패');const d=await r.json();return{temp:Math.round(d.current.temperature_2m),desc:wmoDesc(d.current.weather_code)};}
+function wmoEmoji(c){if(c===0)return'☀️';if(c<=2)return'🌤️';if(c===3)return'☁️';if(c===45||c===48)return'🌫️';if(c>=51&&c<=67)return'🌧️';if(c>=71&&c<=77)return'❄️';if(c>=80&&c<=82)return'🌦️';if(c>=85&&c<=86)return'❄️';if(c>=95)return'⛈️';return'☁️';}
+async function getWeekWeather(){const c=await getGeo();
+  const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${c.latitude}&longitude=${c.longitude}&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&past_days=7&forecast_days=7`);
+  if(!r.ok)throw new Error('날씨 조회 실패');const d=await r.json();const map={},t=d.daily.time;
+  for(let i=0;i<t.length;i++)map[t[i]]={code:d.daily.weather_code[i],max:Math.round(d.daily.temperature_2m_max[i]),min:Math.round(d.daily.temperature_2m_min[i])};
+  return map;}
+async function loadWeekWeather(){showToast('날씨 확인 중…');try{state.weekWeather=await getWeekWeather();render();}catch(e){showToast('날씨 실패: '+(e.message||e));}}
 function aiRecommend(){
   if(!getKey()){alert('먼저 ⚙️ 설정에 Gemini API 키를 넣어주세요.');settings();return;}
   if(!state.items.length){alert('옷장에 옷을 먼저 등록해 주세요.');return;}
@@ -969,6 +981,7 @@ document.body.addEventListener('click',e=>{
   else if(a==='wishstatus'){state.wishStatus=el.dataset.s||null;render();}
   else if(a==='day')dayDetail(el.dataset.date);
   else if(a==='weeknav'){state.week=addDays(state.week,+el.dataset.d);render();}
+  else if(a==='weekweather')loadWeekWeather();
   else if(a==='monthnav'){state.month=new Date(state.month.getFullYear(),state.month.getMonth()+ +el.dataset.d,1);render();}
 });
 
