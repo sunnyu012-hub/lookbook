@@ -1,0 +1,971 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#fbf7f5">
+<title>내 옷장 룩북</title>
+<style>
+  :root{
+    --bg:#fbf7f5; --card:#ffffff; --thumb:#f1ecea; --ink:#26221f; --ink-2:#6b6259; --muted:#a89e95;
+    --line:#efe7e2; --pink:#ec8aa0; --pink-soft:#fce6ec; --pink-ink:#cf5f7c;
+    --mint:#3fc0ad; --blue:#3a86ff; --gold:#e6a94a; --danger:#e5677a;
+    --shadow:0 6px 22px rgba(120,90,80,.09); --shadow-sm:0 3px 12px rgba(120,90,80,.07);
+    --r:20px; --r-sm:14px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0}
+  img{display:block}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    color:var(--ink); background:var(--bg); line-height:1.5; letter-spacing:-.01em;
+    min-height:100vh; padding-bottom:calc(84px + env(safe-area-inset-bottom));
+  }
+  header{position:sticky; top:0; z-index:10; background:var(--bg); display:flex; justify-content:flex-end;
+    padding:calc(10px + env(safe-area-inset-top)) 18px 2px;}
+  .iconbtn{background:none; border:none; padding:6px; cursor:pointer; color:var(--ink-2); line-height:0}
+  .iconbtn svg{width:23px; height:23px; stroke:currentColor; fill:none; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round}
+  main{padding:0 18px 26px; max-width:680px; margin:0 auto; animation:fade .4s cubic-bezier(.2,.7,.2,1)}
+  @keyframes fade{from{opacity:0; transform:translateY(8px)}to{opacity:1; transform:none}}
+  @keyframes pop{from{opacity:0; transform:scale(.9)}to{opacity:1; transform:none}}
+  /* page head (NOVA) */
+  .phead{margin:2px 0 16px}
+  .add-plus{background:none; border:none; color:var(--mint); font-size:27px; line-height:1; padding:0; margin-bottom:2px; cursor:pointer; font-weight:300; display:block}
+  .ptitle{font-weight:800; font-size:32px; line-height:1.05; margin:0; letter-spacing:-.02em}
+  .pcount{font-size:14px; color:var(--muted); margin-top:4px; font-weight:500}
+  /* section header */
+  .sec{display:flex; align-items:baseline; justify-content:space-between; margin:8px 0 14px}
+  .sec h2{font-size:20px; font-weight:700; margin:0}
+  .seeall{background:none; border:none; color:var(--blue); font-size:15px; font-weight:500; cursor:pointer}
+  .backlink{background:none; border:none; color:var(--blue); font-size:16px; font-weight:500; cursor:pointer; margin-bottom:10px; padding:0}
+  /* collage bubbles */
+  .bubbles{display:flex; flex-direction:column; gap:6px; margin:2px 0 18px}
+  .bubble{align-self:flex-start; background:var(--pink); color:#fff; padding:9px 15px; border-radius:19px 19px 19px 5px; font-size:14px; font-weight:500; box-shadow:var(--shadow-sm); max-width:82%}
+  .bubble.r{align-self:flex-end; background:var(--card); color:var(--ink); border-radius:19px 19px 5px 19px; box-shadow:var(--shadow-sm)}
+  .delivered{align-self:flex-end; font-size:11px; color:var(--muted); margin:1px 4px 0 0}
+  /* nav */
+  nav{position:fixed; left:0; right:0; bottom:0; z-index:20; background:rgba(255,255,255,.9); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border-top:1px solid var(--line);
+    display:flex; padding:9px 4px calc(9px + env(safe-area-inset-bottom));}
+  nav button{flex:1; background:none; border:none; padding:3px 0; cursor:pointer; color:var(--muted);
+    font-size:10px; display:flex; flex-direction:column; align-items:center; gap:5px; transition:color .2s}
+  nav button svg{width:23px; height:23px; stroke:currentColor; fill:none; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round}
+  nav button.on{color:var(--ink)}
+  /* grid + cards */
+  .grid{display:grid; grid-template-columns:repeat(2,1fr); gap:20px 14px}
+  .card{cursor:pointer; position:relative; animation:pop .35s cubic-bezier(.2,.7,.2,1) backwards}
+  .card .ph{width:100%; aspect-ratio:3/4; object-fit:cover; background:var(--thumb); border-radius:var(--r-sm); box-shadow:var(--shadow-sm); transition:transform .25s}
+  .card:active .ph{transform:scale(.97)}
+  .card.album .ph{aspect-ratio:1/1}
+  .card .body{padding:9px 3px 0}
+  .card .name{font-size:15px; font-weight:600; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .card .sub{font-size:13px; color:var(--muted); margin-top:2px; display:flex; align-items:center; gap:7px; flex-wrap:wrap}
+  .badge{font-size:13px; color:var(--muted)}
+  .tagchip{font-size:12px; color:var(--ink-2)}
+  .swatch{display:inline-block; width:11px; height:11px; border-radius:50%; border:1px solid rgba(0,0,0,.1); vertical-align:middle}
+  .plus-badge{position:absolute; top:9px; left:9px; width:28px; height:28px; border-radius:50%; background:var(--mint); color:#fff; display:flex; align-items:center; justify-content:center; font-size:19px; font-weight:300; box-shadow:0 2px 7px rgba(0,0,0,.16); z-index:2; pointer-events:none}
+  .checkmark{position:absolute; top:8px; right:8px; width:26px; height:26px; border-radius:50%; background:rgba(255,255,255,.92); border:1.5px solid var(--pink); color:var(--pink); display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; z-index:2}
+  .card.selected .checkmark{background:var(--pink); color:#fff}
+  .card.selected .ph{outline:3px solid var(--pink); outline-offset:-1px}
+  .wbadge{position:absolute; top:9px; left:9px; z-index:2; color:#fff; font-size:11px; font-weight:600; padding:3px 10px; border-radius:12px; box-shadow:0 1px 5px rgba(0,0,0,.14)}
+  .heart{position:absolute; bottom:10px; right:10px; width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,.92); display:flex; align-items:center; justify-content:center; font-size:16px; color:var(--pink); box-shadow:0 2px 8px rgba(0,0,0,.13); z-index:2}
+  .feature{grid-column:1 / -1}
+  .feature .ph{aspect-ratio:4/5}
+  .feature .name{font-size:17px}
+  /* filter pills */
+  .chips{display:flex; gap:9px; overflow-x:auto; padding:2px 0 16px; -webkit-overflow-scrolling:touch}
+  .chip{white-space:nowrap; background:var(--card); border:1px solid var(--line); color:var(--ink-2); padding:8px 15px; border-radius:16px; font-size:13px; font-weight:500; cursor:pointer; box-shadow:var(--shadow-sm)}
+  .chip.on{background:var(--ink); color:#fff; border-color:var(--ink)}
+  /* search + text CTA */
+  .search{width:100%; border:1px solid var(--line); background:var(--card); border-radius:14px; padding:12px 16px; font-size:15px;
+    color:var(--ink); font-family:inherit; margin-bottom:16px; box-shadow:var(--shadow-sm)}
+  .search::placeholder{color:var(--muted)}
+  .search:focus{outline:none; border-color:var(--pink)}
+  .textcta{display:inline-block; background:none; border:none; color:var(--blue); font-size:14px; font-weight:500; padding:2px 0; margin-bottom:14px; cursor:pointer}
+  /* empty */
+  .empty-state{text-align:center; color:var(--muted); padding:56px 24px; font-size:14px; line-height:1.7}
+  .empty-state .big{font-size:40px; margin-bottom:14px}
+  /* week rows */
+  .day-row{display:flex; align-items:center; gap:15px; padding:12px; margin-bottom:11px; background:var(--card); border-radius:var(--r-sm); box-shadow:var(--shadow-sm); cursor:pointer}
+  .day-row .thumb{width:52px; height:66px; border-radius:11px; background:var(--thumb) center/cover no-repeat; flex:none; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:20px; font-weight:300}
+  .day-row .info{flex:1; min-width:0}
+  .day-row .dlabel{font-weight:700; font-size:16px}
+  .day-row .dsub{font-size:13px; color:var(--muted); margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .day-row.today{outline:2px solid var(--pink); outline-offset:0}
+  .day-row.today .dlabel{color:var(--pink-ink)}
+  /* calendar */
+  .navrow{display:flex; align-items:center; justify-content:space-between; margin:2px 0 16px}
+  .navrow button{background:var(--card); border:1px solid var(--line); border-radius:11px; width:36px; height:36px; font-size:19px; color:var(--ink-2); cursor:pointer; box-shadow:var(--shadow-sm)}
+  .navrow .title{font-weight:800; font-size:22px}
+  .cal-head{display:grid; grid-template-columns:repeat(7,1fr); text-align:center; font-size:11px; color:var(--muted); margin-bottom:8px; font-weight:500}
+  .cal{display:grid; grid-template-columns:repeat(7,1fr); gap:5px}
+  .cell{aspect-ratio:3/4; border-radius:9px; background:var(--card); border:1px solid var(--line); overflow:hidden; position:relative; cursor:pointer}
+  .cell.blank{background:none; border:none; cursor:default}
+  .cell .cimg{position:absolute; inset:0; width:100%; height:100%; object-fit:cover}
+  .cell .cnum{position:absolute; top:3px; left:5px; font-size:10px; color:var(--muted); font-weight:600}
+  .cell.has .cnum{color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.5)}
+  .cell.today{border-color:var(--pink); border-width:2px}
+  /* modal sheet */
+  .backdrop{position:fixed; inset:0; background:rgba(38,34,31,.4); z-index:30; display:flex; align-items:flex-end; justify-content:center; animation:fade .2s ease-out}
+  .sheet{background:var(--bg); width:100%; max-width:680px; border-radius:26px 26px 0 0; padding:22px 20px calc(28px + env(safe-area-inset-bottom)); max-height:92vh; overflow-y:auto; box-shadow:0 -12px 44px rgba(80,50,45,.18)}
+  .sheet h2{font-weight:800; margin:2px 0 20px; font-size:23px}
+  .field{margin-bottom:16px}
+  .field label{display:block; font-size:13px; color:var(--muted); margin-bottom:7px; font-weight:600}
+  .field input[type=text], .field input[type=date], .field textarea, .field select{
+    width:100%; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:16px; background:var(--card); color:var(--ink); font-family:inherit;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus{outline:none; border-color:var(--pink)}
+  .field textarea{resize:vertical; min-height:62px}
+  .photo-pick{width:100%; aspect-ratio:3/4; max-height:300px; border:1.5px dashed var(--line); border-radius:16px; background:var(--card) center/cover no-repeat; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:14px; cursor:pointer}
+  .btnrow{display:flex; gap:10px; margin-top:10px}
+  .btn{flex:1; border:none; border-radius:14px; padding:15px; font-size:15px; font-weight:600; cursor:pointer}
+  .btn.primary{background:var(--ink); color:#fff}
+  .btn.ghost{background:var(--card); color:var(--ink); border:1px solid var(--line)}
+  .btn.danger{background:var(--card); color:var(--danger); border:1px solid var(--line); flex:0 0 auto; padding:15px 18px}
+  .stars{display:flex; gap:9px; font-size:27px}
+  .stars span{cursor:pointer; color:var(--line)}
+  .stars span.on{color:var(--gold)}
+  .pick-list{display:flex; flex-direction:column; gap:8px; max-height:52vh; overflow-y:auto}
+  .pick-item{display:flex; align-items:center; gap:13px; padding:9px; background:var(--card); border:1px solid var(--line); border-radius:12px; cursor:pointer}
+  .pick-item.sel{border-color:var(--pink); background:var(--pink-soft)}
+  .pick-item img{width:40px; height:52px; object-fit:cover; border-radius:9px; background:var(--thumb); flex:none}
+  .pick-item .pn{flex:1; font-size:14px; font-weight:500}
+  .selgrid{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+  .selgrid img{width:48px; height:60px; object-fit:cover; border-radius:10px; background:var(--thumb)}
+  .hint{font-size:13px; color:var(--muted); margin-top:8px; line-height:1.6}
+  .tagwrap{display:flex; flex-wrap:wrap; gap:8px}
+  .tagwrap .chip{border:1px solid var(--line); border-radius:14px; padding:8px 13px; color:var(--ink-2); font-size:13px}
+  .tagwrap .chip.on{background:var(--ink); color:#fff; border-color:var(--ink)}
+  .colorchip .dot{display:inline-block; width:13px; height:13px; border-radius:50%; margin-right:6px; border:1px solid rgba(0,0,0,.12); vertical-align:middle}
+  .banner{display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--pink-soft); color:var(--pink-ink); border-radius:16px; padding:12px 12px 12px 16px; margin-bottom:16px; font-size:13px; font-weight:500}
+  .banner-btn{background:var(--pink-ink); color:#fff; border:none; border-radius:10px; padding:7px 14px; font-size:13px; font-weight:600; cursor:pointer}
+  .banner-x{background:none; border:none; color:var(--pink-ink); font-size:15px; padding:4px 6px; cursor:pointer; opacity:.6}
+  #toast{position:fixed; left:0; right:0; bottom:calc(82px + env(safe-area-inset-bottom)); z-index:40; display:flex; justify-content:center; pointer-events:none}
+  .toast{pointer-events:auto; display:flex; align-items:center; gap:16px; background:var(--ink); color:#fff; border-radius:14px; padding:13px 18px; font-size:14px; box-shadow:0 8px 28px rgba(0,0,0,.25); max-width:90%}
+  .toast-undo{background:none; border:none; color:var(--pink); font-weight:700; font-size:14px; cursor:pointer; white-space:nowrap}
+  .statgrid{display:grid; grid-template-columns:repeat(4,1fr); gap:9px; margin-bottom:8px}
+  .statbox{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:13px 5px; text-align:center; box-shadow:var(--shadow-sm)}
+  .statnum{font-size:22px; font-weight:800}
+  .statlbl{font-size:11px; color:var(--muted); margin-top:3px}
+  .statrow{display:flex; align-items:center; gap:12px; padding:9px 0; border-bottom:1px solid var(--line)}
+  .statimg{width:38px; height:48px; object-fit:cover; border-radius:9px; background:var(--thumb); flex:none}
+  .statname{flex:1; font-size:14px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .statval{font-size:14px; font-weight:700; color:var(--pink-ink)}
+  .wk-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
+  .wk-cell{position:relative; aspect-ratio:3/4; border-radius:12px; overflow:hidden; background:var(--card); border:1px solid var(--line); cursor:pointer}
+  .wk-cell img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover}
+  .wk-cell .wk-day{position:absolute; top:7px; left:8px; font-size:11px; font-weight:700; color:var(--muted); z-index:1}
+  .wk-cell .wk-num{position:absolute; top:6px; right:8px; font-size:12px; font-weight:700; color:var(--ink-2); z-index:1}
+  .wk-cell.has .wk-day, .wk-cell.has .wk-num{color:#fff; text-shadow:0 1px 3px rgba(0,0,0,.5)}
+  .wk-plus{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#cdc3ba; font-size:30px; font-weight:200}
+  .wk-cell.today{border-color:var(--pink); border-width:2px}
+  .wk-cell.today .wk-day{color:var(--pink-ink)}
+  #onboarding:empty{display:none}
+  .ob-wrap{position:fixed; inset:0; z-index:60; background:var(--bg); display:flex; flex-direction:column; animation:fade .3s ease-out}
+  .ob-skip{position:absolute; top:calc(12px + env(safe-area-inset-top)); right:18px; z-index:2; background:none; border:none; color:var(--muted); font-size:14px; cursor:pointer}
+  .ob-track{flex:1; display:flex; overflow-x:auto; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; min-height:0}
+  .ob-track::-webkit-scrollbar{display:none}
+  .ob-slide{flex:0 0 100%; scroll-snap-align:center; display:flex; flex-direction:column; align-items:center; padding:calc(44px + env(safe-area-inset-top)) 24px 0}
+  .ob-frame{width:100%; flex:1; min-height:0; display:flex; align-items:center; justify-content:center}
+  .ob-cap{padding:18px 20px 4px; text-align:center; max-width:360px}
+  .ob-emoji{font-size:28px; margin-bottom:8px}
+  .ob-title{font-size:22px; font-weight:800; margin-bottom:9px}
+  .ob-desc{font-size:14px; color:var(--ink-2); line-height:1.65}
+  .ob-dots{display:flex; justify-content:center; gap:7px; padding:12px 0}
+  .ob-dot{width:7px; height:7px; border-radius:50%; background:var(--line); transition:.2s}
+  .ob-dot.on{background:var(--pink); width:20px; border-radius:4px}
+  .ob-start{margin:2px 24px calc(22px + env(safe-area-inset-bottom)); padding:16px; border:none; border-radius:16px; background:var(--ink); color:#fff; font-size:16px; font-weight:600; cursor:pointer}
+  .ob-scr{width:100%; max-width:288px; background:var(--card); border:1px solid var(--line); border-radius:22px; padding:18px 16px; box-shadow:var(--shadow)}
+  .ob-sp{color:var(--mint); font-size:22px; line-height:1}
+  .ob-st{font-size:24px; font-weight:800; margin-top:2px}
+  .ob-ss{font-size:12px; color:var(--muted); margin-top:2px}
+  .ob-row{display:flex; gap:7px; margin:12px 0}
+  .ob-pill{font-size:11px; padding:5px 11px; border-radius:13px; background:var(--bg); border:1px solid var(--line); color:var(--ink-2)}
+  .ob-pill.on{background:var(--ink); color:#fff; border-color:var(--ink)}
+  .ob-g2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  .ob-alb{position:relative}
+  .ob-bdg{position:absolute; top:6px; left:6px; width:20px; height:20px; border-radius:50%; background:var(--mint); color:#fff; font-size:13px; display:flex; align-items:center; justify-content:center}
+  .ob-cov{width:100%; aspect-ratio:1/1; border-radius:10px; background-size:cover; background-position:center; background-color:#e5ddd4}
+  .ob-cov.big{aspect-ratio:4/5; border-radius:12px}
+  .ob-alb b{display:block; font-size:13px; margin-top:6px}
+  .ob-alb i{font-size:11px; color:var(--muted); font-style:normal}
+  .ob-photo{width:100%; aspect-ratio:4/3; border-radius:12px; background-size:cover; background-position:center; display:flex; align-items:center; justify-content:center; color:#fff; font-size:13px; font-weight:700; text-shadow:0 1px 4px rgba(0,0,0,.5)}
+  .ob-line{display:flex; justify-content:space-between; align-items:center; margin-top:14px; font-size:13px; color:var(--muted)}
+  .ob-line b{color:var(--ink)}
+  .ob-look{position:relative; margin-top:10px}
+  .ob-hrt{position:absolute; top:calc(4/5*100%); margin-top:-42px; right:10px; width:30px; height:30px; border-radius:50%; background:rgba(255,255,255,.92); color:var(--pink); display:flex; align-items:center; justify-content:center; font-size:15px; box-shadow:0 2px 8px rgba(0,0,0,.12)}
+  .ob-lb b{display:block; font-size:15px; margin-top:8px}
+  .ob-tags{display:flex; gap:6px; margin-top:5px}
+  .ob-tags span{font-size:11px; color:var(--ink-2)}
+  .ob-wk{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:12px}
+  .ob-wc{position:relative; aspect-ratio:3/4; border-radius:9px; background:var(--bg) center/cover; border:1px solid var(--line); display:flex; align-items:center; justify-content:center}
+  .ob-wc u{color:#cdc3ba; font-size:18px; text-decoration:none}
+  .ob-wc em{position:absolute; top:4px; left:5px; font-size:10px; font-style:normal; font-weight:700; color:var(--muted)}
+  .ob-wc[style] em{color:#fff}
+  .ob-wc.today{border-color:var(--pink); border-width:2px}
+  .ob-stg{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
+  .ob-sb{background:var(--bg); border-radius:12px; padding:12px 4px; text-align:center}
+  .ob-sb b{font-size:20px}
+  .ob-sb i{display:block; font-size:11px; color:var(--muted); font-style:normal; margin-top:2px}
+  .ob-rcpt{background:#fff; border:1px solid var(--line); border-radius:8px; padding:14px; margin-top:12px; font-family:'Courier New',monospace}
+  .ob-rct{text-align:center; font-weight:800; font-size:15px; margin-bottom:10px}
+  .ob-rl{display:flex; justify-content:space-between; font-size:11px; padding:3px 0; border-bottom:1px dashed #ddd}
+  .ob-bar{height:26px; margin-top:12px; background:repeating-linear-gradient(90deg,#222 0 2px,#fff 2px 4px,#222 4px 7px,#fff 7px 9px)}
+</style>
+
+<header>
+  <button class="iconbtn" data-action="stats" title="통계" aria-label="통계">
+    <svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V4M19 20V14"/></svg>
+  </button>
+  <button class="iconbtn" data-action="settings" title="설정/백업" aria-label="설정">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.1 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 0 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H3a2 2 0 0 1 0-4h.1A1.6 1.6 0 0 0 4.6 7l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3 1.6 1.6 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8 1.6 1.6 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg>
+  </button>
+</header>
+<main id="main"></main>
+<nav>
+  <button data-tab="closet" class="on"><svg viewBox="0 0 24 24"><path d="M12 10V9a2.4 2.4 0 1 0-2.4-2.4"/><path d="M12 10 4.6 15a1 1 0 0 0 .6 1.9h13.6a1 1 0 0 0 .6-1.9L12 10Z"/></svg>옷장</button>
+  <button data-tab="looks"><svg viewBox="0 0 24 24"><path d="M8.5 4 5 6 3 9.2l2.6 1.6V20h12.8v-9.2L21 9.2 19 6l-3.5-2a3.5 3.5 0 0 1-7 0Z"/></svg>룩</button>
+  <button data-tab="week"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg>주간</button>
+  <button data-tab="month"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="1.5"/><path d="M4 9.5h16M8.5 3v4M15.5 3v4"/></svg>캘린더</button>
+  <button data-tab="wish"><svg viewBox="0 0 24 24"><path d="M7 4h10a1 1 0 0 1 1 1v15l-6-3.8L6 20V5a1 1 0 0 1 1-1Z"/></svg>위시</button>
+</nav>
+<div id="modalRoot"></div>
+<div id="toast"></div>
+<div id="onboarding"></div>
+
+<script>
+/* ---------------- storage (IndexedDB) ---------------- */
+const DBN='lookbook';
+function db(){return new Promise((res,rej)=>{const r=indexedDB.open(DBN,2);
+  r.onupgradeneeded=()=>{const d=r.result;['items','looks','days','photos','wishlist'].forEach(s=>{if(!d.objectStoreNames.contains(s))d.createObjectStore(s,{keyPath:'id'});});};
+  r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);});}
+function all(store){return new Promise(async(res,rej)=>{const d=await db();const t=d.transaction(store);const rq=t.objectStore(store).getAll();rq.onsuccess=()=>res(rq.result);rq.onerror=()=>rej(rq.error);});}
+function getOne(store,id){return new Promise(async(res,rej)=>{const d=await db();const t=d.transaction(store);const rq=t.objectStore(store).get(id);rq.onsuccess=()=>res(rq.result);rq.onerror=()=>rej(rq.error);});}
+function put(store,obj){return new Promise(async(res,rej)=>{const d=await db();const t=d.transaction(store,'readwrite');t.objectStore(store).put(obj);t.oncomplete=()=>res(obj);t.onerror=()=>rej(t.error);});}
+function del(store,id){return new Promise(async(res,rej)=>{const d=await db();const t=d.transaction(store,'readwrite');t.objectStore(store).delete(id);t.oncomplete=()=>res();t.onerror=()=>rej(t.error);});}
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+
+/* ---------------- images ---------------- */
+async function shrink(file,max=1100,q=.82){
+  const img=await createImageBitmap(file);
+  const s=Math.min(1,max/Math.max(img.width,img.height));
+  const w=Math.round(img.width*s),h=Math.round(img.height*s);
+  const c=document.createElement('canvas');c.width=w;c.height=h;
+  c.getContext('2d').drawImage(img,0,0,w,h);
+  return new Promise(r=>c.toBlob(r,'image/jpeg',q));
+}
+function pickImage(){return new Promise(res=>{
+  const i=document.createElement('input');i.type='file';i.accept='image/*';
+  i.onchange=async()=>{const f=i.files[0];if(!f)return res(null);
+    try{const blob=await shrink(f);const id=uid();await put('photos',{id,blob});res(id);}
+    catch(e){alert('사진 처리 실패: '+e.message);res(null);}};
+  i.click();
+});}
+const _urls={};
+async function photoURL(id){if(!id)return'';if(_urls[id])return _urls[id];
+  const p=await getOne('photos',id);if(!p)return'';const u=URL.createObjectURL(p.blob);_urls[id]=u;return u;}
+async function hydrate(root){for(const el of (root||document).querySelectorAll('[data-photo]')){
+  const id=el.dataset.photo;const u=id?await photoURL(id):'';
+  if(el.tagName==='IMG'){if(u)el.src=u;} else {if(u){el.style.backgroundImage=`url(${u})`;el.textContent='';}}
+}}
+
+/* ---------------- state ---------------- */
+const CATS=['상의','하의','아우터','원피스','신발','가방','액세서리','기타'];
+const SUBCATS={
+  '상의':['반팔티','긴팔티','민소매','셔츠','블라우스','니트/스웨터','맨투맨','후드티','피케/카라티','조끼'],
+  '하의':['청바지','슬랙스','면바지','반바지','트레이닝/조거','레깅스','스커트'],
+  '아우터':['자켓','코트','트렌치코트','패딩','점퍼/블루종','가디건','야상','무스탕/퍼','베스트'],
+  '원피스':['미니','미디','롱','셔츠원피스','니트원피스','점프수트'],
+  '신발':['운동화/스니커즈','구두','로퍼','부츠','샌들','슬리퍼','힐','플랫'],
+  '가방':['백팩','토트백','크로스백','숄더백','클러치','에코백','미니백'],
+  '액세서리':['모자','목걸이','귀걸이','반지','벨트','스카프/머플러','시계','안경/선글라스','양말'],
+  '기타':[]
+};
+const MATERIAL_PRESETS=['면','린넨','데님','니트','울','캐시미어','폴리','나일론','가죽','스웨이드','실크','쉬폰','코듀로이','트위드','플리스','기모'];
+const COLORS=[{n:'블랙',c:'#222'},{n:'화이트',c:'#fdfdfd'},{n:'그레이',c:'#9a9a9a'},{n:'네이비',c:'#2a3a5e'},{n:'베이지',c:'#d8c3a5'},{n:'브라운',c:'#8b5e3c'},{n:'카키',c:'#6b6b47'},{n:'아이보리',c:'#f2ead6'},{n:'레드',c:'#d0463b'},{n:'핑크',c:'#e59bb0'},{n:'오렌지',c:'#e08a3c'},{n:'옐로우',c:'#e8c34a'},{n:'그린',c:'#5a8f5a'},{n:'블루',c:'#4a76c4'},{n:'퍼플',c:'#7d5aa0'},{n:'데님블루',c:'#3f5c7a'}];
+const OWNERS=['나','남친','공용'];
+const SEASONS=['봄','여름','가을','겨울','사계절'];
+const WISH_STATUS=[{k:'want',l:'사고싶어',c:'#ec8aa0'},{k:'considering',l:'고민중',c:'#e6a94a'},{k:'purchased',l:'구매완료',c:'#6bb37a'}];
+const wishStatus=k=>WISH_STATUS.find(x=>x.k===k)||WISH_STATUS[0];
+const colorHex=n=>{const c=COLORS.find(x=>x.n===n);return c?c.c:'#ccc';};
+const WD=['월','화','수','목','금','토','일'];
+const TPO_TAGS=['데일리룩','출근룩','데이트룩','하객룩','여행룩','캠퍼스룩','운동룩','파티룩','면접룩','소개팅룩','나들이룩','집콕룩','휴양지룩','페스티벌룩','졸업/입학룩'];
+const STYLE_TAGS=['미니멀','캐주얼','포멀','클래식','러블리','걸리시','시크','페미닌','보이시','스트릿','락시크','빈티지','스포티','아메카지','프레피','Y2K','고프코어','청순','모던','에스닉'];
+const TAG_PRESETS=[...TPO_TAGS,...STYLE_TAGS];
+const state={tab:'closet', items:[], looks:[], days:[], wish:[], albumBy:'category', album:null, selectMode:false, selected:new Set(), wishStatus:null, catFilter:null, ownerFilter:null, favOnly:false, tagFilter:null, search:'', lookSearch:'', sortWear:false, backupDismissed:false,
+  week:mondayOf(new Date()), month:startOfMonth(new Date())};
+function ymd(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function mondayOf(d){const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x;}
+function startOfMonth(d){return new Date(d.getFullYear(),d.getMonth(),1);}
+function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x;}
+const itemById=id=>state.items.find(i=>i.id===id);
+function lookThumb(l){if(!l)return null;if(l.photoId)return l.photoId;const it=itemById((l.itemIds||[])[0]);return it&&it.photoId;}
+const lookById=id=>state.looks.find(l=>l.id===id);
+function firstItemPhoto(ids){for(const id of(ids||[])){const it=itemById(id);if(it&&it.photoId)return it.photoId;}return null;}
+function dayThumb(d){if(!d)return null;if(d.photoId)return d.photoId;const ip=firstItemPhoto(d.itemIds);if(ip)return ip;return lookThumb(d.lookId?lookById(d.lookId):null);}
+function resolveDayItems(d){if(d.itemIds&&d.itemIds.length)return d.itemIds;if(d.lookId){const l=lookById(d.lookId);return(l&&l.itemIds)||[];}return[];}
+function wearOf(itemId){let count=0,last=null;for(const d of state.days){if(resolveDayItems(d).includes(itemId)){count++;if(!last||d.id>last)last=d.id;}}return{count,last};}
+function looksWith(itemId){return state.looks.filter(l=>(l.itemIds||[]).includes(itemId));}
+function usageHtml(id){const w=wearOf(id);const lks=looksWith(id);const ld=w.last?w.last.split('-'):null;
+  return `<div class="field"><label>📊 사용 기록</label>
+    <div class="hint">👕 착용 ${w.count}회${ld?` · 마지막 ${+ld[1]}/${+ld[2]}`:' · 아직 안 입음'}</div>
+    <div class="hint" style="margin-top:4px">${lks.length?'이 옷이 든 룩: '+lks.map(l=>esc(l.name||'룩')).join(', '):'아직 저장된 룩에 없음'}</div></div>`;}
+
+/* ---------------- render ---------------- */
+async function refresh(){state.items=await all('items');state.looks=await all('looks');state.days=await all('days');state.wish=await all('wishlist');render();}
+function daysSince(s){if(!s)return Infinity;const p=s.split('-').map(Number);const then=new Date(p[0],p[1]-1,p[2]);return Math.floor((new Date()-then)/86400000);}
+function backupBanner(){
+  if(state.backupDismissed)return'';
+  if(!(state.items.length||state.looks.length))return'';
+  const last=localStorage.getItem('last_backup');const d=daysSince(last);
+  if(d<7)return'';
+  const txt=last?`마지막 백업 ${d}일 전`:'아직 백업한 적 없어요';
+  return `<div class="banner"><span>💾 ${txt} — 데이터 지켜요</span><span><button class="banner-btn" data-action="dobackup">백업</button><button class="banner-x" data-action="dismissbackup">✕</button></span></div>`;
+}
+let toastTimer=null;
+function showToast(msg,undoFn){
+  const r=document.getElementById('toast');clearTimeout(toastTimer);
+  r.innerHTML=`<div class="toast"><span>${esc(msg)}</span>${undoFn?'<button class="toast-undo" id="toast-undo">실행취소</button>':''}</div>`;
+  if(undoFn)document.getElementById('toast-undo').onclick=async()=>{clearTimeout(toastTimer);r.innerHTML='';await undoFn();};
+  toastTimer=setTimeout(()=>{r.innerHTML='';},5000);
+}
+function bulkAdd(){
+  const i=document.createElement('input');i.type='file';i.accept='image/*';i.multiple=true;
+  i.onchange=async()=>{const files=[...i.files];if(!files.length)return;showToast(`${files.length}장 처리 중…`);
+    let n=0;for(const f of files){try{const blob=await shrink(f);const pid=uid();await put('photos',{id:pid,blob});await put('items',{id:uid(),name:'',category:'상의',photoId:pid});n++;}catch(e){}}
+    await refresh();showToast(`옷 ${n}장 추가됨 · 눌러서 이름·종류 채우기`);};
+  i.click();
+}
+function pageHead(title,count,cta){
+  return `<div class="phead">${cta?`<button class="add-plus" data-action="add" aria-label="추가">＋</button>`:''}<h1 class="ptitle">${title}</h1>${count?`<div class="pcount">${count}</div>`:''}</div>`;
+}
+async function render(){
+  const m=document.getElementById('main');
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===state.tab));
+  let html;
+  if(state.tab==='closet')html=viewCloset();
+  else if(state.tab==='looks')html=viewLooks();
+  else if(state.tab==='wish')html=viewWishlist();
+  else if(state.tab==='week')html=await viewWeek();
+  else html=await viewMonth();
+  m.innerHTML=backupBanner()+html;
+  await hydrate(m);
+}
+
+function albumGroups(){
+  if(state.albumBy==='color')return COLORS.map(c=>({key:c.n,label:c.n,color:c.c,items:state.items.filter(i=>(i.colors||[]).includes(c.n))})).filter(g=>g.items.length);
+  if(state.albumBy==='owner')return OWNERS.map(o=>({key:o,label:o,items:state.items.filter(i=>i.owner===o)})).filter(g=>g.items.length);
+  if(state.albumBy==='season')return SEASONS.map(s=>({key:s,label:s,items:state.items.filter(i=>i.season===s)})).filter(g=>g.items.length);
+  return CATS.map(c=>({key:c,label:c,items:state.items.filter(i=>i.category===c)})).filter(g=>g.items.length);
+}
+function albumItems(){
+  if(state.albumBy==='color')return state.items.filter(i=>(i.colors||[]).includes(state.album));
+  if(state.albumBy==='owner')return state.items.filter(i=>i.owner===state.album);
+  if(state.albumBy==='season')return state.items.filter(i=>i.season===state.album);
+  return state.items.filter(i=>i.category===state.album);
+}
+function itemCards(list){
+  const sm=state.selectMode;
+  return `<div class="grid">`+list.map(i=>{const sel=state.selected.has(i.id);
+    return `<div class="card ${sel?'selected':''}" data-action="${sm?'toggleselect':'item'}" data-id="${i.id}">
+    ${sm?`<div class="checkmark">${sel?'✓':''}</div>`:''}
+    <img class="ph" data-photo="${i.photoId||''}" alt="">
+    <div class="body"><div class="name">${esc(i.name||'이름 없음')}</div>
+    <div class="sub"><span class="badge">${i.subcategory?esc(i.subcategory):esc(i.category||'')}</span>
+    ${i.owner?`<span class="tagchip">${esc(i.owner)}</span>`:''}
+    ${(i.colors||[]).slice(0,3).map(c=>`<span class="swatch" style="background:${colorHex(c)}"></span>`).join('')}</div></div></div>`;}).join('')+`</div>`;
+}
+function selectBar(){
+  if(!state.selectMode)return `<button class="textcta" data-action="selectmode">선택</button>`;
+  return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <button class="textcta" data-action="cancelselect" style="margin:0">취소</button>
+    <button class="textcta" data-action="deleteselected" style="margin:0;color:var(--danger)">${state.selected.size}개 삭제</button></div>`;
+}
+async function deleteSelected(){
+  const ids=[...state.selected];if(!ids.length){state.selectMode=false;render();return;}
+  const objs=ids.map(id=>itemById(id)).filter(Boolean);
+  for(const id of ids)await del('items',id);
+  state.selectMode=false;state.selected=new Set();await refresh();
+  showToast(`${objs.length}개 삭제됨`,async()=>{for(const o of objs)await put('items',o);await refresh();});
+}
+function lookUse(lookId){return state.days.filter(d=>d.lookId===lookId).length;}
+function statsSheet(){
+  const ww=state.items.map(i=>({i,w:wearOf(i.id).count}));
+  const worn=ww.filter(x=>x.w>0).sort((a,b)=>b.w-a.w);
+  const never=ww.filter(x=>x.w===0).length;
+  const topItems=worn.slice(0,5);
+  const looksU=state.looks.map(l=>({l,n:lookUse(l.id)})).filter(x=>x.n>0).sort((a,b)=>b.n-a.n).slice(0,3);
+  const acc=worn.filter(x=>['가방','액세서리','신발'].includes(x.i.category)).slice(0,3);
+  const spend=state.items.reduce((a,i)=>a+(+i.price||0),0);
+  const row=(photoId,name,val)=>`<div class="statrow"><img class="statimg" data-photo="${photoId||''}" alt=""><span class="statname">${esc(name)}</span><span class="statval">${val}</span></div>`;
+  openSheet(`<h2>내 스타일 통계 📊</h2>
+    <div class="statgrid">
+      <div class="statbox"><div class="statnum">${state.items.length}</div><div class="statlbl">옷</div></div>
+      <div class="statbox"><div class="statnum">${state.looks.length}</div><div class="statlbl">룩</div></div>
+      <div class="statbox"><div class="statnum">${state.days.length}</div><div class="statlbl">착장 기록</div></div>
+      <div class="statbox"><div class="statnum">${never}</div><div class="statlbl">안 입은 옷</div></div>
+    </div>
+    ${spend?`<div class="banner" style="background:var(--pink-soft);color:var(--pink-ink);justify-content:center;font-weight:700">👛 지금까지 옷값 ₩${spend.toLocaleString()}</div>`:''}
+    <div class="field"><label>자주 입은 옷 TOP</label>${topItems.length?topItems.map(x=>row(x.i.photoId,x.i.name||x.i.category||'옷',x.w+'회')).join(''):'<div class="hint">아직 착장 기록이 없어요. 캘린더·주간에서 그날 코디를 기록해 보세요.</div>'}</div>
+    ${looksU.length?`<div class="field"><label>자주 입은 룩</label>${looksU.map(x=>row(lookThumb(x.l),x.l.name||'룩',x.n+'회')).join('')}</div>`:''}
+    ${acc.length?`<div class="field"><label>자주 든 가방·신발·액세서리</label>${acc.map(x=>row(x.i.photoId,x.i.name||x.i.category,x.w+'회')).join('')}</div>`:''}
+    <div class="btnrow"><button class="btn primary" data-close="1">닫기</button></div>`);
+}
+function viewCloset(){
+  const head=pageHead('옷장',state.items.length?`${state.items.length} 벌`:'','add');
+  const search=`<input type="text" class="search" id="closet-search" placeholder="🔍 옷 검색" value="${esc(state.search)}">`;
+  if(!state.items.length)return head+search+`<div class="empty-state"><div class="big">🧺</div>옷장이 비었어요.<br>아래로 옷을 담아 시작해 보세요.<br><br><button class="textcta" data-action="bulkadd">＋ 여러 장 한번에 추가</button></div>`;
+  if(state.search){
+    const q=state.search.toLowerCase();
+    const list=state.items.filter(i=>[i.name||'',i.category||'',i.subcategory||'',i.owner||'',...(i.materials||[]),...(i.colors||[])].join(' ').toLowerCase().includes(q));
+    return head+search+(list.length?selectBar()+itemCards(list):`<div class="empty-state">검색 결과가 없어요.</div>`);
+  }
+  if(state.album){
+    const list=albumItems();
+    return head+`<button class="backlink" data-action="albumback">‹ 앨범</button><div class="sec"><h2>${esc(state.album)}</h2><span class="pcount">${list.length} 벌</span></div>`+selectBar()+itemCards(list);
+  }
+  const bubble=`<div class="bubbles"><div class="bubble">오늘은 뭐 입을까? 👗</div><div class="bubble r">앨범에서 골라봐 ✨</div><div class="delivered">Delivered</div></div>`;
+  const anyOwner=state.items.some(i=>i.owner);const anySeason=state.items.some(i=>i.season);
+  const bys=[['category','카테고리'],['color','색상'],...(anySeason?[['season','시즌']]:[]),...(anyOwner?[['owner','소유자']]:[])];
+  const byChips=`<div class="chips">`+bys.map(([k,l])=>`<button class="chip ${state.albumBy===k?'on':''}" data-action="albumby" data-by="${k}">${l}</button>`).join('')+`</div>`;
+  const albums=albumGroups().map(g=>`<div class="card album" data-action="album" data-key="${esc(g.key)}">
+    <div class="plus-badge">＋</div>
+    <img class="ph" data-photo="${(g.items.find(x=>x.photoId)||{}).photoId||''}" alt="">
+    <div class="body"><div class="name">${g.color?`<span class="swatch" style="background:${g.color}"></span> `:''}${esc(g.label)}</div><div class="sub">${g.items.length}</div></div></div>`).join('');
+  return head+bubble+search+`<button class="textcta" data-action="bulkadd">＋ 여러 장 한번에 추가</button><div class="sec"><h2>앨범</h2></div>`+byChips+`<div class="grid">${albums}</div>`;
+}
+function viewLooks(){
+  let list=state.looks;
+  if(state.favOnly)list=list.filter(l=>l.favorite);
+  else if(state.tagFilter)list=list.filter(l=>(l.tags||[]).includes(state.tagFilter));
+  if(state.lookSearch){const q=state.lookSearch.toLowerCase();list=list.filter(l=>[l.name||'',l.memo||'',...(l.tags||[])].join(' ').toLowerCase().includes(q));}
+  const usedTags=[...new Set(state.looks.flatMap(l=>l.tags||[]))];
+  const none=!state.favOnly&&!state.tagFilter;
+  const head=pageHead('룩',state.looks.length?`${state.looks.length} 개`:'','룩 추가');
+  const aiBtn=`<button class="textcta" data-action="airec">AI 코디 추천</button>`;
+  const searchBox=state.looks.length?`<input type="text" class="search" id="looks-search" placeholder="룩 이름·태그·메모 검색" value="${esc(state.lookSearch)}">`:'';
+  const chips=`<div class="chips">
+    <button class="chip ${none?'on':''}" data-action="lookfilter" data-kind="all">전체</button>
+    <button class="chip ${state.favOnly?'on':''}" data-action="lookfilter" data-kind="fav">즐겨찾기</button>`+
+    usedTags.map(t=>`<button class="chip ${state.tagFilter===t?'on':''}" data-action="lookfilter" data-kind="tag" data-tag="${esc(t)}">${esc(t)}</button>`).join('')+`</div>`;
+  if(!state.looks.length)return head+aiBtn+chips+`<div class="empty-state"><div class="big">✨</div>아직 저장된 룩이 없어요.<br>좋아하는 착장을 룩으로 남겨보세요.</div>`;
+  const card=(l,feat)=>`<div class="card${feat?' feature':''}" data-action="look" data-id="${l.id}">
+    ${l.favorite?'<div class="heart">♥</div>':''}
+    <img class="ph" data-photo="${lookThumb(l)||''}" alt="">
+    <div class="body"><div class="name">${esc(l.name||'룩')}</div>
+    <div class="sub">${stars(l.rating)} ${(l.tags||[]).slice(0,2).map(t=>`<span class="tagchip">${esc(t)}</span>`).join('')}</div></div></div>`;
+  const grid=list.length?`<div class="grid">${card(list[0],true)}${list.slice(1).map(l=>card(l,false)).join('')}</div>`:`<div class="empty-state">검색 결과가 없어요.</div>`;
+  return head+aiBtn+searchBox+chips+grid;
+}
+async function viewWeek(){
+  const days=await all('days');const byId={};days.forEach(d=>byId[d.id]=d);
+  const tstr=ymd(new Date());
+  let worn=0,cells='';
+  for(let k=0;k<7;k++){const dt=addDays(state.week,k);const id=ymd(dt);const d=byId[id];const thumb=dayThumb(d);const today=id===tstr;if(d)worn++;
+    cells+=`<div class="wk-cell ${thumb?'has':''} ${today?'today':''}" data-action="day" data-date="${id}">
+      ${thumb?`<img data-photo="${thumb}" alt="">`:'<span class="wk-plus">＋</span>'}
+      <span class="wk-day">${WD[k]}</span><span class="wk-num">${dt.getDate()}</span></div>`;}
+  const e=addDays(state.week,6);
+  const head=pageHead('이번 주',worn?`${worn} 착장`:'','');
+  return head+`<div class="navrow"><button data-action="weeknav" data-d="-7">‹</button>
+    <span class="title" style="font-size:15px">${state.week.getMonth()+1}/${state.week.getDate()} – ${e.getMonth()+1}/${e.getDate()}</span>
+    <button data-action="weeknav" data-d="7">›</button></div><div class="wk-grid">${cells}</div>`;
+}
+async function viewMonth(){
+  const days=await all('days');const byId={};days.forEach(d=>byId[d.id]=d);
+  const first=state.month;const y=first.getFullYear(),mo=first.getMonth();
+  const lead=(first.getDay()+6)%7;const dim=new Date(y,mo+1,0).getDate();const tstr=ymd(new Date());
+  let cells='';
+  for(let i=0;i<lead;i++)cells+=`<div class="cell blank"></div>`;
+  for(let d=1;d<=dim;d++){const id=ymd(new Date(y,mo,d));const rec=byId[id];
+    const thumb=dayThumb(rec);
+    cells+=`<div class="cell ${thumb?'has':''} ${id===tstr?'today':''}" data-action="day" data-date="${id}">
+      ${thumb?`<img class="cimg" data-photo="${thumb}" alt="">`:''}<span class="cnum">${d}</span></div>`;}
+  const head=WD.map(w=>`<div>${w}</div>`).join('');
+  return `<div class="navrow"><button data-action="monthnav" data-d="-1">‹</button>
+    <span class="title">${y}년 ${mo+1}월</span>
+    <button data-action="monthnav" data-d="1">›</button></div>
+    <div class="cal-head">${head}</div><div class="cal">${cells}</div>`;
+}
+function stars(n){n=n||0;let s='';for(let i=1;i<=5;i++)s+=i<=n?'★':'';return s?`<span style="color:var(--gold);letter-spacing:1px">${s}</span>`:'';}
+function esc(s){return(s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+/* ---------------- modal helpers ---------------- */
+function openSheet(html){document.getElementById('modalRoot').innerHTML=
+  `<div class="backdrop" data-close="1"><div class="sheet">${html}</div></div>`;
+  hydrate(document.getElementById('modalRoot'));}
+function closeSheet(){document.getElementById('modalRoot').innerHTML='';}
+
+/* ----- item form ----- */
+function itemForm(existing,opts){
+  opts=opts||{};
+  const it=existing||{id:uid(),name:'',category:'상의',subcategory:'',photoId:'',materials:[],colors:[]};
+  const draft={...it,materials:[...(it.materials||[])],colors:[...(it.colors||[])]};
+  let analyzing=false;
+  function paint(){
+    const subs=SUBCATS[draft.category]||[];
+    const matChips=[...new Set([...MATERIAL_PRESETS,...draft.materials])].map(t=>`<button type="button" class="chip ${draft.materials.includes(t)?'on':''}" data-mat="${esc(t)}">${esc(t)}</button>`).join('');
+    const colorChips=COLORS.map(co=>`<button type="button" class="chip colorchip ${draft.colors.includes(co.n)?'on':''}" data-color="${co.n}"><span class="dot" style="background:${co.c}"></span>${co.n}</button>`).join('');
+    const html=`<h2>${existing?'옷 수정':'옷 등록'}</h2>
+      <div class="field"><div class="photo-pick" id="pp" data-photo="${draft.photoId||''}">${draft.photoId?'':'📷 사진 선택'}</div>${analyzing?'<div class="hint">🪄 AI가 색·종류 분석 중…</div>':(getKey()?'<div class="hint">🪄 사진 넣으면 AI가 이름·색·종류를 자동으로 채워줘요 (수정 가능)</div>':'')}</div>
+      <div class="field"><label>이름</label><input type="text" id="f-name" value="${esc(draft.name)}" placeholder="예) 흰 셔츠"></div>
+      <div class="field"><label>카테고리</label><select id="f-cat">${CATS.map(c=>`<option ${c===draft.category?'selected':''}>${c}</option>`).join('')}</select></div>
+      <div class="field"><label>세부 종류 (선택)</label><select id="f-sub"${subs.length?'':' disabled'}>
+        <option value="">— 선택 안 함 —</option>
+        ${subs.map(s=>`<option ${s===draft.subcategory?'selected':''}>${s}</option>`).join('')}</select></div>
+      <div class="field"><label>소재 태그 (선택 · 여러 개)</label>
+        <div class="tagwrap" id="f-mats">${matChips}</div>
+        <input type="text" id="f-matnew" placeholder="직접 입력 후 Enter (예: 코듀로이)" style="margin-top:8px"></div>
+      <div class="field"><label>색상 (선택 · 여러 개)</label>
+        <div class="tagwrap" id="f-colors">${colorChips}</div></div>
+      <div class="field"><label>브랜드 (선택)</label><input type="text" id="f-brand" value="${esc(draft.brand||'')}" placeholder="예) COS"></div>
+      <div class="field"><label>시즌 (선택)</label><select id="f-season"><option value="">— 선택 안 함 —</option>${SEASONS.map(s=>`<option ${s===draft.season?'selected':''}>${s}</option>`).join('')}</select></div>
+      <div class="field"><label>구매일 (선택)</label><input type="date" id="f-pdate" value="${draft.purchaseDate||''}"></div>
+      <div class="field"><label>가격 (선택)</label><input type="text" id="f-price" inputmode="numeric" value="${draft.price?Number(draft.price).toLocaleString():''}" placeholder="예) 89,000"></div>
+      ${existing?usageHtml(draft.id):''}
+      <div class="btnrow">${existing?'<button class="btn danger" id="f-del">삭제</button>':''}
+        <button class="btn ghost" data-close="1">취소</button>
+        <button class="btn primary" id="f-save">저장</button></div>`;
+    openSheet(html);
+    document.getElementById('pp').onclick=async()=>{sync();const id=await pickImage();if(!id)return;draft.photoId=id;
+      if(getKey()){analyzing=true;paint();try{const r=await classifyPhoto(id);if(r&&typeof r==='object'){if(r.name&&!draft.name)draft.name=r.name;if(r.category&&CATS.includes(r.category))draft.category=r.category;if(r.subcategory&&(SUBCATS[draft.category]||[]).includes(r.subcategory))draft.subcategory=r.subcategory;if(Array.isArray(r.colors)){const cc=r.colors.filter(c=>COLORS.some(x=>x.n===c));if(cc.length)draft.colors=cc;}showToast('AI가 이름·색·종류를 채웠어요 ✨');}}catch(e){showToast('AI 실패: '+(e.message||e));}analyzing=false;}
+      paint();};
+    document.getElementById('f-cat').onchange=e=>{sync();draft.category=e.target.value;draft.subcategory='';paint();};
+    document.getElementById('f-mats').onclick=e=>{const c=e.target.closest('[data-mat]');if(!c)return;sync();const t=c.dataset.mat;const i=draft.materials.indexOf(t);if(i>=0)draft.materials.splice(i,1);else draft.materials.push(t);paint();};
+    document.getElementById('f-colors').onclick=e=>{const c=e.target.closest('[data-color]');if(!c)return;sync();const t=c.dataset.color;const i=draft.colors.indexOf(t);if(i>=0)draft.colors.splice(i,1);else draft.colors.push(t);paint();};
+    const mn=document.getElementById('f-matnew');mn.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();const v=mn.value.trim();if(v){sync();if(!draft.materials.includes(v))draft.materials.push(v);paint();}}};
+    document.getElementById('f-save').onclick=async()=>{sync();
+      await put('items',draft);
+      if(opts.onSaved){state.items=await all('items');opts.onSaved(draft);}
+      else{closeSheet();refresh();}};
+    if(existing)document.getElementById('f-del').onclick=async()=>{await del('items',existing.id);closeSheet();await refresh();showToast('옷 삭제됨',async()=>{await put('items',existing);await refresh();});};
+  }
+  function sync(){const n=document.getElementById('f-name');if(n)draft.name=n.value.trim();const s=document.getElementById('f-sub');if(s)draft.subcategory=s.value;
+    const br=document.getElementById('f-brand');if(br)draft.brand=br.value.trim();
+    const se=document.getElementById('f-season');if(se)draft.season=se.value;
+    const pd=document.getElementById('f-pdate');if(pd)draft.purchaseDate=pd.value;
+    const pr=document.getElementById('f-price');if(pr)draft.price=pr.value.replace(/[^\d]/g,'');}
+  paint();
+}
+
+/* ----- look form ----- */
+function lookForm(existing){
+  const lo=existing||{id:uid(),name:'',itemIds:[],photoId:'',rating:0,memo:'',favorite:true,tags:[]};
+  const draft={...lo,itemIds:[...(lo.itemIds||[])],tags:[...(lo.tags||[])]};
+  let lookAnalyzing=false;
+  function paint(){
+    const selImgs=draft.itemIds.map(id=>{const it=itemById(id);return `<img data-photo="${it?it.photoId:''}" alt="">`;}).join('');
+    const tchip=t=>`<button type="button" class="chip ${draft.tags.includes(t)?'on':''}" data-tag="${esc(t)}">${esc(t)}</button>`;
+    const tpoChips=TPO_TAGS.map(tchip).join(''), styleChips=STYLE_TAGS.map(tchip).join('');
+    const customTags=draft.tags.filter(t=>!TAG_PRESETS.includes(t));
+    const html=`<h2>${existing?'룩 수정':'새 룩'}</h2>
+      <div class="field"><div class="photo-pick" id="pp" data-photo="${draft.photoId||''}">${draft.photoId?'':'📷 룩 사진 (선택)'}</div>${lookAnalyzing?'<div class="hint">🪄 AI가 룩 이름·태그 짓는 중…</div>':(getKey()?'<div class="hint">🪄 사진 넣으면 AI가 룩 이름·태그를 제안해요 (수정 가능)</div>':'')}</div>
+      <div class="field"><label>이름</label><input type="text" id="l-name" value="${esc(draft.name)}" placeholder="예) 데일리 캐주얼"></div>
+      <div class="field"><label>TPO · 상황</label><div class="tagwrap" id="l-tpo">${tpoChips}</div></div>
+      <div class="field"><label>스타일</label><div class="tagwrap" id="l-style">${styleChips}</div></div>
+      <div class="field"><label>직접 추가</label>
+        ${customTags.length?`<div class="tagwrap" id="l-custom" style="margin-bottom:9px">${customTags.map(tchip).join('')}</div>`:''}
+        <input type="text" id="l-tagnew" placeholder="다른 태그 입력 후 Enter"></div>
+      <div class="field"><label>포함한 옷</label><button class="btn ghost" id="l-pick" style="padding:10px">옷장에서 고르기 (${draft.itemIds.length})</button>
+        <div class="selgrid">${selImgs}</div></div>
+      <div class="field"><label>별점</label><div class="stars" id="l-stars">${[1,2,3,4,5].map(i=>`<span data-n="${i}" class="${i<=draft.rating?'on':''}">★</span>`).join('')}</div></div>
+      <div class="field"><label>메모</label><textarea id="l-memo" placeholder="어울리는 상황, 코디 팁 등">${esc(draft.memo)}</textarea></div>
+      <div class="field"><label><input type="checkbox" id="l-fav" ${draft.favorite?'checked':''}> ♥ 즐겨찾기에 추가</label></div>
+      ${existing?'<div class="btnrow" style="margin-bottom:10px"><button class="btn ghost" id="l-share">🖼 이미지</button><button class="btn ghost" id="l-receipt">🧾 영수증</button></div>':''}
+      <div class="btnrow">${existing?'<button class="btn danger" id="l-del">삭제</button>':''}
+        <button class="btn ghost" data-close="1">취소</button>
+        <button class="btn primary" id="l-save">저장</button></div>`;
+    openSheet(html);
+    document.getElementById('pp').onclick=async()=>{sync();const id=await pickImage();if(!id)return;draft.photoId=id;
+      if(getKey()){lookAnalyzing=true;paint();try{const r=await classifyLook(id);if(r&&typeof r==='object'){let did=false;if(r.name&&!draft.name){draft.name=r.name;did=true;}if(r.memo&&!draft.memo){draft.memo=r.memo;did=true;}if(Array.isArray(r.tags)){for(const t of r.tags){if(TAG_PRESETS.includes(t)&&!draft.tags.includes(t)){draft.tags.push(t);did=true;}}}showToast(did?'AI가 이름·설명·태그를 채웠어요 ✨':'AI가 채울 게 없었어요');}}catch(e){showToast('AI 실패: '+(e.message||e));}lookAnalyzing=false;}
+      paint();};
+    document.getElementById('l-pick').onclick=()=>{sync();itemPicker(draft.itemIds,ids=>{draft.itemIds=ids;paint();});};
+    const tagToggle=e=>{const c=e.target.closest('[data-tag]');if(!c)return;sync();const t=c.dataset.tag;const i=draft.tags.indexOf(t);if(i>=0)draft.tags.splice(i,1);else draft.tags.push(t);paint();};
+    document.getElementById('l-tpo').onclick=tagToggle;
+    document.getElementById('l-style').onclick=tagToggle;
+    {const lc=document.getElementById('l-custom');if(lc)lc.onclick=tagToggle;}
+    const tn=document.getElementById('l-tagnew');tn.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();const v=tn.value.trim();if(v){sync();if(!draft.tags.includes(v))draft.tags.push(v);paint();}}};
+    document.getElementById('l-stars').onclick=e=>{const s=e.target.closest('[data-n]');if(s){sync();draft.rating=+s.dataset.n;paint();}};
+    document.getElementById('l-save').onclick=async()=>{sync();
+      if(!draft.name&&!draft.photoId&&!draft.itemIds.length){alert('이름이나 사진, 옷 중 하나는 넣어주세요.');return;}
+      await put('looks',draft);closeSheet();refresh();};
+    if(existing)document.getElementById('l-del').onclick=async()=>{await del('looks',existing.id);closeSheet();await refresh();showToast('룩 삭제됨',async()=>{await put('looks',existing);await refresh();});};
+    if(existing){const sb=document.getElementById('l-share');if(sb)sb.onclick=async()=>{sync();sb.textContent='만드는 중…';sb.disabled=true;try{await shareLook(draft);}catch(e){alert('이미지 생성 실패: '+(e.message||e));}sb.textContent='🖼 이미지';sb.disabled=false;};
+      const rb=document.getElementById('l-receipt');if(rb)rb.onclick=async()=>{sync();rb.textContent='만드는 중…';rb.disabled=true;try{await shareReceipt(draft);}catch(e){alert('영수증 생성 실패: '+(e.message||e));}rb.textContent='🧾 영수증';rb.disabled=false;};}
+  }
+  function sync(){const n=document.getElementById('l-name');if(n)draft.name=n.value.trim();
+    const mm=document.getElementById('l-memo');if(mm)draft.memo=mm.value;
+    const fv=document.getElementById('l-fav');if(fv)draft.favorite=fv.checked;}
+  paint();
+}
+function itemPicker(selected,onDone){
+  const sel=new Set(selected);
+  const rows=state.items.length?state.items.map(i=>`<div class="pick-item ${sel.has(i.id)?'sel':''}" data-id="${i.id}">
+    <img data-photo="${i.photoId||''}" alt=""><div class="pn">${esc(i.name||'이름 없음')}</div>
+    <span class="badge">${i.category}</span></div>`).join('')
+    :`<div class="hint">옷장이 비었어요. 아래로 새 옷을 추가하세요.</div>`;
+  openSheet(`<h2>옷 고르기</h2>
+    <button class="btn ghost" id="pk-new" style="margin-bottom:12px">＋ 옷장에 없는 옷 추가</button>
+    <div class="pick-list">${rows}</div>
+    <div class="btnrow"><button class="btn ghost" data-close="1">취소</button>
+    <button class="btn primary" id="pk-done">완료</button></div>`);
+  document.querySelectorAll('.pick-item').forEach(el=>el.onclick=()=>{
+    const id=el.dataset.id;if(sel.has(id))sel.delete(id);else sel.add(id);el.classList.toggle('sel');});
+  document.getElementById('pk-new').onclick=()=>itemForm(null,{onSaved:it=>{sel.add(it.id);itemPicker([...sel],onDone);}});
+  document.getElementById('pk-done').onclick=()=>onDone([...sel]);
+}
+
+/* ----- day detail ----- */
+async function dayDetail(dateId){
+  const rec=(await getOne('days',dateId))||{id:dateId,lookId:'',photoId:'',itemIds:[],rating:0,memo:''};
+  const draft={...rec,itemIds:[...(rec.itemIds||[])]};
+  function paint(){
+    const look=draft.lookId?lookById(draft.lookId):null;
+    const thumb=dayThumb(draft);
+    const [y,mo,d]=dateId.split('-');
+    const comboImgs=draft.itemIds.map(id=>{const it=itemById(id);return `<img data-photo="${it?it.photoId:''}" alt="">`;}).join('');
+    const html=`<h2>${+mo}월 ${+d}일 코디</h2>
+      <div class="field"><div class="photo-pick" id="pp" data-photo="${thumb||''}">${thumb?'':'📷 입은 룩 사진'}</div>
+        ${look?`<div class="hint">저장된 룩: <b>${esc(look.name||'룩')}</b></div>`:''}
+        ${draft.itemIds.length?`<div class="selgrid">${comboImgs}</div>`:''}</div>
+      <div class="btnrow" style="margin-bottom:14px">
+        <button class="btn ghost" id="d-look" style="padding:11px">저장된 룩에서</button>
+        <button class="btn ghost" id="d-items" style="padding:11px">옷장에서 조합</button></div>
+      ${(draft.lookId||draft.itemIds.length)&&dateId!==ymd(new Date())?`<div class="btnrow" style="margin-bottom:14px"><button class="btn ghost" id="d-copy">📋 이 코디 오늘 입기</button></div>`:''}
+      <div class="field"><label>오늘 평가</label><div class="stars" id="d-stars">${[1,2,3,4,5].map(i=>`<span data-n="${i}" class="${i<=draft.rating?'on':''}">★</span>`).join('')}</div></div>
+      <div class="field"><label>메모</label><textarea id="d-memo" placeholder="날씨, 착용감, 느낌 등">${esc(draft.memo)}</textarea></div>
+      <div class="btnrow"><button class="btn danger" id="d-clear">비우기</button>
+        <button class="btn ghost" data-close="1">취소</button>
+        <button class="btn primary" id="d-save">저장</button></div>`;
+    openSheet(html);
+    document.getElementById('pp').onclick=async()=>{sync();const id=await pickImage();if(id){draft.photoId=id;paint();}};
+    document.getElementById('d-look').onclick=()=>{sync();lookPicker(id=>{draft.lookId=id;draft.itemIds=[];draft.photoId='';paint();});};
+    document.getElementById('d-items').onclick=()=>{sync();itemPicker(draft.itemIds,ids=>{draft.itemIds=ids;draft.lookId='';paint();});};
+    {const cp=document.getElementById('d-copy');if(cp)cp.onclick=async()=>{const t=ymd(new Date());await put('days',{id:t,lookId:draft.lookId||'',itemIds:[...draft.itemIds],photoId:'',rating:0,memo:''});closeSheet();await refresh();showToast('오늘 코디로 복사됨 ✓');};}
+    document.getElementById('d-stars').onclick=e=>{const s=e.target.closest('[data-n]');if(s){sync();draft.rating=+s.dataset.n;paint();}};
+    document.getElementById('d-save').onclick=async()=>{sync();
+      if(!draft.lookId&&!draft.photoId&&!draft.itemIds.length&&!draft.rating&&!draft.memo){await del('days',dateId);}
+      else await put('days',draft);
+      closeSheet();refresh();};
+    document.getElementById('d-clear').onclick=async()=>{await del('days',dateId);closeSheet();refresh();};
+  }
+  function sync(){const mm=document.getElementById('d-memo');if(mm)draft.memo=mm.value;}
+  paint();
+}
+function lookPicker(onPick){
+  if(!state.looks.length){alert('먼저 룩 탭에서 룩을 만들어 주세요.');return;}
+  const rows=state.looks.map(l=>`<div class="pick-item" data-id="${l.id}">
+    <img data-photo="${lookThumb(l)||''}" alt=""><div class="pn">${esc(l.name||'룩')} ${l.favorite?'♥':''}</div>
+    <span>${stars(l.rating)}</span></div>`).join('');
+  openSheet(`<h2>룩 선택</h2><div class="pick-list">${rows}</div>
+    <div class="btnrow"><button class="btn ghost" data-close="1">취소</button></div>`);
+  document.querySelectorAll('.pick-item').forEach(el=>el.onclick=()=>onPick(el.dataset.id));
+}
+
+/* ----- 위시리스트 ----- */
+function viewWishlist(){
+  const head=pageHead('위시',state.wish.length?`${state.wish.length} 개`:'','위시 추가');
+  if(!state.wish.length)return head+`<div class="empty-state"><div class="big">🛍️</div>위시리스트가 비었어요.<br>갖고 싶은 옷을 무드보드처럼 모아보세요.</div>`;
+  const chips=`<div class="chips"><button class="chip ${!state.wishStatus?'on':''}" data-action="wishstatus" data-s="">전체</button>`+
+    WISH_STATUS.map(s=>`<button class="chip ${state.wishStatus===s.k?'on':''}" data-action="wishstatus" data-s="${s.k}">${s.l}</button>`).join('')+`</div>`;
+  const list=state.wishStatus?state.wish.filter(w=>(w.status||'want')===state.wishStatus):state.wish;
+  const cards=list.map(w=>{const st=wishStatus(w.status);return `<div class="card" data-action="wishitem" data-id="${w.id}">
+    <span class="wbadge" style="background:${st.c}">${st.l}</span>
+    <img class="ph" data-photo="${w.photoId||''}" alt="">
+    <div class="body"><div class="name">${esc(w.name||'아이템')}</div>
+    <div class="sub">${w.memo?`<span>${esc(w.memo)}</span>`:''}${w.link?'<span class="tagchip">링크</span>':''}</div></div></div>`;}).join('');
+  return head+chips+(list.length?`<div class="grid">${cards}</div>`:`<div class="empty-state">해당 상태의 위시가 없어요.</div>`);
+}
+function wishForm(existing){
+  const w=existing||{id:uid(),name:'',memo:'',photoId:'',link:'',status:'want'};
+  const draft={...w};if(!draft.status)draft.status='want';
+  const statusChips=WISH_STATUS.map(s=>`<button type="button" class="chip ${draft.status===s.k?'on':''}" data-ws="${s.k}">${s.l}</button>`).join('');
+  const html=`<h2>${existing?'위시 수정':'위시 추가'}</h2>
+    <div class="field"><div class="photo-pick" id="wp" data-photo="${draft.photoId||''}">${draft.photoId?'':'📷 사진 (선택)'}</div></div>
+    <div class="field"><label>이름</label><input type="text" id="w-name" value="${esc(draft.name)}" placeholder="예) 베이지 트렌치코트"></div>
+    <div class="field"><label>상태</label><div class="tagwrap" id="w-status">${statusChips}</div></div>
+    <div class="field"><label>메모</label><textarea id="w-memo" placeholder="가격, 브랜드, 사이즈 등">${esc(draft.memo)}</textarea></div>
+    <div class="field"><label>링크 (선택)</label><input type="text" id="w-link" value="${esc(draft.link)}" placeholder="쇼핑몰 주소 붙여넣기"></div>
+    ${existing&&draft.link?`<div class="btnrow" style="margin-bottom:10px"><a class="btn ghost" href="${esc(draft.link)}" target="_blank" rel="noopener" style="text-decoration:none;text-align:center;line-height:1.4">🔗 링크 열기</a></div>`:''}
+    ${existing?'<div class="btnrow" style="margin-bottom:10px"><button class="btn ghost" id="w-move">👕 옷장으로 이동</button></div>':''}
+    <div class="btnrow">${existing?'<button class="btn danger" id="w-del">삭제</button>':''}
+      <button class="btn ghost" data-close="1">취소</button>
+      <button class="btn primary" id="w-save">저장</button></div>`;
+  openSheet(html);
+  const sync=()=>{const n=document.getElementById('w-name');if(n)draft.name=n.value.trim();const m=document.getElementById('w-memo');if(m)draft.memo=m.value;const l=document.getElementById('w-link');if(l)draft.link=l.value.trim();};
+  document.getElementById('wp').onclick=async()=>{const id=await pickImage();if(id){draft.photoId=id;const el=document.getElementById('wp');el.dataset.photo=id;await hydrate(document.getElementById('modalRoot'));}};
+  document.getElementById('w-status').onclick=e=>{const c=e.target.closest('[data-ws]');if(!c)return;draft.status=c.dataset.ws;[...document.querySelectorAll('#w-status .chip')].forEach(b=>b.classList.toggle('on',b.dataset.ws===draft.status));};
+  document.getElementById('w-save').onclick=async()=>{sync();await put('wishlist',draft);state.wish=await all('wishlist');closeSheet();render();};
+  if(existing){document.getElementById('w-move').onclick=()=>{sync();moveToWardrobe(draft);};
+    document.getElementById('w-del').onclick=async()=>{await del('wishlist',existing.id);state.wish=await all('wishlist');closeSheet();render();showToast('위시 삭제됨',async()=>{await put('wishlist',existing);state.wish=await all('wishlist');render();});};}
+}
+async function moveToWardrobe(w){
+  const it={id:uid(),name:w.name||'',category:'상의',subcategory:'',photoId:w.photoId||'',materials:[],colors:[]};
+  await put('items',it);await del('wishlist',w.id);
+  state.items=await all('items');state.wish=await all('wishlist');
+  closeSheet();state.tab='closet';state.album=null;render();
+  showToast('옷장으로 옮겼어요 👕');
+  setTimeout(()=>itemForm(itemById(it.id)),260);
+}
+
+/* ----- settings / backup ----- */
+function blobToB64(b){return new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(b);});}
+async function exportAll(){
+  const data={v:1,items:await all('items'),looks:await all('looks'),days:await all('days'),wishlist:await all('wishlist'),photos:[]};
+  for(const p of await all('photos'))data.photos.push({id:p.id,b64:await blobToB64(p.blob)});
+  const blob=new Blob([JSON.stringify(data)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`룩북백업_${ymd(new Date())}.json`;a.click();
+  localStorage.setItem('last_backup',ymd(new Date()));render();
+}
+async function importAll(file){
+  const data=JSON.parse(await file.text());
+  if(!confirm('백업 파일을 불러오면 같은 항목은 덮어써집니다. 계속할까요?'))return;
+  for(const p of(data.photos||[])){const blob=await(await fetch(p.b64)).blob();await put('photos',{id:p.id,blob});}
+  for(const i of(data.items||[]))await put('items',i);
+  for(const l of(data.looks||[]))await put('looks',l);
+  for(const d of(data.days||[]))await put('days',d);
+  for(const w of(data.wishlist||[]))await put('wishlist',w);
+  alert('불러오기 완료!');refresh();
+}
+function settings(){
+  openSheet(`<h2>설정 · 백업</h2>
+    <div class="field"><label>✨ AI 추천 · Gemini API 키</label>
+      <input type="text" id="s-key" value="${esc(getKey())}" placeholder="AIza... (Google AI Studio 무료 발급)">
+      <div class="hint">이 기기에만 저장돼요. 무료 등급으로 충분해요.</div></div>
+    <div class="btnrow" style="margin-bottom:18px"><button class="btn ghost" id="s-savekey">🔑 키 저장</button></div>
+    <div class="hint" style="margin-bottom:14px">사진은 이 기기에만 저장돼요. 기기를 바꾸거나 폰이 저장공간을 정리해도 안 잃도록 가끔 백업 파일을 내보내 두세요.</div>
+    <div class="btnrow" style="margin-bottom:10px"><button class="btn primary" id="s-exp">📤 백업 내보내기</button></div>
+    <div class="btnrow" style="margin-bottom:16px"><button class="btn ghost" id="s-imp">📥 백업 불러오기</button></div>
+    <div class="btnrow" style="margin-bottom:16px"><button class="btn ghost" id="s-howto">📖 사용법 다시 보기</button></div>
+    <div class="btnrow"><button class="btn ghost" data-close="1">닫기</button></div>`);
+  document.getElementById('s-howto').onclick=()=>{closeSheet();showOnboarding();};
+  document.getElementById('s-savekey').onclick=()=>{localStorage.setItem('gemini_key',document.getElementById('s-key').value.trim());alert('키 저장됨! 룩 탭의 ✨ AI 코디 추천을 쓸 수 있어요.');};
+  document.getElementById('s-exp').onclick=exportAll;
+  document.getElementById('s-imp').onclick=()=>{const i=document.createElement('input');i.type='file';i.accept='application/json';i.onchange=()=>i.files[0]&&importAll(i.files[0]);i.click();};
+}
+
+/* ----- AI 코디 추천 (Gemini) ----- */
+const GEMINI_MODELS=['gemini-flash-latest','gemini-2.5-flash','gemini-2.0-flash-001','gemini-2.5-flash-lite'];
+const getKey=()=>localStorage.getItem('gemini_key')||'';
+function matchIds(names){return(names||[]).map(n=>{const it=state.items.find(i=>i.name===n)||state.items.find(i=>i.name&&n&&i.name.includes(n));return it&&it.id;}).filter(Boolean);}
+async function geminiRecommend(situation){
+  const items=state.items.map(i=>{const sub=i.subcategory?'/'+i.subcategory:'';const mat=(i.materials&&i.materials.length)?' ['+i.materials.join(',')+']':'';const col=(i.colors&&i.colors.length)?' 색:'+i.colors.join('/'):'';return `${i.name} (${i.category}${sub}${mat}${col})`;}).join(', ');
+  const prompt=`너는 센스 있는 패션 스타일리스트야. 아래는 사용자 옷장의 옷 목록이야:\n${items}\n\n${situation?`상황/요청: ${situation}\n`:''}이 옷장에 있는 아이템만 조합해서 어울리는 코디 3개를 제안해줘. 반드시 위 목록에 있는 이름만 그대로 사용해. JSON 배열로만 답해(그 외 텍스트 금지). 각 원소 형식: {"name":"코디 이름","items":["아이템 이름", ...],"tags":["상황이나 스타일 태그"],"reason":"왜 어울리는지 한 줄"}`;
+  let lastErr='';
+  for(const m of GEMINI_MODELS){
+    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(getKey())}`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.9,responseMimeType:'application/json'}})});
+    if(res.status===404){lastErr='404 '+m;continue;}
+    if(!res.ok)throw new Error('API '+res.status+' — '+(await res.text()).slice(0,160));
+    const data=await res.json();
+    const txt=(((data.candidates||[])[0]||{}).content||{}).parts?.[0]?.text||'';
+    try{return JSON.parse(txt);}catch(e){return JSON.parse(txt.replace(/```json|```/g,'').trim());}
+  }
+  throw new Error('사용 가능한 모델을 찾지 못했어요 ('+lastErr+')');
+}
+async function geminiVision(photoId,prompt){
+  const p=await getOne('photos',photoId);if(!p)throw new Error('사진 없음');
+  const b64=(await blobToB64(p.blob)).split(',')[1];
+  let lastErr='';
+  for(const m of GEMINI_MODELS){
+    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(getKey())}`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts:[{inlineData:{mimeType:p.blob.type||'image/jpeg',data:b64}},{text:prompt}]}],generationConfig:{temperature:.4,responseMimeType:'application/json'}})});
+    if(res.status===404){lastErr='404 '+m;continue;}
+    if(!res.ok)throw new Error(res.status+' — '+(await res.text()).slice(0,140));
+    const data=await res.json();const txt=(((data.candidates||[])[0]||{}).content||{}).parts?.[0]?.text||'';
+    try{return JSON.parse(txt);}catch(e){return JSON.parse(txt.replace(/```json|```/g,'').trim());}
+  }
+  throw new Error('사용 가능한 모델 없음 ('+lastErr+')');
+}
+function classifyPhoto(photoId){return geminiVision(photoId,`이 옷/패션아이템 사진을 분석해 JSON으로만 답해.
+name: 자세하고 구체적인 한글 이름 (색+소재+핏/디테일+종류를 조합, 예: "베이지 울 라운드넥 오버핏 니트", "화이트 코튼 옥스포드 셔츠", "블랙 스웨이드 첼시 부츠", "카멜 캐시미어 더블 코트").
+category: 반드시 다음 중 하나 — ${CATS.join(', ')}.
+subcategory: 위 category에 맞는 세부종류를 이 목록에서 하나만 골라 — ${JSON.stringify(SUBCATS)}.
+colors: 다음 목록에서 해당되는 것만 1~3개 배열 — ${COLORS.map(c=>c.n).join(', ')}.
+형식: {"name":"","category":"","subcategory":"","colors":[]}`);}
+function classifyLook(photoId){return geminiVision(photoId,`이 착장(코디) 사진을 보고 JSON으로만 답해.
+name: 이 코디를 자세히 묘사하는 한글 이름 (핵심 아이템·색·핏·무드 조합, 예: "베이지 오버핏 니트 & 스트레이트 데님 데일리룩", "블랙 미니원피스 오피스룩").
+memo: 이 코디를 2~3문장으로 자세히 설명 (어떤 아이템 조합인지, 색감·분위기, 어울리는 상황·계절, 스타일링 포인트).
+tags: 다음 중 어울리는 것 1~4개만 배열로 — ${[...TPO_TAGS,...STYLE_TAGS].join(', ')}.
+형식: {"name":"","memo":"","tags":[]}`);}
+function getGeo(){return new Promise((res,rej)=>{if(!navigator.geolocation)return rej(new Error('위치 미지원'));navigator.geolocation.getCurrentPosition(p=>res(p.coords),e=>rej(e),{timeout:8000,maximumAge:600000});});}
+function wmoDesc(c){if(c===0)return'맑음';if(c<=2)return'대체로 맑음';if(c===3)return'흐림';if(c===45||c===48)return'안개';if(c>=51&&c<=57)return'이슬비';if(c>=61&&c<=67)return'비';if(c>=71&&c<=77)return'눈';if(c>=80&&c<=82)return'소나기';if(c>=85&&c<=86)return'눈';if(c>=95)return'뇌우';return'흐림';}
+async function getWeather(){const c=await getGeo();const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${c.latitude}&longitude=${c.longitude}&current=temperature_2m,weather_code&timezone=auto`);if(!r.ok)throw new Error('날씨 조회 실패');const d=await r.json();return{temp:Math.round(d.current.temperature_2m),desc:wmoDesc(d.current.weather_code)};}
+function aiRecommend(){
+  if(!getKey()){alert('먼저 ⚙️ 설정에 Gemini API 키를 넣어주세요.');settings();return;}
+  if(!state.items.length){alert('옷장에 옷을 먼저 등록해 주세요.');return;}
+  let situation='';
+  function inputStep(){
+    openSheet(`<h2>✨ AI 코디 추천</h2>
+      <div class="field"><label>상황 (선택)</label><input type="text" id="ai-sit" value="${esc(situation)}" placeholder="예: 출근, 데이트, 여행"></div>
+      <div class="field"><label><input type="checkbox" id="ai-weather"> 🌤️ 오늘 날씨 반영 (위치 사용)</label></div>
+      <div class="hint">옷장에 등록된 옷들로 코디를 짜줘요.</div>
+      <div class="btnrow" style="margin-top:14px"><button class="btn ghost" data-close="1">취소</button>
+        <button class="btn primary" id="ai-go">추천받기</button></div>`);
+    document.getElementById('ai-go').onclick=async()=>{
+      situation=document.getElementById('ai-sit').value.trim();
+      const useWeather=document.getElementById('ai-weather').checked;
+      openSheet(`<h2>✨ 추천 중…</h2><div class="empty-state"><div class="big">🤔</div>${useWeather?'날씨 확인하고 ':''}코디를 짜고 있어요…</div>`);
+      try{
+        let sit=situation;
+        if(useWeather){try{const w=await getWeather();sit=(sit?sit+', ':'')+`오늘 날씨 ${w.desc} 기온 ${w.temp}도`;}catch(e){}}
+        resultStep(await geminiRecommend(sit));
+      }
+      catch(e){openSheet(`<h2>추천 실패</h2><div class="hint">${esc(e.message||e)}</div>
+        <div class="hint">키가 맞는지, 인터넷 연결을 확인해 주세요.</div>
+        <div class="btnrow" style="margin-top:14px"><button class="btn ghost" data-close="1">닫기</button>
+        <button class="btn primary" id="ai-retry">다시</button></div>`);
+        document.getElementById('ai-retry').onclick=inputStep;}
+    };
+  }
+  function resultStep(recs){
+    if(!Array.isArray(recs)||!recs.length){openSheet(`<h2>결과 없음</h2><div class="hint">추천을 못 만들었어요.</div><div class="btnrow"><button class="btn primary" data-close="1">닫기</button></div>`);return;}
+    const cards=recs.map((r,idx)=>{
+      const imgs=matchIds(r.items).map(id=>{const it=itemById(id);return `<img data-photo="${it?it.photoId:''}" alt="">`;}).join('');
+      return `<div class="card" style="cursor:default;padding:12px;margin-bottom:12px">
+        <div class="name" style="font-size:15px">${esc(r.name||'코디')}</div>
+        ${imgs?`<div class="selgrid" style="margin:8px 0">${imgs}</div>`:''}
+        <div class="sub" style="margin-bottom:4px">${(r.items||[]).map(esc).join(' + ')}</div>
+        ${r.reason?`<div class="hint" style="margin-top:2px">${esc(r.reason)}</div>`:''}
+        ${(r.tags||[]).length?`<div class="tagwrap" style="margin-top:8px">${r.tags.map(t=>`<span class="tagchip">${esc(t)}</span>`).join('')}</div>`:''}
+        <button class="btn ghost" data-save="${idx}" style="margin-top:10px">♥ 룩으로 저장</button></div>`;
+    }).join('');
+    openSheet(`<h2>✨ 추천 코디</h2>${cards}
+      <div class="btnrow"><button class="btn ghost" data-close="1">닫기</button><button class="btn primary" id="ai-again">다시 추천</button></div>`);
+    document.getElementById('ai-again').onclick=inputStep;
+    document.querySelectorAll('[data-save]').forEach(b=>b.onclick=async()=>{
+      const r=recs[+b.dataset.save];
+      await put('looks',{id:uid(),name:r.name||'AI 코디',itemIds:matchIds(r.items),photoId:'',rating:0,memo:r.reason||'',favorite:true,tags:r.tags||[]});
+      b.textContent='저장됨 ✓';b.disabled=true;state.looks=await all('looks');});
+  }
+  inputStep();
+}
+
+/* ----- 룩 이미지로 저장·공유 ----- */
+function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function drawCover(ctx,img,x,y,w,h,r){ctx.save();roundRect(ctx,x,y,w,h,r);ctx.clip();const ir=img.width/img.height,tr=w/h;let sw,sh,sx,sy;if(ir>tr){sh=img.height;sw=sh*tr;sx=(img.width-sw)/2;sy=0;}else{sw=img.width;sh=sw/tr;sx=0;sy=(img.height-sh)/2;}ctx.drawImage(img,sx,sy,sw,sh,x,y,w,h);ctx.restore();}
+async function loadImg(photoId){const p=await getOne('photos',photoId);if(!p)return null;try{return await createImageBitmap(p.blob);}catch(e){return null;}}
+async function shareLook(look){
+  const W=1080,H=1350,m=64;const c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d');
+  const g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,'#f1f3f2');g.addColorStop(.5,'#e9edee');g.addColorStop(1,'#e0e7ea');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  ctx.textBaseline='top';ctx.fillStyle='#38404a';ctx.font='bold 62px -apple-system,sans-serif';ctx.fillText(look.name||'룩',m,m);
+  if(look.rating){ctx.fillStyle='#e0a53f';ctx.font='42px sans-serif';ctx.fillText('★'.repeat(look.rating),m,m+82);}
+  let pics=[];if(look.photoId)pics.push(look.photoId);for(const id of(look.itemIds||[])){const it=itemById(id);if(it&&it.photoId)pics.push(it.photoId);}
+  pics=pics.slice(0,4);
+  const top=m+150,gridH=H-top-190;
+  if(!pics.length){ctx.fillStyle='#d9e0e4';roundRect(ctx,m,top,W-2*m,gridH,28);ctx.fill();ctx.fillStyle='#9aa6ad';ctx.font='40px sans-serif';ctx.fillText('사진 없음',m+40,top+40);}
+  else{const cols=pics.length===1?1:2,rows=Math.ceil(pics.length/cols),gap=18;const cw=(W-2*m-(cols-1)*gap)/cols,ch=(gridH-(rows-1)*gap)/rows;let i=0;for(let r=0;r<rows;r++)for(let cO=0;cO<cols&&i<pics.length;cO++,i++){const img=await loadImg(pics[i]);const x=m+cO*(cw+gap),y=top+r*(ch+gap);if(img)drawCover(ctx,img,x,y,cw,ch,24);else{ctx.fillStyle='#d9e0e4';roundRect(ctx,x,y,cw,ch,24);ctx.fill();}}}
+  let tx=m;const ty=H-118;ctx.font='bold 34px sans-serif';
+  for(const t of(look.tags||[]).slice(0,4)){const tw=ctx.measureText(t).width+44;ctx.fillStyle='rgba(255,255,255,.72)';roundRect(ctx,tx,ty,tw,56,28);ctx.fill();ctx.fillStyle='#456273';ctx.fillText(t,tx+22,ty+11);tx+=tw+12;}
+  ctx.fillStyle='#9aa6ad';ctx.font='30px sans-serif';ctx.fillText('내 옷장 룩북',m,H-52);
+  const blob=await new Promise(r=>c.toBlob(r,'image/png',.92));
+  const file=new File([blob],`${(look.name||'look').replace(/[^\w가-힣]+/g,'_')}.png`,{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:look.name||'룩'});return;}catch(e){if(e&&e.name==='AbortError')return;}}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=file.name;a.click();
+}
+async function shareReceipt(look){
+  const items=(look.itemIds||[]).map(id=>itemById(id)).filter(Boolean);
+  const W=760,H=1160;const c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d');
+  ctx.fillStyle='#e9e9ec';ctx.fillRect(0,0,W,H);
+  const rx=52,rw=W-104,ry=44,rh=H-96;
+  ctx.fillStyle='#fff';ctx.fillRect(rx,ry,rw,rh);
+  const cx=W/2;ctx.textBaseline='top';
+  ctx.textAlign='center';ctx.fillStyle='#141414';ctx.font='bold 48px Arial';ctx.fillText('OUTFIT RECEIPT',cx,ry+52);
+  ctx.font='17px "Courier New",monospace';ctx.fillStyle='#666';ctx.fillText(`${(look.name||'MY LOOK')}  ·  ${ymd(new Date())}`,cx,ry+118);
+  const dash=y=>{ctx.strokeStyle='#c9c9c9';ctx.setLineDash([7,6]);ctx.beginPath();ctx.moveTo(rx+40,y);ctx.lineTo(rx+rw-40,y);ctx.stroke();ctx.setLineDash([]);};
+  let ty=ry+158;dash(ty);ty+=28;
+  if(items.length){const cols=Math.min(items.length,4),gap=14,th=150,tw=(rw-80-(cols-1)*gap)/cols;let x=rx+40;
+    for(let i=0;i<cols;i++){const it=items[i];const img=await loadImg(it.photoId);if(img)drawCover(ctx,img,x,ty,tw,th,8);else{ctx.fillStyle='#eee';roundRect(ctx,x,ty,tw,th,8);ctx.fill();}x+=tw+gap;}
+    ty+=th+26;dash(ty);ty+=26;}
+  ctx.font='21px "Courier New",monospace';ctx.fillStyle='#141414';
+  const lx=rx+44,rr=rx+rw-44;
+  for(const it of items){ctx.textAlign='left';ctx.fillText((it.subcategory||it.category||'ITEM'),lx,ty);ctx.textAlign='right';ctx.fillText((it.name||'-').slice(0,16),rr,ty);ty+=42;}
+  if(!items.length){ctx.textAlign='center';ctx.fillStyle='#999';ctx.fillText('아이템이 연결되지 않은 룩',cx,ty);ty+=42;}
+  ty+=6;dash(ty);ty+=24;
+  ctx.font='bold 21px "Courier New",monospace';ctx.fillStyle='#141414';ctx.textAlign='left';ctx.fillText('TOTAL',lx,ty);ctx.textAlign='right';ctx.fillText(`${items.length} ITEMS`,rr,ty);ty+=48;
+  if(look.rating){ctx.textAlign='center';ctx.font='24px Arial';ctx.fillStyle='#e6a94a';ctx.fillText('★'.repeat(look.rating),cx,ty);ty+=42;}
+  let bx=cx-170,by=ty+14;ctx.fillStyle='#141414';
+  for(let i=0;i<74;i++){const bw=1+((i*7)%5);if(i%2===0)ctx.fillRect(bx,by,bw,58);bx+=bw+2;}
+  ctx.textAlign='center';ctx.font='14px "Courier New",monospace';ctx.fillStyle='#333';ctx.fillText('MY CLOSET LOOKBOOK',cx,by+70);
+  ctx.textAlign='left';
+  const blob=await new Promise(r=>c.toBlob(r,'image/png',.92));
+  const file=new File([blob],`receipt_${(look.name||'look').replace(/[^\w가-힣]+/g,'_')}.png`,{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'OUTFIT RECEIPT'});return;}catch(e){if(e&&e.name==='AbortError')return;}}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=file.name;a.click();
+}
+
+/* ----- 온보딩(사용법) — 앱 화면 목업 ----- */
+const ONBOARDING=[
+ {emoji:'👗',title:'옷장에 다 모아요',desc:'가진 옷을 등록하면 색·카테고리별 앨범으로<br>자동 정리돼요. 눌러서 옷을 꺼내봐요.',
+  mock:`<div class="ob-scr"><div class="ob-sp">＋</div><div class="ob-st">옷장</div><div class="ob-ss">24 벌</div>
+   <div class="ob-row"><span class="ob-pill on">카테고리</span><span class="ob-pill">색상</span><span class="ob-pill">소유자</span></div>
+   <div class="ob-g2"><div class="ob-alb"><span class="ob-bdg">＋</span><div class="ob-cov" style="background-image:url('ob6.jpg')"></div><b>상의</b><i>8</i></div>
+   <div class="ob-alb"><span class="ob-bdg">＋</span><div class="ob-cov" style="background-image:url('ob7.jpg')"></div><b>아우터</b><i>5</i></div></div></div>`},
+ {emoji:'🪄',title:'사진 찍으면 AI가 척척',desc:'옷 사진만 넣으면 색과 종류를<br>AI가 자동으로 채워줘요. 수정도 돼요.',
+  mock:`<div class="ob-scr"><div class="ob-photo" style="background-image:url('ob2.jpg')">🪄 색·종류 분석 중…</div>
+   <div class="ob-line"><span>카테고리</span><b>상의 · 셔츠</b></div>
+   <div class="ob-row" style="margin-top:12px"><span class="ob-pill on">화이트</span><span class="ob-pill on">베이지</span><span class="ob-pill">블랙</span></div></div>`},
+ {emoji:'✨',title:'좋아하는 코디는 룩으로',desc:'상의·하의·신발·가방을 묶어 룩으로 저장.<br>TPO·스타일 태그로 골라봐요.',
+  mock:`<div class="ob-scr"><div class="ob-st" style="font-size:19px">룩</div>
+   <div class="ob-look"><span class="ob-hrt">♥</span><div class="ob-cov big" style="background-image:url('ob9.jpg')"></div>
+   <div class="ob-lb"><b>가을 데일리</b><div class="ob-tags"><span>데일리룩</span><span>미니멀</span></div></div></div></div>`},
+ {emoji:'🗓️',title:'입은 옷이 기록으로',desc:'이번 주 뭐 입었는지 사진 캘린더로.<br>월 캘린더엔 한 달 스타일이 쌓여요.',
+  mock:`<div class="ob-scr"><div class="ob-st" style="font-size:19px">이번 주</div>
+   <div class="ob-wk">${(()=>{const wi={0:'ob3.jpg',1:'ob9.jpg',4:'ob7.jpg'};return ['월','화','수','목','금','토','일'].map((d,i)=>{const f=wi[i];return `<div class="ob-wc ${i===4?'today':''}" ${f?`style="background-image:url('${f}')"`:''}>${f?'':'<u>＋</u>'}<em>${d}</em></div>`;}).join('');})()}</div></div>`},
+ {emoji:'🧾',title:'통계 & 영수증으로 공유',desc:'자주 입는 옷·룩 통계를 보고,<br>아웃핏 영수증으로 예쁘게 공유해요.',
+  mock:`<div class="ob-scr"><div class="ob-stg"><div class="ob-sb"><b>24</b><i>옷</i></div><div class="ob-sb"><b>12</b><i>룩</i></div><div class="ob-sb"><b>31</b><i>착장</i></div></div>
+   <div class="ob-rcpt"><div class="ob-rct">OUTFIT RECEIPT</div><div class="ob-rl"><span>자켓</span><span>그레이 블레이저</span></div><div class="ob-rl"><span>신발</span><span>첼시 부츠</span></div><div class="ob-bar"></div></div></div>`},
+];
+function showOnboarding(){
+  const root=document.getElementById('onboarding');
+  const slides=ONBOARDING.map(s=>`<div class="ob-slide"><div class="ob-frame">${s.mock}</div>
+    <div class="ob-cap"><div class="ob-emoji">${s.emoji}</div><div class="ob-title">${s.title}</div><div class="ob-desc">${s.desc}</div></div></div>`).join('');
+  const dots=ONBOARDING.map((_,i)=>`<span class="ob-dot ${i===0?'on':''}"></span>`).join('');
+  root.innerHTML=`<div class="ob-wrap"><button class="ob-skip" data-ob="close">건너뛰기</button>
+    <div class="ob-track" id="ob-track">${slides}</div>
+    <div class="ob-dots">${dots}</div>
+    <button class="ob-start" data-ob="close">시작하기</button></div>`;
+  const track=document.getElementById('ob-track');
+  track.onscroll=()=>{const i=Math.round(track.scrollLeft/track.clientWidth);[...root.querySelectorAll('.ob-dot')].forEach((d,k)=>d.classList.toggle('on',k===i));};
+}
+
+/* ---------------- events ---------------- */
+document.getElementById('onboarding').addEventListener('click',e=>{if(e.target.closest('[data-ob]')){document.getElementById('onboarding').innerHTML='';localStorage.setItem('onboarded','1');}});
+document.querySelector('nav').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b){state.tab=b.dataset.tab;state.album=null;state.search='';state.selectMode=false;state.selected.clear();render();}});
+document.getElementById('modalRoot').addEventListener('click',e=>{if(e.target.dataset.close)closeSheet();});
+document.body.addEventListener('input',e=>{
+  if(e.target.id==='closet-search'){state.search=e.target.value;render().then(()=>{const s=document.getElementById('closet-search');if(s){s.focus();s.setSelectionRange(s.value.length,s.value.length);}});}
+  else if(e.target.id==='looks-search'){state.lookSearch=e.target.value;render().then(()=>{const s=document.getElementById('looks-search');if(s){s.focus();s.setSelectionRange(s.value.length,s.value.length);}});}
+});
+document.body.addEventListener('click',e=>{
+  const el=e.target.closest('[data-action]');if(!el)return;const a=el.dataset.action;
+  if(a==='add'){state.tab==='closet'?itemForm():state.tab==='wish'?wishForm():lookForm();}
+  else if(a==='settings')settings();
+  else if(a==='stats')statsSheet();
+  else if(a==='airec')aiRecommend();
+  else if(a==='cat'){state.catFilter=el.dataset.cat||null;render();}
+  else if(a==='sortwear'){state.sortWear=!state.sortWear;render();}
+  else if(a==='owner'){state.ownerFilter=el.dataset.owner||null;render();}
+  else if(a==='album'){state.album=el.dataset.key;render();}
+  else if(a==='albumback'){state.album=null;state.selectMode=false;state.selected.clear();render();}
+  else if(a==='albumby'){state.albumBy=el.dataset.by;state.album=null;render();}
+  else if(a==='selectmode'){state.selectMode=true;state.selected.clear();render();}
+  else if(a==='cancelselect'){state.selectMode=false;state.selected.clear();render();}
+  else if(a==='toggleselect'){const id=el.dataset.id;if(state.selected.has(id))state.selected.delete(id);else state.selected.add(id);render();}
+  else if(a==='deleteselected')deleteSelected();
+  else if(a==='bulkadd')bulkAdd();
+  else if(a==='dobackup')exportAll();
+  else if(a==='dismissbackup'){state.backupDismissed=true;render();}
+  else if(a==='lookfilter'){const k=el.dataset.kind;state.favOnly=(k==='fav');state.tagFilter=(k==='tag')?el.dataset.tag:null;render();}
+  else if(a==='item'){const it=itemById(el.dataset.id);if(it)itemForm(it);}
+  else if(a==='look'){const l=lookById(el.dataset.id);if(l)lookForm(l);}
+  else if(a==='wishitem'){const w=state.wish.find(x=>x.id===el.dataset.id);if(w)wishForm(w);}
+  else if(a==='wishstatus'){state.wishStatus=el.dataset.s||null;render();}
+  else if(a==='day')dayDetail(el.dataset.date);
+  else if(a==='weeknav'){state.week=addDays(state.week,+el.dataset.d);render();}
+  else if(a==='monthnav'){state.month=new Date(state.month.getFullYear(),state.month.getMonth()+ +el.dataset.d,1);render();}
+});
+
+refresh();
+if(!localStorage.getItem('onboarded'))setTimeout(showOnboarding,250);
+</script>
