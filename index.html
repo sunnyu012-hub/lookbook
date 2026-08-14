@@ -159,6 +159,18 @@
   .wk-cell.today .wk-day{color:var(--pink-ink)}
   .wk-wx{position:absolute; bottom:4px; left:0; right:0; text-align:center; font-size:10px; font-weight:700; color:var(--ink-2); z-index:1}
   .wk-cell.has .wk-wx{color:#fff; text-shadow:0 1px 3px rgba(0,0,0,.6)}
+  .viewtoggle{display:inline-flex; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:3px; margin-bottom:14px; box-shadow:var(--shadow-sm)}
+  .vt{border:none; background:none; padding:6px 14px; border-radius:9px; font-size:13px; font-weight:500; color:var(--muted); cursor:pointer}
+  .vt.on{background:var(--ink); color:#fff}
+  .look-single{display:flex; flex-direction:column; gap:22px}
+  .look-single .card .ph{aspect-ratio:4/5}
+  .look-single .card .name{font-size:17px}
+  .look-list{display:flex; flex-direction:column}
+  .look-row{display:flex; align-items:center; gap:13px; padding:11px 2px; border-bottom:1px solid var(--line); cursor:pointer}
+  .lr-thumb{width:54px; height:68px; object-fit:cover; border-radius:10px; background:var(--thumb); flex:none}
+  .lr-info{flex:1; min-width:0}
+  .lr-info .name{font-size:15px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .lr-info .sub{font-size:12px; color:var(--muted); margin-top:3px; display:flex; align-items:center; gap:7px; flex-wrap:wrap}
   #onboarding:empty{display:none}
   .ob-wrap{position:fixed; inset:0; z-index:60; background:var(--bg); display:flex; flex-direction:column; animation:fade .3s ease-out}
   .ob-skip{position:absolute; top:calc(12px + env(safe-area-inset-top)); right:18px; z-index:2; background:none; border:none; color:var(--muted); font-size:14px; cursor:pointer}
@@ -291,7 +303,7 @@ const WD=['월','화','수','목','금','토','일'];
 const TPO_TAGS=['데일리룩','출근룩','데이트룩','하객룩','여행룩','캠퍼스룩','운동룩','파티룩','면접룩','소개팅룩','나들이룩','집콕룩','휴양지룩','페스티벌룩','졸업/입학룩'];
 const STYLE_TAGS=['미니멀','캐주얼','포멀','클래식','러블리','걸리시','시크','페미닌','보이시','스트릿','락시크','빈티지','스포티','아메카지','프레피','Y2K','고프코어','청순','모던','에스닉'];
 const TAG_PRESETS=[...TPO_TAGS,...STYLE_TAGS];
-const state={tab:'closet', items:[], looks:[], days:[], wish:[], albumBy:'category', album:null, selectMode:false, selected:new Set(), wishStatus:null, weekWeather:null, catFilter:null, ownerFilter:null, favOnly:false, tagFilter:null, search:'', lookSearch:'', sortWear:false, backupDismissed:false,
+const state={tab:'closet', items:[], looks:[], days:[], wish:[], albumBy:'category', album:null, selectMode:false, selected:new Set(), wishStatus:null, weekWeather:null, lookView:'card', catFilter:null, ownerFilter:null, favOnly:false, tagFilter:null, search:'', lookSearch:'', sortWear:false, backupDismissed:false,
   week:mondayOf(new Date()), month:startOfMonth(new Date())};
 function ymd(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function mondayOf(d){const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x;}
@@ -448,13 +460,25 @@ function viewLooks(){
     <button class="chip ${state.favOnly?'on':''}" data-action="lookfilter" data-kind="fav">즐겨찾기</button>`+
     usedTags.map(t=>`<button class="chip ${state.tagFilter===t?'on':''}" data-action="lookfilter" data-kind="tag" data-tag="${esc(t)}">${esc(t)}</button>`).join('')+`</div>`;
   if(!state.looks.length)return head+aiBtn+chips+`<div class="empty-state"><div class="big">✨</div>아직 저장된 룩이 없어요.<br>좋아하는 착장을 룩으로 남겨보세요.</div>`;
-  const card=(l,feat)=>`<div class="card${feat?' feature':''}" data-action="look" data-id="${l.id}">
+  const card=l=>`<div class="card" data-action="look" data-id="${l.id}">
     ${l.favorite?'<div class="heart">♥</div>':''}
     <img class="ph" data-photo="${lookThumb(l)||''}" alt="">
     <div class="body"><div class="name">${esc(l.name||'룩')}</div>
     <div class="sub">${stars(l.rating)} ${(l.tags||[]).slice(0,2).map(t=>`<span class="tagchip">${esc(t)}</span>`).join('')}</div></div></div>`;
-  const grid=list.length?`<div class="grid">${card(list[0],true)}${list.slice(1).map(l=>card(l,false)).join('')}</div>`:`<div class="empty-state">검색 결과가 없어요.</div>`;
-  return head+aiBtn+searchBox+chips+grid;
+  const row=l=>`<div class="look-row" data-action="look" data-id="${l.id}">
+    <img class="lr-thumb" data-photo="${lookThumb(l)||''}" alt="">
+    <div class="lr-info"><div class="name">${esc(l.name||'룩')} ${l.favorite?'<span style="color:var(--pink)">♥</span>':''}</div>
+    <div class="sub">${stars(l.rating)} ${(l.tags||[]).slice(0,3).map(t=>`<span class="tagchip">${esc(t)}</span>`).join('')}</div></div></div>`;
+  const vt=`<div class="viewtoggle">
+    <button class="vt ${state.lookView==='single'?'on':''}" data-action="lookview" data-v="single">하나씩</button>
+    <button class="vt ${state.lookView!=='single'&&state.lookView!=='list'?'on':''}" data-action="lookview" data-v="card">카드</button>
+    <button class="vt ${state.lookView==='list'?'on':''}" data-action="lookview" data-v="list">목록</button></div>`;
+  let body;
+  if(!list.length)body=`<div class="empty-state">검색 결과가 없어요.</div>`;
+  else if(state.lookView==='list')body=`<div class="look-list">${list.map(row).join('')}</div>`;
+  else if(state.lookView==='single')body=`<div class="look-single">${list.map(card).join('')}</div>`;
+  else body=`<div class="grid">${list.map(card).join('')}</div>`;
+  return head+aiBtn+searchBox+chips+vt+body;
 }
 async function viewWeek(){
   const days=await all('days');const byId={};days.forEach(d=>byId[d.id]=d);
@@ -974,6 +998,7 @@ document.body.addEventListener('click',e=>{
   else if(a==='bulkadd')bulkAdd();
   else if(a==='dobackup')exportAll();
   else if(a==='dismissbackup'){state.backupDismissed=true;render();}
+  else if(a==='lookview'){state.lookView=el.dataset.v;render();}
   else if(a==='lookfilter'){const k=el.dataset.kind;state.favOnly=(k==='fav');state.tagFilter=(k==='tag')?el.dataset.tag:null;render();}
   else if(a==='item'){const it=itemById(el.dataset.id);if(it)itemForm(it);}
   else if(a==='look'){const l=lookById(el.dataset.id);if(l)lookForm(l);}
