@@ -258,13 +258,17 @@ function del(store,id){return new Promise(async(res,rej)=>{const d=await db();co
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
 /* ---------------- images ---------------- */
+function loadViaURL(file){return new Promise((res,rej)=>{const u=URL.createObjectURL(file);const im=new Image();im.onload=()=>{res(im);};im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('이미지 디코드 실패'));};im.src=u;});}
 async function shrink(file,max=1100,q=.82){
-  const img=await createImageBitmap(file);
-  const s=Math.min(1,max/Math.max(img.width,img.height));
-  const w=Math.round(img.width*s),h=Math.round(img.height*s);
+  let img;
+  try{img=await Promise.race([createImageBitmap(file),new Promise((_,j)=>setTimeout(()=>j(new Error('timeout')),8000))]);}
+  catch(e){img=await loadViaURL(file);}
+  const iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height;
+  const s=Math.min(1,max/Math.max(iw,ih));
+  const w=Math.round(iw*s),h=Math.round(ih*s);
   const c=document.createElement('canvas');c.width=w;c.height=h;
   c.getContext('2d').drawImage(img,0,0,w,h);
-  return new Promise(r=>c.toBlob(r,'image/jpeg',q));
+  return await new Promise((res,rej)=>c.toBlob(b=>b?res(b):rej(new Error('저장 형식 변환 실패')),'image/jpeg',q));
 }
 function pickImage(){return new Promise(res=>{
   const i=document.createElement('input');i.type='file';i.accept='image/*';
@@ -555,8 +559,8 @@ function itemForm(existing,opts){
         <button class="btn primary" id="f-save">저장</button></div>`;
     openSheet(html);
     document.getElementById('pp').onclick=async()=>{sync();const id=await pickImage();if(!id)return;draft.photoId=id;
-      if(getKey()){analyzing=true;paint();try{const r=await classifyPhoto(id);if(r&&typeof r==='object'){if(r.name&&!draft.name)draft.name=r.name;if(r.category&&CATS.includes(r.category))draft.category=r.category;if(r.subcategory&&(SUBCATS[draft.category]||[]).includes(r.subcategory))draft.subcategory=r.subcategory;if(Array.isArray(r.colors)){const cc=r.colors.filter(c=>COLORS.some(x=>x.n===c));if(cc.length)draft.colors=cc;}showToast('AI가 이름·색·종류를 채웠어요 ✨');}}catch(e){showToast('AI 실패: '+(e.message||e));}analyzing=false;}
-      paint();};
+      if(getKey()){analyzing=true;paint();classifyPhoto(id).then(r=>{if(draft.photoId!==id)return;if(r&&typeof r==='object'){if(r.name&&!draft.name)draft.name=r.name;if(r.category&&CATS.includes(r.category))draft.category=r.category;if(r.subcategory&&(SUBCATS[draft.category]||[]).includes(r.subcategory))draft.subcategory=r.subcategory;if(Array.isArray(r.colors)){const cc=r.colors.filter(c=>COLORS.some(x=>x.n===c));if(cc.length)draft.colors=cc;}showToast('AI가 이름·색·종류를 채웠어요 ✨');}}).catch(e=>showToast('AI 실패: '+(e.message||e))).finally(()=>{analyzing=false;paint();});}
+      else paint();};
     document.getElementById('f-cat').onchange=e=>{sync();draft.category=e.target.value;draft.subcategory='';paint();};
     document.getElementById('f-mats').onclick=e=>{const c=e.target.closest('[data-mat]');if(!c)return;sync();const t=c.dataset.mat;const i=draft.materials.indexOf(t);if(i>=0)draft.materials.splice(i,1);else draft.materials.push(t);paint();};
     document.getElementById('f-colors').onclick=e=>{const c=e.target.closest('[data-color]');if(!c)return;sync();const t=c.dataset.color;const i=draft.colors.indexOf(t);if(i>=0)draft.colors.splice(i,1);else draft.colors.push(t);paint();};
@@ -604,8 +608,8 @@ function lookForm(existing){
         <button class="btn primary" id="l-save">저장</button></div>`;
     openSheet(html);
     document.getElementById('pp').onclick=async()=>{sync();const id=await pickImage();if(!id)return;draft.photoId=id;
-      if(getKey()){lookAnalyzing=true;paint();try{const r=await classifyLook(id);if(r&&typeof r==='object'){let did=false;if(r.name&&!draft.name){draft.name=r.name;did=true;}if(r.memo&&!draft.memo){draft.memo=r.memo;did=true;}if(Array.isArray(r.tags)){for(const t of r.tags){if(TAG_PRESETS.includes(t)&&!draft.tags.includes(t)){draft.tags.push(t);did=true;}}}showToast(did?'AI가 이름·설명·태그를 채웠어요 ✨':'AI가 채울 게 없었어요');}}catch(e){showToast('AI 실패: '+(e.message||e));}lookAnalyzing=false;}
-      paint();};
+      if(getKey()){lookAnalyzing=true;paint();classifyLook(id).then(r=>{if(draft.photoId!==id)return;if(r&&typeof r==='object'){let did=false;if(r.name&&!draft.name){draft.name=r.name;did=true;}if(r.memo&&!draft.memo){draft.memo=r.memo;did=true;}if(Array.isArray(r.tags)){for(const t of r.tags){if(TAG_PRESETS.includes(t)&&!draft.tags.includes(t)){draft.tags.push(t);did=true;}}}showToast(did?'AI가 이름·설명·태그를 채웠어요 ✨':'AI가 채울 게 없었어요');}}).catch(e=>showToast('AI 실패: '+(e.message||e))).finally(()=>{lookAnalyzing=false;paint();});}
+      else paint();};
     document.getElementById('l-pick').onclick=()=>{sync();itemPicker(draft.itemIds,ids=>{draft.itemIds=ids;paint();});};
     const tagToggle=e=>{const c=e.target.closest('[data-tag]');if(!c)return;sync();const t=c.dataset.tag;const i=draft.tags.indexOf(t);if(i>=0)draft.tags.splice(i,1);else draft.tags.push(t);paint();};
     document.getElementById('l-tpo').onclick=tagToggle;
@@ -801,9 +805,12 @@ async function geminiVision(photoId,prompt){
   let lastErr='';
   for(const m of GEMINI_MODELS){
     for(let attempt=0;attempt<3;attempt++){
-      const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(getKey())}`,{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({contents:[{parts:[{inlineData:{mimeType:p.blob.type||'image/jpeg',data:b64}},{text:prompt}]}],generationConfig:{temperature:.4,responseMimeType:'application/json'}})});
+      const ctrl=new AbortController();const to=setTimeout(()=>ctrl.abort(),25000);let res;
+      try{res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(getKey())}`,{
+        method:'POST',headers:{'Content-Type':'application/json'},signal:ctrl.signal,
+        body:JSON.stringify({contents:[{parts:[{inlineData:{mimeType:p.blob.type||'image/jpeg',data:b64}},{text:prompt}]}],generationConfig:{temperature:.4,responseMimeType:'application/json'}})});}
+      catch(e){lastErr=(e.name==='AbortError'?'응답 지연':'네트워크')+' '+m;await new Promise(r=>setTimeout(r,600*(attempt+1)));continue;}
+      finally{clearTimeout(to);}
       if(res.status===404){lastErr='404 '+m;break;}
       if([429,500,502,503].includes(res.status)){lastErr=res.status+' '+m;await new Promise(r=>setTimeout(r,900*(attempt+1)));continue;}
       if(!res.ok)throw new Error(res.status+' — '+(await res.text()).slice(0,140));
