@@ -258,17 +258,21 @@ function del(store,id){return new Promise(async(res,rej)=>{const d=await db();co
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
 /* ---------------- images ---------------- */
-function loadViaURL(file){return new Promise((res,rej)=>{const u=URL.createObjectURL(file);const im=new Image();im.onload=()=>{res(im);};im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('이미지 디코드 실패'));};im.src=u;});}
+function loadViaURL(file){return new Promise((res,rej)=>{const u=URL.createObjectURL(file);const im=new Image();im.onload=()=>{res(im);};im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('img.onerror(디코드불가)'));};im.src=u;});}
 async function shrink(file,max=1100,q=.82){
   let img;
-  try{img=await Promise.race([createImageBitmap(file),new Promise((_,j)=>setTimeout(()=>j(new Error('timeout')),8000))]);}
-  catch(e){img=await loadViaURL(file);}
+  try{img=await Promise.race([createImageBitmap(file),new Promise((_,j)=>setTimeout(()=>j(new Error('CIB타임아웃')),8000))]);}
+  catch(e){try{img=await loadViaURL(file);}catch(e2){throw new Error('디코드실패(CIB:'+(e&&e.message||e)+' / URL:'+(e2&&e2.message||e2)+')');}}
   const iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height;
+  if(!iw||!ih)throw new Error('이미지크기0('+iw+'x'+ih+')');
   const s=Math.min(1,max/Math.max(iw,ih));
   const w=Math.round(iw*s),h=Math.round(ih*s);
   const c=document.createElement('canvas');c.width=w;c.height=h;
-  c.getContext('2d').drawImage(img,0,0,w,h);
-  return await new Promise((res,rej)=>c.toBlob(b=>b?res(b):rej(new Error('저장 형식 변환 실패')),'image/jpeg',q));
+  const ctx=c.getContext('2d');if(!ctx)throw new Error('canvas ctx 없음');
+  try{ctx.drawImage(img,0,0,w,h);}catch(e){throw new Error('drawImage실패: '+(e&&e.message||e));}
+  const blob=await new Promise((res)=>c.toBlob(b=>res(b),'image/jpeg',q));
+  if(!blob)throw new Error('toBlob→null(용량초과 가능)');
+  return blob;
 }
 function pickImage(){return new Promise(res=>{
   const i=document.createElement('input');i.type='file';i.accept='image/*';
@@ -276,8 +280,9 @@ function pickImage(){return new Promise(res=>{
   const done=v=>{i.remove();res(v);};
   i.onchange=async()=>{const f=i.files[0];if(!f)return done(null);
     showToast('사진 불러오는 중…');
-    try{const blob=await shrink(f);const id=uid();await put('photos',{id,blob});done(id);}
-    catch(e){alert('사진 처리 실패: '+(e&&e.message||e));done(null);}};
+    let step='shrink';
+    try{const blob=await shrink(f);step='save';const id=uid();await put('photos',{id,blob});done(id);}
+    catch(e){alert('실패@'+step+' | 파일:'+(f.type||'형식없음')+' '+Math.round((f.size||0)/1024)+'KB | '+(e?((e.name||'Err')+': '+(e.message||JSON.stringify(e)||'(빈메시지)')):'에러객체=null'));done(null);}};
   document.body.appendChild(i);
   i.click();
 });}
