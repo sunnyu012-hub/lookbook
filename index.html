@@ -275,6 +275,7 @@ function pickImage(){return new Promise(res=>{
   i.style.cssText='position:fixed;left:-9999px;top:0;opacity:0;width:1px;height:1px';
   const done=v=>{i.remove();res(v);};
   i.onchange=async()=>{const f=i.files[0];if(!f)return done(null);
+    showToast('사진 불러오는 중…');
     try{const blob=await shrink(f);const id=uid();await put('photos',{id,blob});done(id);}
     catch(e){alert('사진 처리 실패: '+(e&&e.message||e));done(null);}};
   document.body.appendChild(i);
