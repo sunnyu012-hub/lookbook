@@ -272,9 +272,12 @@ async function shrink(file,max=1100,q=.82){
 }
 function pickImage(){return new Promise(res=>{
   const i=document.createElement('input');i.type='file';i.accept='image/*';
-  i.onchange=async()=>{const f=i.files[0];if(!f)return res(null);
-    try{const blob=await shrink(f);const id=uid();await put('photos',{id,blob});res(id);}
-    catch(e){alert('사진 처리 실패: '+e.message);res(null);}};
+  i.style.cssText='position:fixed;left:-9999px;top:0;opacity:0;width:1px;height:1px';
+  const done=v=>{i.remove();res(v);};
+  i.onchange=async()=>{const f=i.files[0];if(!f)return done(null);
+    try{const blob=await shrink(f);const id=uid();await put('photos',{id,blob});done(id);}
+    catch(e){alert('사진 처리 실패: '+(e&&e.message||e));done(null);}};
+  document.body.appendChild(i);
   i.click();
 });}
 const _urls={};
@@ -347,9 +350,11 @@ function showToast(msg,undoFn){
 }
 function bulkAdd(){
   const i=document.createElement('input');i.type='file';i.accept='image/*';i.multiple=true;
-  i.onchange=async()=>{const files=[...i.files];if(!files.length)return;showToast(`${files.length}장 처리 중…`);
+  i.style.cssText='position:fixed;left:-9999px;top:0;opacity:0;width:1px;height:1px';
+  i.onchange=async()=>{const files=[...i.files];i.remove();if(!files.length)return;showToast(`${files.length}장 처리 중…`);
     let n=0;for(const f of files){try{const blob=await shrink(f);const pid=uid();await put('photos',{id:pid,blob});await put('items',{id:uid(),name:'',category:'상의',photoId:pid});n++;}catch(e){}}
     await refresh();showToast(`옷 ${n}장 추가됨 · 눌러서 이름·종류 채우기`);};
+  document.body.appendChild(i);
   i.click();
 }
 function pageHead(title,count,cta){
@@ -773,7 +778,7 @@ function settings(){
   document.getElementById('s-howto').onclick=()=>{closeSheet();showOnboarding();};
   document.getElementById('s-savekey').onclick=()=>{localStorage.setItem('gemini_key',document.getElementById('s-key').value.trim());alert('키 저장됨! 룩 탭의 ✨ AI 코디 추천을 쓸 수 있어요.');};
   document.getElementById('s-exp').onclick=exportAll;
-  document.getElementById('s-imp').onclick=()=>{const i=document.createElement('input');i.type='file';i.accept='application/json';i.onchange=()=>i.files[0]&&importAll(i.files[0]);i.click();};
+  document.getElementById('s-imp').onclick=()=>{const i=document.createElement('input');i.type='file';i.accept='application/json';i.style.cssText='position:fixed;left:-9999px;top:0;opacity:0;width:1px;height:1px';i.onchange=()=>{const f=i.files[0];i.remove();if(f)importAll(f);};document.body.appendChild(i);i.click();};
 }
 
 /* ----- AI 코디 추천 (Gemini) ----- */
