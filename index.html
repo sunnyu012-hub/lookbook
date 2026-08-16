@@ -274,6 +274,9 @@ async function shrink(file,max=1100,q=.82){
   if(!blob)throw new Error('toBlob→null(용량초과 가능)');
   return blob;
 }
+// iOS Safari는 Blob을 IndexedDB에 저장하면 실패(에러=null) → ArrayBuffer로 저장하고 읽을 때 Blob 복원
+async function storePhoto(id,blob){const buf=await blob.arrayBuffer();return put('photos',{id,buf,type:blob.type||'image/jpeg'});}
+function blobOf(rec){if(!rec)return null;if(rec.blob)return rec.blob;if(rec.buf)return new Blob([rec.buf],{type:rec.type||'image/jpeg'});return null;}
 function pickImage(){return new Promise(res=>{
   const i=document.createElement('input');i.type='file';i.accept='image/*';
   i.style.cssText='position:fixed;left:-9999px;top:0;opacity:0;width:1px;height:1px';
@@ -281,14 +284,14 @@ function pickImage(){return new Promise(res=>{
   i.onchange=async()=>{const f=i.files[0];if(!f)return done(null);
     showToast('사진 불러오는 중…');
     let step='shrink';
-    try{const blob=await shrink(f);step='save';const id=uid();await put('photos',{id,blob});done(id);}
+    try{const blob=await shrink(f);step='save';const id=uid();await storePhoto(id,blob);done(id);}
     catch(e){alert('실패@'+step+' | 파일:'+(f.type||'형식없음')+' '+Math.round((f.size||0)/1024)+'KB | '+(e?((e.name||'Err')+': '+(e.message||JSON.stringify(e)||'(빈메시지)')):'에러객체=null'));done(null);}};
   document.body.appendChild(i);
   i.click();
 });}
 const _urls={};
 async function photoURL(id){if(!id)return'';if(_urls[id])return _urls[id];
-  const p=await getOne('photos',id);if(!p)return'';const u=URL.createObjectURL(p.blob);_urls[id]=u;return u;}
+  const p=await getOne('photos',id);const b=blobOf(p);if(!b)return'';const u=URL.createObjectURL(b);_urls[id]=u;return u;}
 async function hydrate(root){for(const el of (root||document).querySelectorAll('[data-photo]')){
   const id=el.dataset.photo;const u=id?await photoURL(id):'';
   if(el.tagName==='IMG'){if(u)el.src=u;} else {if(u){el.style.backgroundImage=`url(${u})`;el.textContent='';}}
@@ -358,7 +361,7 @@ function bulkAdd(){
   const i=document.createElement('input');i.type='file';i.accept='image/*';i.multiple=true;
   i.style.cssText='position:fixed;left:-9999px;top:0;opacity:0;width:1px;height:1px';
   i.onchange=async()=>{const files=[...i.files];i.remove();if(!files.length)return;showToast(`${files.length}장 처리 중…`);
-    let n=0;for(const f of files){try{const blob=await shrink(f);const pid=uid();await put('photos',{id:pid,blob});await put('items',{id:uid(),name:'',category:'상의',photoId:pid});n++;}catch(e){}}
+    let n=0;for(const f of files){try{const blob=await shrink(f);const pid=uid();await storePhoto(pid,blob);await put('items',{id:uid(),name:'',category:'상의',photoId:pid});n++;}catch(e){}}
     await refresh();showToast(`옷 ${n}장 추가됨 · 눌러서 이름·종류 채우기`);};
   document.body.appendChild(i);
   i.click();
@@ -754,7 +757,7 @@ async function moveToWardrobe(w){
 function blobToB64(b){return new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(b);});}
 async function exportAll(){
   const data={v:1,items:await all('items'),looks:await all('looks'),days:await all('days'),wishlist:await all('wishlist'),photos:[]};
-  for(const p of await all('photos'))data.photos.push({id:p.id,b64:await blobToB64(p.blob)});
+  for(const p of await all('photos')){const b=blobOf(p);if(b)data.photos.push({id:p.id,b64:await blobToB64(b)});}
   const blob=new Blob([JSON.stringify(data)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download=`룩북백업_${ymd(new Date())}.json`;a.click();
@@ -763,7 +766,7 @@ async function exportAll(){
 async function importAll(file){
   const data=JSON.parse(await file.text());
   if(!confirm('백업 파일을 불러오면 같은 항목은 덮어써집니다. 계속할까요?'))return;
-  for(const p of(data.photos||[])){const blob=await(await fetch(p.b64)).blob();await put('photos',{id:p.id,blob});}
+  for(const p of(data.photos||[])){const blob=await(await fetch(p.b64)).blob();await storePhoto(p.id,blob);}
   for(const i of(data.items||[]))await put('items',i);
   for(const l of(data.looks||[]))await put('looks',l);
   for(const d of(data.days||[]))await put('days',d);
@@ -811,15 +814,15 @@ async function geminiRecommend(situation){
   throw new Error('AI 서버가 잠시 바빠요 ('+lastErr+'). 잠시 후 다시 시도해 주세요');
 }
 async function geminiVision(photoId,prompt){
-  const p=await getOne('photos',photoId);if(!p)throw new Error('사진 없음');
-  const b64=(await blobToB64(p.blob)).split(',')[1];
+  const p=await getOne('photos',photoId);const pb=blobOf(p);if(!pb)throw new Error('사진 없음');
+  const b64=(await blobToB64(pb)).split(',')[1];
   let lastErr='';
   for(const m of GEMINI_MODELS){
     for(let attempt=0;attempt<3;attempt++){
       const ctrl=new AbortController();const to=setTimeout(()=>ctrl.abort(),25000);let res;
       try{res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(getKey())}`,{
         method:'POST',headers:{'Content-Type':'application/json'},signal:ctrl.signal,
-        body:JSON.stringify({contents:[{parts:[{inlineData:{mimeType:p.blob.type||'image/jpeg',data:b64}},{text:prompt}]}],generationConfig:{temperature:.4,responseMimeType:'application/json'}})});}
+        body:JSON.stringify({contents:[{parts:[{inlineData:{mimeType:pb.type||'image/jpeg',data:b64}},{text:prompt}]}],generationConfig:{temperature:.4,responseMimeType:'application/json'}})});}
       catch(e){lastErr=(e.name==='AbortError'?'응답 지연':'네트워크')+' '+m;await new Promise(r=>setTimeout(r,600*(attempt+1)));continue;}
       finally{clearTimeout(to);}
       if(res.status===404){lastErr='404 '+m;break;}
@@ -905,7 +908,7 @@ function aiRecommend(){
 /* ----- 룩 이미지로 저장·공유 ----- */
 function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 function drawCover(ctx,img,x,y,w,h,r){ctx.save();roundRect(ctx,x,y,w,h,r);ctx.clip();const ir=img.width/img.height,tr=w/h;let sw,sh,sx,sy;if(ir>tr){sh=img.height;sw=sh*tr;sx=(img.width-sw)/2;sy=0;}else{sw=img.width;sh=sw/tr;sx=0;sy=(img.height-sh)/2;}ctx.drawImage(img,sx,sy,sw,sh,x,y,w,h);ctx.restore();}
-async function loadImg(photoId){const p=await getOne('photos',photoId);if(!p)return null;try{return await createImageBitmap(p.blob);}catch(e){return null;}}
+async function loadImg(photoId){const p=await getOne('photos',photoId);const b=blobOf(p);if(!b)return null;try{return await createImageBitmap(b);}catch(e){return null;}}
 async function shareLook(look){
   const W=1080,H=1350,m=64;const c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d');
   const g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,'#f1f3f2');g.addColorStop(.5,'#e9edee');g.addColorStop(1,'#e0e7ea');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
