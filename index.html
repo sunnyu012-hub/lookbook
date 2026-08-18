@@ -366,12 +366,7 @@ function usageHtml(id){const w=wearOf(id);const lks=looksWith(id);const ld=w.las
 async function refresh(){state.items=await all('items');state.looks=await all('looks');state.days=await all('days');state.wish=await all('wishlist');render();}
 function daysSince(s){if(!s)return Infinity;const p=s.split('-').map(Number);const then=new Date(p[0],p[1]-1,p[2]);return Math.floor((new Date()-then)/86400000);}
 function backupBanner(){
-  if(state.backupDismissed)return'';
-  if(!(state.items.length||state.looks.length))return'';
-  const last=localStorage.getItem('last_backup');const d=daysSince(last);
-  if(d<7)return'';
-  const txt=last?`마지막 백업 ${d}일 전`:'아직 백업한 적 없어요';
-  return `<div class="banner"><span>💾 ${txt} — 데이터 지켜요</span><span><button class="banner-btn" data-action="dobackup">백업</button><button class="banner-x" data-action="dismissbackup">✕</button></span></div>`;
+  return''; // 데이터는 클라우드에 자동 저장돼 별도 백업 배너 불필요
 }
 let toastTimer=null;
 function showToast(msg,undoFn){
