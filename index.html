@@ -238,7 +238,9 @@
   .eval-photo{width:100%; max-height:320px; object-fit:contain; border-radius:16px; background:var(--thumb); margin-bottom:12px}
   .eval-score{font-size:42px; font-weight:800; color:var(--pink); text-align:center; line-height:1.05}
   .eval-score span{font-size:17px; color:var(--muted); font-weight:600; margin-left:2px}
-  .eval-vibe{text-align:center; font-size:16px; font-weight:700; color:var(--ink); margin:4px 0 18px}
+  .eval-vibe{text-align:center; font-size:16px; font-weight:700; color:var(--ink); margin:4px 0 12px}
+  .eval-tags{display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin:0 0 18px}
+  .eval-tags .tagchip{background:var(--bg); border-radius:12px; padding:5px 12px; font-size:12px; font-weight:600; color:var(--ink-2)}
   .eval-sec{background:var(--bg); border-radius:16px; padding:13px 16px; margin-bottom:11px}
   .eval-h{font-size:14px; font-weight:800; color:var(--ink); margin-bottom:7px}
   .eval-sec ul{margin:0; padding:0; list-style:none}
@@ -937,7 +939,7 @@ memo: 이 코디를 2~3문장으로 자세히 설명 (어떤 아이템 조합인
 tags: 다음 중 어울리는 것 1~4개만 배열로 — ${[...TPO_TAGS,...STYLE_TAGS].join(', ')}.
 형식: {"name":"","memo":"","tags":[]}`);}
 function evaluateLook(photoId){return geminiVision(photoId,`너는 발랄하고 사랑스러운 AI 패션 스타일리스트야. 이 착장 사진을 보고 귀엽고 통통 튀는 말투로 평가해줘. 이모지는 과하지 않게 적당히(항목당 최대 1개, 문장이 이모지로 도배되지 않게) 넣어줘. 보완할 점도 절대 상처주지 말고 응원하듯 다정하게 말해줘. JSON으로만 답해.
-형식: {"score": 1~10 사이 정수, "vibe": "이 룩의 무드를 한마디로(예: 청순 캠퍼스룩)", "good": ["좋은 점 2~3개"], "improve": ["이렇게 하면 더 예쁠 점 2~3개, 다정하게"], "tip": "한 줄 스타일링 꿀팁"}`);}
+형식: {"score": 1~10 사이 정수, "vibe": "이 룩의 무드를 한마디로(예: 청순 캠퍼스룩)", "good": ["좋은 점 2~3개"], "improve": ["이렇게 하면 더 예쁠 점 2~3개, 다정하게"], "tip": "한 줄 스타일링 꿀팁", "tags": ["이 룩에 어울리는 상황·스타일 태그 2~4개, 반드시 다음 목록에서만 골라: ${[...TPO_TAGS,...STYLE_TAGS].join(', ')}"]}`);}
 function lookRate(){
   if(!hasAI()){alert('지금 AI를 쓸 수 없어요. 잠시 후 다시 시도해 주세요.');return;}
   (async()=>{
@@ -954,13 +956,14 @@ function showEval(photoId,r){
     <img class="eval-photo" data-photo="${photoId}" alt="">
     <div class="eval-score">${r.score||'?'}<span>/10</span></div>
     ${r.vibe?`<div class="eval-vibe">${esc(r.vibe)}</div>`:''}
+    ${(r.tags&&r.tags.length)?`<div class="eval-tags">${r.tags.filter(t=>TAG_PRESETS.includes(t)).map(t=>`<span class="tagchip">${esc(t)}</span>`).join('')}</div>`:''}
     <div class="eval-sec"><div class="eval-h">👍 좋은 점</div><ul>${good||'<li>-</li>'}</ul></div>
     <div class="eval-sec"><div class="eval-h">💡 이렇게 하면 더 예뻐요</div><ul>${improve||'<li>-</li>'}</ul></div>
     ${r.tip?`<div class="eval-tip">✂️ ${esc(r.tip)}</div>`:''}
     <div class="btnrow" style="margin-top:16px"><button class="btn ghost" data-close="1">닫기</button><button class="btn primary" id="eval-save">♥ 이 룩 저장</button></div>`);
   document.getElementById('eval-save').onclick=async()=>{
     const b=document.getElementById('eval-save');b.disabled=true;b.textContent='저장 중…';
-    try{await put('looks',{id:uid(),name:r.vibe||'평가받은 룩',photoId,rating:Math.max(1,Math.round((r.score||7)/2)),memo:[...(r.good||[]),r.tip].filter(Boolean).join(' · '),favorite:true,tags:[]});state.looks=await all('looks');b.textContent='저장됐어요 ✓';}
+    try{await put('looks',{id:uid(),name:r.vibe||'평가받은 룩',photoId,rating:Math.max(1,Math.round((r.score||7)/2)),memo:[...(r.good||[]),r.tip].filter(Boolean).join(' · '),favorite:true,tags:(r.tags||[]).filter(t=>TAG_PRESETS.includes(t))});state.myLooks=await all('looks');state.looks=state.myLooks;b.textContent='저장됐어요 ✓';}
     catch(e){b.disabled=false;b.textContent='♥ 이 룩 저장';alert('저장 실패: '+(e.message||e));}
   };
 }
