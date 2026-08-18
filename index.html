@@ -569,6 +569,23 @@ function sanitizeMascot(txt){
   return'';
 }
 const MASCOT_KEY='mascot2';
+// AI가 없거나 실패해도 옷장 데이터로 만드는 대사 (하루 단위로 하나 고정) — 항상 뭔가 말하게
+function localMascot(){
+  const items=state.myItems||[];const n=items.length;
+  const ww=items.map(i=>({i,w:wearOf(i.id)}));
+  const sleeping=ww.filter(x=>x.w.count===0||daysSince(x.w.last)>=90);
+  const top=ww.filter(x=>x.w.count>0).sort((a,b)=>b.w.count-a.w.count)[0];
+  const nm=x=>x&&(x.i.name||x.i.category)||'';
+  const pool=[];
+  if(n===0)pool.push('첫 옷을 등록해줘! 두근두근 🧺');
+  if(sleeping.length)pool.push(`${nm(sleeping[0])} 오랜만에 어때? 🥺`);
+  if(top)pool.push(`${nm(top)}, 오늘도 함께할래? 💕`);
+  if(typeof PARTNER!=='undefined'&&PARTNER)pool.push(`${PARTNERNAME||'애인'} 오늘 뭐 입었나 궁금해 👀`);
+  if(n>=10)pool.push(`옷 ${n}벌… 옷부자다 헤헤 👑`);
+  pool.push('오늘은 뭐 입을까? 👗','좋아하는 옷 꺼내 입자! ✨','오늘도 예쁘게 입어봐 🌷');
+  const d=new Date();const idx=(d.getFullYear()+d.getMonth()*31+d.getDate())%pool.length;
+  return pool[idx];
+}
 function mascotCached(){try{const c=JSON.parse(localStorage.getItem(MASCOT_KEY)||'null');return(c&&c.uid===MYUID)?sanitizeMascot(c.text):'';}catch(e){return'';}}
 let _mascotBusy=false;
 async function refreshMascot(){
@@ -592,11 +609,15 @@ async function mascotLine(){
     +(PARTNER?`${PARTNERNAME||'애인'}이랑 커플 연결됨. `:'');
   const prompt=`옷장 상황: ${summary}\n\n너는 이 옷장에 사는 귀엽고 발랄한 마스코트야. 위 상황에 어울리게, 옷(또는 옷장) 입장에서 주인에게 건네는 사랑스러운 한마디를 지어줘.\n규칙: 한국어로 딱 한 문장, 25자 이내, 이모지 1개 정도, 귀여운 반말 말투. 대사 한 줄만 그대로 출력하고 설명·목록·별표·따옴표·제목은 절대 쓰지 마.`;
   for(const m of GEMINI_MODELS){
-    let res;try{res=await geminiFetch(m,{contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:1.05,maxOutputTokens:80}});}catch(e){continue;}
-    if(res.status===404)continue;
-    if(!res.ok){if([429,500,502,503].includes(res.status))continue;throw new Error('AI '+res.status);}
-    const data=await res.json();const txt=(((data.candidates||[])[0]||{}).content||{}).parts?.[0]?.text||'';
-    const clean=sanitizeMascot(txt);if(clean)return clean;
+    for(let attempt=0;attempt<2;attempt++){
+      let res;try{res=await geminiFetch(m,{contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:1.05}});}catch(e){break;}
+      if(res.status===404)break;                 // 폐기된 모델 → 다음 모델
+      if([429,500,502,503].includes(res.status)){await new Promise(r=>setTimeout(r,800*(attempt+1)));continue;}
+      if(!res.ok)break;
+      const data=await res.json();const txt=(((data.candidates||[])[0]||{}).content||{}).parts?.[0]?.text||'';
+      const clean=sanitizeMascot(txt);if(clean)return clean;
+      await new Promise(r=>setTimeout(r,400));    // 200인데 빈 응답 → 한 번 더
+    }
   }
   return '';
 }
@@ -616,7 +637,7 @@ function viewCloset(){
     const list=albumItems();
     return head+tog+`<button class="backlink" data-action="albumback">‹ 앨범</button><div class="sec"><h2>${esc(state.album)}</h2><span class="pcount">${list.length} 벌</span></div>`+(partner?'':selectBar())+itemCards(list);
   }
-  const mline=mascotCached()||'오늘은 뭐 입을까? 👗';
+  const mline=mascotCached()||localMascot();
   const bubble=partner?'':`<div class="bubbles"><div class="bubble" id="mascot-bubble">${esc(mline)}</div><div class="bubble r">앨범에서 골라봐 ✨</div><div class="delivered">Delivered</div></div>`;
   const anySeason=state.items.some(i=>i.season);
   const bys=[['category','카테고리'],['color','색상'],...(anySeason?[['season','시즌']]:[])];
