@@ -250,9 +250,9 @@
   .ownertog{display:flex; gap:8px; margin:2px 0 16px}
   .ownertog .ot{flex:1; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:10px 8px; font-size:14px; font-weight:700; color:var(--muted); cursor:pointer; box-shadow:var(--shadow-sm); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
   .ownertog .ot.on{background:var(--ink); color:#fff; border-color:var(--ink)}
-  .looklock{position:absolute; top:9px; left:9px; z-index:2; background:rgba(255,255,255,.92); border:none; border-radius:12px; padding:4px 9px; font-size:14px; cursor:pointer; box-shadow:0 1px 5px rgba(0,0,0,.14)}
-  .looklock.on{background:#fdeef2}
-  .look-row .looklock{position:static; margin-left:auto; align-self:center}
+  .looklock{position:absolute; top:9px; left:9px; z-index:2; background:rgba(255,255,255,.95); color:var(--muted); border:1px solid var(--line); border-radius:20px; padding:4px 10px; font-size:11px; font-weight:800; cursor:pointer; box-shadow:0 1px 6px rgba(0,0,0,.14); letter-spacing:-.01em}
+  .looklock.on{background:var(--pink); color:#fff; border-color:var(--pink)}
+  .look-row .looklock{position:static; margin-left:auto; align-self:center; font-size:12px}
 </style>
 
 <header>
@@ -547,7 +547,7 @@ function viewLooks(){
     <button class="chip ${state.favOnly?'on':''}" data-action="lookfilter" data-kind="fav">즐겨찾기</button>`+
     usedTags.map(t=>`<button class="chip ${state.tagFilter===t?'on':''}" data-action="lookfilter" data-kind="tag" data-tag="${esc(t)}">${esc(t)}</button>`).join('')+`</div>`;
   if(!state.looks.length)return head+tog+aiBtn+chips+`<div class="empty-state"><div class="big">✨</div>${partner?`${esc(PARTNERNAME)}이(가) 공유한 룩이 아직 없어요.`:'아직 저장된 룩이 없어요.<br>좋아하는 착장을 룩으로 남겨보세요.'}</div>`;
-  const lock=l=>partner?'':`<button class="looklock ${l.shared?'on':''}" data-action="looklock" data-id="${l.id}" title="${l.shared?'공유중 — 누르면 나만 보기':'나만 보기 — 누르면 공유'}">${l.shared?'🔓':'🔒'}</button>`;
+  const lock=l=>partner?'':`<button class="looklock ${l.shared?'on':''}" data-action="looklock" data-id="${l.id}" title="${l.shared?'공유중 — 누르면 나만 보기':'나만 보기 — 누르면 공유'}">${l.shared?'🔓 공유중':'🔒 나만'}</button>`;
   const card=l=>`<div class="card" data-action="look" data-id="${l.id}">
     ${lock(l)}
     ${l.favorite?'<div class="heart">♥</div>':''}
