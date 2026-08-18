@@ -556,14 +556,27 @@ function ownerToggle(kind){
   return `<div class="ownertog"><button class="ot ${cur==='me'?'on':''}" data-action="owner-${kind}" data-o="me">${esc(MYNAME)} ${noun}</button><button class="ot ${cur==='partner'?'on':''}" data-action="owner-${kind}" data-o="partner">${esc(PARTNERNAME||'상대')} ${noun}</button></div>`;
 }
 /* ----- 옷장 마스코트: 하루 1번 AI 한마디, 유저별(각자 자기 옷장 기준) ----- */
-function mascotCached(){try{const c=JSON.parse(localStorage.getItem('mascot')||'null');return(c&&c.uid===MYUID)?c.text:'';}catch(e){return'';}}
+// AI가 대사 대신 형식/지시문을 뱉는 경우를 걸러 유효한 한글 대사 한 줄만 남김
+function sanitizeMascot(txt){
+  if(!txt)return'';
+  const lines=String(txt).replace(/[*#`>_\[\]]/g,'').split('\n');
+  for(let ln of lines){
+    ln=ln.trim().replace(/^[-•·\d.)\s"'“”]+/,'').replace(/["'“”\s]+$/,'').trim();
+    if(!ln||!/[가-힣]/.test(ln))continue;         // 한글 대사만 통과
+    if(/constraint|instruction|prompt|output|format|situation|json|제약|형식|출력|규칙|예시|지시|상황|이내|글자|문장|이모지|말투|반말|한국어/i.test(ln))continue;
+    return ln.slice(0,45);
+  }
+  return'';
+}
+const MASCOT_KEY='mascot2';
+function mascotCached(){try{const c=JSON.parse(localStorage.getItem(MASCOT_KEY)||'null');return(c&&c.uid===MYUID)?sanitizeMascot(c.text):'';}catch(e){return'';}}
 let _mascotBusy=false;
 async function refreshMascot(){
   const el=document.getElementById('mascot-bubble');if(!el)return;
-  const today=ymd(new Date());let c=null;try{c=JSON.parse(localStorage.getItem('mascot')||'null');}catch(e){}
-  if(c&&c.uid===MYUID&&c.date===today){el.textContent=c.text;return;}
+  const today=ymd(new Date());let c=null;try{c=JSON.parse(localStorage.getItem(MASCOT_KEY)||'null');}catch(e){}
+  if(c&&c.uid===MYUID&&c.date===today&&sanitizeMascot(c.text)){el.textContent=sanitizeMascot(c.text);return;}
   if(!hasAI()||_mascotBusy)return;_mascotBusy=true;
-  try{const text=await mascotLine();if(text){const cur=document.getElementById('mascot-bubble');if(cur)cur.textContent=text;localStorage.setItem('mascot',JSON.stringify({date:today,uid:MYUID,text}));}}
+  try{const text=await mascotLine();if(text){const cur=document.getElementById('mascot-bubble');if(cur)cur.textContent=text;localStorage.setItem(MASCOT_KEY,JSON.stringify({date:today,uid:MYUID,text}));}}
   catch(e){}finally{_mascotBusy=false;}
 }
 async function mascotLine(){
@@ -577,13 +590,13 @@ async function mascotLine(){
     +(sleeping.length?`오래 안 입은 옷 ${sleeping.length}벌(예: ${sleepEx.join(', ')||'-'}). `:(total?'옷을 골고루 입는 중. ':''))
     +(top?`제일 자주 입은 옷: ${top.i.name||top.i.category} ${top.w.count}회. `:'')
     +(PARTNER?`${PARTNERNAME||'애인'}이랑 커플 연결됨. `:'');
-  const prompt=`너는 사용자의 옷장에 사는 귀엽고 발랄한 마스코트야. 아래 옷장 상황을 보고, 옷장(또는 옷) 입장에서 사용자에게 건네는 짧고 사랑스러운 한마디를 만들어줘. 이모지는 1개 정도만. 25자 이내 한 문장. 따옴표나 설명 없이 대사만 출력.\n옷장 상황: ${summary}`;
+  const prompt=`옷장 상황: ${summary}\n\n너는 이 옷장에 사는 귀엽고 발랄한 마스코트야. 위 상황에 어울리게, 옷(또는 옷장) 입장에서 주인에게 건네는 사랑스러운 한마디를 지어줘.\n규칙: 한국어로 딱 한 문장, 25자 이내, 이모지 1개 정도, 귀여운 반말 말투. 대사 한 줄만 그대로 출력하고 설명·목록·별표·따옴표·제목은 절대 쓰지 마.`;
   for(const m of GEMINI_MODELS){
-    let res;try{res=await geminiFetch(m,{contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:1.05,maxOutputTokens:60}});}catch(e){continue;}
+    let res;try{res=await geminiFetch(m,{contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:1.05,maxOutputTokens:80}});}catch(e){continue;}
     if(res.status===404)continue;
     if(!res.ok){if([429,500,502,503].includes(res.status))continue;throw new Error('AI '+res.status);}
     const data=await res.json();const txt=(((data.candidates||[])[0]||{}).content||{}).parts?.[0]?.text||'';
-    if(txt)return txt.replace(/^[\s"'`]+|[\s"'`]+$/g,'').split('\n')[0].slice(0,45);
+    const clean=sanitizeMascot(txt);if(clean)return clean;
   }
   return '';
 }
