@@ -244,6 +244,15 @@
   .eval-sec ul{margin:0; padding:0; list-style:none}
   .eval-sec li{font-size:14px; color:var(--ink-2); line-height:1.55; margin-bottom:5px}
   .eval-tip{background:#fdeef2; color:var(--ink); border-radius:14px; padding:12px 16px; font-size:14px; font-weight:600; text-align:center}
+  /* 커플: 디데이 + 소유자 토글 + 룩 잠금 */
+  .dday{text-align:center; font-size:13px; color:var(--muted); padding:4px 0 10px; font-weight:600}
+  .dday b{color:var(--pink); font-size:15px; margin:0 1px}
+  .ownertog{display:flex; gap:8px; margin:2px 0 16px}
+  .ownertog .ot{flex:1; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:10px 8px; font-size:14px; font-weight:700; color:var(--muted); cursor:pointer; box-shadow:var(--shadow-sm); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .ownertog .ot.on{background:var(--ink); color:#fff; border-color:var(--ink)}
+  .looklock{position:absolute; top:9px; left:9px; z-index:2; background:rgba(255,255,255,.92); border:none; border-radius:12px; padding:4px 9px; font-size:14px; cursor:pointer; box-shadow:0 1px 5px rgba(0,0,0,.14)}
+  .looklock.on{background:#fdeef2}
+  .look-row .looklock{position:static; margin-left:auto; align-self:center}
 </style>
 
 <header>
@@ -272,12 +281,30 @@
 /* ---------------- storage (Supabase cloud) ---------------- */
 const SB_URL='https://brkpvwuictvdnqyojjkg.supabase.co';
 const SB_KEY='sb_publishable_YGl42hSSGKCS8ulowQJBdQ_6Vp2ABJM';
-let sb=null, HH=null, MYUID=null;   // supabase client, 커플 household id, 내 user id
+let sb=null, HH=null, MYUID=null, PARTNER=null;   // supabase client, 커플 household id, 내 user id, 남친 user id
 const _TBL={items:'items',looks:'looks',wishlist:'wishlist',days:'days'};
-async function all(store){const t=_TBL[store];if(!t)return [];const {data,error}=await sb.from(t).select('data');if(error)throw error;return data.map(r=>r.data);}
+// all()은 "내 것"만 반환 (items/looks는 user_id로 필터). 남친 데이터는 loadPartner()로 따로.
+async function all(store){const t=_TBL[store];if(!t)return [];
+  const sel=(t==='looks')?'user_id,shared,data':(t==='items')?'user_id,data':'data';
+  const {data,error}=await sb.from(t).select(sel);if(error)throw error;
+  let rows=data;
+  if(t==='items'||t==='looks')rows=rows.filter(r=>r.user_id===MYUID);
+  return rows.map(r=>(t==='looks')?{...r.data,shared:!!r.shared}:r.data);}
 async function getOne(store,id){const t=_TBL[store];if(!t)return null;const {data,error}=await sb.from(t).select('data').eq('id',id).limit(1);if(error)throw error;return data[0]?data[0].data:null;}
-async function put(store,obj){const t=_TBL[store];if(!t)return obj;const row=(t==='days')?{id:obj.id,user_id:MYUID,data:obj}:{id:obj.id,household_id:HH,data:obj};const {error}=await sb.from(t).upsert(row);if(error)throw error;return obj;}
+async function put(store,obj){const t=_TBL[store];if(!t)return obj;
+  let row;
+  if(t==='days')row={id:obj.id,user_id:MYUID,data:obj};
+  else if(t==='wishlist')row={id:obj.id,user_id:MYUID,data:obj};
+  else if(t==='looks')row={id:obj.id,user_id:MYUID,household_id:HH,shared:!!obj.shared,data:obj};
+  else row={id:obj.id,user_id:MYUID,household_id:HH,data:obj};
+  const {error}=await sb.from(t).upsert(row);if(error)throw error;return obj;}
 async function del(store,id){const t=_TBL[store];if(!t)return;const {error}=await sb.from(t).delete().eq('id',id);if(error)throw error;}
+// 남친 데이터 로드: 옷장 전체 + 공유한 룩만 (RLS가 자동 필터)
+async function loadPartner(){
+  if(!PARTNER){state.partnerItems=[];state.partnerLooks=[];return;}
+  const [it,lo]=await Promise.all([sb.from('items').select('user_id,data'),sb.from('looks').select('user_id,shared,data')]);
+  state.partnerItems=(it.data||[]).filter(r=>r.user_id===PARTNER).map(r=>r.data);
+  state.partnerLooks=(lo.data||[]).filter(r=>r.user_id===PARTNER&&r.shared).map(r=>r.data);}
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
 /* ---------------- images ---------------- */
@@ -344,7 +371,12 @@ const TPO_TAGS=['데일리룩','출근룩','데이트룩','하객룩','여행룩
 const STYLE_TAGS=['미니멀','캐주얼','포멀','클래식','러블리','걸리시','시크','페미닌','보이시','스트릿','락시크','빈티지','스포티','아메카지','프레피','Y2K','고프코어','청순','모던','에스닉'];
 const TAG_PRESETS=[...TPO_TAGS,...STYLE_TAGS];
 const state={tab:'closet', items:[], looks:[], days:[], wish:[], albumBy:'category', album:null, selectMode:false, selected:new Set(), wishStatus:null, weekWeather:null, lookView:'card', catFilter:null, ownerFilter:null, favOnly:false, tagFilter:null, search:'', lookSearch:'', sortWear:false, backupDismissed:false,
+  closetOwner:'me', lookOwner:'me', myItems:[], myLooks:[], partnerItems:[], partnerLooks:[],
   week:mondayOf(new Date()), month:startOfMonth(new Date())};
+let MYNAME='나', PARTNERNAME='';
+// 우리 만난 날(2025-12-24)=1일차
+function coupleDays(){const s=Date.UTC(2025,11,24);const t=new Date();const n=Date.UTC(t.getFullYear(),t.getMonth(),t.getDate());return Math.floor((n-s)/86400000)+1;}
+function ddayBar(){const d=coupleDays();if(d<1)return'';const names=PARTNERNAME?`${esc(MYNAME)}♡${esc(PARTNERNAME)}`:'함께';return `<div class="dday">💕 ${names} <b>${d}</b>일</div>`;}
 function ymd(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function mondayOf(d){const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x;}
 function startOfMonth(d){return new Date(d.getFullYear(),d.getMonth(),1);}
@@ -363,7 +395,15 @@ function usageHtml(id){const w=wearOf(id);const lks=looksWith(id);const ld=w.las
     <div class="hint" style="margin-top:4px">${lks.length?'이 옷이 든 룩: '+lks.map(l=>esc(l.name||'룩')).join(', '):'아직 저장된 룩에 없음'}</div></div>`;}
 
 /* ---------------- render ---------------- */
-async function refresh(){state.items=await all('items');state.looks=await all('looks');state.days=await all('days');state.wish=await all('wishlist');render();}
+async function refresh(){
+  state.myItems=await all('items');state.myLooks=await all('looks');
+  state.days=await all('days');state.wish=await all('wishlist');
+  await loadPartner();
+  // 옷장/룩 탭의 활성 소유자에 맞춰 state.items/looks 설정
+  state.items=(state.closetOwner==='partner'&&PARTNER)?state.partnerItems:state.myItems;
+  state.looks=(state.lookOwner==='partner'&&PARTNER)?state.partnerLooks:state.myLooks;
+  render();
+}
 function daysSince(s){if(!s)return Infinity;const p=s.split('-').map(Number);const then=new Date(p[0],p[1]-1,p[2]);return Math.floor((new Date()-then)/86400000);}
 function backupBanner(){
   return''; // 데이터는 클라우드에 자동 저장돼 별도 백업 배너 불필요
@@ -396,7 +436,7 @@ async function render(){
   else if(state.tab==='wish')html=viewWishlist();
   else if(state.tab==='week')html=await viewWeek();
   else html=await viewMonth();
-  m.innerHTML=backupBanner()+html;
+  m.innerHTML=ddayBar()+html;
   await hydrate(m);
 }
 
@@ -459,45 +499,57 @@ function statsSheet(){
     ${acc.length?`<div class="field"><label>자주 든 가방·신발·액세서리</label>${acc.map(x=>row(x.i.photoId,x.i.name||x.i.category,x.w+'회')).join('')}</div>`:''}
     <div class="btnrow"><button class="btn primary" data-close="1">닫기</button></div>`);
 }
+function ownerToggle(kind){
+  const cur=kind==='closet'?state.closetOwner:state.lookOwner;
+  const noun=kind==='closet'?'옷장':'룩';
+  return `<div class="ownertog"><button class="ot ${cur==='me'?'on':''}" data-action="owner-${kind}" data-o="me">${esc(MYNAME)} ${noun}</button><button class="ot ${cur==='partner'?'on':''}" data-action="owner-${kind}" data-o="partner">${esc(PARTNERNAME||'상대')} ${noun}</button></div>`;
+}
 function viewCloset(){
-  const head=pageHead('옷장',state.items.length?`${state.items.length} 벌`:'','add');
+  const partner=state.closetOwner==='partner'&&PARTNER;
+  const tog=PARTNER?ownerToggle('closet'):'';
+  const head=pageHead(partner?`${PARTNERNAME} 옷장`:'옷장',state.items.length?`${state.items.length} 벌`:'',partner?'':'add');
   const search=`<input type="text" class="search" id="closet-search" placeholder="🔍 옷 검색" value="${esc(state.search)}">`;
-  if(!state.items.length)return head+search+`<div class="empty-state"><div class="big">🧺</div>옷장이 비었어요.<br>아래로 옷을 담아 시작해 보세요.<br><br><button class="textcta" data-action="bulkadd">＋ 여러 장 한번에 추가</button></div>`;
+  const bulk=partner?'':`<button class="textcta" data-action="bulkadd">＋ 여러 장 한번에 추가</button>`;
+  if(!state.items.length)return head+tog+search+`<div class="empty-state"><div class="big">🧺</div>${partner?`${esc(PARTNERNAME)} 옷장이 아직 비었어요.`:'옷장이 비었어요.<br>아래로 옷을 담아 시작해 보세요.<br><br>'+bulk}</div>`;
   if(state.search){
     const q=state.search.toLowerCase();
-    const list=state.items.filter(i=>[i.name||'',i.category||'',i.subcategory||'',i.owner||'',...(i.materials||[]),...(i.colors||[])].join(' ').toLowerCase().includes(q));
-    return head+search+(list.length?selectBar()+itemCards(list):`<div class="empty-state">검색 결과가 없어요.</div>`);
+    const list=state.items.filter(i=>[i.name||'',i.category||'',i.subcategory||'',...(i.materials||[]),...(i.colors||[])].join(' ').toLowerCase().includes(q));
+    return head+tog+search+(list.length?(partner?'':selectBar())+itemCards(list):`<div class="empty-state">검색 결과가 없어요.</div>`);
   }
   if(state.album){
     const list=albumItems();
-    return head+`<button class="backlink" data-action="albumback">‹ 앨범</button><div class="sec"><h2>${esc(state.album)}</h2><span class="pcount">${list.length} 벌</span></div>`+selectBar()+itemCards(list);
+    return head+tog+`<button class="backlink" data-action="albumback">‹ 앨범</button><div class="sec"><h2>${esc(state.album)}</h2><span class="pcount">${list.length} 벌</span></div>`+(partner?'':selectBar())+itemCards(list);
   }
-  const bubble=`<div class="bubbles"><div class="bubble">오늘은 뭐 입을까? 👗</div><div class="bubble r">앨범에서 골라봐 ✨</div><div class="delivered">Delivered</div></div>`;
-  const anyOwner=state.items.some(i=>i.owner);const anySeason=state.items.some(i=>i.season);
-  const bys=[['category','카테고리'],['color','색상'],...(anySeason?[['season','시즌']]:[]),...(anyOwner?[['owner','소유자']]:[])];
+  const bubble=partner?'':`<div class="bubbles"><div class="bubble">오늘은 뭐 입을까? 👗</div><div class="bubble r">앨범에서 골라봐 ✨</div><div class="delivered">Delivered</div></div>`;
+  const anySeason=state.items.some(i=>i.season);
+  const bys=[['category','카테고리'],['color','색상'],...(anySeason?[['season','시즌']]:[])];
   const byChips=`<div class="chips">`+bys.map(([k,l])=>`<button class="chip ${state.albumBy===k?'on':''}" data-action="albumby" data-by="${k}">${l}</button>`).join('')+`</div>`;
   const albums=albumGroups().map(g=>`<div class="card album" data-action="album" data-key="${esc(g.key)}">
-    <div class="plus-badge">＋</div>
+    ${partner?'':'<div class="plus-badge">＋</div>'}
     <img class="ph" data-photo="${(g.items.find(x=>x.photoId)||{}).photoId||''}" alt="">
     <div class="body"><div class="name">${g.color?`<span class="swatch" style="background:${g.color}"></span> `:''}${esc(g.label)}</div><div class="sub">${g.items.length}</div></div></div>`).join('');
-  return head+bubble+search+`<button class="textcta" data-action="bulkadd">＋ 여러 장 한번에 추가</button><div class="sec"><h2>앨범</h2></div>`+byChips+`<div class="grid">${albums}</div>`;
+  return head+tog+bubble+search+bulk+`<div class="sec"><h2>앨범</h2></div>`+byChips+`<div class="grid">${albums}</div>`;
 }
 function viewLooks(){
+  const partner=state.lookOwner==='partner'&&PARTNER;
+  const tog=PARTNER?ownerToggle('look'):'';
   let list=state.looks;
   if(state.favOnly)list=list.filter(l=>l.favorite);
   else if(state.tagFilter)list=list.filter(l=>(l.tags||[]).includes(state.tagFilter));
   if(state.lookSearch){const q=state.lookSearch.toLowerCase();list=list.filter(l=>[l.name||'',l.memo||'',...(l.tags||[])].join(' ').toLowerCase().includes(q));}
   const usedTags=[...new Set(state.looks.flatMap(l=>l.tags||[]))];
   const none=!state.favOnly&&!state.tagFilter;
-  const head=pageHead('룩',state.looks.length?`${state.looks.length} 개`:'','룩 추가');
-  const aiBtn=`<button class="textcta" data-action="airec">✨ AI 코디 추천</button> <button class="textcta" data-action="lookrate">📸 이 룩 어때?</button>`;
+  const head=pageHead(partner?`${PARTNERNAME} 룩`:'룩',state.looks.length?`${state.looks.length} 개`:'',partner?'':'룩 추가');
+  const aiBtn=partner?'':`<button class="textcta" data-action="airec">✨ AI 코디 추천</button> <button class="textcta" data-action="lookrate">📸 이 룩 어때?</button>`;
   const searchBox=state.looks.length?`<input type="text" class="search" id="looks-search" placeholder="룩 이름·태그·메모 검색" value="${esc(state.lookSearch)}">`:'';
   const chips=`<div class="chips">
     <button class="chip ${none?'on':''}" data-action="lookfilter" data-kind="all">전체</button>
     <button class="chip ${state.favOnly?'on':''}" data-action="lookfilter" data-kind="fav">즐겨찾기</button>`+
     usedTags.map(t=>`<button class="chip ${state.tagFilter===t?'on':''}" data-action="lookfilter" data-kind="tag" data-tag="${esc(t)}">${esc(t)}</button>`).join('')+`</div>`;
-  if(!state.looks.length)return head+aiBtn+chips+`<div class="empty-state"><div class="big">✨</div>아직 저장된 룩이 없어요.<br>좋아하는 착장을 룩으로 남겨보세요.</div>`;
+  if(!state.looks.length)return head+tog+aiBtn+chips+`<div class="empty-state"><div class="big">✨</div>${partner?`${esc(PARTNERNAME)}이(가) 공유한 룩이 아직 없어요.`:'아직 저장된 룩이 없어요.<br>좋아하는 착장을 룩으로 남겨보세요.'}</div>`;
+  const lock=l=>partner?'':`<button class="looklock ${l.shared?'on':''}" data-action="looklock" data-id="${l.id}" title="${l.shared?'공유중 — 누르면 나만 보기':'나만 보기 — 누르면 공유'}">${l.shared?'🔓':'🔒'}</button>`;
   const card=l=>`<div class="card" data-action="look" data-id="${l.id}">
+    ${lock(l)}
     ${l.favorite?'<div class="heart">♥</div>':''}
     <img class="ph" data-photo="${lookThumb(l)||''}" alt="">
     <div class="body"><div class="name">${esc(l.name||'룩')}</div>
@@ -505,7 +557,7 @@ function viewLooks(){
   const row=l=>`<div class="look-row" data-action="look" data-id="${l.id}">
     <img class="lr-thumb" data-photo="${lookThumb(l)||''}" alt="">
     <div class="lr-info"><div class="name">${esc(l.name||'룩')} ${l.favorite?'<span style="color:var(--pink)">♥</span>':''}</div>
-    <div class="sub">${stars(l.rating)} ${(l.tags||[]).slice(0,3).map(t=>`<span class="tagchip">${esc(t)}</span>`).join('')}</div></div></div>`;
+    <div class="sub">${stars(l.rating)} ${(l.tags||[]).slice(0,3).map(t=>`<span class="tagchip">${esc(t)}</span>`).join('')}</div></div>${lock(l)}</div>`;
   const vt=`<div class="viewtoggle">
     <button class="vt ${state.lookView==='single'?'on':''}" data-action="lookview" data-v="single">하나씩</button>
     <button class="vt ${state.lookView!=='single'&&state.lookView!=='list'?'on':''}" data-action="lookview" data-v="card">카드</button>
@@ -515,7 +567,7 @@ function viewLooks(){
   else if(state.lookView==='list')body=`<div class="look-list">${list.map(row).join('')}</div>`;
   else if(state.lookView==='single')body=`<div class="look-single">${list.map(card).join('')}</div>`;
   else body=`<div class="grid">${list.map(card).join('')}</div>`;
-  return head+aiBtn+searchBox+chips+vt+body;
+  return head+tog+aiBtn+searchBox+chips+vt+body;
 }
 async function viewWeek(){
   const days=await all('days');const byId={};days.forEach(d=>byId[d.id]=d);
@@ -1079,8 +1131,11 @@ document.body.addEventListener('click',e=>{
   else if(a==='dismissbackup'){state.backupDismissed=true;render();}
   else if(a==='lookview'){state.lookView=el.dataset.v;render();}
   else if(a==='lookfilter'){const k=el.dataset.kind;state.favOnly=(k==='fav');state.tagFilter=(k==='tag')?el.dataset.tag:null;render();}
-  else if(a==='item'){const it=itemById(el.dataset.id);if(it)itemForm(it);}
-  else if(a==='look'){const l=lookById(el.dataset.id);if(l)lookForm(l);}
+  else if(a==='owner-closet'){state.closetOwner=el.dataset.o;state.album=null;state.search='';state.selectMode=false;state.selected.clear();refresh();}
+  else if(a==='owner-look'){state.lookOwner=el.dataset.o;refresh();}
+  else if(a==='looklock'){const l=lookById(el.dataset.id);if(l){l.shared=!l.shared;put('looks',l).then(()=>{state.myLooks.forEach(x=>{if(x.id===l.id)x.shared=l.shared;});showToast(l.shared?`💛 ${PARTNERNAME||'상대'}에게 공유했어요`:'🔒 나만 보기로 바꿨어요');render();}).catch(er=>showToast('실패: '+(er.message||er)));}}
+  else if(a==='item'){if(state.closetOwner==='partner'){showToast(`${PARTNERNAME} 옷장은 보기 전용이에요`);return;}const it=itemById(el.dataset.id);if(it)itemForm(it);}
+  else if(a==='look'){if(state.lookOwner==='partner'){showToast('공유받은 룩은 보기 전용이에요');return;}const l=lookById(el.dataset.id);if(l)lookForm(l);}
   else if(a==='wishitem'){const w=state.wish.find(x=>x.id===el.dataset.id);if(w)wishForm(w);}
   else if(a==='wishstatus'){state.wishStatus=el.dataset.s||null;render();}
   else if(a==='day')dayDetail(el.dataset.date);
@@ -1097,6 +1152,7 @@ function showAuth(){
     <div class="auth-logo">👗</div>
     <h1>내 옷장 룩북</h1>
     <p class="auth-sub">${mode==='login'?'로그인해서 옷장을 열어요':'계정을 만들어 시작해요'}</p>
+    ${mode==='signup'?'<input id="au-name" type="text" maxlength="10" placeholder="닉네임 (예: 유링)">':''}
     <input id="au-email" type="email" inputmode="email" autocomplete="email" placeholder="이메일">
     <input id="au-pw" type="password" autocomplete="current-password" placeholder="비밀번호 (6자 이상)">
     <button class="btn primary auth-go" id="au-go">${mode==='login'?'로그인':'회원가입'}</button>
@@ -1108,25 +1164,35 @@ function showAuth(){
     document.getElementById('au-go').onclick=async()=>{
       const email=document.getElementById('au-email').value.trim();
       const pw=document.getElementById('au-pw').value;
+      const nick=mode==='signup'?(document.getElementById('au-name').value.trim()):'';
       if(!email||!pw){msg.textContent='이메일과 비밀번호를 입력해주세요.';return;}
+      if(mode==='signup'&&!nick){msg.textContent='닉네임을 입력해주세요.';return;}
       msg.style.color='var(--muted)';msg.textContent='잠시만요…';
       try{
         const {error}=mode==='login'
           ? await sb.auth.signInWithPassword({email,password:pw})
           : await sb.auth.signUp({email,password:pw});
         if(error)throw error;
-        await afterLogin();
+        await afterLogin(nick);
       }catch(e){msg.style.color='var(--pink)';msg.textContent=(mode==='login'?'로그인 실패: ':'가입 실패: ')+(e.message||e);}
     };
     document.getElementById('au-pw').onkeydown=e=>{if(e.key==='Enter')document.getElementById('au-go').click();};
   };
   draw();
 }
-async function afterLogin(){
+async function afterLogin(nickname){
   const {data:{user}}=await sb.auth.getUser(); MYUID=user.id;
   const {data:hh,error}=await sb.rpc('init_profile');
   if(error){alert('프로필 생성 오류: '+error.message);return;}
   HH=hh;
+  if(nickname)await sb.from('profiles').update({display_name:nickname}).eq('user_id',MYUID);
+  // 같은 커플(household) 멤버들 → 내 이름·남친 이름
+  const {data:mates}=await sb.from('profiles').select('user_id,display_name').eq('household_id',HH);
+  const me=(mates||[]).find(m=>m.user_id===MYUID);
+  const other=(mates||[]).find(m=>m.user_id!==MYUID);
+  MYNAME=(me&&me.display_name)||'나';
+  PARTNER=other?other.user_id:null;
+  PARTNERNAME=(other&&other.display_name)||'';
   document.getElementById('authRoot').innerHTML='';
   await refresh();
   if(!localStorage.getItem('onboarded'))setTimeout(showOnboarding,250);
