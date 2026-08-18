@@ -552,7 +552,7 @@ function itemForm(existing,opts){
     const matChips=[...new Set([...MATERIAL_PRESETS,...draft.materials])].map(t=>`<button type="button" class="chip ${draft.materials.includes(t)?'on':''}" data-mat="${esc(t)}">${esc(t)}</button>`).join('');
     const colorChips=COLORS.map(co=>`<button type="button" class="chip colorchip ${draft.colors.includes(co.n)?'on':''}" data-color="${co.n}"><span class="dot" style="background:${co.c}"></span>${co.n}</button>`).join('');
     const html=`<h2>${existing?'옷 수정':'옷 등록'}</h2>
-      <div class="field"><div class="photo-pick" id="pp" data-photo="${draft.photoId||''}">${draft.photoId?'':'📷 사진 선택'}</div>${analyzing?'<div class="hint">🪄 AI가 색·종류 분석 중…</div>':(getKey()?'<div class="hint">🪄 사진 넣으면 AI가 이름·색·종류를 자동으로 채워줘요 (수정 가능)</div>':'')}</div>
+      <div class="field"><div class="photo-pick" id="pp" data-photo="${draft.photoId||''}">${draft.photoId?'':'📷 사진 선택'}</div>${analyzing?'<div class="hint">🪄 AI가 색·종류 분석 중…</div>':(hasAI()?'<div class="hint">🪄 사진 넣으면 AI가 이름·색·종류를 자동으로 채워줘요 (수정 가능)</div>':'')}</div>
       <div class="field"><label>이름</label><input type="text" id="f-name" value="${esc(draft.name)}" placeholder="예) 흰 셔츠"></div>
       <div class="field"><label>카테고리</label><select id="f-cat">${CATS.map(c=>`<option ${c===draft.category?'selected':''}>${c}</option>`).join('')}</select></div>
       <div class="field"><label>세부 종류 (선택)</label><select id="f-sub"${subs.length?'':' disabled'}>
@@ -573,7 +573,7 @@ function itemForm(existing,opts){
         <button class="btn primary" id="f-save">저장</button></div>`;
     openSheet(html);
     document.getElementById('pp').onclick=async()=>{sync();const id=await pickImage();if(!id)return;draft.photoId=id;
-      if(getKey()){analyzing=true;paint();classifyPhoto(id).then(r=>{if(draft.photoId!==id)return;if(r&&typeof r==='object'){if(r.name&&!draft.name)draft.name=r.name;if(r.category&&CATS.includes(r.category))draft.category=r.category;if(r.subcategory&&(SUBCATS[draft.category]||[]).includes(r.subcategory))draft.subcategory=r.subcategory;if(Array.isArray(r.colors)){const cc=r.colors.filter(c=>COLORS.some(x=>x.n===c));if(cc.length)draft.colors=cc;}showToast('AI가 이름·색·종류를 채웠어요 ✨');}}).catch(e=>showToast('AI 실패: '+(e.message||e))).finally(()=>{analyzing=false;paint();});}
+      if(hasAI()){analyzing=true;paint();classifyPhoto(id).then(r=>{if(draft.photoId!==id)return;if(r&&typeof r==='object'){if(r.name&&!draft.name)draft.name=r.name;if(r.category&&CATS.includes(r.category))draft.category=r.category;if(r.subcategory&&(SUBCATS[draft.category]||[]).includes(r.subcategory))draft.subcategory=r.subcategory;if(Array.isArray(r.colors)){const cc=r.colors.filter(c=>COLORS.some(x=>x.n===c));if(cc.length)draft.colors=cc;}showToast('AI가 이름·색·종류를 채웠어요 ✨');}}).catch(e=>showToast('AI 실패: '+(e.message||e))).finally(()=>{analyzing=false;paint();});}
       else paint();};
     document.getElementById('f-cat').onchange=e=>{sync();draft.category=e.target.value;draft.subcategory='';paint();};
     document.getElementById('f-mats').onclick=e=>{const c=e.target.closest('[data-mat]');if(!c)return;sync();const t=c.dataset.mat;const i=draft.materials.indexOf(t);if(i>=0)draft.materials.splice(i,1);else draft.materials.push(t);paint();};
@@ -604,7 +604,7 @@ function lookForm(existing){
     const tpoChips=TPO_TAGS.map(tchip).join(''), styleChips=STYLE_TAGS.map(tchip).join('');
     const customTags=draft.tags.filter(t=>!TAG_PRESETS.includes(t));
     const html=`<h2>${existing?'룩 수정':'새 룩'}</h2>
-      <div class="field"><div class="photo-pick" id="pp" data-photo="${draft.photoId||''}">${draft.photoId?'':'📷 룩 사진 (선택)'}</div>${lookAnalyzing?'<div class="hint">🪄 AI가 룩 이름·태그 짓는 중…</div>':(getKey()?'<div class="hint">🪄 사진 넣으면 AI가 룩 이름·태그를 제안해요 (수정 가능)</div>':'')}</div>
+      <div class="field"><div class="photo-pick" id="pp" data-photo="${draft.photoId||''}">${draft.photoId?'':'📷 룩 사진 (선택)'}</div>${lookAnalyzing?'<div class="hint">🪄 AI가 룩 이름·태그 짓는 중…</div>':(hasAI()?'<div class="hint">🪄 사진 넣으면 AI가 룩 이름·태그를 제안해요 (수정 가능)</div>':'')}</div>
       <div class="field"><label>이름</label><input type="text" id="l-name" value="${esc(draft.name)}" placeholder="예) 데일리 캐주얼"></div>
       <div class="field"><label>TPO · 상황</label><div class="tagwrap" id="l-tpo">${tpoChips}</div></div>
       <div class="field"><label>스타일</label><div class="tagwrap" id="l-style">${styleChips}</div></div>
@@ -622,7 +622,7 @@ function lookForm(existing){
         <button class="btn primary" id="l-save">저장</button></div>`;
     openSheet(html);
     document.getElementById('pp').onclick=async()=>{sync();const id=await pickImage();if(!id)return;draft.photoId=id;
-      if(getKey()){lookAnalyzing=true;paint();classifyLook(id).then(r=>{if(draft.photoId!==id)return;if(r&&typeof r==='object'){let did=false;if(r.name&&!draft.name){draft.name=r.name;did=true;}if(r.memo&&!draft.memo){draft.memo=r.memo;did=true;}if(Array.isArray(r.tags)){for(const t of r.tags){if(TAG_PRESETS.includes(t)&&!draft.tags.includes(t)){draft.tags.push(t);did=true;}}}showToast(did?'AI가 이름·설명·태그를 채웠어요 ✨':'AI가 채울 게 없었어요');}}).catch(e=>showToast('AI 실패: '+(e.message||e))).finally(()=>{lookAnalyzing=false;paint();});}
+      if(hasAI()){lookAnalyzing=true;paint();classifyLook(id).then(r=>{if(draft.photoId!==id)return;if(r&&typeof r==='object'){let did=false;if(r.name&&!draft.name){draft.name=r.name;did=true;}if(r.memo&&!draft.memo){draft.memo=r.memo;did=true;}if(Array.isArray(r.tags)){for(const t of r.tags){if(TAG_PRESETS.includes(t)&&!draft.tags.includes(t)){draft.tags.push(t);did=true;}}}showToast(did?'AI가 이름·설명·태그를 채웠어요 ✨':'AI가 채울 게 없었어요');}}).catch(e=>showToast('AI 실패: '+(e.message||e))).finally(()=>{lookAnalyzing=false;paint();});}
       else paint();};
     document.getElementById('l-pick').onclick=()=>{sync();itemPicker(draft.itemIds,ids=>{draft.itemIds=ids;paint();});};
     const tagToggle=e=>{const c=e.target.closest('[data-tag]');if(!c)return;sync();const t=c.dataset.tag;const i=draft.tags.indexOf(t);if(i>=0)draft.tags.splice(i,1);else draft.tags.push(t);paint();};
@@ -793,6 +793,15 @@ function settings(){
 /* ----- AI 코디 추천 (Gemini) ----- */
 const GEMINI_MODELS=['gemini-flash-latest','gemini-2.5-flash','gemini-2.0-flash-001','gemini-2.5-flash-lite'];
 const getKey=()=>localStorage.getItem('gemini_key')||'';
+// 공유 AI 프록시(Cloudflare Worker): 키를 서버에 숨겨둠 → 개인 키 없어도 AI 사용 가능
+const AI_PROXY='https://lookbook-ai-proxy.vercel.app/api/gemini';
+const hasAI=()=>!!getKey()||!!AI_PROXY;
+// 개인 키 있으면 Gemini 직접 호출, 없으면 프록시 경유
+function geminiFetch(m,payload,signal){
+  const key=getKey();
+  if(key)return fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(key)}`,{method:'POST',headers:{'Content-Type':'application/json'},signal,body:JSON.stringify(payload)});
+  return fetch(AI_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},signal,body:JSON.stringify({model:m,payload})});
+}
 function matchIds(names){return(names||[]).map(n=>{const it=state.items.find(i=>i.name===n)||state.items.find(i=>i.name&&n&&i.name.includes(n));return it&&it.id;}).filter(Boolean);}
 async function geminiRecommend(situation){
   const items=state.items.map(i=>{const sub=i.subcategory?'/'+i.subcategory:'';const mat=(i.materials&&i.materials.length)?' ['+i.materials.join(',')+']':'';const col=(i.colors&&i.colors.length)?' 색:'+i.colors.join('/'):'';return `${i.name} (${i.category}${sub}${mat}${col})`;}).join(', ');
@@ -800,9 +809,7 @@ async function geminiRecommend(situation){
   let lastErr='';
   for(const m of GEMINI_MODELS){
     for(let attempt=0;attempt<3;attempt++){
-      const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(getKey())}`,{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.9,responseMimeType:'application/json'}})});
+      const res=await geminiFetch(m,{contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.9,responseMimeType:'application/json'}});
       if(res.status===404){lastErr='404 '+m;break;}
       if([429,500,502,503].includes(res.status)){lastErr=res.status+' '+m;await new Promise(r=>setTimeout(r,900*(attempt+1)));continue;}
       if(!res.ok)throw new Error('API '+res.status+' — '+(await res.text()).slice(0,160));
@@ -820,9 +827,7 @@ async function geminiVision(photoId,prompt){
   for(const m of GEMINI_MODELS){
     for(let attempt=0;attempt<3;attempt++){
       const ctrl=new AbortController();const to=setTimeout(()=>ctrl.abort(),25000);let res;
-      try{res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(getKey())}`,{
-        method:'POST',headers:{'Content-Type':'application/json'},signal:ctrl.signal,
-        body:JSON.stringify({contents:[{parts:[{inlineData:{mimeType:pb.type||'image/jpeg',data:b64}},{text:prompt}]}],generationConfig:{temperature:.4,responseMimeType:'application/json'}})});}
+      try{res=await geminiFetch(m,{contents:[{parts:[{inlineData:{mimeType:pb.type||'image/jpeg',data:b64}},{text:prompt}]}],generationConfig:{temperature:.4,responseMimeType:'application/json'}},ctrl.signal);}
       catch(e){lastErr=(e.name==='AbortError'?'응답 지연':'네트워크')+' '+m;await new Promise(r=>setTimeout(r,600*(attempt+1)));continue;}
       finally{clearTimeout(to);}
       if(res.status===404){lastErr='404 '+m;break;}
@@ -856,7 +861,7 @@ async function getWeekWeather(){const c=await getGeo();
   return map;}
 async function loadWeekWeather(){showToast('날씨 확인 중…');try{state.weekWeather=await getWeekWeather();render();}catch(e){showToast('날씨 실패: '+(e.message||e));}}
 function aiRecommend(){
-  if(!getKey()){alert('먼저 ⚙️ 설정에 Gemini API 키를 넣어주세요.');settings();return;}
+  if(!hasAI()){alert('먼저 ⚙️ 설정에 Gemini API 키를 넣어주세요.');settings();return;}
   if(!state.items.length){alert('옷장에 옷을 먼저 등록해 주세요.');return;}
   let situation='';
   function inputStep(){
