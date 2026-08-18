@@ -846,6 +846,10 @@ async function importAll(file){
 }
 function settings(){
   openSheet(`<h2>설정 · 백업</h2>
+    <div class="field"><label>🏷 닉네임</label>
+      <input type="text" id="s-nick" maxlength="10" value="${esc(MYNAME==='나'?'':MYNAME)}" placeholder="예: 유링">
+      <div class="hint">옷장·룩 탭과 디데이에 표시돼요.</div></div>
+    <div class="btnrow" style="margin-bottom:18px"><button class="btn primary" id="s-savenick">닉네임 저장</button></div>
     <div class="field"><label>✨ AI 추천 · Gemini API 키</label>
       <input type="text" id="s-key" value="${esc(getKey())}" placeholder="AIza... (Google AI Studio 무료 발급)">
       <div class="hint">이 기기에만 저장돼요. 무료 등급으로 충분해요.</div></div>
@@ -859,6 +863,13 @@ function settings(){
     <div class="btnrow"><button class="btn ghost" data-close="1">닫기</button></div>`);
   sb.auth.getUser().then(({data})=>{const el=document.getElementById('s-acct');if(el&&data&&data.user)el.textContent=data.user.email;});
   document.getElementById('s-logout').onclick=logout;
+  document.getElementById('s-savenick').onclick=async()=>{
+    const n=document.getElementById('s-nick').value.trim();
+    if(!n){alert('닉네임을 입력해주세요.');return;}
+    const b=document.getElementById('s-savenick');b.disabled=true;b.textContent='저장 중…';
+    try{const {error}=await sb.from('profiles').update({display_name:n}).eq('user_id',MYUID);if(error)throw error;MYNAME=n;showToast('닉네임 저장됐어요 ✓');closeSheet();render();}
+    catch(e){b.disabled=false;b.textContent='닉네임 저장';alert('저장 실패: '+(e.message||e));}
+  };
   document.getElementById('s-howto').onclick=()=>{closeSheet();showOnboarding();};
   document.getElementById('s-savekey').onclick=()=>{localStorage.setItem('gemini_key',document.getElementById('s-key').value.trim());alert('키 저장됨! 룩 탭의 ✨ AI 코디 추천을 쓸 수 있어요.');};
   document.getElementById('s-exp').onclick=exportAll;
