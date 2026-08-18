@@ -586,6 +586,11 @@ function localMascot(){
   const d=new Date();const idx=(d.getFullYear()+d.getMonth()*31+d.getDate())%pool.length;
   return pool[idx];
 }
+// 둘째(답장) 말풍선 — 그날그날 다른 로컬 문구
+function localReply(){
+  const pool=['앨범에서 골라봐 ✨','오늘도 예쁘게 입자 🌷','뭐 입을지 같이 골라줄게 👀','거울 앞에서 고민 중? 😆','좋아하는 옷부터 꺼내보자 💕','오늘 룩 기대된다! 🎀','천천히 골라도 돼 🍀'];
+  const d=new Date();return pool[(d.getFullYear()+d.getMonth()*31+d.getDate()+3)%pool.length];
+}
 function mascotCached(){try{const c=JSON.parse(localStorage.getItem(MASCOT_KEY)||'null');return(c&&c.uid===MYUID)?sanitizeMascot(c.text):'';}catch(e){return'';}}
 let _mascotBusy=false;
 async function refreshMascot(){
@@ -595,6 +600,17 @@ async function refreshMascot(){
   if(!hasAI()||_mascotBusy)return;_mascotBusy=true;
   try{const text=await mascotLine();if(text){const cur=document.getElementById('mascot-bubble');if(cur)cur.textContent=text;localStorage.setItem(MASCOT_KEY,JSON.stringify({date:today,uid:MYUID,text}));}}
   catch(e){}finally{_mascotBusy=false;}
+}
+// 마스코트를 톡 누르면 즉석에서 새 대사(캐시 갱신)
+async function tapMascot(){
+  const el=document.getElementById('mascot-bubble');if(!el||_mascotBusy)return;
+  if(!hasAI()){el.textContent=localMascot();return;}
+  _mascotBusy=true;const prev=el.textContent;el.textContent='음… 뭐라고 할까? 🤔';
+  try{const text=await mascotLine();
+    if(text){el.textContent=text;localStorage.setItem(MASCOT_KEY,JSON.stringify({date:ymd(new Date()),uid:MYUID,text}));}
+    else{el.textContent=prev;showToast('AI가 지금 잠깐 바빠요 🥲 곧 다시!');}}
+  catch(e){el.textContent=prev;}
+  finally{_mascotBusy=false;}
 }
 async function mascotLine(){
   const items=state.myItems||[];const total=items.length;
@@ -638,7 +654,7 @@ function viewCloset(){
     return head+tog+`<button class="backlink" data-action="albumback">‹ 앨범</button><div class="sec"><h2>${esc(state.album)}</h2><span class="pcount">${list.length} 벌</span></div>`+(partner?'':selectBar())+itemCards(list);
   }
   const mline=mascotCached()||localMascot();
-  const bubble=partner?'':`<div class="bubbles"><div class="bubble" id="mascot-bubble">${esc(mline)}</div><div class="bubble r">앨범에서 골라봐 ✨</div><div class="delivered">Delivered</div></div>`;
+  const bubble=partner?'':`<div class="bubbles"><div class="bubble" id="mascot-bubble" data-action="mascottap" title="톡 누르면 새 대사 ✨" style="cursor:pointer">${esc(mline)}</div><div class="bubble r">${esc(localReply())}</div><div class="delivered">Delivered</div></div>`;
   const anySeason=state.items.some(i=>i.season);
   const bys=[['category','카테고리'],['color','색상'],...(anySeason?[['season','시즌']]:[])];
   const byChips=`<div class="chips">`+bys.map(([k,l])=>`<button class="chip ${state.albumBy===k?'on':''}" data-action="albumby" data-by="${k}">${l}</button>`).join('')+`</div>`;
@@ -1340,6 +1356,7 @@ document.body.addEventListener('click',e=>{
   else if(a==='settings')settings();
   else if(a==='stats')statsSheet();
   else if(a==='airec')aiRecommend();
+  else if(a==='mascottap')tapMascot();
   else if(a==='todayoutfit')showToday();
   else if(a==='lookrate')lookRate();
   else if(a==='cat'){state.catFilter=el.dataset.cat||null;render();}
