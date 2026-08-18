@@ -223,6 +223,17 @@
   .ob-rct{text-align:center; font-weight:800; font-size:15px; margin-bottom:10px}
   .ob-rl{display:flex; justify-content:space-between; font-size:11px; padding:3px 0; border-bottom:1px dashed #ddd}
   .ob-bar{height:26px; margin-top:12px; background:repeating-linear-gradient(90deg,#222 0 2px,#fff 2px 4px,#222 4px 7px,#fff 7px 9px)}
+  /* auth / login */
+  #authRoot .auth-bg{position:fixed; inset:0; z-index:80; background:var(--bg); display:flex; align-items:center; justify-content:center; padding:26px}
+  .auth-card{width:100%; max-width:340px; background:var(--card); border-radius:24px; padding:34px 26px; box-shadow:var(--shadow-lg,0 12px 40px rgba(0,0,0,.12)); text-align:center}
+  .auth-logo{font-size:44px; margin-bottom:8px}
+  .auth-card h1{font-size:23px; font-weight:800; color:var(--ink); margin-bottom:4px}
+  .auth-sub{font-size:13px; color:var(--muted); margin-bottom:22px}
+  .auth-card input{width:100%; box-sizing:border-box; border:1px solid var(--line); background:var(--bg); border-radius:14px; padding:14px 16px; font-size:15px; color:var(--ink); margin-bottom:11px; outline:none}
+  .auth-card input:focus{border-color:var(--pink)}
+  .auth-go{width:100%; margin-top:5px}
+  .auth-msg{min-height:18px; font-size:13px; color:var(--muted); margin-top:12px}
+  .auth-toggle{background:none; border:none; color:var(--blue,#3a86ff); font-size:14px; margin-top:16px; cursor:pointer; font-weight:600}
 </style>
 
 <header>
@@ -244,17 +255,19 @@
 <div id="modalRoot"></div>
 <div id="toast"></div>
 <div id="onboarding"></div>
+<div id="authRoot"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* ---------------- storage (IndexedDB) ---------------- */
-const DBN='lookbook';
-function db(){return new Promise((res,rej)=>{const r=indexedDB.open(DBN,2);
-  r.onupgradeneeded=()=>{const d=r.result;['items','looks','days','photos','wishlist'].forEach(s=>{if(!d.objectStoreNames.contains(s))d.createObjectStore(s,{keyPath:'id'});});};
-  r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);});}
-function all(store){return new Promise(async(res,rej)=>{const d=await db();const t=d.transaction(store);const rq=t.objectStore(store).getAll();rq.onsuccess=()=>res(rq.result);rq.onerror=()=>rej(rq.error);});}
-function getOne(store,id){return new Promise(async(res,rej)=>{const d=await db();const t=d.transaction(store);const rq=t.objectStore(store).get(id);rq.onsuccess=()=>res(rq.result);rq.onerror=()=>rej(rq.error);});}
-function put(store,obj){return new Promise(async(res,rej)=>{const d=await db();const t=d.transaction(store,'readwrite');t.objectStore(store).put(obj);t.oncomplete=()=>res(obj);t.onerror=()=>rej(t.error);});}
-function del(store,id){return new Promise(async(res,rej)=>{const d=await db();const t=d.transaction(store,'readwrite');t.objectStore(store).delete(id);t.oncomplete=()=>res();t.onerror=()=>rej(t.error);});}
+/* ---------------- storage (Supabase cloud) ---------------- */
+const SB_URL='https://brkpvwuictvdnqyojjkg.supabase.co';
+const SB_KEY='sb_publishable_YGl42hSSGKCS8ulowQJBdQ_6Vp2ABJM';
+let sb=null, HH=null, MYUID=null;   // supabase client, 커플 household id, 내 user id
+const _TBL={items:'items',looks:'looks',wishlist:'wishlist',days:'days'};
+async function all(store){const t=_TBL[store];if(!t)return [];const {data,error}=await sb.from(t).select('data');if(error)throw error;return data.map(r=>r.data);}
+async function getOne(store,id){const t=_TBL[store];if(!t)return null;const {data,error}=await sb.from(t).select('data').eq('id',id).limit(1);if(error)throw error;return data[0]?data[0].data:null;}
+async function put(store,obj){const t=_TBL[store];if(!t)return obj;const row=(t==='days')?{id:obj.id,user_id:MYUID,data:obj}:{id:obj.id,household_id:HH,data:obj};const {error}=await sb.from(t).upsert(row);if(error)throw error;return obj;}
+async function del(store,id){const t=_TBL[store];if(!t)return;const {error}=await sb.from(t).delete().eq('id',id);if(error)throw error;}
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
 /* ---------------- images ---------------- */
@@ -274,9 +287,10 @@ async function shrink(file,max=1100,q=.82){
   if(!blob)throw new Error('toBlob→null(용량초과 가능)');
   return blob;
 }
-// iOS Safari는 Blob을 IndexedDB에 저장하면 실패(에러=null) → ArrayBuffer로 저장하고 읽을 때 Blob 복원
-async function storePhoto(id,blob){const buf=await blob.arrayBuffer();return put('photos',{id,buf,type:blob.type||'image/jpeg'});}
-function blobOf(rec){if(!rec)return null;if(rec.blob)return rec.blob;if(rec.buf)return new Blob([rec.buf],{type:rec.type||'image/jpeg'});return null;}
+// 사진은 Supabase Storage(photos 버킷)에 저장. 경로=household_id/photoId.jpg → 커플이 공유
+function photoPath(id){return HH+'/'+id+'.jpg';}
+async function storePhoto(id,blob){const {error}=await sb.storage.from('photos').upload(photoPath(id),blob,{upsert:true,contentType:'image/jpeg'});if(error)throw error;return {id};}
+async function getPhotoBlob(id){if(!id)return null;const r=await fetch(photoURL(id));if(!r.ok)return null;return await r.blob();}
 function pickImage(){return new Promise(res=>{
   const i=document.createElement('input');i.type='file';i.accept='image/*';
   i.style.cssText='position:fixed;left:-9999px;top:0;opacity:0;width:1px;height:1px';
@@ -290,8 +304,7 @@ function pickImage(){return new Promise(res=>{
   i.click();
 });}
 const _urls={};
-async function photoURL(id){if(!id)return'';if(_urls[id])return _urls[id];
-  const p=await getOne('photos',id);const b=blobOf(p);if(!b)return'';const u=URL.createObjectURL(b);_urls[id]=u;return u;}
+function photoURL(id){if(!id)return'';if(_urls[id])return _urls[id];const u=sb.storage.from('photos').getPublicUrl(photoPath(id)).data.publicUrl;_urls[id]=u;return u;}
 async function hydrate(root){for(const el of (root||document).querySelectorAll('[data-photo]')){
   const id=el.dataset.photo;const u=id?await photoURL(id):'';
   if(el.tagName==='IMG'){if(u)el.src=u;} else {if(u){el.style.backgroundImage=`url(${u})`;el.textContent='';}}
@@ -757,7 +770,8 @@ async function moveToWardrobe(w){
 function blobToB64(b){return new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(b);});}
 async function exportAll(){
   const data={v:1,items:await all('items'),looks:await all('looks'),days:await all('days'),wishlist:await all('wishlist'),photos:[]};
-  for(const p of await all('photos')){const b=blobOf(p);if(b)data.photos.push({id:p.id,b64:await blobToB64(b)});}
+  const pids=new Set();[...data.items,...data.looks,...data.days,...data.wishlist].forEach(o=>{if(o&&o.photoId)pids.add(o.photoId);});
+  for(const pid of pids){const b=await getPhotoBlob(pid);if(b)data.photos.push({id:pid,b64:await blobToB64(b)});}
   const blob=new Blob([JSON.stringify(data)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download=`룩북백업_${ymd(new Date())}.json`;a.click();
@@ -779,11 +793,15 @@ function settings(){
       <input type="text" id="s-key" value="${esc(getKey())}" placeholder="AIza... (Google AI Studio 무료 발급)">
       <div class="hint">이 기기에만 저장돼요. 무료 등급으로 충분해요.</div></div>
     <div class="btnrow" style="margin-bottom:18px"><button class="btn ghost" id="s-savekey">🔑 키 저장</button></div>
-    <div class="hint" style="margin-bottom:14px">사진은 이 기기에만 저장돼요. 기기를 바꾸거나 폰이 저장공간을 정리해도 안 잃도록 가끔 백업 파일을 내보내 두세요.</div>
+    <div class="hint" style="margin-bottom:14px">☁️ 옷장·룩은 클라우드에 자동 저장돼 둘이 공유돼요. 필요하면 백업 파일로 내려받을 수도 있어요.</div>
     <div class="btnrow" style="margin-bottom:10px"><button class="btn primary" id="s-exp">📤 백업 내보내기</button></div>
     <div class="btnrow" style="margin-bottom:16px"><button class="btn ghost" id="s-imp">📥 백업 불러오기</button></div>
     <div class="btnrow" style="margin-bottom:16px"><button class="btn ghost" id="s-howto">📖 사용법 다시 보기</button></div>
+    <div class="field"><label>👤 계정</label><div class="hint" id="s-acct">…</div></div>
+    <div class="btnrow" style="margin-bottom:10px"><button class="btn ghost" id="s-logout">로그아웃</button></div>
     <div class="btnrow"><button class="btn ghost" data-close="1">닫기</button></div>`);
+  sb.auth.getUser().then(({data})=>{const el=document.getElementById('s-acct');if(el&&data&&data.user)el.textContent=data.user.email;});
+  document.getElementById('s-logout').onclick=logout;
   document.getElementById('s-howto').onclick=()=>{closeSheet();showOnboarding();};
   document.getElementById('s-savekey').onclick=()=>{localStorage.setItem('gemini_key',document.getElementById('s-key').value.trim());alert('키 저장됨! 룩 탭의 ✨ AI 코디 추천을 쓸 수 있어요.');};
   document.getElementById('s-exp').onclick=exportAll;
@@ -821,7 +839,7 @@ async function geminiRecommend(situation){
   throw new Error('AI 서버가 잠시 바빠요 ('+lastErr+'). 잠시 후 다시 시도해 주세요');
 }
 async function geminiVision(photoId,prompt){
-  const p=await getOne('photos',photoId);const pb=blobOf(p);if(!pb)throw new Error('사진 없음');
+  const pb=await getPhotoBlob(photoId);if(!pb)throw new Error('사진 없음');
   const b64=(await blobToB64(pb)).split(',')[1];
   let lastErr='';
   for(const m of GEMINI_MODELS){
@@ -913,7 +931,7 @@ function aiRecommend(){
 /* ----- 룩 이미지로 저장·공유 ----- */
 function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 function drawCover(ctx,img,x,y,w,h,r){ctx.save();roundRect(ctx,x,y,w,h,r);ctx.clip();const ir=img.width/img.height,tr=w/h;let sw,sh,sx,sy;if(ir>tr){sh=img.height;sw=sh*tr;sx=(img.width-sw)/2;sy=0;}else{sw=img.width;sh=sw/tr;sx=0;sy=(img.height-sh)/2;}ctx.drawImage(img,sx,sy,sw,sh,x,y,w,h);ctx.restore();}
-async function loadImg(photoId){const p=await getOne('photos',photoId);const b=blobOf(p);if(!b)return null;try{return await createImageBitmap(b);}catch(e){return null;}}
+async function loadImg(photoId){const b=await getPhotoBlob(photoId);if(!b)return null;try{return await createImageBitmap(b);}catch(e){return null;}}
 async function shareLook(look){
   const W=1080,H=1350,m=64;const c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d');
   const g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,'#f1f3f2');g.addColorStop(.5,'#e9edee');g.addColorStop(1,'#e0e7ea');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
@@ -1037,6 +1055,53 @@ document.body.addEventListener('click',e=>{
   else if(a==='monthnav'){state.month=new Date(state.month.getFullYear(),state.month.getMonth()+ +el.dataset.d,1);render();}
 });
 
-refresh();
-if(!localStorage.getItem('onboarded'))setTimeout(showOnboarding,250);
+/* ---------------- auth / boot ---------------- */
+function showAuth(){
+  let mode='login';
+  const r=document.getElementById('authRoot');
+  const draw=()=>{r.innerHTML=`<div class="auth-bg"><div class="auth-card">
+    <div class="auth-logo">👗</div>
+    <h1>내 옷장 룩북</h1>
+    <p class="auth-sub">${mode==='login'?'로그인해서 옷장을 열어요':'계정을 만들어 시작해요'}</p>
+    <input id="au-email" type="email" inputmode="email" autocomplete="email" placeholder="이메일">
+    <input id="au-pw" type="password" autocomplete="current-password" placeholder="비밀번호 (6자 이상)">
+    <button class="btn primary auth-go" id="au-go">${mode==='login'?'로그인':'회원가입'}</button>
+    <div id="au-msg" class="auth-msg"></div>
+    <button class="auth-toggle" id="au-toggle">${mode==='login'?'계정이 없어요 · 회원가입':'이미 계정이 있어요 · 로그인'}</button>
+  </div></div>`;
+    const msg=document.getElementById('au-msg');
+    document.getElementById('au-toggle').onclick=()=>{mode=mode==='login'?'signup':'login';draw();};
+    document.getElementById('au-go').onclick=async()=>{
+      const email=document.getElementById('au-email').value.trim();
+      const pw=document.getElementById('au-pw').value;
+      if(!email||!pw){msg.textContent='이메일과 비밀번호를 입력해주세요.';return;}
+      msg.style.color='var(--muted)';msg.textContent='잠시만요…';
+      try{
+        const {error}=mode==='login'
+          ? await sb.auth.signInWithPassword({email,password:pw})
+          : await sb.auth.signUp({email,password:pw});
+        if(error)throw error;
+        await afterLogin();
+      }catch(e){msg.style.color='var(--pink)';msg.textContent=(mode==='login'?'로그인 실패: ':'가입 실패: ')+(e.message||e);}
+    };
+    document.getElementById('au-pw').onkeydown=e=>{if(e.key==='Enter')document.getElementById('au-go').click();};
+  };
+  draw();
+}
+async function afterLogin(){
+  const {data:{user}}=await sb.auth.getUser(); MYUID=user.id;
+  const {data:hh,error}=await sb.rpc('init_profile');
+  if(error){alert('프로필 생성 오류: '+error.message);return;}
+  HH=hh;
+  document.getElementById('authRoot').innerHTML='';
+  await refresh();
+  if(!localStorage.getItem('onboarded'))setTimeout(showOnboarding,250);
+}
+async function logout(){await sb.auth.signOut();location.reload();}
+async function boot(){
+  sb=window.supabase.createClient(SB_URL,SB_KEY);
+  const {data:{session}}=await sb.auth.getSession();
+  if(session)await afterLogin(); else showAuth();
+}
+boot();
 </script>
