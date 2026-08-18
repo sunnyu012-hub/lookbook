@@ -443,9 +443,24 @@ function showToast(msg,undoFn){
 function bulkAdd(){
   const i=document.createElement('input');i.type='file';i.accept='image/*';i.multiple=true;
   i.style.cssText='position:fixed;left:-9999px;top:0;opacity:0;width:1px;height:1px';
-  i.onchange=async()=>{const files=[...i.files];i.remove();if(!files.length)return;showToast(`${files.length}장 처리 중…`);
-    let n=0;for(const f of files){try{const blob=await shrink(f);const pid=uid();await storePhoto(pid,blob);await put('items',{id:uid(),name:'',category:'상의',photoId:pid});n++;}catch(e){}}
-    await refresh();showToast(`옷 ${n}장 추가됨 · 눌러서 이름·종류 채우기`);};
+  i.onchange=async()=>{const files=[...i.files];i.remove();if(!files.length)return;
+    const useAI=hasAI();let n=0,ai=0;
+    for(let k=0;k<files.length;k++){const f=files[k];
+      showToast(`${files.length}장 중 ${k+1}번째 ${useAI?'AI 분석':'추가'} 중…`);
+      try{const blob=await shrink(f);const pid=uid();await storePhoto(pid,blob);
+        const obj={id:uid(),name:'',category:'상의',photoId:pid,materials:[],colors:[]};
+        if(useAI){try{const r=await classifyPhoto(pid);if(r&&typeof r==='object'){
+          if(r.name)obj.name=r.name;
+          if(r.category&&CATS.includes(r.category))obj.category=r.category;
+          if(r.subcategory&&(SUBCATS[obj.category]||[]).includes(r.subcategory))obj.subcategory=r.subcategory;
+          if(Array.isArray(r.colors)){const cc=r.colors.filter(c=>COLORS.some(x=>x.n===c));if(cc.length)obj.colors=cc;}
+          if(r.season&&SEASONS.includes(r.season))obj.season=r.season;
+          ai++;}}catch(e){}}
+        await put('items',obj);n++;
+      }catch(e){}
+    }
+    await refresh();
+    showToast(useAI?`옷 ${n}장 추가 · ${ai}장 AI 자동완성 ✨ (눌러서 확인·수정)`:`옷 ${n}장 추가됨 · 눌러서 이름·종류 채우기`);};
   document.body.appendChild(i);
   i.click();
 }
@@ -503,14 +518,21 @@ async function deleteSelected(){
 }
 function lookUse(lookId){return state.days.filter(d=>d.lookId===lookId).length;}
 function statsSheet(){
-  const ww=state.items.map(i=>({i,w:wearOf(i.id).count}));
-  const worn=ww.filter(x=>x.w>0).sort((a,b)=>b.w-a.w);
-  const never=ww.filter(x=>x.w===0).length;
+  const ww=state.items.map(i=>({i,w:wearOf(i.id)}));
+  const worn=ww.filter(x=>x.w.count>0).sort((a,b)=>b.w.count-a.w.count);
+  const never=ww.filter(x=>x.w.count===0).length;
   const topItems=worn.slice(0,5);
   const looksU=state.looks.map(l=>({l,n:lookUse(l.id)})).filter(x=>x.n>0).sort((a,b)=>b.n-a.n).slice(0,3);
   const acc=worn.filter(x=>['가방','액세서리','신발'].includes(x.i.category)).slice(0,3);
   const spend=state.items.reduce((a,i)=>a+(+i.price||0),0);
+  const sleeping=ww.filter(x=>x.w.count===0||daysSince(x.w.last)>=60).sort((a,b)=>daysSince(b.w.last)-daysSince(a.w.last)).slice(0,6);
+  const catPairs=CATS.map(c=>[c,state.items.filter(i=>i.category===c).length]).filter(p=>p[1]);
+  const colPairs=COLORS.map(c=>({n:c.n,hex:c.c,v:state.items.filter(i=>(i.colors||[]).includes(c.n)).length})).filter(p=>p.v).sort((a,b)=>b.v-a.v);
+  const cpw=x=>{const p=+x.i.price||0;return(p&&x.w.count)?` · ₩${Math.round(p/x.w.count).toLocaleString()}/회`:'';};
+  const sleepLabel=x=>x.w.count===0?'아직 못 입음':`${Math.max(1,Math.floor(daysSince(x.w.last)/30))}개월째`;
   const row=(photoId,name,val)=>`<div class="statrow"><img class="statimg" data-photo="${photoId||''}" alt=""><span class="statname">${esc(name)}</span><span class="statval">${val}</span></div>`;
+  const bars=pairs=>{const max=Math.max(1,...pairs.map(p=>p[1]));return pairs.map(p=>`<div style="display:flex;align-items:center;gap:9px;margin-bottom:7px"><span style="width:56px;font-size:12px;color:var(--ink-2);flex:none">${esc(p[0])}</span><div style="flex:1;background:var(--thumb);border-radius:6px;height:13px;overflow:hidden"><div style="width:${Math.round(p[1]/max*100)}%;height:100%;background:var(--pink)"></div></div><span style="font-size:12px;color:var(--muted);width:24px;text-align:right;flex:none">${p[1]}</span></div>`).join('');};
+  const colorBars=(()=>{const max=Math.max(1,...colPairs.map(p=>p.v));return colPairs.map(p=>`<div style="display:flex;align-items:center;gap:9px;margin-bottom:7px"><span style="width:66px;font-size:12px;color:var(--ink-2);flex:none"><span class="swatch" style="background:${p.hex}"></span> ${esc(p.n)}</span><div style="flex:1;background:var(--thumb);border-radius:6px;height:13px;overflow:hidden"><div style="width:${Math.round(p.v/max*100)}%;height:100%;background:${p.hex}"></div></div><span style="font-size:12px;color:var(--muted);width:24px;text-align:right;flex:none">${p.v}</span></div>`).join('');})();
   openSheet(`<h2>내 스타일 통계 📊</h2>
     <div class="statgrid">
       <div class="statbox"><div class="statnum">${state.items.length}</div><div class="statlbl">옷</div></div>
@@ -519,9 +541,12 @@ function statsSheet(){
       <div class="statbox"><div class="statnum">${never}</div><div class="statlbl">안 입은 옷</div></div>
     </div>
     ${spend?`<div class="banner" style="background:var(--pink-soft);color:var(--pink-ink);justify-content:center;font-weight:700">👛 지금까지 옷값 ₩${spend.toLocaleString()}</div>`:''}
-    <div class="field"><label>자주 입은 옷 TOP</label>${topItems.length?topItems.map(x=>row(x.i.photoId,x.i.name||x.i.category||'옷',x.w+'회')).join(''):'<div class="hint">아직 착장 기록이 없어요. 캘린더·주간에서 그날 코디를 기록해 보세요.</div>'}</div>
+    <div class="field"><label>자주 입은 옷 TOP</label>${topItems.length?topItems.map(x=>row(x.i.photoId,x.i.name||x.i.category||'옷',x.w.count+'회'+cpw(x))).join(''):'<div class="hint">아직 착장 기록이 없어요. 캘린더·주간에서 그날 코디를 기록해 보세요.</div>'}</div>
+    ${sleeping.length?`<div class="field"><label>😴 잠자는 옷장 (오래 안 입은 옷)</label>${sleeping.map(x=>row(x.i.photoId,x.i.name||x.i.category||'옷',sleepLabel(x))).join('')}</div>`:''}
+    ${catPairs.length?`<div class="field"><label>카테고리 분포</label>${bars(catPairs)}</div>`:''}
+    ${colPairs.length?`<div class="field"><label>색상 분포</label>${colorBars}</div>`:''}
     ${looksU.length?`<div class="field"><label>자주 입은 룩</label>${looksU.map(x=>row(lookThumb(x.l),x.l.name||'룩',x.n+'회')).join('')}</div>`:''}
-    ${acc.length?`<div class="field"><label>자주 든 가방·신발·액세서리</label>${acc.map(x=>row(x.i.photoId,x.i.name||x.i.category,x.w+'회')).join('')}</div>`:''}
+    ${acc.length?`<div class="field"><label>자주 든 가방·신발·액세서리</label>${acc.map(x=>row(x.i.photoId,x.i.name||x.i.category,x.w.count+'회')).join('')}</div>`:''}
     <div class="btnrow"><button class="btn primary" data-close="1">닫기</button></div>`);
 }
 function ownerToggle(kind){
@@ -534,7 +559,7 @@ function viewCloset(){
   const tog=PARTNER?ownerToggle('closet'):'';
   const head=pageHead(partner?`${PARTNERNAME} 옷장`:'옷장',state.items.length?`${state.items.length} 벌`:'',partner?'':'add');
   const search=`<input type="text" class="search" id="closet-search" placeholder="🔍 옷 검색" value="${esc(state.search)}">`;
-  const bulk=partner?'':`<button class="textcta" data-action="bulkadd">＋ 여러 장 한번에 추가</button>`;
+  const bulk=partner?'':`<button class="textcta" data-action="bulkadd">＋ 여러 장 한번에 추가${hasAI()?' · AI 자동완성 ✨':''}</button>`;
   if(!state.items.length)return head+tog+search+`<div class="empty-state"><div class="big">🧺</div>${partner?`${esc(PARTNERNAME)} 옷장이 아직 비었어요.`:'옷장이 비었어요.<br>아래로 옷을 담아 시작해 보세요.<br><br>'+bulk}</div>`;
   if(state.search){
     const q=state.search.toLowerCase();
@@ -565,7 +590,7 @@ function viewLooks(){
   const usedTags=[...new Set(state.looks.flatMap(l=>l.tags||[]))];
   const none=!state.favOnly&&!state.tagFilter;
   const head=pageHead(partner?`${PARTNERNAME} 룩`:'룩',state.looks.length?`${state.looks.length} 개`:'',partner?'':'룩 추가');
-  const aiBtn=partner?'':`<button class="textcta" data-action="airec">✨ AI 코디 추천</button> <button class="textcta" data-action="lookrate">📸 이 룩 어때?</button>`;
+  const aiBtn=partner?'':`<button class="textcta" data-action="todayoutfit">🌤️ 오늘 뭐 입지</button> <button class="textcta" data-action="airec">✨ AI 코디 추천</button> <button class="textcta" data-action="lookrate">📸 이 룩 어때?</button>`;
   const searchBox=state.looks.length?`<input type="text" class="search" id="looks-search" placeholder="룩 이름·태그·메모 검색" value="${esc(state.lookSearch)}">`:'';
   const chips=`<div class="chips">
     <button class="chip ${none?'on':''}" data-action="lookfilter" data-kind="all">전체</button>
@@ -668,7 +693,7 @@ function itemForm(existing,opts){
         <button class="btn primary" id="f-save">저장</button></div>`;
     openSheet(html);
     document.getElementById('pp').onclick=async()=>{sync();const id=await pickImage();if(!id)return;draft.photoId=id;
-      if(hasAI()){analyzing=true;paint();classifyPhoto(id).then(r=>{if(draft.photoId!==id)return;if(r&&typeof r==='object'){if(r.name&&!draft.name)draft.name=r.name;if(r.category&&CATS.includes(r.category))draft.category=r.category;if(r.subcategory&&(SUBCATS[draft.category]||[]).includes(r.subcategory))draft.subcategory=r.subcategory;if(Array.isArray(r.colors)){const cc=r.colors.filter(c=>COLORS.some(x=>x.n===c));if(cc.length)draft.colors=cc;}showToast('AI가 이름·색·종류를 채웠어요 ✨');}}).catch(e=>showToast('AI 실패: '+(e.message||e))).finally(()=>{analyzing=false;paint();});}
+      if(hasAI()){analyzing=true;paint();classifyPhoto(id).then(r=>{if(draft.photoId!==id)return;if(r&&typeof r==='object'){if(r.name&&!draft.name)draft.name=r.name;if(r.category&&CATS.includes(r.category))draft.category=r.category;if(r.subcategory&&(SUBCATS[draft.category]||[]).includes(r.subcategory))draft.subcategory=r.subcategory;if(Array.isArray(r.colors)){const cc=r.colors.filter(c=>COLORS.some(x=>x.n===c));if(cc.length)draft.colors=cc;}if(r.season&&SEASONS.includes(r.season)&&!draft.season)draft.season=r.season;showToast('AI가 이름·색·종류·계절을 채웠어요 ✨');}}).catch(e=>showToast('AI 실패: '+(e.message||e))).finally(()=>{analyzing=false;paint();});}
       else paint();};
     document.getElementById('f-cat').onchange=e=>{sync();draft.category=e.target.value;draft.subcategory='';paint();};
     document.getElementById('f-mats').onclick=e=>{const c=e.target.closest('[data-mat]');if(!c)return;sync();const t=c.dataset.mat;const i=draft.materials.indexOf(t);if(i>=0)draft.materials.splice(i,1);else draft.materials.push(t);paint();};
@@ -758,6 +783,7 @@ function itemPicker(selected,onDone){
 }
 
 /* ----- day detail ----- */
+function lastYearOf(dateId){const p=dateId.split('-');const pid=`${+p[0]-1}-${p[1]}-${p[2]}`;const r=state.days.find(x=>x.id===pid);return(r&&(r.photoId||r.lookId||(r.itemIds||[]).length||r.memo))?r:null;}
 async function dayDetail(dateId){
   const rec=(await getOne('days',dateId))||{id:dateId,lookId:'',photoId:'',itemIds:[],rating:0,memo:''};
   const draft={...rec,itemIds:[...(rec.itemIds||[])]};
@@ -766,7 +792,9 @@ async function dayDetail(dateId){
     const thumb=dayThumb(draft);
     const [y,mo,d]=dateId.split('-');
     const comboImgs=draft.itemIds.map(id=>{const it=itemById(id);return `<img data-photo="${it?it.photoId:''}" alt="">`;}).join('');
+    const ly=lastYearOf(dateId);
     const html=`<h2>${+mo}월 ${+d}일 코디</h2>
+      ${ly?`<div class="day-row" data-action="day" data-date="${ly.id}" style="margin-bottom:14px"><div class="thumb" data-photo="${dayThumb(ly)||''}">${dayThumb(ly)?'':'👗'}</div><div class="info"><div class="dlabel" style="font-size:14px">📅 작년 오늘</div><div class="dsub">${esc(ly.memo||(ly.lookId&&(lookById(ly.lookId)||{}).name)||'이날의 코디 보기')}</div></div></div>`:''}
       <div class="field"><div class="photo-pick" id="pp" data-photo="${thumb||''}">${thumb?'':'📷 입은 룩 사진'}</div>
         ${look?`<div class="hint">저장된 룩: <b>${esc(look.name||'룩')}</b></div>`:''}
         ${draft.itemIds.length?`<div class="selgrid">${comboImgs}</div>`:''}</div>
@@ -972,7 +1000,8 @@ name: 자세하고 구체적인 한글 이름 (색+소재+핏/디테일+종류�
 category: 반드시 다음 중 하나 — ${CATS.join(', ')}.
 subcategory: 위 category에 맞는 세부종류를 이 목록에서 하나만 골라 — ${JSON.stringify(SUBCATS)}.
 colors: 다음 목록에서 해당되는 것만 1~3개 배열 — ${COLORS.map(c=>c.n).join(', ')}.
-형식: {"name":"","category":"","subcategory":"","colors":[]}`);}
+season: 이 옷이 어울리는 계절 하나만 — ${SEASONS.join(', ')}.
+형식: {"name":"","category":"","subcategory":"","colors":[],"season":""}`);}
 function classifyLook(photoId){return geminiVision(photoId,`이 착장(코디) 사진을 보고 JSON으로만 답해.
 name: 이 코디를 자세히 묘사하는 한글 이름 (핵심 아이템·색·핏·무드 조합, 예: "베이지 오버핏 니트 & 스트레이트 데님 데일리룩", "블랙 미니원피스 오피스룩").
 memo: 이 코디를 2~3문장으로 자세히 설명 (어떤 아이템 조합인지, 색감·분위기, 어울리는 상황·계절, 스타일링 포인트).
@@ -1054,6 +1083,26 @@ async function getWeekWeather(){const c=await getGeo();
   for(let i=0;i<t.length;i++)map[t[i]]={code:d.daily.weather_code[i],max:Math.round(d.daily.temperature_2m_max[i]),min:Math.round(d.daily.temperature_2m_min[i])};
   return map;}
 async function loadWeekWeather(){showToast('날씨 확인 중…');try{state.weekWeather=await getWeekWeather();render();}catch(e){showToast('날씨 실패: '+(e.message||e));}}
+function bandTip(t){if(t<=4)return['❄️ 한파','패딩·두꺼운 코트에 목도리까지 단단히!'];if(t<=9)return['🧥 추움','코트·두꺼운 니트가 좋아요'];if(t<=16)return['🍂 쌀쌀','자켓·가디건, 긴팔 하나 챙겨요'];if(t<=22)return['🌤️ 선선','얇은 긴팔·셔츠 딱 좋은 날'];if(t<=27)return['👕 따뜻','반팔·얇은 옷으로 가볍게'];return['🔥 더움','민소매·반바지, 더위 조심!'];}
+function tempToSeasons(t){if(t<=9)return['겨울'];if(t<=16)return['가을','봄'];if(t<=22)return['봄','가을'];return['여름'];}
+function lookMatchesSeasons(l,seasons){const ss=(l.itemIds||[]).map(id=>{const it=itemById(id);return it&&it.season;}).filter(Boolean);if(!ss.length)return false;if(ss.includes('사계절'))return true;return ss.some(s=>seasons.includes(s));}
+async function showToday(){
+  openSheet(`<h2>🌤️ 오늘 뭐 입지</h2><div class="empty-state"><div class="big">📍</div>위치로 날씨 확인 중…</div>`);
+  let w;
+  try{w=await getWeather();}
+  catch(e){openSheet(`<h2>🌤️ 오늘 뭐 입지</h2><div class="hint">날씨를 못 가져왔어요: ${esc(e.message||e)}<br>위치 권한(허용)을 확인해 주세요.</div><div class="btnrow" style="margin-top:14px"><button class="btn ghost" data-close="1">닫기</button><button class="btn primary" id="td-retry">다시</button></div>`);const rb=document.getElementById('td-retry');if(rb)rb.onclick=showToday;return;}
+  const [band,tip]=bandTip(w.temp);const seasons=tempToSeasons(w.temp);
+  const matched=state.myLooks.filter(l=>lookMatchesSeasons(l,seasons));
+  const favs=state.myLooks.filter(l=>l.favorite);
+  const pool=(matched.length?matched:favs).slice(0,6);
+  const cards=pool.map(l=>`<div class="card" data-action="look" data-id="${l.id}"><img class="ph" data-photo="${lookThumb(l)||''}" alt=""><div class="body"><div class="name">${esc(l.name||'룩')}</div><div class="sub">${stars(l.rating)}</div></div></div>`).join('');
+  openSheet(`<h2>🌤️ 오늘 뭐 입지</h2>
+    <div class="banner" style="justify-content:center;font-size:15px;font-weight:700">${esc(w.desc)} · ${w.temp}° · ${band}</div>
+    <div class="eval-tip" style="margin-bottom:16px">${tip}</div>
+    <div class="field"><label>${matched.length?`이 기온대에 어울리는 룩 ${matched.length}개`:'이 기온대 룩이 아직 없어요 · 즐겨찾기에서 골라봐요'}</label>
+    ${pool.length?`<div class="grid">${cards}</div>`:'<div class="hint">룩을 저장하고 옷에 시즌을 넣으면 여기서 딱 맞게 추천돼요.</div>'}</div>
+    <div class="btnrow"><button class="btn primary" data-close="1">닫기</button></div>`);
+}
 function aiRecommend(){
   if(!hasAI()){alert('먼저 ⚙️ 설정에 Gemini API 키를 넣어주세요.');settings();return;}
   if(!state.items.length){alert('옷장에 옷을 먼저 등록해 주세요.');return;}
@@ -1206,6 +1255,7 @@ document.body.addEventListener('click',e=>{
   else if(a==='settings')settings();
   else if(a==='stats')statsSheet();
   else if(a==='airec')aiRecommend();
+  else if(a==='todayoutfit')showToday();
   else if(a==='lookrate')lookRate();
   else if(a==='cat'){state.catFilter=el.dataset.cat||null;render();}
   else if(a==='sortwear'){state.sortWear=!state.sortWear;render();}
