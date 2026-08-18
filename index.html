@@ -234,6 +234,16 @@
   .auth-go{width:100%; margin-top:5px}
   .auth-msg{min-height:18px; font-size:13px; color:var(--muted); margin-top:12px}
   .auth-toggle{background:none; border:none; color:var(--blue,#3a86ff); font-size:14px; margin-top:16px; cursor:pointer; font-weight:600}
+  /* AI 룩 평가 */
+  .eval-photo{width:100%; max-height:320px; object-fit:contain; border-radius:16px; background:var(--thumb); margin-bottom:12px}
+  .eval-score{font-size:42px; font-weight:800; color:var(--pink); text-align:center; line-height:1.05}
+  .eval-score span{font-size:17px; color:var(--muted); font-weight:600; margin-left:2px}
+  .eval-vibe{text-align:center; font-size:16px; font-weight:700; color:var(--ink); margin:4px 0 18px}
+  .eval-sec{background:var(--bg); border-radius:16px; padding:13px 16px; margin-bottom:11px}
+  .eval-h{font-size:14px; font-weight:800; color:var(--ink); margin-bottom:7px}
+  .eval-sec ul{margin:0; padding:0; list-style:none}
+  .eval-sec li{font-size:14px; color:var(--ink-2); line-height:1.55; margin-bottom:5px}
+  .eval-tip{background:#fdeef2; color:var(--ink); border-radius:14px; padding:12px 16px; font-size:14px; font-weight:600; text-align:center}
 </style>
 
 <header>
@@ -485,7 +495,7 @@ function viewLooks(){
   const usedTags=[...new Set(state.looks.flatMap(l=>l.tags||[]))];
   const none=!state.favOnly&&!state.tagFilter;
   const head=pageHead('룩',state.looks.length?`${state.looks.length} 개`:'','룩 추가');
-  const aiBtn=`<button class="textcta" data-action="airec">AI 코디 추천</button>`;
+  const aiBtn=`<button class="textcta" data-action="airec">✨ AI 코디 추천</button> <button class="textcta" data-action="lookrate">📸 이 룩 어때?</button>`;
   const searchBox=state.looks.length?`<input type="text" class="search" id="looks-search" placeholder="룩 이름·태그·메모 검색" value="${esc(state.lookSearch)}">`:'';
   const chips=`<div class="chips">
     <button class="chip ${none?'on':''}" data-action="lookfilter" data-kind="all">전체</button>
@@ -868,6 +878,34 @@ name: 이 코디를 자세히 묘사하는 한글 이름 (핵심 아이템·색�
 memo: 이 코디를 2~3문장으로 자세히 설명 (어떤 아이템 조합인지, 색감·분위기, 어울리는 상황·계절, 스타일링 포인트).
 tags: 다음 중 어울리는 것 1~4개만 배열로 — ${[...TPO_TAGS,...STYLE_TAGS].join(', ')}.
 형식: {"name":"","memo":"","tags":[]}`);}
+function evaluateLook(photoId){return geminiVision(photoId,`너는 발랄하고 사랑스러운 AI 패션 스타일리스트야! 🎀 이 착장 사진을 보고 아주 귀엽고 통통 튀는 말투로 평가해줘. 이모지 팍팍 넣어서 기분 좋게! 보완할 점도 절대 상처주지 말고 응원하듯 발랄하고 다정하게 말해줘. JSON으로만 답해.
+형식: {"score": 1~10 사이 정수, "vibe": "이 룩의 무드를 한마디로(이모지 포함, 예: 청순 캠퍼스룩 🌷)", "good": ["좋은 점 2~3개, 각 항목 앞에 어울리는 이모지"], "improve": ["이렇게 하면 더 예쁠 점 2~3개, 발랄하고 다정하게 이모지 포함"], "tip": "한 줄 스타일링 꿀팁(이모지 포함)"}`);}
+function lookRate(){
+  if(!hasAI()){alert('지금 AI를 쓸 수 없어요. 잠시 후 다시 시도해 주세요.');return;}
+  (async()=>{
+    const id=await pickImage(); if(!id)return;
+    openSheet(`<h2>✨ 룩 평가 중…</h2><div class="empty-state"><div class="big">👀</div>AI 스타일리스트가 요리조리 뜯어보는 중이에요… 💭</div>`);
+    try{const r=await evaluateLook(id); showEval(id,r);}
+    catch(e){openSheet(`<h2>평가 실패 😢</h2><div class="hint">${esc(e.message||e)}</div><div class="hint">인터넷 연결을 확인하고 다시 시도해 주세요.</div><div class="btnrow" style="margin-top:14px"><button class="btn ghost" data-close="1">닫기</button><button class="btn primary" id="eval-retry">다시</button></div>`);document.getElementById('eval-retry').onclick=lookRate;}
+  })();
+}
+function showEval(photoId,r){
+  const good=(r.good||[]).map(g=>`<li>${esc(g)}</li>`).join('');
+  const improve=(r.improve||[]).map(g=>`<li>${esc(g)}</li>`).join('');
+  openSheet(`<h2>💖 AI 룩 평가</h2>
+    <img class="eval-photo" data-photo="${photoId}" alt="">
+    <div class="eval-score">${r.score||'?'}<span>/10</span></div>
+    ${r.vibe?`<div class="eval-vibe">${esc(r.vibe)}</div>`:''}
+    <div class="eval-sec"><div class="eval-h">👍 좋은 점</div><ul>${good||'<li>-</li>'}</ul></div>
+    <div class="eval-sec"><div class="eval-h">💡 이렇게 하면 더 예뻐요</div><ul>${improve||'<li>-</li>'}</ul></div>
+    ${r.tip?`<div class="eval-tip">✂️ ${esc(r.tip)}</div>`:''}
+    <div class="btnrow" style="margin-top:16px"><button class="btn ghost" data-close="1">닫기</button><button class="btn primary" id="eval-save">♥ 이 룩 저장</button></div>`);
+  document.getElementById('eval-save').onclick=async()=>{
+    const b=document.getElementById('eval-save');b.disabled=true;b.textContent='저장 중…';
+    try{await put('looks',{id:uid(),name:r.vibe||'평가받은 룩',photoId,rating:Math.max(1,Math.round((r.score||7)/2)),memo:[...(r.good||[]),r.tip].filter(Boolean).join(' · '),favorite:true,tags:[]});state.looks=await all('looks');b.textContent='저장됐어요 ✓';}
+    catch(e){b.disabled=false;b.textContent='♥ 이 룩 저장';alert('저장 실패: '+(e.message||e));}
+  };
+}
 function getGeo(){return new Promise((res,rej)=>{if(!navigator.geolocation)return rej(new Error('위치 미지원'));navigator.geolocation.getCurrentPosition(p=>res(p.coords),e=>rej(e),{timeout:8000,maximumAge:600000});});}
 function wmoDesc(c){if(c===0)return'맑음';if(c<=2)return'대체로 맑음';if(c===3)return'흐림';if(c===45||c===48)return'안개';if(c>=51&&c<=57)return'이슬비';if(c>=61&&c<=67)return'비';if(c>=71&&c<=77)return'눈';if(c>=80&&c<=82)return'소나기';if(c>=85&&c<=86)return'눈';if(c>=95)return'뇌우';return'흐림';}
 async function getWeather(){const c=await getGeo();const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${c.latitude}&longitude=${c.longitude}&current=temperature_2m,weather_code&timezone=auto`);if(!r.ok)throw new Error('날씨 조회 실패');const d=await r.json();return{temp:Math.round(d.current.temperature_2m),desc:wmoDesc(d.current.weather_code)};}
@@ -1030,6 +1068,7 @@ document.body.addEventListener('click',e=>{
   else if(a==='settings')settings();
   else if(a==='stats')statsSheet();
   else if(a==='airec')aiRecommend();
+  else if(a==='lookrate')lookRate();
   else if(a==='cat'){state.catFilter=el.dataset.cat||null;render();}
   else if(a==='sortwear'){state.sortWear=!state.sortWear;render();}
   else if(a==='owner'){state.ownerFilter=el.dataset.owner||null;render();}
