@@ -1,6 +1,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAADsUlEQVR4nO3SuXFcQRAEUdhPK2ggJQpUSeEjAoujloudo6p7MiINmK55L79+/CT6shf7Cyg2cJAMHCQDB8nAQTJwkAwcJAMHycBBMnCQDBwkAwfJcnH8/f3nfvYXtr8lCMd/F6wycZtD/DjGp0zYt8cVKTgWrbl/3DaHRODYs+bqcXtcEYTDMuj0cXtckYXDvun4uPaXb/axA4d9yinj2t+8n8hyHPYFx8e1v9PlYy0O+3bj49pfaPSxEId9tcF97a+y+1iFw77X4L729yT4WILDvtTgvvaXhPiYj8O+0bE4pvuYjMO+zvi49jfk+JiJw74LOOb6mIbDvgjdBg6SBeGwb0Gfi8BhX4FU4CCZGYf9frofOEhmw2G/nB4JHCQDB8kMOOw30+OBg2Rbcdivpe8GDpKBg2TgINkmHPY76bnAQTJwkAwcJAMHyZbjsF9II4GDZOAgGThIBg6SgYNk4CAZOEgGDpKBg2TgIBk4SAYOkoGDZOAgGThIBg6SrcWBj7p996PBcVDgIBk4SAYOkoGDZDtw4KNiT/wyOE4JHCQDB8n24cBHrZ77YnAcEThIthsHPqr09P+Co3/gIJkHBz7yG/lccDQPHCRz4sBHcoM/C47OgYNkfhz4yGz8W8HRthQc+Ehryp+Co2dZOPCR06wPBUfDEnHgI6GJvwmObuXiwEcbGeDoVjoOfPSQsQoHPhrIAEefKuHAR3UZ4GhSPRz4KC1jOQ581JUBjvLVxoGPojI24cBHRRngKFwfHPgoJ2MrDnzUkrEbBz4KyTDgwEcVGeAoVn8c+Cghw4YDH/kynDjwES7DjAMfyTL8OPARKyMCBz4yZaTgwEegDHDkZv+RIBz4SJORhQMfUTLicODDvn80jpN92JcvgONAIva1i+E4x4d955I4TvBhX7gwjt4+7NuWx9HVh33VJjj6+bDv2QpHJx/2JRviaEDEvl5zHHV92Hc7AkdFH/bFDsJRy4d9q+NwlCBi3+doHMk+7MuA4zU7hU4srvrgyPFh32FWrXAk+LAvMLFuOK5gMaWeOPb7sN+7orY4rmAxUnMcq33Yr1tafxxXsHiiU3DM9WG/ZU8H4biCxeMdh2PEh/3lmzsRx3M+7G/e36E4rmBxv6NxPOLD/kJjp+O478P+Nm/geA0WnwPHW8j4EDjeAseHwPEuZNwGjneB4zZwkAwcJAMHycBBMnCQDBwkAwfJwEEycJAMHCQDB8nAQTJwkAwcJAMHycBBMnCQDBwkAwfJwEGyfzAXI4ocGMGLAAAAAElFTkSuQmCC">
+  <meta name="apple-mobile-web-app-title" content="룩북">
 <meta name="theme-color" content="#fbf7f5">
 <title>내 옷장 룩북</title>
 <style>
@@ -255,6 +258,26 @@
   .looklock{position:absolute; top:9px; left:9px; z-index:2; background:rgba(255,255,255,.95); color:var(--muted); border:1px solid var(--line); border-radius:20px; padding:4px 10px; font-size:11px; font-weight:800; cursor:pointer; box-shadow:0 1px 6px rgba(0,0,0,.14); letter-spacing:-.01em}
   .looklock.on{background:var(--pink); color:#fff; border-color:var(--pink)}
   .look-row .looklock{position:static; margin-left:auto; align-self:center; font-size:12px}
+  .mycode{background:var(--pink); color:#fff; padding:2px 10px; border-radius:8px; font-size:15px; letter-spacing:2px; font-weight:800}
+  .couple-on{background:#fdeef2; color:var(--ink); border-radius:14px; padding:12px 16px; font-size:15px; font-weight:700; text-align:center}
+  .ro-line{display:flex; justify-content:space-between; gap:12px; padding:11px 2px; border-bottom:1px solid var(--line); font-size:14px}
+  .ro-line span{color:var(--muted)} .ro-line b{color:var(--ink); text-align:right}
+  .ro-meta{display:flex; flex-wrap:wrap; gap:7px; align-items:center; color:var(--gold,#e0a53f); font-size:14px; margin:12px 0}
+  .ro-memo{background:var(--bg); border-radius:14px; padding:13px 16px; font-size:14px; line-height:1.6; color:var(--ink-2); margin-bottom:6px}
+  .ro-note{text-align:center; font-size:13px; color:var(--muted); margin-top:14px; font-weight:600}
+  .rx-wrap{background:var(--bg); border-radius:16px; padding:13px 14px; margin:12px 0}
+  .rx-h{font-size:13px; font-weight:800; color:var(--ink); margin-bottom:9px}
+  .rx-list{display:flex; flex-direction:column; gap:7px; margin-bottom:11px}
+  .rx{background:var(--card); border-radius:12px; padding:8px 12px; font-size:14px; color:var(--ink-2); display:flex; align-items:center; gap:5px}
+  .rx.me{background:#fdeef2}
+  .rx b{color:var(--ink); font-weight:700}
+  .rx-del{margin-left:auto; background:none; border:none; color:var(--muted); font-size:13px; cursor:pointer}
+  .rx-empty{font-size:13px; color:var(--muted); text-align:center; padding:4px}
+  .rx-bar{display:flex; gap:7px; align-items:center}
+  .rx-heart{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:8px 11px; font-size:16px; cursor:pointer; line-height:1}
+  .rx-heart.on{background:#fdeef2; border-color:var(--pink)}
+  .rx-bar input{flex:1; min-width:0; border:1px solid var(--line); background:var(--card); border-radius:12px; padding:9px 12px; font-size:14px; outline:none}
+  .rx-send{background:var(--pink); color:#fff; border:none; border-radius:12px; padding:9px 14px; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap}
 </style>
 
 <header>
@@ -375,7 +398,7 @@ const TAG_PRESETS=[...TPO_TAGS,...STYLE_TAGS];
 const state={tab:'closet', items:[], looks:[], days:[], wish:[], albumBy:'category', album:null, selectMode:false, selected:new Set(), wishStatus:null, weekWeather:null, lookView:'card', catFilter:null, ownerFilter:null, favOnly:false, tagFilter:null, search:'', lookSearch:'', sortWear:false, backupDismissed:false,
   closetOwner:'me', lookOwner:'me', myItems:[], myLooks:[], partnerItems:[], partnerLooks:[],
   week:mondayOf(new Date()), month:startOfMonth(new Date())};
-let MYNAME='나', PARTNERNAME='';
+let MYNAME='나', PARTNERNAME='', MYCODE='';
 // 우리 만난 날(2025-12-24)=1일차
 function coupleDays(){const s=Date.UTC(2025,11,24);const t=new Date();const n=Date.UTC(t.getFullYear(),t.getMonth(),t.getDate());return Math.floor((n-s)/86400000)+1;}
 function ddayBar(){const d=coupleDays();if(d<1)return'';const names=PARTNERNAME?`${esc(MYNAME)}♡${esc(PARTNERNAME)}`:'함께';return `<div class="dday">💕 ${names} <b>${d}</b>일</div>`;}
@@ -688,6 +711,7 @@ function lookForm(existing){
       <div class="field"><label>별점</label><div class="stars" id="l-stars">${[1,2,3,4,5].map(i=>`<span data-n="${i}" class="${i<=draft.rating?'on':''}">★</span>`).join('')}</div></div>
       <div class="field"><label>메모</label><textarea id="l-memo" placeholder="어울리는 상황, 코디 팁 등">${esc(draft.memo)}</textarea></div>
       <div class="field"><label><input type="checkbox" id="l-fav" ${draft.favorite?'checked':''}> ♥ 즐겨찾기에 추가</label></div>
+      ${existing&&PARTNER?'<div id="look-react" class="rx-wrap"></div>':''}
       ${existing?'<div class="btnrow" style="margin-bottom:10px"><button class="btn ghost" id="l-share">🖼 이미지</button><button class="btn ghost" id="l-receipt">🧾 영수증</button></div>':''}
       <div class="btnrow">${existing?'<button class="btn danger" id="l-del">삭제</button>':''}
         <button class="btn ghost" data-close="1">취소</button>
@@ -709,6 +733,7 @@ function lookForm(existing){
     if(existing)document.getElementById('l-del').onclick=async()=>{await del('looks',existing.id);closeSheet();await refresh();showToast('룩 삭제됨',async()=>{await put('looks',existing);await refresh();});};
     if(existing){const sb=document.getElementById('l-share');if(sb)sb.onclick=async()=>{sync();sb.textContent='만드는 중…';sb.disabled=true;try{await shareLook(draft);}catch(e){alert('이미지 생성 실패: '+(e.message||e));}sb.textContent='🖼 이미지';sb.disabled=false;};
       const rb=document.getElementById('l-receipt');if(rb)rb.onclick=async()=>{sync();rb.textContent='만드는 중…';rb.disabled=true;try{await shareReceipt(draft);}catch(e){alert('영수증 생성 실패: '+(e.message||e));}rb.textContent='🧾 영수증';rb.disabled=false;};}
+    if(existing&&PARTNER)renderReactions(existing.id,'look-react');
   }
   function sync(){const n=document.getElementById('l-name');if(n)draft.name=n.value.trim();
     const mm=document.getElementById('l-memo');if(mm)draft.memo=mm.value;
@@ -852,6 +877,12 @@ function settings(){
       <input type="text" id="s-nick" maxlength="10" value="${esc(MYNAME==='나'?'':MYNAME)}" placeholder="예: 유링">
       <div class="hint">옷장·룩 탭과 디데이에 표시돼요.</div></div>
     <div class="btnrow" style="margin-bottom:18px"><button class="btn primary" id="s-savenick">닉네임 저장</button></div>
+    <div class="field"><label>💑 커플 연결</label>
+      ${PARTNER
+        ? `<div class="couple-on">${esc(MYNAME)} ♡ ${esc(PARTNERNAME)} 연결됨 💕</div>`
+        : `<div class="hint">내 초대코드 <b class="mycode">${esc(MYCODE)}</b> 를 상대에게 알려주고,<br>상대 코드를 받아 입력하면 커플로 연결돼요.</div>
+           <input type="text" id="s-joincode" maxlength="6" placeholder="상대 초대코드 입력" style="text-transform:uppercase; letter-spacing:2px">`}</div>
+    ${PARTNER?'':`<div class="btnrow" style="margin-bottom:18px"><button class="btn primary" id="s-join">💞 코드로 연결하기</button></div>`}
     <div class="field"><label>✨ AI 추천 · Gemini API 키</label>
       <input type="text" id="s-key" value="${esc(getKey())}" placeholder="AIza... (Google AI Studio 무료 발급)">
       <div class="hint">이 기기에만 저장돼요. 무료 등급으로 충분해요.</div></div>
@@ -865,6 +896,15 @@ function settings(){
     <div class="btnrow"><button class="btn ghost" data-close="1">닫기</button></div>`);
   sb.auth.getUser().then(({data})=>{const el=document.getElementById('s-acct');if(el&&data&&data.user)el.textContent=data.user.email;});
   document.getElementById('s-logout').onclick=logout;
+  if(!PARTNER){const jb=document.getElementById('s-join');if(jb)jb.onclick=async()=>{
+    const code=(document.getElementById('s-joincode').value||'').trim();
+    if(!code){alert('상대 초대코드를 입력해주세요.');return;}
+    jb.disabled=true;jb.textContent='연결 중…';
+    try{const {data,error}=await sb.rpc('join_couple',{code});if(error)throw error;
+      if(data==='OK'){alert('커플 연결 완료! 💕 옷장·룩이 이제 공유돼요.');location.reload();}
+      else{jb.disabled=false;jb.textContent='💞 코드로 연결하기';alert(data==='SELF'?'내 코드예요 😅 상대의 코드를 입력해주세요.':'그런 코드가 없어요. 다시 확인해주세요.');}
+    }catch(e){jb.disabled=false;jb.textContent='💞 코드로 연결하기';alert('연결 실패: '+(e.message||e));}
+  };}
   document.getElementById('s-savenick').onclick=async()=>{
     const n=document.getElementById('s-nick').value.trim();
     if(!n){alert('닉네임을 입력해주세요.');return;}
@@ -966,6 +1006,43 @@ function showEval(photoId,r){
     try{await put('looks',{id:uid(),name:r.vibe||'평가받은 룩',photoId,rating:Math.max(1,Math.round((r.score||7)/2)),memo:[...(r.good||[]),r.tip].filter(Boolean).join(' · '),favorite:true,tags:(r.tags||[]).filter(t=>TAG_PRESETS.includes(t))});state.myLooks=await all('looks');state.looks=state.myLooks;b.textContent='저장됐어요 ✓';}
     catch(e){b.disabled=false;b.textContent='♥ 이 룩 저장';alert('저장 실패: '+(e.message||e));}
   };
+}
+/* 남친 룩·옷 자세히 보기 (읽기 전용) */
+function itemDetailRO(it){
+  const rows=[['종류',[it.category,it.subcategory].filter(Boolean).join(' · ')],['색상',(it.colors||[]).join(', ')],['소재',(it.materials||[]).join(', ')],['브랜드',it.brand],['시즌',it.season],['가격',it.price?Number(it.price).toLocaleString()+'원':'']].filter(r=>r[1]);
+  openSheet(`<h2>${esc(it.name||'옷')}</h2>
+    ${it.photoId?`<img class="eval-photo" data-photo="${it.photoId}" alt="">`:''}
+    ${rows.map(r=>`<div class="ro-line"><span>${r[0]}</span><b>${esc(r[1])}</b></div>`).join('')||'<div class="hint" style="text-align:center">상세 정보가 없어요.</div>'}
+    <div class="ro-note">${esc(PARTNERNAME||'상대')} 옷장 · 보기 전용 👀</div>
+    <div class="btnrow" style="margin-top:14px"><button class="btn primary" data-close="1">닫기</button></div>`);
+}
+function lookDetailRO(l){
+  const tags=(l.tags||[]).map(t=>`<span class="tagchip">${esc(t)}</span>`).join('');
+  openSheet(`<h2>${esc(l.name||'룩')}</h2>
+    ${lookThumb(l)?`<img class="eval-photo" data-photo="${lookThumb(l)}" alt="">`:''}
+    <div class="ro-meta">${l.rating?stars(l.rating):''} ${tags}</div>
+    ${l.memo?`<div class="ro-memo">${esc(l.memo)}</div>`:''}
+    <div id="ro-react" class="rx-wrap"></div>
+    <div class="ro-note">${esc(PARTNERNAME||'상대')}이(가) 공유한 룩 💕</div>
+    <div class="btnrow" style="margin-top:14px"><button class="btn primary" data-close="1">닫기</button></div>`);
+  renderReactions(l.id,'ro-react');
+}
+// 커플 반응(하트·한마디) — 남친 공유룩 + 내 룩(받은 반응 확인)에 표시
+async function renderReactions(lookId,containerId){
+  const el=document.getElementById(containerId);if(!el)return;
+  const {data,error}=await sb.from('reactions').select('*').eq('look_id',lookId).order('created_at');
+  if(error){el.innerHTML=`<div class="hint">반응을 불러오지 못했어요.</div>`;return;}
+  const list=data||[];const nameOf=u=>u===MYUID?MYNAME:(u===PARTNER?PARTNERNAME:'상대');
+  const rows=list.map(r=>`<div class="rx ${r.user_id===MYUID?'me':''}"><b>${esc(nameOf(r.user_id))}</b> ${r.kind==='heart'?'❤️':esc(r.text||'')}${r.user_id===MYUID?` <button class="rx-del" data-rxdel="${r.id}">✕</button>`:''}</div>`).join('');
+  const myHeart=list.find(r=>r.user_id===MYUID&&r.kind==='heart');
+  el.innerHTML=`<div class="rx-h">💬 반응</div><div class="rx-list">${rows||'<div class="rx-empty">아직 반응이 없어요. 첫 반응을 남겨봐요!</div>'}</div>
+    <div class="rx-bar"><button class="rx-heart ${myHeart?'on':''}" id="rx-heart">${myHeart?'❤️':'🤍'}</button>
+    <input type="text" id="rx-input" maxlength="40" placeholder="한마디 남기기…"><button class="rx-send" id="rx-send">보내기</button></div>`;
+  const reload=()=>renderReactions(lookId,containerId);
+  document.getElementById('rx-heart').onclick=async()=>{try{if(myHeart)await sb.from('reactions').delete().eq('id',myHeart.id);else await sb.from('reactions').insert({id:uid(),look_id:lookId,user_id:MYUID,household_id:HH,kind:'heart'});reload();}catch(e){showToast('실패: '+(e.message||e));}};
+  document.getElementById('rx-send').onclick=async()=>{const t=document.getElementById('rx-input').value.trim();if(!t)return;try{await sb.from('reactions').insert({id:uid(),look_id:lookId,user_id:MYUID,household_id:HH,kind:'comment',text:t});reload();}catch(e){showToast('실패: '+(e.message||e));}};
+  document.getElementById('rx-input').onkeydown=e=>{if(e.key==='Enter')document.getElementById('rx-send').click();};
+  el.querySelectorAll('[data-rxdel]').forEach(b=>b.onclick=async()=>{try{await sb.from('reactions').delete().eq('id',b.dataset.rxdel);reload();}catch(e){showToast('실패: '+(e.message||e));}});
 }
 function getGeo(){return new Promise((res,rej)=>{if(!navigator.geolocation)return rej(new Error('위치 미지원'));navigator.geolocation.getCurrentPosition(p=>res(p.coords),e=>rej(e),{timeout:8000,maximumAge:600000});});}
 function wmoDesc(c){if(c===0)return'맑음';if(c<=2)return'대체로 맑음';if(c===3)return'흐림';if(c===45||c===48)return'안개';if(c>=51&&c<=57)return'이슬비';if(c>=61&&c<=67)return'비';if(c>=71&&c<=77)return'눈';if(c>=80&&c<=82)return'소나기';if(c>=85&&c<=86)return'눈';if(c>=95)return'뇌우';return'흐림';}
@@ -1082,23 +1159,23 @@ async function shareReceipt(look){
 
 /* ----- 온보딩(사용법) — 앱 화면 목업 ----- */
 const ONBOARDING=[
- {emoji:'👗',title:'옷장에 다 모아요',desc:'가진 옷을 등록하면 색·카테고리별 앨범으로<br>자동 정리돼요. 눌러서 옷을 꺼내봐요.',
+ {emoji:'👗',title:'옷장에 다 모아요',desc:'가진 옷을 등록하면 색·카테고리별 앨범으로<br>자동 정리돼요. 사진만 넣으면 AI가 척척!',
   mock:`<div class="ob-scr"><div class="ob-sp">＋</div><div class="ob-st">옷장</div><div class="ob-ss">24 벌</div>
-   <div class="ob-row"><span class="ob-pill on">카테고리</span><span class="ob-pill">색상</span><span class="ob-pill">소유자</span></div>
+   <div class="ob-row"><span class="ob-pill on">카테고리</span><span class="ob-pill">색상</span><span class="ob-pill">시즌</span></div>
    <div class="ob-g2"><div class="ob-alb"><span class="ob-bdg">＋</span><div class="ob-cov" style="background-image:url('ob6.jpg')"></div><b>상의</b><i>8</i></div>
    <div class="ob-alb"><span class="ob-bdg">＋</span><div class="ob-cov" style="background-image:url('ob7.jpg')"></div><b>아우터</b><i>5</i></div></div></div>`},
  {emoji:'🪄',title:'사진 찍으면 AI가 척척',desc:'옷 사진만 넣으면 색과 종류를<br>AI가 자동으로 채워줘요. 수정도 돼요.',
   mock:`<div class="ob-scr"><div class="ob-photo" style="background-image:url('ob2.jpg')">🪄 색·종류 분석 중…</div>
    <div class="ob-line"><span>카테고리</span><b>상의 · 셔츠</b></div>
    <div class="ob-row" style="margin-top:12px"><span class="ob-pill on">화이트</span><span class="ob-pill on">베이지</span><span class="ob-pill">블랙</span></div></div>`},
- {emoji:'✨',title:'좋아하는 코디는 룩으로',desc:'상의·하의·신발·가방을 묶어 룩으로 저장.<br>TPO·스타일 태그로 골라봐요.',
+ {emoji:'✨',title:'좋아하는 코디는 룩으로',desc:'착장을 룩으로 저장하고, "📸 이 룩 어때?"로<br>AI에게 평가·태그도 받아봐요.',
   mock:`<div class="ob-scr"><div class="ob-st" style="font-size:19px">룩</div>
    <div class="ob-look"><span class="ob-hrt">♥</span><div class="ob-cov big" style="background-image:url('ob9.jpg')"></div>
    <div class="ob-lb"><b>가을 데일리</b><div class="ob-tags"><span>데일리룩</span><span>미니멀</span></div></div></div></div>`},
  {emoji:'🗓️',title:'입은 옷이 기록으로',desc:'이번 주 뭐 입었는지 사진 캘린더로.<br>월 캘린더엔 한 달 스타일이 쌓여요.',
   mock:`<div class="ob-scr"><div class="ob-st" style="font-size:19px">이번 주</div>
    <div class="ob-wk">${(()=>{const wi={0:'ob3.jpg',1:'ob9.jpg',4:'ob7.jpg'};return ['월','화','수','목','금','토','일'].map((d,i)=>{const f=wi[i];return `<div class="ob-wc ${i===4?'today':''}" ${f?`style="background-image:url('${f}')"`:''}>${f?'':'<u>＋</u>'}<em>${d}</em></div>`;}).join('');})()}</div></div>`},
- {emoji:'🧾',title:'통계 & 영수증으로 공유',desc:'자주 입는 옷·룩 통계를 보고,<br>아웃핏 영수증으로 예쁘게 공유해요.',
+ {emoji:'💕',title:'커플이 함께 쓰는 옷장',desc:'설정에서 초대코드로 연결하면<br>옷장·룩을 함께 보고 하트·한마디도 남겨요.',
   mock:`<div class="ob-scr"><div class="ob-stg"><div class="ob-sb"><b>24</b><i>옷</i></div><div class="ob-sb"><b>12</b><i>룩</i></div><div class="ob-sb"><b>31</b><i>착장</i></div></div>
    <div class="ob-rcpt"><div class="ob-rct">OUTFIT RECEIPT</div><div class="ob-rl"><span>자켓</span><span>그레이 블레이저</span></div><div class="ob-rl"><span>신발</span><span>첼시 부츠</span></div><div class="ob-bar"></div></div></div>`},
 ];
@@ -1148,8 +1225,8 @@ document.body.addEventListener('click',e=>{
   else if(a==='owner-closet'){state.closetOwner=el.dataset.o;state.album=null;state.search='';state.selectMode=false;state.selected.clear();refresh();}
   else if(a==='owner-look'){state.lookOwner=el.dataset.o;refresh();}
   else if(a==='looklock'){const l=lookById(el.dataset.id);if(l){l.shared=!l.shared;put('looks',l).then(()=>{state.myLooks.forEach(x=>{if(x.id===l.id)x.shared=l.shared;});showToast(l.shared?`💛 ${PARTNERNAME||'상대'}에게 공유했어요`:'🔒 나만 보기로 바꿨어요');render();}).catch(er=>showToast('실패: '+(er.message||er)));}}
-  else if(a==='item'){if(state.closetOwner==='partner'){showToast(`${PARTNERNAME} 옷장은 보기 전용이에요`);return;}const it=itemById(el.dataset.id);if(it)itemForm(it);}
-  else if(a==='look'){if(state.lookOwner==='partner'){showToast('공유받은 룩은 보기 전용이에요');return;}const l=lookById(el.dataset.id);if(l)lookForm(l);}
+  else if(a==='item'){if(state.closetOwner==='partner'){const it=state.partnerItems.find(x=>x.id===el.dataset.id);if(it)itemDetailRO(it);return;}const it=itemById(el.dataset.id);if(it)itemForm(it);}
+  else if(a==='look'){if(state.lookOwner==='partner'){const l=state.partnerLooks.find(x=>x.id===el.dataset.id);if(l)lookDetailRO(l);return;}const l=lookById(el.dataset.id);if(l)lookForm(l);}
   else if(a==='wishitem'){const w=state.wish.find(x=>x.id===el.dataset.id);if(w)wishForm(w);}
   else if(a==='wishstatus'){state.wishStatus=el.dataset.s||null;render();}
   else if(a==='day')dayDetail(el.dataset.date);
@@ -1207,6 +1284,8 @@ async function afterLogin(nickname){
   MYNAME=(me&&me.display_name)||'나';
   PARTNER=other?other.user_id:null;
   PARTNERNAME=(other&&other.display_name)||'';
+  const {data:hhrow}=await sb.from('households').select('invite_code').eq('id',HH).single();
+  MYCODE=(hhrow&&hhrow.invite_code)||'';
   document.getElementById('authRoot').innerHTML='';
   await refresh();
   if(!localStorage.getItem('onboarded'))setTimeout(showOnboarding,250);
