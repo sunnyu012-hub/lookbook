@@ -855,7 +855,9 @@ function wishForm(existing){
     <div class="field"><label>이름</label><input type="text" id="w-name" value="${esc(draft.name)}" placeholder="예) 베이지 트렌치코트"></div>
     <div class="field"><label>상태</label><div class="tagwrap" id="w-status">${statusChips}</div></div>
     <div class="field"><label>메모</label><textarea id="w-memo" placeholder="가격, 브랜드, 사이즈 등">${esc(draft.memo)}</textarea></div>
-    <div class="field"><label>링크 (선택)</label><input type="text" id="w-link" value="${esc(draft.link)}" placeholder="쇼핑몰 주소 붙여넣기"></div>
+    <div class="field"><label>링크 (선택)</label><input type="text" id="w-link" value="${esc(draft.link)}" placeholder="쇼핑몰 주소 붙여넣기">
+      <div class="hint">링크 붙여넣고 아래 버튼을 누르면 상품명·사진·가격을 자동으로 가져와요.</div></div>
+    <div class="btnrow" style="margin-bottom:10px"><button class="btn ghost" id="w-fetch">🪄 링크에서 자동으로 가져오기</button></div>
     ${existing&&draft.link?`<div class="btnrow" style="margin-bottom:10px"><a class="btn ghost" href="${esc(draft.link)}" target="_blank" rel="noopener" style="text-decoration:none;text-align:center;line-height:1.4">🔗 링크 열기</a></div>`:''}
     ${existing?'<div class="btnrow" style="margin-bottom:10px"><button class="btn ghost" id="w-move">👕 옷장으로 이동</button></div>':''}
     <div class="btnrow">${existing?'<button class="btn danger" id="w-del">삭제</button>':''}
@@ -863,7 +865,21 @@ function wishForm(existing){
       <button class="btn primary" id="w-save">저장</button></div>`;
   openSheet(html);
   const sync=()=>{const n=document.getElementById('w-name');if(n)draft.name=n.value.trim();const m=document.getElementById('w-memo');if(m)draft.memo=m.value;const l=document.getElementById('w-link');if(l)draft.link=l.value.trim();};
-  document.getElementById('wp').onclick=async()=>{const id=await pickImage();if(id){draft.photoId=id;const el=document.getElementById('wp');el.dataset.photo=id;await hydrate(document.getElementById('modalRoot'));}};
+  document.getElementById('wp').onclick=async()=>{const id=await pickImage();if(!id)return;draft.photoId=id;const el=document.getElementById('wp');el.dataset.photo=id;await hydrate(document.getElementById('modalRoot'));
+    if(hasAI()){const nEl=document.getElementById('w-name');if(nEl&&!nEl.value.trim()){try{const r=await classifyPhoto(id);if(r&&r.name){nEl.value=r.name;draft.name=r.name;showToast('AI가 이름을 채웠어요 ✨');}}catch(e){}}}};
+  document.getElementById('w-fetch').onclick=async()=>{sync();const url=draft.link;
+    if(!/^https?:\/\//i.test(url||'')){alert('먼저 쇼핑몰 링크(주소)를 붙여넣어 주세요.');return;}
+    const b=document.getElementById('w-fetch');b.disabled=true;b.textContent='가져오는 중… (몇 초)';
+    try{
+      const r=await fetch(SCRAPE_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});
+      const d=await r.json().catch(()=>({}));
+      let got=false;
+      if(d.name){draft.name=d.name;const n=document.getElementById('w-name');if(n)n.value=d.name;got=true;}
+      if(d.price){const p='₩'+Number(d.price).toLocaleString();if(!(draft.memo||'').includes(p)){draft.memo=(draft.memo?draft.memo+' · ':'')+p;const m=document.getElementById('w-memo');if(m)m.value=draft.memo;}got=true;}
+      if(d.image){try{const blob=await(await fetch(d.image)).blob();const small=await shrink(blob).catch(()=>blob);const pid=uid();await storePhoto(pid,small);draft.photoId=pid;const el=document.getElementById('wp');if(el)el.dataset.photo=pid;await hydrate(document.getElementById('modalRoot'));got=true;}catch(e){}}
+      showToast(got?'상품 정보를 가져왔어요 ✨ (확인·수정하고 저장)':'정보를 못 가져왔어요. 이 사이트는 자동을 막을 수 있어요 — 수동으로 채워주세요.');
+    }catch(e){alert('가져오기 실패: '+(e.message||e)+'\n이 사이트는 자동을 막을 수 있어요. 수동으로 입력해 주세요.');}
+    b.disabled=false;b.textContent='🪄 링크에서 자동으로 가져오기';};
   document.getElementById('w-status').onclick=e=>{const c=e.target.closest('[data-ws]');if(!c)return;draft.status=c.dataset.ws;[...document.querySelectorAll('#w-status .chip')].forEach(b=>b.classList.toggle('on',b.dataset.ws===draft.status));};
   document.getElementById('w-save').onclick=async()=>{sync();await put('wishlist',draft);state.wish=await all('wishlist');closeSheet();render();};
   if(existing){document.getElementById('w-move').onclick=()=>{sync();moveToWardrobe(draft);};
@@ -951,6 +967,7 @@ const GEMINI_MODELS=['gemini-flash-latest','gemini-2.5-flash','gemini-2.0-flash-
 const getKey=()=>localStorage.getItem('gemini_key')||'';
 // 공유 AI 프록시(Cloudflare Worker): 키를 서버에 숨겨둠 → 개인 키 없어도 AI 사용 가능
 const AI_PROXY='https://lookbook-ai-proxy.vercel.app/api/gemini';
+const SCRAPE_PROXY=AI_PROXY.replace('/gemini','/scrape');
 const hasAI=()=>!!getKey()||!!AI_PROXY;
 // 개인 키 있으면 Gemini 직접 호출, 없으면 프록시 경유
 function geminiFetch(m,payload,signal){
