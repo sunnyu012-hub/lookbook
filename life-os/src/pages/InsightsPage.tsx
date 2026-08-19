@@ -1,13 +1,16 @@
 import { useMemo } from 'react'
-import type { Checkin } from '@/types'
-import { Card, CardLabel } from '@/components/ui/Card'
-import { EmptyState } from '@/components/ui/EmptyState'
-import { Sparkline } from '@/components/ui/Sparkline'
-import { ExerciseCompare } from '@/components/insights/ExerciseCompare'
-import { ModeDaysBar } from '@/components/insights/ModeDaysBar'
-import { StatRow } from '@/components/insights/StatRow'
+import type { Checkin, EnergyMode } from '@/types'
+import { PixelIcon } from '@/components/pixel/PixelIcon'
+import { PixelPanel } from '@/components/pixel/PixelPanel'
+import { PixelButton } from '@/components/pixel/PixelButton'
+import { EnergyBar } from '@/components/pixel/EnergyBar'
 import { buildInsights } from '@/lib/insights'
-import { modeOf } from '@/lib/energy'
+import { findPatterns } from '@/lib/patterns'
+import { formatSleep } from '@/lib/date'
+import { MODE_META, modeOf } from '@/lib/energy'
+import { cn } from '@/lib/cn'
+
+const ORDER: EnergyMode[] = ['RECOVERY', 'EASY', 'NORMAL', 'POWER']
 
 interface Props {
   checkins: Checkin[]
@@ -17,118 +20,132 @@ interface Props {
 
 export function InsightsPage({ checkins, onStartCheckin, devAction }: Props) {
   const insights = useMemo(() => buildInsights(checkins), [checkins])
-  const hasTrend = insights.trend14.some((p) => p.score != null)
-  const trendColor = modeOf(insights.avgScore7 ?? insights.avgScore30 ?? 50).hex
+  const patterns = useMemo(() => findPatterns(checkins), [checkins])
 
-  // 계산할 수 있는 게 하나도 없으면 아무 카드도 띄우지 않는다
   const nothingToShow =
-    insights.avgScore7 == null &&
-    insights.avgScore30 == null &&
-    insights.avgSleepHours == null &&
-    insights.exercise == null
+    insights.avgScore7 == null && insights.avgScore30 == null && insights.avgSleepHours == null
 
   return (
-    <div>
-      <header className="mb-7">
-        <p className="label mb-2">INSIGHTS</p>
-        <h1 className="font-display text-[30px] leading-none tracking-tight">기록이 말해주는 것</h1>
-        <p className="mt-2 text-[13px] text-muted">
-          지금까지 {insights.totalCount}일의 기록으로 계산했어요.
-        </p>
+    <div className="space-y-3">
+      <header className="flex items-end justify-between">
+        <div>
+          <h1 className="font-pixel text-[18px] uppercase leading-none tracking-[0.04em]">
+            Player Stats
+          </h1>
+          <p className="plabel mt-2">Last 30 days</p>
+        </div>
+        <p className="plabel">{insights.totalCount} saves</p>
       </header>
 
       {nothingToShow ? (
-        <EmptyState
-          title="아직 분석할 기록이 적어요"
-          description="며칠만 더 기록하면 평균과 흐름을 보여드릴게요. 데이터가 모자란 분석은 억지로 만들지 않아요."
-          action={
-            <div className="flex flex-col items-center gap-3">
-              <button
-                type="button"
-                onClick={onStartCheckin}
-                className="press rounded-full bg-paper px-6 py-3 text-[14px] font-medium text-ink"
-              >
-                오늘 기록하기
-              </button>
-              {devAction}
-            </div>
-          }
-        />
+        <PixelPanel title="Not Enough Data" icon="book">
+          <p className="body-ko">
+            아직 계산할 기록이 적어요. 며칠만 더 저장하면 평균과 패턴이 열려요.
+          </p>
+          <PixelButton icon="floppy" full className="mt-3" onClick={onStartCheckin}>
+            Daily Save
+          </PixelButton>
+          {devAction && <div className="mt-3 flex justify-center">{devAction}</div>}
+        </PixelPanel>
       ) : (
-        <div className="space-y-3">
-          {hasTrend && (
-            <Card>
-              <CardLabel>LAST 14 DAYS</CardLabel>
-              <Sparkline
-                values={insights.trend14.map((p) => p.score)}
-                color={trendColor}
-                height={64}
-              />
-              <div className="mt-2 flex justify-between">
-                <span className="text-[11px] text-faint">14일 전</span>
-                <span className="text-[11px] text-faint">오늘</span>
-              </div>
-            </Card>
-          )}
-
-          <Card>
-            <CardLabel>AVERAGES</CardLabel>
-            <div>
-              {insights.avgScore7 != null && (
-                <StatRow
-                  label="최근 7일 평균 에너지"
-                  value={String(Math.round(insights.avgScore7))}
-                  color={modeOf(insights.avgScore7).hex}
-                />
+        <>
+          <div className="grid grid-cols-2 gap-2">
+            <StatCard
+              label="Avg Energy 7d"
+              value={insights.avgScore7 == null ? '--' : String(Math.round(insights.avgScore7))}
+              color={insights.avgScore7 == null ? undefined : modeOf(insights.avgScore7).hex}
+            />
+            <StatCard
+              label="Avg Energy 30d"
+              value={insights.avgScore30 == null ? '--' : String(Math.round(insights.avgScore30))}
+              color={insights.avgScore30 == null ? undefined : modeOf(insights.avgScore30).hex}
+            />
+            <StatCard
+              label="Avg Sleep"
+              value={insights.avgSleepHours == null ? '--' : formatSleep(
+                Math.round(insights.avgSleepHours * 2) / 2,
               )}
-              {insights.avgScore30 != null && (
-                <StatRow
-                  label="최근 30일 평균 에너지"
-                  value={String(Math.round(insights.avgScore30))}
-                  color={modeOf(insights.avgScore30).hex}
-                />
-              )}
-              {insights.avgSleepHours != null && (
-                <StatRow
-                  label="평균 수면 시간"
-                  value={insights.avgSleepHours.toFixed(1)}
-                  unit="h"
-                />
-              )}
-              {insights.avgFatigue != null && (
-                <StatRow
-                  label="평균 피로도"
-                  value={insights.avgFatigue.toFixed(1)}
-                  unit="/5"
-                  caption="낮을수록 덜 피로해요"
-                />
-              )}
-              {insights.avgMood != null && (
-                <StatRow label="평균 기분" value={insights.avgMood.toFixed(1)} unit="/5" />
-              )}
-            </div>
-          </Card>
+            />
+            <StatCard
+              label="Avg Mood"
+              value={insights.avgMood == null ? '--' : insights.avgMood.toFixed(1)}
+            />
+          </div>
 
           {insights.modeDaysTotal > 0 && (
-            <Card>
-              <CardLabel>MODE DAYS · 30D</CardLabel>
-              <ModeDaysBar modeDays={insights.modeDays} total={insights.modeDaysTotal} />
-            </Card>
+            <PixelPanel title="Mode Days" icon="moon">
+              <div className="grid grid-cols-4 gap-2">
+                {ORDER.map((mode) => (
+                  <div key={mode} className="text-center">
+                    <PixelIcon name={MODE_META[mode].icon} size={24} />
+                    <p
+                      className="mt-1.5 font-pixel text-[18px] leading-none"
+                      style={{ color: MODE_META[mode].hex }}
+                    >
+                      {String(insights.modeDays[mode]).padStart(2, '0')}
+                    </p>
+                    <p className="plabel mt-1.5">{mode}</p>
+                  </div>
+                ))}
+              </div>
+            </PixelPanel>
           )}
 
-          {insights.exercise && (
-            <Card>
-              <CardLabel>EXERCISE</CardLabel>
-              <ExerciseCompare {...insights.exercise} />
-            </Card>
+          {insights.avgFatigue != null && (
+            <PixelPanel title="Fatigue Level" icon="bolt">
+              <div className="mb-2 flex items-baseline justify-between">
+                <span className="text-[12px] text-inkdim">평균 피로도 (낮을수록 가벼움)</span>
+                <span className="font-pixel text-[14px]">{insights.avgFatigue.toFixed(1)} / 5</span>
+              </div>
+              <EnergyBar score={(insights.avgFatigue / 5) * 100} color="#D3848E" segments={5} />
+            </PixelPanel>
           )}
 
-          <p className="px-2 pt-2 text-center text-[11px] leading-relaxed text-faint">
-            모든 수치는 직접 남긴 기록만으로 계산한 참고값이에요.
-          </p>
-          {devAction && <div className="flex justify-center pt-2">{devAction}</div>}
-        </div>
+          {patterns.length > 0 && (
+            <div className="space-y-2">
+              <p className="plabel px-1">Discovered</p>
+              {patterns.map((pattern) => (
+                <div
+                  key={pattern.id}
+                  className={cn(
+                    'rounded-px3 border-2 border-ink p-3 shadow-hardlg',
+                    pattern.kind === 'buff' ? 'bg-sage/25' : 'bg-blush/25',
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <PixelIcon name="sparkle" size={16} className="animate-twinkle" />
+                    <p className="font-pixel text-[12px] uppercase">{pattern.title}</p>
+                    <span className="ml-auto plabel">{pattern.sample}</span>
+                  </div>
+                  <p className="mt-2 flex items-start gap-2 text-[13px] leading-relaxed">
+                    <PixelIcon name={pattern.icon} size={16} className="mt-0.5" />
+                    {pattern.body}
+                  </p>
+                </div>
+              ))}
+              <p className="px-1 text-[11px] leading-relaxed text-inkdim">
+                기록 사이에서 보이는 관계일 뿐, 원인이라고 단정할 수는 없어요.
+              </p>
+            </div>
+          )}
+
+          {devAction && <div className="flex justify-center pt-1">{devAction}</div>}
+        </>
       )}
+    </div>
+  )
+}
+
+function StatCard({ label, value, color }: { label: string; value: string; color?: string }) {
+  return (
+    <div className="panel px-3 py-3">
+      <p className="plabel">{label}</p>
+      <p
+        className="mt-2 font-pixel text-[22px] leading-none"
+        style={color ? { color } : undefined}
+      >
+        {value}
+      </p>
     </div>
   )
 }

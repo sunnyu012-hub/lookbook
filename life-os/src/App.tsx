@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react'
 import type { TabKey } from '@/types'
 import { AppShell } from '@/components/layout/AppShell'
 import { DevTools } from '@/components/DevTools'
-import { Toast } from '@/components/ui/Toast'
+import { PixelToast } from '@/components/pixel/PixelToast'
 import { CheckinPage } from '@/pages/CheckinPage'
 import { HistoryPage } from '@/pages/HistoryPage'
 import { InsightsPage } from '@/pages/InsightsPage'
@@ -11,10 +11,15 @@ import { useCheckins } from '@/hooks/useCheckins'
 import { todayKey } from '@/lib/date'
 import { storageMode } from '@/lib/repository'
 
+interface ToastState {
+  title: string
+  detail?: string
+}
+
 export default function App() {
   const [tab, setTab] = useState<TabKey>('today')
   const [editingDate, setEditingDate] = useState<string>(todayKey())
-  const [toast, setToast] = useState<string | null>(null)
+  const [toast, setToast] = useState<ToastState | null>(null)
   const store = useCheckins()
 
   const openCheckin = useCallback((date: string = todayKey()) => {
@@ -28,15 +33,15 @@ export default function App() {
   }
 
   const existing = store.byDate.get(editingDate) ?? null
+  /** 오늘까지 며칠째인지 — 오늘 기록이 없으면 다음 날짜로 센다 */
+  const dayNumber = store.checkins.length + (store.today ? 0 : 1)
 
   return (
     <AppShell active={tab} onTabChange={handleTab}>
-      {storageMode === 'local' && (
-        <p className="label mb-4 text-right">LOCAL STORAGE MODE</p>
-      )}
+      {storageMode === 'local' && <p className="plabel mb-3 text-right">Local Save</p>}
 
       {store.error && (
-        <p className="mb-4 rounded-2xl border border-recovery/40 bg-recovery/10 px-4 py-3 text-[13px] text-recovery">
+        <p className="mb-3 rounded-px3 border-2 border-blushdeep bg-blush/25 px-3 py-2 text-[12px]">
           {store.error}
         </p>
       )}
@@ -44,6 +49,7 @@ export default function App() {
       {tab === 'today' && (
         <TodayPage
           today={store.today}
+          dayNumber={dayNumber}
           loading={store.loading}
           onStartCheckin={() => openCheckin(todayKey())}
         />
@@ -55,7 +61,7 @@ export default function App() {
           existing={existing}
           onSave={store.save}
           onSaved={() => {
-            setToast('기록했어요.')
+            setToast({ title: 'Save Complete!', detail: '오늘의 기록이 저장됐어요.' })
             setTab('today')
           }}
         />
@@ -68,7 +74,7 @@ export default function App() {
           onEdit={openCheckin}
           onDelete={async (date) => {
             await store.remove(date)
-            setToast('기록을 지웠어요.')
+            setToast({ title: 'Deleted', detail: '기록을 지웠어요.' })
           }}
         />
       )}
@@ -81,7 +87,9 @@ export default function App() {
         />
       )}
 
-      {toast && <Toast message={toast} onDone={() => setToast(null)} />}
+      {toast && (
+        <PixelToast title={toast.title} detail={toast.detail} onDone={() => setToast(null)} />
+      )}
     </AppShell>
   )
 }

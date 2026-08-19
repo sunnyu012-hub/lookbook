@@ -4,6 +4,8 @@
  * 가중치·정규화 함수만 이 파일에서 고치면 앱 전체에 반영된다.
  */
 import type { CheckinInput, EnergyMode } from '@/types'
+import type { IconName } from './sprites.generated'
+import { CHARACTER_STATES } from './sprites.generated'
 
 export const WEIGHTS = {
   sleep: 0.3,
@@ -78,51 +80,54 @@ export function scoreToMode(score: number): EnergyMode {
 
 export interface ModeMeta {
   key: EnergyMode
+  /** 화면에 그대로 찍는 라틴 라벨 (픽셀 폰트용) */
   label: string
-  glyph: string
-  headline: string
-  body: string
-  /** tailwind 클래스에서 쓰는 색 이름 */
-  color: string
+  icon: IconName
+  /** 게임 말투의 짧은 한 줄 */
+  message: string
+  /** 캐릭터 스프라이트 시트의 상태 이름 */
+  sprite: (typeof CHARACTER_STATES)[number]
   hex: string
+  /** 패널 배경으로 쓰는 옅은 색 */
+  soft: string
 }
 
 export const MODE_META: Record<EnergyMode, ModeMeta> = {
   RECOVERY: {
     key: 'RECOVERY',
-    label: 'RECOVERY MODE',
-    glyph: '🌙',
-    headline: '몸이 꽤 지쳐 있어요.',
-    body: '오늘은 회복을 우선해보세요.',
-    color: 'recovery',
-    hex: '#8B7CF6',
+    label: 'RECOVERY',
+    icon: 'moon',
+    message: '오늘은 HP 회복이 우선이에요.',
+    sprite: 'recovery',
+    hex: '#9A8AD1',
+    soft: '#EDE9FA',
   },
   EASY: {
     key: 'EASY',
-    label: 'EASY MODE',
-    glyph: '🍃',
-    headline: '여력이 많지는 않아요.',
-    body: '가볍게, 무리하지 않는 하루로.',
-    color: 'easy',
-    hex: '#45D0C0',
+    label: 'EASY',
+    icon: 'sprout',
+    message: '천천히 움직여도 충분한 하루!',
+    sprite: 'easy',
+    hex: '#7A9E74',
+    soft: '#E8F1E5',
   },
   NORMAL: {
     key: 'NORMAL',
-    label: 'NORMAL MODE',
-    glyph: '☀️',
-    headline: '평소만큼의 컨디션이에요.',
-    body: '계획한 일을 그대로 밀고 가도 좋아요.',
-    color: 'normal',
-    hex: '#F4C25E',
+    label: 'NORMAL',
+    icon: 'sun',
+    message: '평범하지만 좋은 모험의 날.',
+    sprite: 'normal',
+    hex: '#7FB3D8',
+    soft: '#E4F1F9',
   },
   POWER: {
     key: 'POWER',
-    label: 'POWER MODE',
-    glyph: '⚡',
-    headline: '에너지가 충분해요.',
-    body: '미뤄둔 큰 일을 오늘 꺼내보세요.',
-    color: 'power',
-    hex: '#C8F04A',
+    label: 'POWER',
+    icon: 'bolt',
+    message: '에너지가 가득 찼어요!',
+    sprite: 'power',
+    hex: '#E0B34E',
+    soft: '#FBF0D5',
   },
 }
 

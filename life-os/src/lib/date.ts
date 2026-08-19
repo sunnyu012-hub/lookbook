@@ -87,3 +87,22 @@ export function monthLabel(year: number, month: number): string {
 /** 같은 달인지 (YYYY-MM 비교) */
 export const isSameMonth = (key: string, year: number, month: number) =>
   key.startsWith(`${year}-${pad(month + 1)}`)
+
+const EN_WEEK = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
+const EN_MONTH = [
+  'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
+  'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
+]
+
+/** 픽셀 폰트로 찍는 날짜: WED · AUG 19 */
+export function pixelDate(key: string): string {
+  const d = fromDateKey(key)
+  return `${EN_WEEK[d.getDay()]} · ${EN_MONTH[d.getMonth()]} ${d.getDate()}`
+}
+
+/** 7.5 → 7H 30M */
+export function formatSleep(hours: number): string {
+  const h = Math.floor(hours)
+  const m = Math.round((hours - h) * 60)
+  return m === 0 ? `${h}H` : `${h}H ${String(m).padStart(2, '0')}M`
+}

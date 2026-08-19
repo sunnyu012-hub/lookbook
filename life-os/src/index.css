@@ -4,10 +4,10 @@
 
 @layer base {
   :root {
-    color-scheme: dark;
+    color-scheme: light;
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
-    --tabbar-h: 68px;
+    --tabbar-h: 62px;
   }
 
   html,
@@ -17,94 +17,119 @@
   }
 
   body {
-    @apply bg-ink text-paper font-sans antialiased;
+    @apply bg-cream text-ink font-sans antialiased;
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior-y: none;
+    background-image:
+      radial-gradient(rgba(90, 75, 62, 0.05) 1px, transparent 1px);
+    background-size: 8px 8px;
   }
 
-  /* 큰 숫자는 항상 폭이 일정하게 */
-  .tnum {
-    font-variant-numeric: tabular-nums;
+  /* 픽셀 아트가 흐려지지 않게 */
+  .pixel-img {
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
   }
 
+  /* 슬라이더도 픽셀 부품처럼 — 둥근 기본 썸을 네모로 바꾼다 */
   input[type='range'] {
     -webkit-appearance: none;
     appearance: none;
     background: transparent;
   }
 
-  input[type='range']::-webkit-slider-runnable-track {
-    height: 2px;
-    background: #26262c;
-  }
-
   input[type='range']::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 26px;
-    height: 26px;
-    margin-top: -12px;
-    border-radius: 999px;
-    background: #f2f0eb;
-    border: none;
-    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.6);
-  }
-
-  input[type='range']::-moz-range-track {
-    height: 2px;
-    background: #26262c;
+    width: 14px;
+    height: 18px;
+    border: 2px solid #5a4b3e;
+    border-radius: 2px;
+    background: #fffbf2;
+    box-shadow: 2px 2px 0 0 rgba(90, 75, 62, 0.25);
+    cursor: pointer;
   }
 
   input[type='range']::-moz-range-thumb {
-    width: 26px;
-    height: 26px;
-    border: none;
-    border-radius: 999px;
-    background: #f2f0eb;
+    width: 14px;
+    height: 18px;
+    border: 2px solid #5a4b3e;
+    border-radius: 2px;
+    background: #fffbf2;
+    cursor: pointer;
   }
 
-  textarea,
-  input {
+  input,
+  textarea {
     font-size: 16px; /* iOS 자동 확대 방지 */
+  }
+
+  ::selection {
+    background: #f5d57c;
   }
 }
 
 @layer components {
-  .label {
-    @apply font-mono text-[10px] uppercase tracking-label text-faint;
+  /* 픽셀 RPG 창 — 2px 테두리 + 하드 섀도우 */
+  .panel {
+    @apply rounded-px3 border-2 border-ink bg-ivory shadow-hardlg;
   }
 
-  .label-strong {
-    @apply font-mono text-[10px] uppercase tracking-label text-muted;
+  .panel-flat {
+    @apply rounded-px3 border-2 border-ink bg-ivory;
   }
 
-  /* 한글 라벨 — 모노/넓은 자간은 라틴 대문자에만 쓴다 */
-  .klabel {
-    @apply text-[13px] tracking-tight text-muted;
+  /* 라틴 대문자 라벨 (픽셀 폰트) */
+  .plabel {
+    @apply font-pixel text-[10px] uppercase leading-none tracking-[0.08em] text-inkdim;
   }
 
-  .card {
-    @apply rounded-card border border-line bg-surface;
+  .ptitle {
+    @apply font-pixel text-[13px] uppercase leading-none tracking-[0.06em] text-ink;
   }
 
-  .hairline {
-    @apply border-t border-line;
+  /* 한글 본문 */
+  .body-ko {
+    @apply text-[13px] leading-relaxed text-ink/85;
   }
 
+  /* 눌리는 느낌: 그림자만큼 내려간다 */
   .press {
-    @apply transition-transform duration-200 ease-soft active:scale-[0.97];
+    @apply shadow-hard transition-[transform,box-shadow] duration-100;
   }
 
-  /* 상단/하단 가장자리 페이드 — 매거진 여백감 */
-  .page {
-    @apply mx-auto w-full max-w-[520px] px-5;
+  .press:active {
+    @apply translate-x-[2px] translate-y-[2px] shadow-none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
   }
 }
 
-/* 스크롤바 숨김 (모바일 우선) */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
+/* 2프레임 스프라이트 — 부드러운 보간 없이 딱딱 끊어서 */
+@keyframes sprite2 {
+  0%,
+  49.99% {
+    background-position-x: 0%;
+  }
+  50%,
+  100% {
+    background-position-x: 100%;
+  }
 }
-.no-scrollbar {
-  scrollbar-width: none;
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }

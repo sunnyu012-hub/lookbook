@@ -6,10 +6,7 @@ interface Props {
   onChanged: () => void
 }
 
-/**
- * 로컬 모드 전용 도구. Supabase 를 연결하면 자동으로 사라진다.
- * 화면을 실제 데이터 모양으로 검증하기 위한 용도.
- */
+/** 로컬 모드 전용 도구. Supabase 를 연결하면 사라진다. */
 export function DevTools({ onChanged }: Props) {
   if (storageMode !== 'local') return null
 
@@ -21,7 +18,7 @@ export function DevTools({ onChanged }: Props) {
           seedMockData()
           onChanged()
         }}
-        className="press rounded-full border border-line px-4 py-2 font-mono text-[10px] uppercase tracking-label text-faint"
+        className="press rounded-px2 border-2 border-ink/25 bg-ivory px-3 py-1.5 font-pixel text-[9px] uppercase text-inkdim"
       >
         Seed sample
       </button>
@@ -31,7 +28,7 @@ export function DevTools({ onChanged }: Props) {
           localStore.clear()
           onChanged()
         }}
-        className="press rounded-full border border-line px-4 py-2 font-mono text-[10px] uppercase tracking-label text-faint"
+        className="press rounded-px2 border-2 border-ink/25 bg-ivory px-3 py-1.5 font-pixel text-[9px] uppercase text-inkdim"
       >
         Clear local
       </button>

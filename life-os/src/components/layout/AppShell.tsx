@@ -9,16 +9,15 @@ interface Props {
 }
 
 export function AppShell({ active, onTabChange, children }: Props) {
-  // 탭을 옮기면 항상 화면 맨 위에서 시작한다
   useEffect(() => {
     window.scrollTo({ top: 0 })
   }, [active])
 
   return (
-    <div className="min-h-[100dvh] bg-ink">
+    <div className="min-h-[100dvh]">
       <main
         key={active}
-        className="page animate-fade pb-[calc(var(--tabbar-h)+var(--safe-bottom)+28px)] pt-[calc(var(--safe-top)+20px)]"
+        className="mx-auto w-full max-w-[460px] animate-rise px-4 pb-[calc(var(--tabbar-h)+var(--safe-bottom)+24px)] pt-[calc(var(--safe-top)+16px)]"
       >
         {children}
       </main>
