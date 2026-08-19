@@ -218,6 +218,20 @@
   .addidea input{flex:1;min-width:180px}
   .addidea select{flex:0 0 140px}
 
+  /* ── 추세 ── */
+  .trend{width:100%;border-collapse:collapse}
+  .trend th{font-size:11.5px;font-weight:700;letter-spacing:.04em;color:var(--muted);text-transform:uppercase;padding:0 10px 8px 0;border-bottom:1px solid var(--line)}
+  .trend td{padding:10px 10px 10px 0;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+  .trend .kwc{font-weight:700;font-size:14px}
+  .trend .sub{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .trend .rank{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-size:15px;font-weight:600;white-space:nowrap}
+  .trend .rank.out{color:var(--muted);font-size:12.5px;font-weight:400}
+  .trend .up{color:var(--ok);font-weight:700;font-size:12.5px}
+  .trend .down{color:var(--bad);font-weight:700;font-size:12.5px}
+  .trend .d0,.trend .none{color:var(--muted);font-size:12.5px}
+  .spark{display:block}
+  .trendwrap{overflow-x:auto}
+
   /* ── 백업 ── */
   #backup textarea{height:180px;font:400 12px/1.6 "IBM Plex Mono",monospace}
 </style>
@@ -336,18 +350,27 @@
     <div class="card" id="dayPanel" style="margin-top:16px"></div>
   </section>
 
-  <!-- ══ 키워드 보드 ══ -->
+  <!-- ══ 추세 (작성한 키워드 순위 추적) ══ -->
+  <section id="v-trend" class="hide">
+    <div class="addidea">
+      <button class="pri" id="trendAll" type="button">순위 전체 조회</button>
+      <span class="state" id="trendMsg" style="font-size:12.5px;color:var(--muted)"></span>
+    </div>
+    <div class="card"><div class="trendwrap"><table class="trend" id="trendTbl"></table></div></div>
+    <p class="foot">보관함에 저장한 글의 <b>메인키워드</b>만 추적합니다. 채널 기준 설정에 <b>블로그 주소</b>를 넣은 채널이 대상이며, 네이버 <b>블로그탭</b> 기준 100위까지입니다(통합검색·스마트블록 순위와 다릅니다). 하루 한 번 기록되고 같은 날 다시 조회하면 덮어씁니다.</p>
+  </section>
+
+  <!-- ══ 키워드 보드 (아이디어) ══ -->
   <section id="v-board" class="hide">
     <div class="addidea">
       <input id="ikw" placeholder="떠오른 키워드">
       <select id="ich"></select>
       <button class="pri" id="iadd" type="button">추가</button>
       <button class="ghost" id="volAll" type="button">검색량 전체 조회</button>
-      <button class="ghost" id="rankAll" type="button">순위 전체 조회</button>
       <span class="state" id="boardMsg" style="font-size:12.5px;color:var(--muted)"></span>
     </div>
     <div class="board" id="board"></div>
-    <p class="foot">보관함에 같은 키워드로 저장된 글이 있으면 <b>작성됨</b>이 자동으로 표시됩니다. 순위는 채널 기준 설정에 <b>블로그 주소</b>를 넣은 채널만 조회하며, 네이버 <b>블로그탭</b> 기준 100위까지입니다(통합검색 순위와 다릅니다).</p>
+    <p class="foot">아직 쓰지 않은 키워드를 모아두는 곳입니다. 보관함에 같은 키워드로 저장된 글이 생기면 <b>작성됨</b>이 표시되고, 순위 추적은 <b>추세</b> 탭에서 이어집니다.</p>
   </section>
 </div>
 
@@ -382,6 +405,7 @@ let mine=DB.get('bc.presets',{});
 let blogs=DB.get('bc.blogs',{});
 let posts=DB.get('bc.posts',[]);
 let ideas=DB.get('bc.ideas',[]);
+let ranks=DB.get('bc.ranks',{});   // 키워드별 순위 이력
 let editingId=null, activeCh=null, selDate=null;
 let cur=new Date(); cur.setDate(1);
 
@@ -649,11 +673,12 @@ $('#todayB').onclick=()=>{cur=new Date();cur.setDate(1);selDate=TODAY;renderCal(
 
 /* ── 네이버 API (Cloudflare Worker 프록시 경유) ── */
 // https:// 를 빠뜨리면 상대경로가 되어 엉뚱한 페이지를 읽으므로 여기서 보정한다
-function proxyUrl(){
-  let u=DB.get('bc.proxy','').trim().replace(/\/+$/,'');
+function normalizeProxy(v){
+  let u=String(v||'').trim().replace(/\/+$/,'');
   if(u&&!/^https?:\/\//i.test(u)) u='https://'+u;
   return u;
 }
+const proxyUrl=()=>normalizeProxy(DB.get('bc.proxy',''));
 async function api(path,params){
   const base=proxyUrl();
   if(!base) throw new Error('프록시 주소가 없습니다. 상단 “연결 설정”에서 넣어 주세요.');
@@ -747,13 +772,10 @@ function renderBoard(){
         '<input type="checkbox" data-tog="'+i.id+'"'+(i.done?' checked':'')+' title="완료">'+
         '<div style="flex:1;min-width:0">'+
           '<div class="kwt">'+esc(i.kw)+'</div>'+
-          (i.vol||i.rank!==undefined?'<div class="seo">'+
-            (i.vol?'<span title="월간 검색량 (PC '+num(i.vol.pc)+' · 모바일 '+num(i.vol.mobile)+')">월 '+num(i.vol.total)+'</span>':'')+
-            (i.rank?'<span class="rk">블로그탭 '+i.rank+'위</span>':i.rank===0?'<span class="rk out">100위 밖</span>':'')+
-          '</div>':'')+
+          (i.vol?'<div class="seo"><span title="월간 검색량 (PC '+num(i.vol.pc)+' · 모바일 '+num(i.vol.mobile)+')">월 '+num(i.vol.total)+'</span></div>':'')+
         '</div>'+
         (written.has(i.kw)?'<span class="written">작성됨</span>':'')+
-        '<button class="mini" data-look="'+i.id+'" type="button" title="검색량·순위 조회">◎</button>'+
+        '<button class="mini" data-look="'+i.id+'" type="button" title="검색량 조회">◎</button>'+
         '<button class="mini" data-write="'+i.id+'" type="button" title="이 키워드로 쓰기">쓰기</button>'+
         '<button class="mini" data-dropi="'+i.id+'" type="button" title="삭제">×</button></div>').join('')
         :'<div class="empty" style="padding:8px 2px;font-size:12.5px">비어 있음</div>')+
@@ -761,46 +783,128 @@ function renderBoard(){
   }).join('');
 }
 
-async function lookupIdeas(list,mode){
+const nowHM=()=>new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+async function lookupIdeas(list){
   const msg=t=>$('#boardMsg').textContent=t;
   if(!list.length){msg('조회할 키워드가 없습니다.');return}
   try{
-    if(mode!=='rank'){
-      msg('검색량 조회 중… (0/'+list.length+')');
-      const vols=await volumes(list.map(i=>i.kw));
-      list.forEach(i=>{if(vols[i.kw])i.vol=vols[i.kw]});
-      saveIdeas(); renderBoard();
-    }
-    if(mode!=='vol'){
-      const targets=list.filter(i=>blogOf(i.ch));
-      if(!targets.length&&mode==='rank'){msg('채널 기준 설정에 블로그 주소를 먼저 넣어 주세요.');return}
-      for(let n=0;n<targets.length;n++){
-        msg('순위 조회 중… ('+(n+1)+'/'+targets.length+')');
-        const i=targets[n];
-        try{
-          const r=await api('/rank',{query:i.kw,blog:blogOf(i.ch),limit:100});
-          i.rank=r.rank||0;
-        }catch(e){ msg('순위 조회 실패: '+e.message); break }
-      }
-      saveIdeas(); renderBoard();
-    }
-    msg('완료 · '+new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}));
+    msg('검색량 조회 중… ('+list.length+'개)');
+    const vols=await volumes(list.map(i=>i.kw));
+    list.forEach(i=>{if(vols[i.kw])i.vol=vols[i.kw]});
+    saveIdeas(); renderBoard();
+    msg('완료 · '+nowHM());
   }catch(e){ msg(e.message) }
 }
-$('#volAll').onclick=()=>lookupIdeas(ideas.filter(i=>!i.done),'vol');
-$('#rankAll').onclick=()=>lookupIdeas(ideas.filter(i=>!i.done&&blogOf(i.ch)),'rank');
+$('#volAll').onclick=()=>lookupIdeas(ideas.filter(i=>!i.done));
 $('#board').onclick=e=>{
   const t=e.target;
   if(t.dataset.tog){
     const i=ideas.find(x=>x.id===t.dataset.tog); i.done=t.checked; saveIdeas(); renderBoard(); return;
   }
   if(t.dataset.dropi){ ideas=ideas.filter(x=>x.id!==t.dataset.dropi); saveIdeas(); renderBoard(); return }
-  if(t.dataset.look){ lookupIdeas([ideas.find(x=>x.id===t.dataset.look)],'both'); return }
+  if(t.dataset.look){ lookupIdeas([ideas.find(x=>x.id===t.dataset.look)]); return }
   if(t.dataset.write){
     const i=ideas.find(x=>x.id===t.dataset.write);
     $('#newPost').click(); setChannel(i.ch); $('#kw').value=i.kw;
     show('check'); run(); window.scrollTo({top:0,behavior:'smooth'});
   }
+};
+
+/* ── 추세: 작성한 키워드의 순위 이력 ── */
+const rkey=(ch,kw)=>JSON.stringify([ch,kw]);
+// 보관함에 저장된 글의 메인키워드만 추적 대상이다
+function writtenList(){
+  const m=new Map();
+  posts.forEach(p=>{
+    if(!p.kw) return;
+    const k=rkey(p.ch,p.kw);
+    if(!m.has(k)) m.set(k,{ch:p.ch,kw:p.kw,n:0,last:''});
+    const e=m.get(k); e.n++; if((p.date||'')>e.last) e.last=p.date||'';
+  });
+  return [...m.values()].sort((a,b)=>(b.last||'').localeCompare(a.last||''));
+}
+const rankVal=r=>r?r:101;               // 0(100위 밖)은 101로 두고 그린다
+const histOf=(ch,kw)=>ranks[rkey(ch,kw)]||[];
+
+// 스파크라인: 단일 계열, 순위가 낮을수록(1위) 위로 가도록 y를 뒤집는다
+function sparkline(hist,color){
+  if(hist.length<2) return '<span class="none">기록 1회</span>';
+  const W=78,H=22,P=4;
+  const vals=hist.map(h=>rankVal(h.r));
+  const lo=Math.min(...vals), hi=Math.max(...vals);
+  const x=i=>P+i*(W-2*P)/(hist.length-1);
+  const y=v=>hi===lo?H/2:P+((v-lo)/(hi-lo))*(H-2*P);
+  const d=vals.map((v,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(v).toFixed(1)).join(' ');
+  const li=vals.length-1;
+  return '<svg class="spark" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="순위 추이 '+
+      hist.map(h=>h.d+' '+(h.r?h.r+'위':'100위 밖')).join(', ')+'">'+
+    '<path d="'+d+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'+
+    '<circle cx="'+x(li).toFixed(1)+'" cy="'+y(vals[li]).toFixed(1)+'" r="3" fill="'+color+'"/>'+
+    '<title>'+esc(hist.slice(-8).map(h=>h.d.slice(5)+' '+(h.r?h.r+'위':'밖')).join(' · '))+'</title></svg>';
+}
+function delta(hist){
+  if(hist.length<2) return '<span class="d0">—</span>';
+  const p=hist[hist.length-2].r, c=hist[hist.length-1].r;
+  // 100위 밖은 순위가 없으므로 숫자 차이 대신 진입/이탈로 표시한다
+  if(!p&&!c) return '<span class="d0">계속 밖</span>';
+  if(!p) return '<span class="up">▲ 진입</span>';
+  if(!c) return '<span class="down">▼ 밖으로</span>';
+  const d=p-c;
+  if(!d) return '<span class="d0">변동 없음</span>';
+  return d>0?'<span class="up">▲ '+d+'</span>':'<span class="down">▼ '+(-d)+'</span>';
+}
+
+function renderTrend(){
+  const rows=writtenList();
+  if(!rows.length){
+    $('#trendTbl').innerHTML='<tr><td class="empty">보관함에 저장된 글이 없습니다. 검사기에서 메인키워드를 넣고 저장하면 여기에 나타납니다.</td></tr>';
+    return;
+  }
+  $('#trendTbl').innerHTML=
+    '<tr><th style="width:40%">키워드</th><th>현재</th><th>변화</th><th>추이</th><th>기록</th><th></th></tr>'+
+    rows.map((r,idx)=>{
+      const h=histOf(r.ch,r.kw), last=h[h.length-1];
+      const noBlog=!blogOf(r.ch);
+      return '<tr>'+
+        '<td><div class="kwc">'+esc(r.kw)+'</div><div class="sub">'+chBadge(r.ch)+
+          ' <span>글 '+r.n+'건'+(r.last?' · 최근 '+esc(r.last):'')+'</span>'+
+          (noBlog?' <span class="warn">블로그 주소 없음</span>':'')+'</div></td>'+
+        '<td>'+(last?(last.r?'<span class="rank">'+last.r+'위</span>':'<span class="rank out">100위 밖</span>')
+                    :'<span class="none">—</span>')+'</td>'+
+        '<td>'+(last?delta(h):'')+'</td>'+
+        '<td>'+(h.length?sparkline(h,chColor(r.ch)):'<span class="none">—</span>')+'</td>'+
+        '<td><span class="sub">'+(last?esc(last.d)+' · '+h.length+'회':'없음')+'</span></td>'+
+        '<td style="text-align:right"><button class="mini" data-tr="'+idx+'" type="button"'+(noBlog?' disabled':'')+'>조회</button></td>'+
+      '</tr>';
+    }).join('');
+}
+
+async function lookupTrend(list){
+  const msg=t=>$('#trendMsg').textContent=t;
+  const targets=list.filter(t=>blogOf(t.ch));
+  if(!targets.length){msg('채널 기준 설정에 블로그 주소를 먼저 넣어 주세요.');return}
+  let err=null, done=0;
+  for(let n=0;n<targets.length;n++){
+    msg('순위 조회 중… ('+(n+1)+'/'+targets.length+')');
+    const t=targets[n];
+    try{
+      const res=await api('/rank',{query:t.kw,blog:blogOf(t.ch),limit:100});
+      const k=rkey(t.ch,t.kw), h=(ranks[k]||[]).slice();
+      const rec={d:TODAY,r:res.rank||0};
+      if(h.length&&h[h.length-1].d===TODAY) h[h.length-1]=rec; else h.push(rec);
+      ranks[k]=h.slice(-30);   // 최근 30회만 보관
+      done++;
+    }catch(e){ err=e.message; break }
+  }
+  DB.set('bc.ranks',ranks); renderTrend();
+  // 실패를 '완료'로 덮어쓰지 않는다
+  msg(err?('실패: '+err+(done?' ('+done+'개는 저장됨)':'')):('완료 · '+done+'개 · '+nowHM()));
+}
+$('#trendAll').onclick=()=>lookupTrend(writtenList());
+$('#trendTbl').onclick=e=>{
+  const b=e.target.closest('button[data-tr]'); if(!b) return;
+  const row=writtenList()[+b.dataset.tr];
+  if(row) lookupTrend([row]);
 };
 
 /* ── 채널 select 채우기 ── */
@@ -818,7 +922,7 @@ function fillChannelSelects(){
 $('#bkBtn').onclick=()=>{
   const b=$('#backup'); b.classList.toggle('hide');
   if(!b.classList.contains('hide')){
-    $('#bkText').value=JSON.stringify({v:1,presets:mine,blogs,posts,ideas},null,1);
+    $('#bkText').value=JSON.stringify({v:1,presets:mine,blogs,posts,ideas,ranks},null,1);
     msg('#bkMsg','');
   }
 };
@@ -835,24 +939,26 @@ $('#bkRestore').onclick=()=>{
   if(!confirm('현재 데이터를 덮어씁니다. 계속할까요?'))return;
   posts=d.posts; ideas=Array.isArray(d.ideas)?d.ideas:[]; mine=d.presets&&typeof d.presets==='object'?d.presets:{};
   blogs=d.blogs&&typeof d.blogs==='object'?d.blogs:{};
-  savePosts(); saveIdeas(); DB.set('bc.presets',mine); DB.set('bc.blogs',blogs);
+  ranks=d.ranks&&typeof d.ranks==='object'?d.ranks:{};
+  savePosts(); saveIdeas(); DB.set('bc.presets',mine); DB.set('bc.blogs',blogs); DB.set('bc.ranks',ranks);
   editingId=null; tabs(); fillChannelSelects(); $('#blogUrl').value=blogOf(activeCh); renderAll();
   msg('#bkMsg','복원했습니다. 글 '+posts.length+'건, 키워드 '+ideas.length+'건.');
 };
 
 /* ── 뷰 전환 ── */
-const VIEWS=[['check','검사기'],['archive','보관함'],['cal','캘린더'],['board','키워드']];
+const VIEWS=[['check','검사기'],['archive','보관함'],['cal','캘린더'],['trend','추세'],['board','키워드']];
 function show(v){
   VIEWS.forEach(([k])=>$('#v-'+k).classList.toggle('hide',k!==v));
   $$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
   DB.set('bc.view',v);
   if(v==='archive')renderArchive();
   if(v==='cal')renderCal();
+  if(v==='trend')renderTrend();
   if(v==='board')renderBoard();
 }
 function renderNav(){
   $('#nav').innerHTML=VIEWS.map(([k,label])=>{
-    const c=k==='archive'?posts.length:k==='board'?ideas.filter(i=>!i.done).length:0;
+    const c=k==='archive'?posts.length:k==='board'?ideas.filter(i=>!i.done).length:k==='trend'?writtenList().length:0;
     return '<button type="button" data-v="'+k+'">'+label+(c?'<b>'+c+'</b>':'')+'</button>';
   }).join('');
 }
@@ -860,10 +966,11 @@ $('#nav').onclick=e=>{const b=e.target.closest('button'); if(b) show(b.dataset.v
 
 function renderAll(){
   renderNav(); fillChannelSelects();
-  const v=$$('#v-archive,#v-cal,#v-board,#v-check').find(s=>!s.classList.contains('hide'));
+  const v=$$('#v-archive,#v-cal,#v-trend,#v-board,#v-check').find(s=>!s.classList.contains('hide'));
   $$('#nav button').forEach(b=>b.classList.toggle('on','v-'+b.dataset.v===(v&&v.id)));
   if(!$('#v-archive').classList.contains('hide'))renderArchive();
   if(!$('#v-cal').classList.contains('hide'))renderCal();
+  if(!$('#v-trend').classList.contains('hide'))renderTrend();
   if(!$('#v-board').classList.contains('hide'))renderBoard();
 }
 
@@ -891,5 +998,12 @@ console.assert(iso(new Date(2026,7,9))==='2026-08-09','iso pads');
 console.assert(noSpaceLen(' 가 나\n다 ')===3,'noSpaceLen');
 console.assert(SAVED.indexOf('blogUrl')===-1,'blogUrl은 프리셋이 아니라 채널별 맵에 저장된다');
 console.assert(num(12345)==='12,345','num');
-console.assert((()=>{const o=DB.get('bc.proxy','');DB.set('bc.proxy','p.workers.dev/');const a=proxyUrl();DB.set('bc.proxy',o);return a==='https://p.workers.dev'})(),'프록시 주소는 https:// 보정 + 끝 슬래시 제거');
+console.assert(rkey('a','b')!==rkey('ab',''),'rkey는 채널·키워드를 구분한다');
+console.assert(delta([{d:'1',r:9},{d:'2',r:4}]).includes('▲ 5'),'순위가 올라가면 상승');
+console.assert(delta([{d:'1',r:4},{d:'2',r:0}]).includes('밖으로'),'100위 밖으로 밀리면 숫자 대신 이탈 표시');
+console.assert(delta([{d:'1',r:0},{d:'2',r:7}]).includes('진입'),'100위 안으로 들어오면 진입');
+console.assert(delta([{d:'1',r:0},{d:'2',r:0}]).includes('계속 밖'),'둘 다 밖이면 변화 없음');
+console.assert(sparkline([{d:'1',r:1}],'#000').includes('기록 1회'),'점 하나면 선을 안 그린다');
+console.assert(sparkline([{d:'1',r:1},{d:'2',r:50}],'#000').startsWith('<svg'),'두 점부터 스파크라인');
+console.assert(normalizeProxy('p.workers.dev/')==='https://p.workers.dev'&&normalizeProxy('https://a.dev')==='https://a.dev'&&normalizeProxy('')==='','프록시 주소는 https:// 보정 + 끝 슬래시 제거');
 </script>
