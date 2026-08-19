@@ -857,7 +857,10 @@ function delta(hist){
 function renderTrend(){
   const rows=writtenList();
   if(!rows.length){
-    $('#trendTbl').innerHTML='<tr><td class="empty">보관함에 저장된 글이 없습니다. 검사기에서 메인키워드를 넣고 저장하면 여기에 나타납니다.</td></tr>';
+    // 글은 있는데 메인키워드가 비어 있는 경우를 구분해서 알려준다
+    $('#trendTbl').innerHTML='<tr><td class="empty">'+(posts.length
+      ? '저장된 글 '+posts.length+'건에 메인키워드가 없습니다. 보관함에서 글을 불러와 <b>메인키워드</b>를 넣고 다시 저장하면 추적이 시작됩니다.'
+      : '보관함에 저장된 글이 없습니다. 검사기에서 메인키워드를 넣고 저장하면 여기에 나타납니다.')+'</td></tr>';
     return;
   }
   $('#trendTbl').innerHTML=
