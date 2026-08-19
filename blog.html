@@ -648,16 +648,25 @@ $('#nextM').onclick=()=>{cur.setMonth(cur.getMonth()+1);renderCal()};
 $('#todayB').onclick=()=>{cur=new Date();cur.setDate(1);selDate=TODAY;renderCal()};
 
 /* ── 네이버 API (Cloudflare Worker 프록시 경유) ── */
-const proxyUrl=()=>DB.get('bc.proxy','').trim().replace(/\/+$/,'');
+// https:// 를 빠뜨리면 상대경로가 되어 엉뚱한 페이지를 읽으므로 여기서 보정한다
+function proxyUrl(){
+  let u=DB.get('bc.proxy','').trim().replace(/\/+$/,'');
+  if(u&&!/^https?:\/\//i.test(u)) u='https://'+u;
+  return u;
+}
 async function api(path,params){
   const base=proxyUrl();
   if(!base) throw new Error('프록시 주소가 없습니다. 상단 “연결 설정”에서 넣어 주세요.');
-  const qs=new URLSearchParams(params).toString();
+  const url=base+path+'?'+new URLSearchParams(params).toString();
   let r;
-  try{ r=await fetch(base+path+'?'+qs) }
-  catch(e){ throw new Error('프록시에 연결하지 못했습니다. claude.ai 아티팩트 주소에서는 외부 호출이 차단되니 GitHub Pages 주소에서 사용하세요.') }
+  try{ r=await fetch(url) }
+  catch(e){ throw new Error('연결 실패 — '+base+' 에 닿지 못했습니다. 주소가 맞는지, Worker가 배포됐는지 확인하세요. (claude.ai 아티팩트에서는 외부 호출이 차단됩니다)') }
+  const raw=await r.text();
   let body;
-  try{body=await r.json()}catch(e){throw new Error('응답을 읽지 못했습니다. 프록시 주소를 확인하세요.')}
+  try{ body=JSON.parse(raw) }
+  catch(e){
+    throw new Error('JSON이 아닌 응답 ('+r.status+') — '+base+path+' → “'+raw.slice(0,70).replace(/\s+/g,' ')+'”');
+  }
   if(!r.ok) throw new Error(body.error||body.errorMessage||('오류 '+r.status));
   return body;
 }
@@ -684,7 +693,9 @@ $('#cfgBtn').onclick=()=>{
 $('#connClose').onclick=()=>$('#conn').classList.add('hide');
 $('#proxy').addEventListener('input',e=>DB.set('bc.proxy',e.target.value.trim()));
 $('#connTest').onclick=async()=>{
-  $('#connMsg').textContent='확인 중…';
+  const u=proxyUrl();
+  if(!u){$('#connMsg').innerHTML='<b class="bad">주소를 입력하세요.</b>';return}
+  $('#connMsg').innerHTML='확인 중… <span style="color:var(--muted)">'+esc(u)+'</span>';
   try{
     const v=await api('/volume',{keywords:'속기사'});
     const t=(v.rows&&v.rows[0])?' (속기사 월 '+num(v.rows[0].total)+'회)':'';
@@ -880,4 +891,5 @@ console.assert(iso(new Date(2026,7,9))==='2026-08-09','iso pads');
 console.assert(noSpaceLen(' 가 나\n다 ')===3,'noSpaceLen');
 console.assert(SAVED.indexOf('blogUrl')===-1,'blogUrl은 프리셋이 아니라 채널별 맵에 저장된다');
 console.assert(num(12345)==='12,345','num');
+console.assert((()=>{const o=DB.get('bc.proxy','');DB.set('bc.proxy','p.workers.dev/');const a=proxyUrl();DB.set('bc.proxy',o);return a==='https://p.workers.dev'})(),'프록시 주소는 https:// 보정 + 끝 슬래시 제거');
 </script>
