@@ -121,6 +121,11 @@
 
   .grid{display:grid;grid-template-columns:1fr 372px;gap:16px;align-items:start}
   @media(max-width:960px){.grid{grid-template-columns:1fr}}
+  .editbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--warn-soft);color:var(--warn);
+    border-radius:9px;padding:8px 12px;margin-bottom:10px;font-size:13px;font-weight:500}
+  .editbar b{font-weight:800}
+  .editbar button{margin-left:auto;background:none;border:1px solid currentColor;color:inherit;
+    border-radius:7px;padding:4px 10px;font:700 12px "Gothic A1",sans-serif;cursor:pointer}
   .metarow{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
   .metarow input[type=text]{flex:1;min-width:180px}
   .metarow input[type=date]{flex:0 0 150px}
@@ -276,6 +281,7 @@
       <div>
         <div class="card">
           <h2>원고</h2>
+          <div class="editbar hide" id="editBar"></div>
           <div class="metarow">
             <input type="text" id="title" placeholder="글 제목">
             <input type="date" id="pdate">
@@ -548,12 +554,33 @@ $('#psave').onclick=()=>{
 /* ── 원고 보관함 ── */
 function savePosts(){ return DB.set('bc.posts',posts) }
 
+// 편집 중인 글이 무엇인지 항상 화면에 보이게 한다 (안 보이면 다른 글을 덮어쓰게 된다)
+function setEditing(id){
+  editingId=id||null;
+  const p=editingId&&posts.find(x=>x.id===editingId);
+  const bar=$('#editBar');
+  bar.classList.toggle('hide',!p);
+  if(p) bar.innerHTML='<b>편집 중</b> · '+esc(p.title)+
+    ' <button type="button" id="editOff">새 글로 전환</button>';
+  $('#save').textContent=p?'수정 저장':'보관함에 저장';
+}
+$('#editBar').onclick=e=>{ if(e.target.id==='editOff') $('#newPost').click() };
+
 $('#save').onclick=()=>{
   const body=$('#txt').value, title=$('#title').value.trim();
   if(!body.trim()&&!title){msg('#saveMsg','제목이나 본문을 입력하세요.');return}
+  const name=title||'(제목 없음)';
+  let id=editingId||uid();
+  // 편집 중인데 제목이 달라졌다면 실수로 다른 글을 덮어쓰는 상황이다. 반드시 물어본다.
+  if(editingId){
+    const cur=posts.find(p=>p.id===editingId);
+    if(cur&&cur.title!==name){
+      const overwrite=confirm('편집 중인 글은 “'+cur.title+'” 입니다. [확인] 그 글을 “'+name+'” 내용으로 수정 / [취소] 새 글로 따로 저장 (기존 글 유지)');
+      if(!overwrite) id=uid();
+    }
+  }
   const rec={
-    id:editingId||uid(),
-    title:title||'(제목 없음)',
+    id, title:name,
     kw:$('#kw').value.trim(), ch:activeCh,
     date:$('#pdate').value||TODAY, status:$('#status').value,
     body, len:noSpaceLen(body)
@@ -562,13 +589,13 @@ $('#save').onclick=()=>{
   const next=posts.slice();
   if(i<0) next.unshift(rec); else next[i]=rec;
   if(!DB.set('bc.posts',next)){msg('#saveMsg','저장 실패: 브라우저 저장소를 쓸 수 없습니다.');return}
-  posts=next; editingId=rec.id;
-  msg('#saveMsg',(i<0?'보관함에 저장했습니다.':'수정 내용을 저장했습니다.')+' ('+rec.len+'자)');
+  posts=next; setEditing(rec.id);
+  msg('#saveMsg',(i<0?'보관함에 새로 저장했습니다.':'기존 글을 수정했습니다.')+' ('+rec.len+'자)');
   renderAll();
 };
 
 $('#newPost').onclick=()=>{
-  editingId=null;
+  setEditing(null);
   $('#txt').value='';$('#title').value='';$('#kw').value='';
   $('#pdate').value=TODAY;$('#status').value='초안';
   msg('#saveMsg','새 글을 시작합니다.'); run();
@@ -576,7 +603,7 @@ $('#newPost').onclick=()=>{
 
 function loadPost(id){
   const p=posts.find(x=>x.id===id); if(!p) return;
-  editingId=p.id;
+  setEditing(p.id);
   if(cfgOf(p.ch)) setChannel(p.ch);
   $('#title').value=p.title==='(제목 없음)'?'':p.title;
   $('#kw').value=p.kw||''; $('#txt').value=p.body||'';
@@ -587,7 +614,7 @@ function loadPost(id){
 }
 function delPost(id){
   posts=posts.filter(p=>p.id!==id); savePosts();
-  if(editingId===id) editingId=null;
+  if(editingId===id) setEditing(null);
   renderAll();
 }
 
@@ -944,7 +971,7 @@ $('#bkRestore').onclick=()=>{
   blogs=d.blogs&&typeof d.blogs==='object'?d.blogs:{};
   ranks=d.ranks&&typeof d.ranks==='object'?d.ranks:{};
   savePosts(); saveIdeas(); DB.set('bc.presets',mine); DB.set('bc.blogs',blogs); DB.set('bc.ranks',ranks);
-  editingId=null; tabs(); fillChannelSelects(); $('#blogUrl').value=blogOf(activeCh); renderAll();
+  setEditing(null); tabs(); fillChannelSelects(); $('#blogUrl').value=blogOf(activeCh); renderAll();
   msg('#bkMsg','복원했습니다. 글 '+posts.length+'건, 키워드 '+ideas.length+'건.');
 };
 
@@ -985,6 +1012,7 @@ tabs();
 apply(savedCfg||cfgOf(activeCh));
 $('#blogUrl').value=blogOf(activeCh);
 $('#pdate').value=TODAY;
+setEditing(null);
 renderNav(); fillChannelSelects();
 show(DB.get('bc.view','check'));
 FIELDS.concat('txt').forEach(f=>$('#'+f).addEventListener('input',run));
