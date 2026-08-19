@@ -1,0 +1,883 @@
+<title>블로그 작업대</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --bg:#eef1f0; --surface:#fff; --sunk:#f5f7f6;
+    --line:#dfe4e2; --line-soft:#eceeed;
+    --ink:#141d1b; --ink-2:#3d4a47; --muted:#6d7b77;
+    --accent:#0d6f60; --accent-soft:#d5ebe6; --on-accent:#fff;
+    --ok:#0d6f60; --ok-soft:#d9ece7;
+    --warn:#9a6100; --warn-soft:#f7e7c8;
+    --bad:#b3261e; --bad-soft:#f8dcd9;
+    --shadow:0 1px 2px rgba(20,29,27,.05),0 6px 18px rgba(20,29,27,.05);
+    --mix:88%;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0e1413; --surface:#161e1d; --sunk:#111817;
+      --line:#27332f; --line-soft:#1e2926;
+      --ink:#e6ede9; --ink-2:#b6c4bf; --muted:#7f8f8a;
+      --accent:#4ec8ad; --accent-soft:#173630; --on-accent:#0e1413;
+      --ok:#4ec8ad; --ok-soft:#153029;
+      --warn:#e0a33f; --warn-soft:#33270f;
+      --bad:#f0857a; --bad-soft:#3a1a17;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.3);
+      --mix:78%;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0e1413; --surface:#161e1d; --sunk:#111817;
+    --line:#27332f; --line-soft:#1e2926;
+    --ink:#e6ede9; --ink-2:#b6c4bf; --muted:#7f8f8a;
+    --accent:#4ec8ad; --accent-soft:#173630; --on-accent:#0e1413;
+    --ok:#4ec8ad; --ok-soft:#153029;
+    --warn:#e0a33f; --warn-soft:#33270f;
+    --bad:#f0857a; --bad-soft:#3a1a17;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.3);
+    --mix:78%;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font:400 15px/1.65 "Gothic A1","Malgun Gothic","맑은 고딕",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .num,input[type=number],input[type=date]{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+  .wrap{max-width:1240px;margin:0 auto;padding:22px 20px 70px}
+
+  /* ── 헤더 / 주 탭 ── */
+  .top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+  h1{font-size:20px;font-weight:900;letter-spacing:-.025em;margin:0}
+  nav{display:flex;gap:2px;background:var(--sunk);border:1px solid var(--line);border-radius:12px;padding:3px}
+  nav button{
+    font:700 13.5px/1 "Gothic A1",sans-serif;color:var(--muted);background:none;border:0;
+    border-radius:9px;padding:9px 15px;cursor:pointer;transition:.15s;
+  }
+  nav button:hover{color:var(--ink)}
+  nav button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+  nav button b{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);margin-left:5px}
+  .top .right{margin-left:auto;display:flex;gap:6px}
+  .ghost{
+    font:500 13px "Gothic A1",sans-serif;color:var(--ink-2);background:var(--surface);
+    border:1px solid var(--line);border-radius:9px;padding:8px 13px;cursor:pointer;
+  }
+  .ghost:hover{border-color:var(--accent);color:var(--accent)}
+  button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  /* ── 공통 ── */
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px;box-shadow:var(--shadow)}
+  .card h2{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+  .card h2 span{text-transform:none;letter-spacing:0;font-weight:400;margin-left:6px}
+  input,select,textarea{
+    background:var(--sunk);color:var(--ink);border:1px solid var(--line-soft);
+    border-radius:8px;padding:7px 10px;font:400 14px "Gothic A1",sans-serif;width:100%;
+  }
+  textarea{font-size:14.5px;line-height:1.85;resize:vertical}
+  .pri{
+    font:700 13.5px "Gothic A1",sans-serif;color:var(--accent);background:var(--accent-soft);
+    border:1px solid transparent;border-radius:9px;padding:9px 16px;cursor:pointer;white-space:nowrap;
+  }
+  .pri:hover{background:var(--accent);color:var(--on-accent)}
+  .danger{color:var(--bad);background:none;border:0;cursor:pointer;font:700 13px "Gothic A1",sans-serif;padding:4px 6px;border-radius:6px}
+  .danger:hover{background:var(--bad-soft)}
+  .empty{color:var(--muted);font-size:13.5px;padding:18px 2px;text-align:center}
+  .foot{color:var(--muted);font-size:12px;margin:10px 0 0;line-height:1.7}
+  .ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+  .hide{display:none !important}
+
+  /* 채널 뱃지 — 색은 JS가 --c 로 주입 */
+  .ch{
+    display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;white-space:nowrap;
+    padding:3px 9px;border-radius:999px;color:var(--c);
+    background:color-mix(in srgb,var(--c) 14%,transparent);
+  }
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--c);flex:0 0 auto}
+
+  /* ── 검사기 ── */
+  .presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+  .presets button{
+    font:500 13px/1 "Gothic A1",sans-serif;color:var(--ink-2);background:var(--surface);
+    border:1px solid var(--line);border-radius:999px;padding:8px 14px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:7px;
+  }
+  .presets button:hover{border-color:var(--c);color:var(--c)}
+  .presets button.on{background:var(--c);border-color:var(--c);color:#fff;font-weight:700}
+  .presets button.on .dot{background:#fff}
+  .presets button .x{font-style:normal;opacity:.5;font-weight:700;margin-left:2px}
+  .presets button .x:hover{opacity:1}
+
+  .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+  @media(max-width:700px){.summary{grid-template-columns:1fr}}
+  .tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .tile::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--line)}
+  .tile.s-ok::before{background:var(--ok)} .tile.s-warn::before{background:var(--warn)} .tile.s-bad::before{background:var(--bad)}
+  .tile .lab{font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+  .tile .big{font-size:34px;font-weight:900;line-height:1.1;margin-top:4px;letter-spacing:-.03em}
+  .tile .note{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .track{height:5px;border-radius:3px;background:var(--sunk);margin-top:10px;overflow:hidden}
+  .track i{display:block;height:100%;border-radius:3px;background:var(--ok);transition:width .2s}
+  .s-warn .track i{background:var(--warn)} .s-bad .track i{background:var(--bad)}
+
+  .grid{display:grid;grid-template-columns:1fr 372px;gap:16px;align-items:start}
+  @media(max-width:960px){.grid{grid-template-columns:1fr}}
+  .metarow{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+  .metarow input[type=text]{flex:1;min-width:180px}
+  .metarow input[type=date]{flex:0 0 150px}
+  .metarow select{flex:0 0 110px}
+  .row{display:flex;gap:8px;align-items:center;margin-bottom:9px}
+  .row label{flex:0 0 84px;font-size:12.5px;color:var(--muted);font-weight:500}
+  .row .sep{color:var(--muted);font-size:13px}
+  .dup{font-size:12.5px;color:var(--warn);margin:-4px 0 9px 92px;font-weight:500}
+  .dup button{background:none;border:0;color:var(--warn);text-decoration:underline;cursor:pointer;font:inherit;padding:0}
+
+  .stat{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px}
+  .stat:last-child{border:0;padding-bottom:0}
+  .stat span:first-child{color:var(--ink-2)}
+  .stat b{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-size:14px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:500;padding:5px 10px;border-radius:999px;background:var(--sunk);color:var(--ink-2);border:1px solid var(--line-soft)}
+  .chip b{font-family:"IBM Plex Mono",monospace}
+  .chip.hit{background:var(--bad-soft);color:var(--bad);border-color:transparent}
+  .chip.clear{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+  .chip.over{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  td,th{padding:5px 2px;border-bottom:1px solid var(--line-soft);text-align:left}
+  #freq td:first-child{color:var(--ink-2)}
+  #freq td:last-child{text-align:right;width:56px;font-family:"IBM Plex Mono",monospace;color:var(--muted)}
+  #freq tr.over td{color:var(--warn);font-weight:700}
+  .freqwrap{max-height:300px;overflow:auto}
+  .prev{background:var(--sunk);border:1px solid var(--line-soft);border-radius:10px;padding:14px;white-space:pre-wrap;font-size:14.5px;line-height:1.95;max-height:340px;overflow:auto;color:var(--ink-2)}
+  .prev:empty::after{content:"본문을 입력하면 여기에 표시됩니다.";color:var(--muted);font-size:13px}
+  mark.k{background:var(--accent-soft);color:var(--accent);border-radius:3px;padding:1px 2px;font-weight:700}
+  mark.b{background:var(--bad-soft);color:var(--bad);border-radius:3px;padding:1px 2px;font-weight:700}
+  .legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:10px}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+  .saverow{display:flex;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line-soft)}
+  .saverow input{flex:1}
+  .actions{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
+  .actions .state{font-size:12.5px;color:var(--muted)}
+
+  /* ── 보관함 ── */
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .filters input{flex:1;min-width:200px}
+  .filters select{flex:0 0 130px}
+  .plist{display:flex;flex-direction:column;gap:8px}
+  .post{
+    display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;
+    background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;
+  }
+  .post:hover{border-color:var(--accent)}
+  .post .t{font-weight:700;font-size:14.5px;letter-spacing:-.01em}
+  .post .m{font-size:12.5px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:3px}
+  .post .m .num{color:var(--ink-2)}
+  .post .btns{display:flex;gap:4px;grid-row:span 2;align-items:center}
+  .pill{font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--sunk);color:var(--muted)}
+  .pill.done{background:var(--ok-soft);color:var(--ok)}
+  .pill.plan{background:var(--warn-soft);color:var(--warn)}
+
+  /* ── 캘린더 ── */
+  .calhead{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .calhead .mon{font-size:17px;font-weight:900;letter-spacing:-.02em;min-width:150px}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .cal .dow{font-size:11.5px;font-weight:700;color:var(--muted);text-align:center;padding-bottom:2px}
+  .cal .dow.sun{color:var(--bad)}
+  .cell{
+    min-height:92px;background:var(--surface);border:1px solid var(--line);border-radius:10px;
+    padding:6px;cursor:pointer;display:flex;flex-direction:column;gap:3px;
+  }
+  .cell.void{background:transparent;border-color:transparent;cursor:default}
+  .cell:hover:not(.void){border-color:var(--accent)}
+  .cell.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+  .cell .d{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted);font-weight:600}
+  .cell.today .d{background:var(--accent);color:var(--on-accent);border-radius:6px;padding:0 5px;align-self:flex-start}
+  .cell .ev{
+    font-size:11px;font-weight:600;padding:2px 6px;border-radius:5px;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap;color:var(--c);
+    background:color-mix(in srgb,var(--c) 14%,transparent);
+  }
+  .cell .ev.plan{opacity:.75;border:1px dashed color-mix(in srgb,var(--c) 45%,transparent)}
+  @media(max-width:700px){.cell{min-height:64px}.cell .ev{font-size:10px;padding:1px 4px}}
+
+  /* ── 키워드 보드 ── */
+  .board{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px}
+  .col{flex:1 0 230px;background:var(--sunk);border:1px solid var(--line);border-radius:12px;padding:10px}
+  .col h3{font-size:13px;font-weight:700;margin:0 0 10px;display:flex;align-items:center;gap:6px;color:var(--c)}
+  .col h3 em{font-style:normal;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);margin-left:auto}
+  .idea{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:8px 10px;margin-bottom:6px;display:flex;align-items:center;gap:7px}
+  .idea .kwt{font-size:13.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .idea.done .kwt{text-decoration:line-through;color:var(--muted)}
+  .idea .seo{display:flex;gap:6px;font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--muted);margin-top:2px}
+  .idea .seo .rk{color:var(--accent);font-weight:600}
+  .idea .seo .rk.out{color:var(--muted);font-weight:400}
+  .idea .mini{background:none;border:0;cursor:pointer;color:var(--muted);font-size:12px;padding:2px 4px;border-radius:5px;font-weight:700}
+  .idea .mini:hover{color:var(--accent);background:var(--accent-soft)}
+  .idea .written{font-size:10.5px;font-weight:700;color:var(--ok);background:var(--ok-soft);padding:1px 6px;border-radius:999px}
+  .idea input[type=checkbox]{width:auto;flex:0 0 auto;accent-color:var(--accent)}
+  .addidea{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+  .addidea input{flex:1;min-width:180px}
+  .addidea select{flex:0 0 140px}
+
+  /* ── 백업 ── */
+  #backup textarea{height:180px;font:400 12px/1.6 "IBM Plex Mono",monospace}
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <h1>블로그 작업대</h1>
+    <nav id="nav"></nav>
+    <div class="right">
+      <button class="ghost" id="cfgBtn" type="button">연결 설정</button>
+      <button class="ghost" id="bkBtn" type="button">백업 · 복원</button>
+    </div>
+  </div>
+
+  <div class="card hide" id="conn">
+    <h2>연결 설정 <span>네이버 검색량·순위를 쓰려면 프록시 주소가 필요합니다.</span></h2>
+    <div class="row"><label>프록시 주소</label><input id="proxy" placeholder="https://naver-proxy.○○○.workers.dev"></div>
+    <div class="actions">
+      <button class="pri" id="connTest" type="button">연결 확인</button>
+      <button class="ghost" id="connClose" type="button">닫기</button>
+      <span class="state" id="connMsg"></span>
+    </div>
+    <p class="foot">Cloudflare Worker에 <b>naver-proxy-worker.js</b>를 올리고 받은 주소를 넣으세요. API 키는 이 페이지가 아니라 Cloudflare에 저장됩니다.</p>
+  </div>
+
+  <div class="card hide" id="backup">
+    <h2>백업 · 복원 <span>브라우저를 정리하면 데이터가 사라집니다. 가끔 복사해서 보관하세요.</span></h2>
+    <textarea id="bkText" spellcheck="false"></textarea>
+    <div class="actions">
+      <button class="pri" id="bkCopy" type="button">전체 복사</button>
+      <button class="ghost" id="bkRestore" type="button">붙여넣은 내용으로 복원</button>
+      <button class="ghost" id="bkClose" type="button">닫기</button>
+      <span class="state" id="bkMsg"></span>
+    </div>
+  </div>
+
+  <!-- ══ 검사기 ══ -->
+  <section id="v-check">
+    <div class="presets" id="tabs"></div>
+    <div class="summary" id="summary"></div>
+    <div class="grid">
+      <div>
+        <div class="card">
+          <h2>원고</h2>
+          <div class="metarow">
+            <input type="text" id="title" placeholder="글 제목">
+            <input type="date" id="pdate">
+            <select id="status"><option>초안</option><option>예정</option><option>발행</option></select>
+          </div>
+          <textarea id="txt" style="height:360px" placeholder="여기에 원고를 붙여넣으세요."></textarea>
+          <div class="actions">
+            <button class="pri" id="save" type="button">보관함에 저장</button>
+            <button class="ghost" id="newPost" type="button">새 글</button>
+            <span class="state" id="saveMsg"></span>
+          </div>
+        </div>
+        <div class="card">
+          <h2>하이라이트</h2>
+          <div class="prev" id="prev"></div>
+          <div class="legend">
+            <span><i style="background:var(--accent-soft)"></i>메인키워드</span>
+            <span><i style="background:var(--bad-soft)"></i>금지어</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h2>기준 설정</h2>
+          <div class="row"><label>메인키워드</label><input id="kw" placeholder="예: 속기사 자격증"><button class="ghost" id="kwLook" type="button" style="flex:0 0 auto">조회</button></div>
+          <div class="dup hide" id="dup"></div>
+          <div class="dup hide" id="seo" style="color:var(--ink-2)"></div>
+          <div class="row"><label>키워드 횟수</label><input id="kwMin" type="number"><span class="sep">~</span><input id="kwMax" type="number"></div>
+          <div class="row"><label>글자수</label><input id="lenMin" type="number"><span class="sep">~</span><input id="lenMax" type="number"></div>
+          <div class="row"><label>금지어</label><input id="ban" placeholder="쉼표로 구분"></div>
+          <div class="row"><label>단어 상한</label><input id="cap" type="number"><span class="sep">회 초과 시 경고</span></div>
+          <div class="row"><label>주시 단어</label><input id="watch" placeholder="속기,자격증"></div>
+          <div class="row"><label>블로그 주소</label><input id="blogUrl" placeholder="blog.naver.com/아이디"></div>
+          <div class="saverow">
+            <input id="pname" placeholder="이 설정 이름 (예: 파워콘텐츠)" maxlength="20">
+            <button class="pri" id="psave" type="button">설정 저장</button>
+          </div>
+          <p class="foot" id="pmsg">저장한 설정은 위쪽 버튼 줄에 채널로 추가됩니다. 메인키워드는 글마다 달라서 저장되지 않습니다.</p>
+        </div>
+        <div class="card"><h2>세부 수치</h2><div id="stats"></div></div>
+        <div class="card"><h2>금지어 · 주시 단어 <span style="color:var(--muted)">부분일치</span></h2><div class="chips" id="chips"></div></div>
+        <div class="card">
+          <h2>단어 빈도 <span style="color:var(--muted)">상위 30</span></h2>
+          <div class="freqwrap"><table id="freq"></table></div>
+          <p class="foot">조사만 떼어낸 근사 집계입니다. 정확한 횟수가 필요한 단어는 <b>주시 단어</b>에 등록하세요.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 보관함 ══ -->
+  <section id="v-archive" class="hide">
+    <div class="filters">
+      <input type="search" id="q" placeholder="제목 · 키워드 · 본문 검색">
+      <select id="fch"></select>
+      <select id="fst"><option value="">전체 상태</option><option>초안</option><option>예정</option><option>발행</option></select>
+      <select id="sort"><option value="date">날짜순</option><option value="title">제목순</option><option value="kw">키워드순</option></select>
+    </div>
+    <div class="plist" id="plist"></div>
+  </section>
+
+  <!-- ══ 캘린더 ══ -->
+  <section id="v-cal" class="hide">
+    <div class="calhead">
+      <button class="ghost" id="prevM" type="button">‹</button>
+      <span class="mon" id="mon"></span>
+      <button class="ghost" id="nextM" type="button">›</button>
+      <button class="ghost" id="todayB" type="button">오늘</button>
+    </div>
+    <div class="cal" id="cal"></div>
+    <div class="card" id="dayPanel" style="margin-top:16px"></div>
+  </section>
+
+  <!-- ══ 키워드 보드 ══ -->
+  <section id="v-board" class="hide">
+    <div class="addidea">
+      <input id="ikw" placeholder="떠오른 키워드">
+      <select id="ich"></select>
+      <button class="pri" id="iadd" type="button">추가</button>
+      <button class="ghost" id="volAll" type="button">검색량 전체 조회</button>
+      <button class="ghost" id="rankAll" type="button">순위 전체 조회</button>
+      <span class="state" id="boardMsg" style="font-size:12.5px;color:var(--muted)"></span>
+    </div>
+    <div class="board" id="board"></div>
+    <p class="foot">보관함에 같은 키워드로 저장된 글이 있으면 <b>작성됨</b>이 자동으로 표시됩니다. 순위는 채널 기준 설정에 <b>블로그 주소</b>를 넣은 채널만 조회하며, 네이버 <b>블로그탭</b> 기준 100위까지입니다(통합검색 순위와 다릅니다).</p>
+  </section>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const $$=s=>[...document.querySelectorAll(s)];
+
+/* ── 저장소 ── */
+const DB={
+  get(k,d){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
+};
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const TODAY=iso(new Date());
+
+/* ── 채널 = 기준 설정 ── */
+const PRESETS={
+  '협회 브블':{kwMin:5,kwMax:6,lenMin:1450,lenMax:1600,ban:'가장,상담,무료,제일',cap:6,watch:'자격,자격증,속기,속기사'},
+  '개인블 페니':{kwMin:5,kwMax:6,lenMin:1500,lenMax:1600,ban:'제일,가장,상담,추천',cap:6,watch:'속기,속기사,다시,제가,시작'},
+  '드리밍':{kwMin:5,kwMax:6,lenMin:1400,lenMax:1700,ban:'제일,가장,상담,무료',cap:6,watch:'취업,자격증,속기'},
+  '유링':{kwMin:4,kwMax:6,lenMin:1400,lenMax:1800,ban:'가장,제일',cap:6,watch:''}
+};
+const FIELDS=['kw','kwMin','kwMax','lenMin','lenMax','ban','cap','watch'];
+const SAVED=FIELDS.filter(f=>f!=='kw');   // 메인키워드는 글마다 달라서 제외
+// 블로그 주소는 기본 채널에도 넣을 수 있어야 하므로 프리셋이 아니라 채널명 → 주소 맵으로 따로 둔다
+const PALETTE=['#2f6fb0','#b8557d','#7a5cc4','#a8701c','#2a8a72','#a4483c','#4b7a2c','#8a5ab0'];
+
+let mine=DB.get('bc.presets',{});
+let blogs=DB.get('bc.blogs',{});
+let posts=DB.get('bc.posts',[]);
+let ideas=DB.get('bc.ideas',[]);
+let editingId=null, activeCh=null, selDate=null;
+let cur=new Date(); cur.setDate(1);
+
+const channels=()=>Object.keys(PRESETS).concat(Object.keys(mine));
+const cfgOf=n=>PRESETS[n]||mine[n];
+function chColor(n){
+  const i=channels().indexOf(n);
+  return PALETTE[(i<0?0:i)%PALETTE.length];
+}
+const chBadge=n=>'<span class="ch" style="--c:'+chColor(n)+'"><i class="dot"></i>'+esc(n)+'</span>';
+
+/* ── 검사 로직 ── */
+// 조사만 떼는 근사 분석. 형태소 분석기 아님 — 정확한 횟수는 '주시 단어'(부분일치)로 확인.
+// ponytail: 조사 목록 하드코딩. 어미까지 필요해지면 그때 형태소 분석기 붙이기
+const PARTICLES=['으로서','으로써','이라는','에게서','에서는','으로는','이라고','이라도','에서도','에게는','라는','으로','에서','에게','한테','부터','까지','처럼','보다','이나','든지','마다','조차','밖에','과의','와의','에는','에도','은','는','이','가','을','를','에','도','만','로','와','과','랑','의','께'];
+function countOf(text,word){
+  if(!word) return 0;
+  let n=0,i=0;
+  while((i=text.indexOf(word,i))!==-1){n++;i+=word.length}
+  return n;
+}
+function stem(w){
+  w=w.replace(/[^가-힣]/g,'');
+  if(w.length<2) return '';
+  for(const p of PARTICLES) if(w.length-p.length>=2&&w.endsWith(p)) return w.slice(0,-p.length);
+  return w;
+}
+const listOf=s=>s.split(',').map(x=>x.trim()).filter(Boolean);
+const state=(v,a,b)=>v<a?'warn':v>b?'bad':'ok';
+const noSpaceLen=t=>t.replace(/\s/g,'').length;
+
+function run(){
+  const text=$('#txt').value;
+  const kw=$('#kw').value.trim();
+  const bans=listOf($('#ban').value);
+  const watches=listOf($('#watch').value);
+  const cap=+$('#cap').value||6;
+  const n=noSpaceLen(text);
+  const lenMin=+$('#lenMin').value, lenMax=+$('#lenMax').value;
+  const kwN=countOf(text,kw), kwMin=+$('#kwMin').value, kwMax=+$('#kwMax').value;
+  const first=text.split(/\n\s*\n/)[0]||'';
+  const banHits=bans.reduce((a,w)=>a+countOf(text,w),0);
+  const lenS=state(n,lenMin,lenMax), kwS=kw?state(kwN,kwMin,kwMax):'';
+
+  $('#summary').innerHTML=[
+    {c:lenS,lab:'공백 제외 글자수',big:n,pct:lenMax?Math.min(100,Math.round(n/lenMax*100)):0,
+     note:'목표 '+lenMin+'~'+lenMax+'자'+(lenS==='ok'?' · 충족':lenS==='warn'?' · '+(lenMin-n)+'자 부족':' · '+(n-lenMax)+'자 초과')},
+    {c:kwS,lab:'메인키워드',big:kw?kwN:'—',pct:kw&&kwMax?Math.min(100,Math.round(kwN/kwMax*100)):0,
+     note:kw?'목표 '+kwMin+'~'+kwMax+'회 · 첫 문단 '+(first.includes(kw)?'포함':'누락'):'키워드를 입력하세요'},
+    {c:banHits?'bad':'ok',lab:'금지어',big:banHits,pct:banHits?100:0,note:banHits?'본문에서 하이라이트됨':'검출 없음'}
+  ].map(t=>'<div class="tile s-'+t.c+'"><div class="lab">'+t.lab+'</div><div class="big num">'+t.big+
+    '</div><div class="note">'+t.note+'</div><div class="track"><i style="width:'+t.pct+'%"></i></div></div>').join('');
+
+  $('#stats').innerHTML=[
+    ['공백 포함 글자수','<b>'+text.length+'</b>'],
+    ['어절 수','<b>'+(text.trim().match(/\S+/g)||[]).length+'</b>'],
+    ['줄 수','<b>'+(text.trim()?text.trim().split('\n').length:0)+'</b>'],
+    ['문단 수','<b>'+(text.trim()?text.split(/\n\s*\n/).filter(p=>p.trim()).length:0)+'</b>'],
+    ['메인키워드 첫 문단',kw?(first.includes(kw)?'<b class="ok">포함</b>':'<b class="bad">누락</b>'):'<b style="color:var(--muted)">—</b>']
+  ].map(p=>'<div class="stat"><span>'+p[0]+'</span><span>'+p[1]+'</span></div>').join('');
+
+  $('#chips').innerHTML=bans.map(w=>{const c=countOf(text,w);
+      return '<span class="chip '+(c?'hit':'clear')+'">'+esc(w)+' <b>'+c+'</b></span>'})
+    .concat(watches.map(w=>{const c=countOf(text,w);
+      return '<span class="chip '+(c>cap?'over':'')+'">'+esc(w)+' <b>'+c+'</b>'+(c>cap?' 초과':'')+'</span>'}))
+    .join('')||'<span class="empty">설정에서 금지어와 주시 단어를 등록하세요.</span>';
+
+  const m={};
+  for(const w of text.match(/\S+/g)||[]){const s=stem(w);if(s)m[s]=(m[s]||0)+1}
+  $('#freq').innerHTML=Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,30)
+    .map(e=>'<tr class="'+(e[1]>cap?'over':'')+'"><td>'+esc(e[0])+'</td><td>'+e[1]+'</td></tr>').join('')
+    ||'<tr><td class="empty">본문 없음</td><td></td></tr>';
+
+  let html=esc(text);
+  for(const w of bans) if(w) html=html.split(esc(w)).join('<mark class="b">'+esc(w)+'</mark>');
+  if(kw) html=html.split(esc(kw)).join('<mark class="k">'+esc(kw)+'</mark>');
+  $('#prev').innerHTML=html;
+
+  dupCheck(kw);
+  const cfg={};FIELDS.forEach(f=>cfg[f]=$('#'+f).value);
+  DB.set('bc.settings',cfg);
+}
+
+// 같은 키워드로 이미 쓴 글이 있으면 알린다 (중복 발행 방지)
+function dupCheck(kw){
+  const d=$('#dup');
+  if(!kw){d.classList.add('hide');return}
+  const hits=posts.filter(p=>p.id!==editingId&&p.kw&&p.kw===kw);
+  if(!hits.length){d.classList.add('hide');return}
+  d.classList.remove('hide');
+  d.innerHTML='이미 이 키워드로 저장된 글 '+hits.length+'건 · '+
+    hits.slice(0,3).map(p=>esc(p.ch)+(p.date?' '+p.date:'')).join(' / ')+
+    ' <button type="button" id="dupGo">보관함에서 보기</button>';
+  $('#dupGo').onclick=()=>{$('#q').value=kw;show('archive');renderArchive()};
+}
+
+/* ── 기준 설정(채널) 탭 ── */
+function apply(p){Object.keys(p).forEach(k=>{if($('#'+k))$('#'+k).value=p[k]});run()}
+function msg(el,t){$(el).textContent=t}
+function storePresets(next){ if(!DB.set('bc.presets',next))return false; mine=next; return true }
+
+function tabs(){
+  $('#tabs').innerHTML=channels().map(n=>
+    '<button type="button" data-n="'+esc(n)+'" style="--c:'+chColor(n)+'"'+(n===activeCh?' class="on"':'')+'>'+
+    '<i class="dot"></i>'+esc(n)+(PRESETS[n]?'':'<i class="x" title="삭제">×</i>')+'</button>').join('');
+}
+function setChannel(n){ activeCh=n; tabs(); apply(cfgOf(n)); $('#blogUrl').value=blogOf(n) }
+const blogOf=ch=>String(blogs[ch]||'').trim();
+$('#blogUrl').addEventListener('input',e=>{
+  blogs[activeCh]=e.target.value.trim();
+  DB.set('bc.blogs',blogs);
+});
+
+$('#tabs').onclick=e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  const n=b.dataset.n;
+  if(e.target.classList.contains('x')){
+    const next=Object.assign({},mine); delete next[n];
+    if(!storePresets(next)){msg('#pmsg','삭제 실패: 브라우저 저장소를 쓸 수 없습니다.');return}
+    if(activeCh===n) activeCh=Object.keys(PRESETS)[0];
+    tabs(); apply(cfgOf(activeCh)); fillChannelSelects();
+    msg('#pmsg','"'+n+'" 삭제됨. 이 채널로 저장한 글은 그대로 남아 있습니다.');
+    return;
+  }
+  setChannel(n);
+};
+
+$('#psave').onclick=()=>{
+  const n=$('#pname').value.trim();
+  if(!n){msg('#pmsg','이름을 입력하세요.');$('#pname').focus();return}
+  if(PRESETS[n]){msg('#pmsg','"'+n+'"은 기본 설정 이름이라 쓸 수 없습니다.');return}
+  const cfg={};SAVED.forEach(f=>cfg[f]=$('#'+f).value);
+  const isNew=!mine[n];
+  const next=Object.assign({},mine); next[n]=cfg;
+  if(!storePresets(next)){msg('#pmsg','저장 실패: 브라우저 저장소를 쓸 수 없습니다.');return}
+  $('#pname').value=''; activeCh=n; tabs(); fillChannelSelects();
+  msg('#pmsg',isNew?'"'+n+'" 저장됨':'"'+n+'" 덮어썼습니다.');
+};
+
+/* ── 원고 보관함 ── */
+function savePosts(){ return DB.set('bc.posts',posts) }
+
+$('#save').onclick=()=>{
+  const body=$('#txt').value, title=$('#title').value.trim();
+  if(!body.trim()&&!title){msg('#saveMsg','제목이나 본문을 입력하세요.');return}
+  const rec={
+    id:editingId||uid(),
+    title:title||'(제목 없음)',
+    kw:$('#kw').value.trim(), ch:activeCh,
+    date:$('#pdate').value||TODAY, status:$('#status').value,
+    body, len:noSpaceLen(body)
+  };
+  const i=posts.findIndex(p=>p.id===rec.id);
+  const next=posts.slice();
+  if(i<0) next.unshift(rec); else next[i]=rec;
+  if(!DB.set('bc.posts',next)){msg('#saveMsg','저장 실패: 브라우저 저장소를 쓸 수 없습니다.');return}
+  posts=next; editingId=rec.id;
+  msg('#saveMsg',(i<0?'보관함에 저장했습니다.':'수정 내용을 저장했습니다.')+' ('+rec.len+'자)');
+  renderAll();
+};
+
+$('#newPost').onclick=()=>{
+  editingId=null;
+  $('#txt').value='';$('#title').value='';$('#kw').value='';
+  $('#pdate').value=TODAY;$('#status').value='초안';
+  msg('#saveMsg','새 글을 시작합니다.'); run();
+};
+
+function loadPost(id){
+  const p=posts.find(x=>x.id===id); if(!p) return;
+  editingId=p.id;
+  if(cfgOf(p.ch)) setChannel(p.ch);
+  $('#title').value=p.title==='(제목 없음)'?'':p.title;
+  $('#kw').value=p.kw||''; $('#txt').value=p.body||'';
+  $('#pdate').value=p.date||TODAY; $('#status').value=p.status||'초안';
+  msg('#saveMsg','불러왔습니다. 저장하면 이 글이 갱신됩니다.');
+  show('check'); run();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function delPost(id){
+  posts=posts.filter(p=>p.id!==id); savePosts();
+  if(editingId===id) editingId=null;
+  renderAll();
+}
+
+function renderArchive(){
+  const q=$('#q').value.trim().toLowerCase();
+  const fch=$('#fch').value, fst=$('#fst').value, sort=$('#sort').value;
+  let rows=posts.filter(p=>
+    (!fch||p.ch===fch)&&(!fst||p.status===fst)&&
+    (!q||[p.title,p.kw,p.body].join(' ').toLowerCase().includes(q)));
+  rows.sort((a,b)=>sort==='title'?a.title.localeCompare(b.title,'ko')
+    :sort==='kw'?(a.kw||'').localeCompare(b.kw||'','ko')
+    :(b.date||'').localeCompare(a.date||''));
+
+  $('#plist').innerHTML=rows.length?rows.map(p=>
+    '<div class="post"><div><div class="t">'+esc(p.title)+'</div><div class="m">'+
+      chBadge(p.ch)+
+      '<span class="pill '+(p.status==='발행'?'done':p.status==='예정'?'plan':'')+'">'+esc(p.status)+'</span>'+
+      (p.kw?'<span>키워드 '+esc(p.kw)+'</span>':'')+
+      '<span class="num">'+p.len+'자</span><span class="num">'+esc(p.date||'')+'</span>'+
+    '</div></div><div class="btns">'+
+      '<button class="ghost" data-load="'+p.id+'" type="button">불러오기</button>'+
+      '<button class="danger" data-del="'+p.id+'" type="button">삭제</button>'+
+    '</div></div>').join('')
+    :'<div class="empty">'+(posts.length?'조건에 맞는 글이 없습니다.':'저장된 글이 없습니다. 검사기에서 “보관함에 저장”을 눌러 보세요.')+'</div>';
+}
+$('#plist').onclick=e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  if(b.dataset.load) loadPost(b.dataset.load);
+  if(b.dataset.del&&confirm('이 글을 삭제할까요? 되돌릴 수 없습니다.')) delPost(b.dataset.del);
+};
+['q','fch','fst','sort'].forEach(id=>$('#'+id).addEventListener('input',renderArchive));
+
+/* ── 캘린더 ── */
+function renderCal(){
+  const y=cur.getFullYear(), m=cur.getMonth();
+  $('#mon').textContent=y+'년 '+(m+1)+'월';
+  const start=new Date(y,m,1).getDay(), days=new Date(y,m+1,0).getDate();
+  const byDate={};
+  posts.forEach(p=>{(byDate[p.date]=byDate[p.date]||[]).push(p)});
+
+  let html=['일','월','화','수','목','금','토']
+    .map((d,i)=>'<div class="dow'+(i===0?' sun':'')+'">'+d+'</div>').join('');
+  for(let i=0;i<start;i++) html+='<div class="cell void"></div>';
+  for(let d=1;d<=days;d++){
+    const key=y+'-'+pad(m+1)+'-'+pad(d);
+    const evs=(byDate[key]||[]).map(p=>
+      '<div class="ev'+(p.status==='발행'?'':' plan')+'" style="--c:'+chColor(p.ch)+'" data-load="'+p.id+'" title="'+esc(p.title)+'">'+esc(p.title)+'</div>').join('');
+    html+='<div class="cell'+(key===TODAY?' today':'')+(key===selDate?' sel':'')+'" data-date="'+key+'">'+
+      '<span class="d">'+d+'</span>'+evs+'</div>';
+  }
+  $('#cal').innerHTML=html;
+  renderDayPanel();
+}
+function renderDayPanel(){
+  const p=$('#dayPanel');
+  if(!selDate){p.innerHTML='<div class="empty">날짜를 클릭하면 그날의 글을 보고, 새 글을 잡을 수 있습니다.</div>';return}
+  const list=posts.filter(x=>x.date===selDate);
+  p.innerHTML='<h2>'+selDate+'</h2>'+
+    (list.length?'<div class="plist">'+list.map(x=>
+      '<div class="post"><div><div class="t">'+esc(x.title)+'</div><div class="m">'+chBadge(x.ch)+
+      '<span class="pill '+(x.status==='발행'?'done':x.status==='예정'?'plan':'')+'">'+esc(x.status)+'</span>'+
+      '<span class="num">'+x.len+'자</span></div></div>'+
+      '<div class="btns"><button class="ghost" data-load="'+x.id+'" type="button">불러오기</button></div></div>').join('')+'</div>'
+      :'<div class="empty">이 날짜에 잡힌 글이 없습니다.</div>')+
+    '<div class="actions"><button class="pri" id="newOnDay" type="button">이 날짜로 새 글 잡기</button></div>';
+  $('#newOnDay').onclick=()=>{
+    $('#newPost').click();
+    $('#pdate').value=selDate; $('#status').value='예정';
+    show('check'); window.scrollTo({top:0,behavior:'smooth'});
+  };
+}
+$('#cal').onclick=e=>{
+  const ev=e.target.closest('[data-load]');
+  if(ev){loadPost(ev.dataset.load);return}
+  const cell=e.target.closest('.cell');
+  if(!cell||cell.classList.contains('void'))return;
+  selDate=cell.dataset.date===selDate?null:cell.dataset.date;
+  renderCal();
+};
+$('#prevM').onclick=()=>{cur.setMonth(cur.getMonth()-1);renderCal()};
+$('#nextM').onclick=()=>{cur.setMonth(cur.getMonth()+1);renderCal()};
+$('#todayB').onclick=()=>{cur=new Date();cur.setDate(1);selDate=TODAY;renderCal()};
+
+/* ── 네이버 API (Cloudflare Worker 프록시 경유) ── */
+const proxyUrl=()=>DB.get('bc.proxy','').trim().replace(/\/+$/,'');
+async function api(path,params){
+  const base=proxyUrl();
+  if(!base) throw new Error('프록시 주소가 없습니다. 상단 “연결 설정”에서 넣어 주세요.');
+  const qs=new URLSearchParams(params).toString();
+  let r;
+  try{ r=await fetch(base+path+'?'+qs) }
+  catch(e){ throw new Error('프록시에 연결하지 못했습니다. claude.ai 아티팩트 주소에서는 외부 호출이 차단되니 GitHub Pages 주소에서 사용하세요.') }
+  let body;
+  try{body=await r.json()}catch(e){throw new Error('응답을 읽지 못했습니다. 프록시 주소를 확인하세요.')}
+  if(!r.ok) throw new Error(body.error||body.errorMessage||('오류 '+r.status));
+  return body;
+}
+const num=n=>Number(n||0).toLocaleString();
+// 검색광고 키워드도구는 한 번에 5개까지만 받는다
+async function volumes(keywords){
+  const out={};
+  for(let i=0;i<keywords.length;i+=5){
+    const chunk=keywords.slice(i,i+5);
+    const {rows}=await api('/volume',{keywords:chunk.join(',')});
+    // 공백을 뺀 형태로 조회되므로 같은 방식으로 되짚는다
+    chunk.forEach(k=>{
+      const hit=(rows||[]).find(r=>String(r.keyword).replace(/\s+/g,'')===k.replace(/\s+/g,''));
+      if(hit) out[k]={pc:hit.pc,mobile:hit.mobile,total:hit.total,comp:hit.comp};
+    });
+  }
+  return out;
+}
+
+$('#cfgBtn').onclick=()=>{
+  const c=$('#conn'); c.classList.toggle('hide');
+  if(!c.classList.contains('hide')){$('#proxy').value=DB.get('bc.proxy','');$('#connMsg').textContent=''}
+};
+$('#connClose').onclick=()=>$('#conn').classList.add('hide');
+$('#proxy').addEventListener('input',e=>DB.set('bc.proxy',e.target.value.trim()));
+$('#connTest').onclick=async()=>{
+  $('#connMsg').textContent='확인 중…';
+  try{
+    const v=await api('/volume',{keywords:'속기사'});
+    const t=(v.rows&&v.rows[0])?' (속기사 월 '+num(v.rows[0].total)+'회)':'';
+    $('#connMsg').innerHTML='<b class="ok">검색량 연결됨'+t+'</b>';
+  }catch(e){ $('#connMsg').innerHTML='<b class="bad">'+esc(e.message)+'</b>'; return }
+  try{
+    await api('/blog',{query:'속기사',display:1});
+    $('#connMsg').innerHTML+=' · <b class="ok">검색 연결됨</b>';
+  }catch(e){ $('#connMsg').innerHTML+=' · <b class="warn">검색: '+esc(e.message)+'</b>' }
+};
+
+/* 검사기의 메인키워드 한 건 조회 */
+$('#kwLook').onclick=async()=>{
+  const kw=$('#kw').value.trim(), box=$('#seo');
+  if(!kw){$('#kw').focus();return}
+  box.classList.remove('hide'); box.textContent='조회 중…';
+  const blog=$('#blogUrl').value.trim();
+  let out=[];
+  try{
+    const v=await volumes([kw]);
+    out.push(v[kw]?'월 검색량 <b>'+num(v[kw].total)+'</b>회 (PC '+num(v[kw].pc)+' · 모바일 '+num(v[kw].mobile)+')':'월 검색량 정보 없음');
+  }catch(e){ out.push('검색량: '+esc(e.message)) }
+  if(blog){
+    try{
+      const r=await api('/rank',{query:kw,blog,limit:100});
+      out.push(r.rank?'블로그탭 <b>'+r.rank+'위</b>':'블로그탭 100위 안에 없음');
+    }catch(e){ out.push('순위: '+esc(e.message)) }
+  }else out.push('블로그 주소를 넣으면 순위도 함께 조회합니다.');
+  box.innerHTML=out.join(' · ');
+};
+
+/* ── 키워드 보드 ── */
+function saveIdeas(){ return DB.set('bc.ideas',ideas) }
+$('#iadd').onclick=()=>{
+  const kw=$('#ikw').value.trim(); if(!kw){$('#ikw').focus();return}
+  ideas.unshift({id:uid(),kw,ch:$('#ich').value,done:false});
+  saveIdeas(); $('#ikw').value=''; renderBoard();
+};
+$('#ikw').addEventListener('keydown',e=>{if(e.key==='Enter')$('#iadd').click()});
+
+function renderBoard(){
+  const written=new Set(posts.map(p=>p.kw).filter(Boolean));
+  $('#board').innerHTML=channels().map(ch=>{
+    const list=ideas.filter(i=>i.ch===ch).sort((a,b)=>a.done-b.done);
+    return '<div class="col" style="--c:'+chColor(ch)+'"><h3><i class="dot"></i>'+esc(ch)+
+      '<em>'+list.filter(i=>!i.done).length+'</em></h3>'+
+      (list.length?list.map(i=>
+        '<div class="idea'+(i.done?' done':'')+'">'+
+        '<input type="checkbox" data-tog="'+i.id+'"'+(i.done?' checked':'')+' title="완료">'+
+        '<div style="flex:1;min-width:0">'+
+          '<div class="kwt">'+esc(i.kw)+'</div>'+
+          (i.vol||i.rank!==undefined?'<div class="seo">'+
+            (i.vol?'<span title="월간 검색량 (PC '+num(i.vol.pc)+' · 모바일 '+num(i.vol.mobile)+')">월 '+num(i.vol.total)+'</span>':'')+
+            (i.rank?'<span class="rk">블로그탭 '+i.rank+'위</span>':i.rank===0?'<span class="rk out">100위 밖</span>':'')+
+          '</div>':'')+
+        '</div>'+
+        (written.has(i.kw)?'<span class="written">작성됨</span>':'')+
+        '<button class="mini" data-look="'+i.id+'" type="button" title="검색량·순위 조회">◎</button>'+
+        '<button class="mini" data-write="'+i.id+'" type="button" title="이 키워드로 쓰기">쓰기</button>'+
+        '<button class="mini" data-dropi="'+i.id+'" type="button" title="삭제">×</button></div>').join('')
+        :'<div class="empty" style="padding:8px 2px;font-size:12.5px">비어 있음</div>')+
+      '</div>';
+  }).join('');
+}
+
+async function lookupIdeas(list,mode){
+  const msg=t=>$('#boardMsg').textContent=t;
+  if(!list.length){msg('조회할 키워드가 없습니다.');return}
+  try{
+    if(mode!=='rank'){
+      msg('검색량 조회 중… (0/'+list.length+')');
+      const vols=await volumes(list.map(i=>i.kw));
+      list.forEach(i=>{if(vols[i.kw])i.vol=vols[i.kw]});
+      saveIdeas(); renderBoard();
+    }
+    if(mode!=='vol'){
+      const targets=list.filter(i=>blogOf(i.ch));
+      if(!targets.length&&mode==='rank'){msg('채널 기준 설정에 블로그 주소를 먼저 넣어 주세요.');return}
+      for(let n=0;n<targets.length;n++){
+        msg('순위 조회 중… ('+(n+1)+'/'+targets.length+')');
+        const i=targets[n];
+        try{
+          const r=await api('/rank',{query:i.kw,blog:blogOf(i.ch),limit:100});
+          i.rank=r.rank||0;
+        }catch(e){ msg('순위 조회 실패: '+e.message); break }
+      }
+      saveIdeas(); renderBoard();
+    }
+    msg('완료 · '+new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}));
+  }catch(e){ msg(e.message) }
+}
+$('#volAll').onclick=()=>lookupIdeas(ideas.filter(i=>!i.done),'vol');
+$('#rankAll').onclick=()=>lookupIdeas(ideas.filter(i=>!i.done&&blogOf(i.ch)),'rank');
+$('#board').onclick=e=>{
+  const t=e.target;
+  if(t.dataset.tog){
+    const i=ideas.find(x=>x.id===t.dataset.tog); i.done=t.checked; saveIdeas(); renderBoard(); return;
+  }
+  if(t.dataset.dropi){ ideas=ideas.filter(x=>x.id!==t.dataset.dropi); saveIdeas(); renderBoard(); return }
+  if(t.dataset.look){ lookupIdeas([ideas.find(x=>x.id===t.dataset.look)],'both'); return }
+  if(t.dataset.write){
+    const i=ideas.find(x=>x.id===t.dataset.write);
+    $('#newPost').click(); setChannel(i.ch); $('#kw').value=i.kw;
+    show('check'); run(); window.scrollTo({top:0,behavior:'smooth'});
+  }
+};
+
+/* ── 채널 select 채우기 ── */
+function fillChannelSelects(){
+  const opts=channels().map(n=>'<option>'+esc(n)+'</option>').join('');
+  const keepI=$('#ich').value;
+  $('#ich').innerHTML=opts;
+  $('#ich').value=channels().includes(keepI)?keepI:channels()[0];
+  const keepF=$('#fch').value;
+  $('#fch').innerHTML='<option value="">전체 채널</option>'+opts;
+  $('#fch').value=keepF;
+}
+
+/* ── 백업 ── */
+$('#bkBtn').onclick=()=>{
+  const b=$('#backup'); b.classList.toggle('hide');
+  if(!b.classList.contains('hide')){
+    $('#bkText').value=JSON.stringify({v:1,presets:mine,blogs,posts,ideas},null,1);
+    msg('#bkMsg','');
+  }
+};
+$('#bkClose').onclick=()=>$('#backup').classList.add('hide');
+$('#bkCopy').onclick=()=>{
+  navigator.clipboard.writeText($('#bkText').value)
+    .then(()=>msg('#bkMsg','복사했습니다. 메모장 등에 붙여넣어 보관하세요.'))
+    .catch(()=>{$('#bkText').select();msg('#bkMsg','Ctrl+C로 복사하세요.')});
+};
+$('#bkRestore').onclick=()=>{
+  let d;
+  try{d=JSON.parse($('#bkText').value)}catch(e){msg('#bkMsg','형식이 올바르지 않습니다.');return}
+  if(!d||typeof d!=='object'||!Array.isArray(d.posts)){msg('#bkMsg','백업 데이터가 아닙니다.');return}
+  if(!confirm('현재 데이터를 덮어씁니다. 계속할까요?'))return;
+  posts=d.posts; ideas=Array.isArray(d.ideas)?d.ideas:[]; mine=d.presets&&typeof d.presets==='object'?d.presets:{};
+  blogs=d.blogs&&typeof d.blogs==='object'?d.blogs:{};
+  savePosts(); saveIdeas(); DB.set('bc.presets',mine); DB.set('bc.blogs',blogs);
+  editingId=null; tabs(); fillChannelSelects(); $('#blogUrl').value=blogOf(activeCh); renderAll();
+  msg('#bkMsg','복원했습니다. 글 '+posts.length+'건, 키워드 '+ideas.length+'건.');
+};
+
+/* ── 뷰 전환 ── */
+const VIEWS=[['check','검사기'],['archive','보관함'],['cal','캘린더'],['board','키워드']];
+function show(v){
+  VIEWS.forEach(([k])=>$('#v-'+k).classList.toggle('hide',k!==v));
+  $$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  DB.set('bc.view',v);
+  if(v==='archive')renderArchive();
+  if(v==='cal')renderCal();
+  if(v==='board')renderBoard();
+}
+function renderNav(){
+  $('#nav').innerHTML=VIEWS.map(([k,label])=>{
+    const c=k==='archive'?posts.length:k==='board'?ideas.filter(i=>!i.done).length:0;
+    return '<button type="button" data-v="'+k+'">'+label+(c?'<b>'+c+'</b>':'')+'</button>';
+  }).join('');
+}
+$('#nav').onclick=e=>{const b=e.target.closest('button'); if(b) show(b.dataset.v)};
+
+function renderAll(){
+  renderNav(); fillChannelSelects();
+  const v=$$('#v-archive,#v-cal,#v-board,#v-check').find(s=>!s.classList.contains('hide'));
+  $$('#nav button').forEach(b=>b.classList.toggle('on','v-'+b.dataset.v===(v&&v.id)));
+  if(!$('#v-archive').classList.contains('hide'))renderArchive();
+  if(!$('#v-cal').classList.contains('hide'))renderCal();
+  if(!$('#v-board').classList.contains('hide'))renderBoard();
+}
+
+/* ── 시작 ── */
+const savedCfg=DB.get('bc.settings',null);
+activeCh=DB.get('bc.channel',null);
+if(!cfgOf(activeCh)) activeCh=Object.keys(PRESETS)[0];
+tabs();
+apply(savedCfg||cfgOf(activeCh));
+$('#blogUrl').value=blogOf(activeCh);
+$('#pdate').value=TODAY;
+renderNav(); fillChannelSelects();
+show(DB.get('bc.view','check'));
+FIELDS.concat('txt').forEach(f=>$('#'+f).addEventListener('input',run));
+$('#tabs').addEventListener('click',()=>DB.set('bc.channel',activeCh));
+run();
+
+/* ── self-check ── */
+console.assert(countOf('속기사 속기 속기사','속기')===3,'countOf');
+console.assert(stem('속기사가')==='속기사'&&stem('자격증을')==='자격증'&&stem('의')==='','stem');
+console.assert(esc('<b>&"')==='&lt;b&gt;&amp;&quot;','esc');
+console.assert(state(5,5,6)==='ok'&&state(4,5,6)==='warn'&&state(7,5,6)==='bad','state');
+console.assert(SAVED.indexOf('kw')===-1&&SAVED.length===FIELDS.length-1,'preset excludes kw');
+console.assert(iso(new Date(2026,7,9))==='2026-08-09','iso pads');
+console.assert(noSpaceLen(' 가 나\n다 ')===3,'noSpaceLen');
+console.assert(SAVED.indexOf('blogUrl')===-1,'blogUrl은 프리셋이 아니라 채널별 맵에 저장된다');
+console.assert(num(12345)==='12,345','num');
+</script>
