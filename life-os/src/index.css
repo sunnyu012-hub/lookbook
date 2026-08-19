@@ -1,0 +1,110 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --tabbar-h: 68px;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-ink text-paper font-sans antialiased;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
+  }
+
+  /* 큰 숫자는 항상 폭이 일정하게 */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+
+  input[type='range'] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+  }
+
+  input[type='range']::-webkit-slider-runnable-track {
+    height: 2px;
+    background: #26262c;
+  }
+
+  input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 26px;
+    height: 26px;
+    margin-top: -12px;
+    border-radius: 999px;
+    background: #f2f0eb;
+    border: none;
+    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.6);
+  }
+
+  input[type='range']::-moz-range-track {
+    height: 2px;
+    background: #26262c;
+  }
+
+  input[type='range']::-moz-range-thumb {
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 999px;
+    background: #f2f0eb;
+  }
+
+  textarea,
+  input {
+    font-size: 16px; /* iOS 자동 확대 방지 */
+  }
+}
+
+@layer components {
+  .label {
+    @apply font-mono text-[10px] uppercase tracking-label text-faint;
+  }
+
+  .label-strong {
+    @apply font-mono text-[10px] uppercase tracking-label text-muted;
+  }
+
+  /* 한글 라벨 — 모노/넓은 자간은 라틴 대문자에만 쓴다 */
+  .klabel {
+    @apply text-[13px] tracking-tight text-muted;
+  }
+
+  .card {
+    @apply rounded-card border border-line bg-surface;
+  }
+
+  .hairline {
+    @apply border-t border-line;
+  }
+
+  .press {
+    @apply transition-transform duration-200 ease-soft active:scale-[0.97];
+  }
+
+  /* 상단/하단 가장자리 페이드 — 매거진 여백감 */
+  .page {
+    @apply mx-auto w-full max-w-[520px] px-5;
+  }
+}
+
+/* 스크롤바 숨김 (모바일 우선) */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
