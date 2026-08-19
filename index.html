@@ -444,7 +444,7 @@ function bulkAdd(){
   const i=document.createElement('input');i.type='file';i.accept='image/*';i.multiple=true;
   i.style.cssText='position:fixed;left:-9999px;top:0;opacity:0;width:1px;height:1px';
   i.onchange=async()=>{const files=[...i.files];i.remove();if(!files.length)return;
-    const useAI=hasAI();let n=0,ai=0;
+    const useAI=hasAI();let n=0,ai=0,aiFail=0,failMsg='';
     for(let k=0;k<files.length;k++){const f=files[k];
       showToast(`${files.length}장 중 ${k+1}번째 ${useAI?'AI 분석':'추가'} 중…`);
       try{const blob=await shrink(f);const pid=uid();await storePhoto(pid,blob);
@@ -455,12 +455,13 @@ function bulkAdd(){
           if(r.subcategory&&(SUBCATS[obj.category]||[]).includes(r.subcategory))obj.subcategory=r.subcategory;
           if(Array.isArray(r.colors)){const cc=r.colors.filter(c=>COLORS.some(x=>x.n===c));if(cc.length)obj.colors=cc;}
           if(r.season&&SEASONS.includes(r.season))obj.season=r.season;
-          ai++;}}catch(e){}}
+          ai++;}}catch(e){aiFail++;failMsg=e&&e.message||'';}}
         await put('items',obj);n++;
       }catch(e){}
     }
     await refresh();
-    showToast(useAI?`옷 ${n}장 추가 · ${ai}장 AI 자동완성 ✨ (눌러서 확인·수정)`:`옷 ${n}장 추가됨 · 눌러서 이름·종류 채우기`);};
+    const failNote=aiFail?` · ${aiFail}장은 ${/한도/.test(failMsg)?'AI 한도로':'AI 오류로'} 자동완성 실패`:'';
+    showToast(useAI?`옷 ${n}장 추가 · ${ai}장 AI 자동완성 ✨${failNote} (눌러서 확인·수정)`:`옷 ${n}장 추가됨 · 눌러서 이름·종류 채우기`);};
   document.body.appendChild(i);
   i.click();
 }
@@ -628,7 +629,8 @@ async function mascotLine(){
     for(let attempt=0;attempt<2;attempt++){
       let res;try{res=await geminiFetch(m,{contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:1.05}});}catch(e){break;}
       if(res.status===404)break;                 // 폐기된 모델 → 다음 모델
-      if([429,500,502,503].includes(res.status)){await new Promise(r=>setTimeout(r,800*(attempt+1)));continue;}
+      if(res.status===429)break;
+      if([500,502,503].includes(res.status)){await new Promise(r=>setTimeout(r,800*(attempt+1)));continue;}
       if(!res.ok)break;
       const data=await res.json();const txt=(((data.candidates||[])[0]||{}).content||{}).parts?.[0]?.text||'';
       const clean=sanitizeMascot(txt);if(clean)return clean;
@@ -1047,54 +1049,83 @@ function settings(){
 }
 
 /* ----- AI 코디 추천 (Gemini) ----- */
-const GEMINI_MODELS=['gemini-flash-latest','gemini-2.5-flash','gemini-2.0-flash-001','gemini-2.5-flash-lite'];
+// Lite = 하루 500회 · 가벼움 / Flash = 하루 20회 · 똑똑함.
+// 한도 확인: https://aistudio.google.com/rate-limit (모델이 404 나면 여기 목록을 갱신할 것)
+const GEMINI_LITE=['gemini-3.5-flash-lite','gemini-3.1-flash-lite'];
+const GEMINI_SMART=['gemini-flash-latest','gemini-2.5-flash'];
+const GEMINI_MODELS=[...GEMINI_LITE,...GEMINI_SMART];        // 기본(사진 분류·태그): 싼 것 먼저
+const GEMINI_MODELS_SMART=[...GEMINI_SMART,...GEMINI_LITE];  // 룩 평가·코디 추천: 똑똑한 것 먼저, 하루 20회 소진되면 Lite로 폴백
 const getKey=()=>localStorage.getItem('gemini_key')||'';
 // 공유 AI 프록시(Cloudflare Worker): 키를 서버에 숨겨둠 → 개인 키 없어도 AI 사용 가능
 const AI_PROXY='https://lookbook-ai-proxy.vercel.app/api/gemini';
 const SCRAPE_PROXY=AI_PROXY.replace('/gemini','/scrape');
 const hasAI=()=>!!getKey()||!!AI_PROXY;
 // 개인 키 있으면 Gemini 직접 호출, 없으면 프록시 경유
-function geminiFetch(m,payload,signal){
+// ponytail: 429 맞은 모델은 60초간 호출 안 함(분당 한도 회복 대기).
+// 하루 한도면 60초로 안 풀리지만 그때도 모델당 1회로 끝나 폭주는 없음. 정확한 대기시간이 필요하면 응답의 retryDelay를 파싱할 것.
+const _cool={};
+// ponytail: 최근 60초 안에 AI_RPM회까지만 내보내는 토큰 버킷. 무료 한도(분당 10회) 기준이라
+// 유료로 올리거나 한도가 다르면 AI_RPM 숫자만 고치면 된다.
+const AI_RPM=15, _hits=[];
+async function _slot(){
+  for(;;){
+    const now=Date.now();
+    while(_hits.length&&now-_hits[0]>60000)_hits.shift();
+    if(_hits.length<AI_RPM){_hits.push(now);return;}
+    await new Promise(r=>setTimeout(r,60000-(now-_hits[0])+50));
+  }
+}
+async function geminiFetch(m,payload,timeoutMs){
+  if(Date.now()<(_cool[m]||0))return new Response('{"error":"cooldown"}',{status:429});
+  await _slot();                      // 대기는 타임아웃 시작 전에 — 큐 대기가 '응답 지연'으로 오인되지 않게
   const key=getKey();
-  if(key)return fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(key)}`,{method:'POST',headers:{'Content-Type':'application/json'},signal,body:JSON.stringify(payload)});
-  return fetch(AI_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},signal,body:JSON.stringify({model:m,payload})});
+  const ctrl=new AbortController();
+  const to=timeoutMs?setTimeout(()=>ctrl.abort(),timeoutMs):0;
+  const signal=ctrl.signal;
+  try{
+    const res=await(key?fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(key)}`,{method:'POST',headers:{'Content-Type':'application/json'},signal,body:JSON.stringify(payload)})
+                       :fetch(AI_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},signal,body:JSON.stringify({model:m,payload})}));
+    if(res.status===429)_cool[m]=Date.now()+60000;
+    return res;
+  }finally{if(to)clearTimeout(to);}
 }
 function matchIds(names){return(names||[]).map(n=>{const it=state.items.find(i=>i.name===n)||state.items.find(i=>i.name&&n&&i.name.includes(n));return it&&it.id;}).filter(Boolean);}
-async function geminiRecommend(situation){
+async function geminiRecommend(situation,models=GEMINI_MODELS_SMART){
   const items=state.items.map(i=>{const sub=i.subcategory?'/'+i.subcategory:'';const mat=(i.materials&&i.materials.length)?' ['+i.materials.join(',')+']':'';const col=(i.colors&&i.colors.length)?' 색:'+i.colors.join('/'):'';return `${i.name} (${i.category}${sub}${mat}${col})`;}).join(', ');
   const prompt=`너는 센스 있는 패션 스타일리스트야. 아래는 사용자 옷장의 옷 목록이야:\n${items}\n\n${situation?`상황/요청: ${situation}\n`:''}이 옷장에 있는 아이템만 조합해서 어울리는 코디 3개를 제안해줘. 반드시 위 목록에 있는 이름만 그대로 사용해. JSON 배열로만 답해(그 외 텍스트 금지). 각 원소 형식: {"name":"코디 이름","items":["아이템 이름", ...],"tags":["상황이나 스타일 태그"],"reason":"왜 어울리는지 한 줄"}`;
   let lastErr='';
-  for(const m of GEMINI_MODELS){
+  for(const m of models){
     for(let attempt=0;attempt<3;attempt++){
       const res=await geminiFetch(m,{contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.9,responseMimeType:'application/json'}});
       if(res.status===404){lastErr='404 '+m;break;}
-      if([429,500,502,503].includes(res.status)){lastErr=res.status+' '+m;await new Promise(r=>setTimeout(r,900*(attempt+1)));continue;}
+      if(res.status===429){lastErr='429 '+m;break;}
+      if([500,502,503].includes(res.status)){lastErr=res.status+' '+m;await new Promise(r=>setTimeout(r,900*(attempt+1)));continue;}
       if(!res.ok)throw new Error('API '+res.status+' — '+(await res.text()).slice(0,160));
       const data=await res.json();
       const txt=(((data.candidates||[])[0]||{}).content||{}).parts?.[0]?.text||'';
       try{return JSON.parse(txt);}catch(e){return JSON.parse(txt.replace(/```json|```/g,'').trim());}
     }
   }
-  throw new Error('AI 서버가 잠시 바빠요 ('+lastErr+'). 잠시 후 다시 시도해 주세요');
+  throw new Error(lastErr.startsWith('429')?'AI 사용 한도에 걸렸어요. 1분쯤 뒤에 다시 시도해 주세요 ('+lastErr+')':'AI 서버가 잠시 바빠요 ('+lastErr+'). 잠시 후 다시 시도해 주세요');
 }
-async function geminiVision(photoId,prompt){
+async function geminiVision(photoId,prompt,models=GEMINI_MODELS){
   const pb=await getPhotoBlob(photoId);if(!pb)throw new Error('사진 없음');
   const b64=(await blobToB64(pb)).split(',')[1];
   let lastErr='';
-  for(const m of GEMINI_MODELS){
+  for(const m of models){
     for(let attempt=0;attempt<3;attempt++){
-      const ctrl=new AbortController();const to=setTimeout(()=>ctrl.abort(),25000);let res;
-      try{res=await geminiFetch(m,{contents:[{parts:[{inlineData:{mimeType:pb.type||'image/jpeg',data:b64}},{text:prompt}]}],generationConfig:{temperature:.4,responseMimeType:'application/json'}},ctrl.signal);}
+      let res;
+      try{res=await geminiFetch(m,{contents:[{parts:[{inlineData:{mimeType:pb.type||'image/jpeg',data:b64}},{text:prompt}]}],generationConfig:{temperature:.4,responseMimeType:'application/json'}},25000);}
       catch(e){lastErr=(e.name==='AbortError'?'응답 지연':'네트워크')+' '+m;await new Promise(r=>setTimeout(r,600*(attempt+1)));continue;}
-      finally{clearTimeout(to);}
       if(res.status===404){lastErr='404 '+m;break;}
-      if([429,500,502,503].includes(res.status)){lastErr=res.status+' '+m;await new Promise(r=>setTimeout(r,900*(attempt+1)));continue;}
+      if(res.status===429){lastErr='429 '+m;break;}
+      if([500,502,503].includes(res.status)){lastErr=res.status+' '+m;await new Promise(r=>setTimeout(r,900*(attempt+1)));continue;}
       if(!res.ok)throw new Error(res.status+' — '+(await res.text()).slice(0,140));
       const data=await res.json();const txt=(((data.candidates||[])[0]||{}).content||{}).parts?.[0]?.text||'';
       try{return JSON.parse(txt);}catch(e){return JSON.parse(txt.replace(/```json|```/g,'').trim());}
     }
   }
-  throw new Error('AI 서버가 잠시 바빠요 ('+lastErr+'). 잠시 후 다시 시도해 주세요');
+  throw new Error(lastErr.startsWith('429')?'AI 사용 한도에 걸렸어요. 1분쯤 뒤에 다시 시도해 주세요 ('+lastErr+')':'AI 서버가 잠시 바빠요 ('+lastErr+'). 잠시 후 다시 시도해 주세요');
 }
 function classifyPhoto(photoId){return geminiVision(photoId,`이 옷/패션아이템 사진을 분석해 JSON으로만 답해.
 name: 자세하고 구체적인 한글 이름 (색+소재+핏/디테일+종류를 조합, 예: "베이지 울 라운드넥 오버핏 니트", "화이트 코튼 옥스포드 셔츠", "블랙 스웨이드 첼시 부츠", "카멜 캐시미어 더블 코트").
@@ -1109,7 +1140,7 @@ memo: 이 코디를 2~3문장으로 자세히 설명 (어떤 아이템 조합인
 tags: 다음 중 어울리는 것 1~4개만 배열로 — ${[...TPO_TAGS,...STYLE_TAGS].join(', ')}.
 형식: {"name":"","memo":"","tags":[]}`);}
 function evaluateLook(photoId){return geminiVision(photoId,`너는 발랄하고 사랑스러운 AI 패션 스타일리스트야. 이 착장 사진을 보고 귀엽고 통통 튀는 말투로 평가해줘. 이모지는 과하지 않게 적당히(항목당 최대 1개, 문장이 이모지로 도배되지 않게) 넣어줘. 보완할 점도 절대 상처주지 말고 응원하듯 다정하게 말해줘. JSON으로만 답해.
-형식: {"score": 1~10 사이 정수, "vibe": "이 룩의 무드를 한마디로(예: 청순 캠퍼스룩)", "good": ["좋은 점 2~3개"], "improve": ["이렇게 하면 더 예쁠 점 2~3개, 다정하게"], "tip": "한 줄 스타일링 꿀팁", "tags": ["이 룩에 어울리는 상황·스타일 태그 2~4개, 반드시 다음 목록에서만 골라: ${[...TPO_TAGS,...STYLE_TAGS].join(', ')}"]}`);}
+형식: {"score": 1~10 사이 정수, "vibe": "이 룩의 무드를 한마디로(예: 청순 캠퍼스룩)", "good": ["좋은 점 2~3개"], "improve": ["이렇게 하면 더 예쁠 점 2~3개, 다정하게"], "tip": "한 줄 스타일링 꿀팁", "tags": ["이 룩에 어울리는 상황·스타일 태그 2~4개, 반드시 다음 목록에서만 골라: ${[...TPO_TAGS,...STYLE_TAGS].join(', ')}"]}`, GEMINI_MODELS_SMART);}
 function lookRate(){
   if(!hasAI()){alert('지금 AI를 쓸 수 없어요. 잠시 후 다시 시도해 주세요.');return;}
   (async()=>{
