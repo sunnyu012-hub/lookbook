@@ -2,7 +2,7 @@
 import type { Checkin, CheckinInput, Pain5, Scale5 } from '@/types'
 import { addDays, todayKey } from './date'
 import { calcEnergyScore, scoreToMode } from './energy'
-import { DEFAULT_USER_ID } from './env'
+import { LOCAL_USER_ID } from './env'
 import { localStore } from './localStore'
 
 /** 시드 기반 의사난수 — 새로고침해도 같은 데이터가 나오도록 */
@@ -52,7 +52,7 @@ export function generateMockCheckins(days = 34): Checkin[] {
     out.push({
       ...input,
       id: `mock-${date}`,
-      userId: DEFAULT_USER_ID,
+      userId: LOCAL_USER_ID,
       energyScore,
       mode: scoreToMode(energyScore),
       createdAt: stamp,

@@ -81,31 +81,24 @@ import { icons, MODE_CHARACTER } from '@/lib/pixelAssets'
 `fashion/*` 대부분 — 방 확장이나 옷 기록 기능을 붙일 때 쓰라고 남겨 뒀다.
 시트에 있던 **표정 6종**은 서로 차이가 거의 없어 5단계 척도로 쓰기 어렵다고 판단해 추출하지 않았다.
 
-## Supabase 연결
+## Supabase 연결과 배포
+
+**전체 순서는 [DEPLOY.md](./DEPLOY.md) 에 있다.** 요약하면:
 
 1. Supabase 프로젝트를 만들고 SQL Editor 에서 [`supabase/schema.sql`](./supabase/schema.sql) 을 실행한다.
-2. `.env.example` 을 `.env` 로 복사하고 값을 채운다.
-
-```
-VITE_SUPABASE_URL=https://xxxx.supabase.co
-VITE_SUPABASE_ANON_KEY=...
-VITE_DEFAULT_USER_ID=00000000-0000-0000-0000-000000000001   # 인증 붙이기 전 고정 ID
-```
+2. `.env.example` 을 `.env` 로 복사하고 API 키 두 개를 채운다.
+3. Vercel 에서 이 저장소를 import 하되 **Root Directory 를 `life-os`** 로 지정하고, 같은 환경변수를 넣는다.
 
 환경변수가 채워지면 `lib/repository.ts` 가 자동으로 Supabase 를 쓴다. 화면 코드는 바뀌지 않는다.
 
-> 스키마에는 임시 `anon` 정책이 들어 있다. 개인용으로 혼자 쓸 때를 위한 것이며,
-> 공개 배포 전에는 반드시 `own rows only` (auth.uid() 기반) 정책만 남겨야 한다.
+### 로그인
 
-### 인증을 붙일 때
+비밀번호 없이 **메일 매직 링크**만 쓴다 (`components/AuthGate.tsx`).
+기록은 `auth.uid()` 기준 RLS 로 보호되므로, anon key 가 노출돼도 남의 기록에는 접근할 수 없다.
+환경변수가 없으면 로그인 화면 자체가 뜨지 않고 로컬 저장소 모드로 동작한다.
 
-`lib/repository.ts` 의 `currentUserId()` 하나만 세션 기반으로 바꾸면 된다. 나머지 코드는 이미
-`user_id` 를 기준으로 읽고 쓴다.
-
-## Vercel 배포
-
-프레임워크 프리셋 `Vite`, 빌드 `npm run build`, 출력 `dist`. `vercel.json` 에 SPA rewrite 가 들어 있다.
-Vercel 프로젝트 환경변수에 위 `VITE_*` 값을 넣으면 된다.
+실제 Supabase 프로젝트 없이 연결 경로만 확인하려면 `node scripts/supabase-stub.mjs` 로
+개발용 스텁 서버를 띄울 수 있다 (DEPLOY.md 부록).
 
 ## PWA (iPhone 홈 화면)
 

@@ -18,9 +18,12 @@ interface Props {
   checkins: Checkin[]
   onStartCheckin: () => void
   devAction?: React.ReactNode
+  /** Supabase 로그인 중일 때만 들어온다 */
+  account?: string | null
+  onSignOut?: () => void
 }
 
-export function InsightsPage({ checkins, onStartCheckin, devAction }: Props) {
+export function InsightsPage({ checkins, onStartCheckin, devAction, account, onSignOut }: Props) {
   const insights = useMemo(() => buildInsights(checkins), [checkins])
   const patterns = useMemo(() => findPatterns(checkins), [checkins])
 
@@ -140,6 +143,19 @@ export function InsightsPage({ checkins, onStartCheckin, devAction }: Props) {
 
           {devAction && <div className="flex justify-center pt-1">{devAction}</div>}
         </>
+      )}
+
+      {account && (
+        <div className="flex items-center gap-2 px-1 pt-2">
+          <span className="truncate text-[11px] text-inkfaint">{account}</span>
+          <button
+            type="button"
+            onClick={onSignOut}
+            className="press ml-auto rounded-px3 border-[1.5px] border-border bg-ivory px-3 py-1.5 font-pixel text-[9px] uppercase text-inkdim"
+          >
+            Sign out
+          </button>
+        </div>
       )}
     </div>
   )

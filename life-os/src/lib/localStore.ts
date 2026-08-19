@@ -1,6 +1,6 @@
 import type { Checkin, CheckinInput } from '@/types'
 import { calcEnergyScore, scoreToMode } from './energy'
-import { DEFAULT_USER_ID } from './env'
+import { LOCAL_USER_ID } from './env'
 
 const KEY = 'life-os:checkins:v1'
 
@@ -45,7 +45,7 @@ export const localStore = {
       exerciseType: input.exercise ? input.exerciseType || null : null,
       memo: input.memo?.trim() || null,
       id: existing?.id ?? newId(),
-      userId: existing?.userId ?? DEFAULT_USER_ID,
+      userId: existing?.userId ?? LOCAL_USER_ID,
       energyScore,
       mode: scoreToMode(energyScore),
       createdAt: existing?.createdAt ?? now,

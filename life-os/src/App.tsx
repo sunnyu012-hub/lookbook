@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import type { TabKey } from '@/types'
 import { AppShell } from '@/components/layout/AppShell'
+import { AuthGate } from '@/components/AuthGate'
 import { DevTools } from '@/components/DevTools'
 import { PixelToast } from '@/components/pixel/PixelToast'
 import { CheckinPage } from '@/pages/CheckinPage'
@@ -8,6 +9,9 @@ import { HistoryPage } from '@/pages/HistoryPage'
 import { InsightsPage } from '@/pages/InsightsPage'
 import { TodayPage } from '@/pages/TodayPage'
 import { useCheckins } from '@/hooks/useCheckins'
+import { useSession } from '@/hooks/useSession'
+import { PixelImage } from '@/components/pixel/PixelImage'
+import { characters } from '@/lib/pixelAssets'
 import { todayKey } from '@/lib/date'
 import { storageMode } from '@/lib/repository'
 
@@ -20,7 +24,8 @@ export default function App() {
   const [tab, setTab] = useState<TabKey>('today')
   const [editingDate, setEditingDate] = useState<string>(todayKey())
   const [toast, setToast] = useState<ToastState | null>(null)
-  const store = useCheckins()
+  const auth = useSession()
+  const store = useCheckins(auth.state)
 
   const openCheckin = useCallback((date: string = todayKey()) => {
     setEditingDate(date)
@@ -35,6 +40,17 @@ export default function App() {
   const existing = store.byDate.get(editingDate) ?? null
   /** 오늘까지 며칠째인지 — 오늘 기록이 없으면 다음 날짜로 센다 */
   const dayNumber = store.checkins.length + (store.today ? 0 : 1)
+
+  if (auth.state === 'loading') {
+    return (
+      <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-3">
+        <PixelImage asset={characters.idle} height={96} className="animate-floaty" />
+        <p className="plabel">Loading…</p>
+      </div>
+    )
+  }
+
+  if (auth.state === 'signed-out') return <AuthGate />
 
   return (
     <AppShell active={tab} onTabChange={handleTab}>
@@ -84,6 +100,8 @@ export default function App() {
           checkins={store.checkins}
           onStartCheckin={() => openCheckin(todayKey())}
           devAction={<DevTools onChanged={() => void store.refresh()} />}
+          account={auth.email}
+          onSignOut={() => void auth.signOut()}
         />
       )}
 

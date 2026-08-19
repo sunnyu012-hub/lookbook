@@ -3,8 +3,7 @@
 export const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL ?? '').trim()
 export const SUPABASE_ANON_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY ?? '').trim()
 
-/** 인증 붙이기 전까지 쓰는 단일 사용자 ID */
-export const DEFAULT_USER_ID =
-  (import.meta.env.VITE_DEFAULT_USER_ID ?? '').trim() || '00000000-0000-0000-0000-000000000001'
+/** 로컬 저장소 모드에서만 쓰는 소유자 id (Supabase 를 붙이면 세션의 사용자 id 를 쓴다) */
+export const LOCAL_USER_ID = 'local-user'
 
 export const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY)

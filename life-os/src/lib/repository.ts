@@ -3,7 +3,7 @@
  * Supabase 설정이 있으면 원격, 없으면 localStorage 를 쓴다 — 화면 코드는 어느 쪽인지 몰라도 된다.
  */
 import type { Checkin, CheckinInput, CheckinRow } from '@/types'
-import { DEFAULT_USER_ID, hasSupabaseConfig } from './env'
+import { hasSupabaseConfig } from './env'
 import { localStore } from './localStore'
 import { inputToRow, rowToCheckin } from './mappers'
 import { CHECKINS_TABLE, supabase } from './supabase'
@@ -11,11 +11,23 @@ import { CHECKINS_TABLE, supabase } from './supabase'
 export type StorageMode = 'supabase' | 'local'
 export const storageMode: StorageMode = hasSupabaseConfig ? 'supabase' : 'local'
 
-/** 인증을 붙이면 이 함수만 auth 세션 기반으로 바꾸면 된다. */
+export class NotSignedInError extends Error {
+  constructor() {
+    super('로그인이 필요해요.')
+    this.name = 'NotSignedInError'
+  }
+}
+
+/**
+ * 로그인한 사용자의 id.
+ * RLS 가 auth.uid() 로 걸려 있으므로, 세션이 없으면 서버가 어차피 거절한다.
+ * 여기서 먼저 끊어 오류 메시지를 사람이 읽을 수 있게 만든다.
+ */
 async function currentUserId(): Promise<string> {
-  if (!supabase) return DEFAULT_USER_ID
-  const { data } = await supabase.auth.getUser()
-  return data.user?.id ?? DEFAULT_USER_ID
+  const { data } = await supabase!.auth.getSession()
+  const id = data.session?.user.id
+  if (!id) throw new NotSignedInError()
+  return id
 }
 
 export const checkinRepository = {
