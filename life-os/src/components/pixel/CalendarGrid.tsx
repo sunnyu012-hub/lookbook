@@ -2,7 +2,7 @@ import type { Checkin } from '@/types'
 import { cn } from '@/lib/cn'
 import { monthGrid } from '@/lib/date'
 import { modeMeta } from '@/lib/energy'
-import { PixelIcon } from './PixelIcon'
+import { PixelImage } from './PixelImage'
 
 interface Props {
   year: number
@@ -40,17 +40,17 @@ export function CalendarGrid({ year, month, byDate, selected, onSelect }: Props)
               disabled={cell.isFuture}
               onClick={() => onSelect(cell.key as string)}
               className={cn(
-                'flex aspect-square flex-col items-center justify-center gap-0.5 rounded-px2 border-2 transition-colors duration-150',
-                selected === cell.key ? 'border-ink shadow-hard' : 'border-ink/15',
-                cell.isToday && selected !== cell.key && 'border-ink border-dashed',
-                cell.isFuture && 'opacity-30',
+                'flex aspect-square flex-col items-center justify-center gap-0.5 rounded-px3 border transition-colors duration-150',
+                selected === cell.key ? 'border-pinkdeep shadow-hardpink' : 'border-border',
+                cell.isToday && selected !== cell.key && 'border-dashed border-pinkdeep',
+                cell.isFuture && 'opacity-35',
               )}
               style={{ backgroundColor: meta ? meta.soft : 'transparent' }}
             >
               <span className="font-pixel text-[9px] leading-none text-inkdim">{cell.day}</span>
               {meta ? (
                 <>
-                  <PixelIcon name={meta.icon} size={16} />
+                  <PixelImage asset={meta.icon} height={17} />
                   <span className="font-pixel text-[9px] leading-none" style={{ color: meta.hex }}>
                     {checkin!.energyScore}
                   </span>

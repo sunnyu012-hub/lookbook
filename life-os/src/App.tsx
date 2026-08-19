@@ -41,7 +41,7 @@ export default function App() {
       {storageMode === 'local' && <p className="plabel mb-3 text-right">Local Save</p>}
 
       {store.error && (
-        <p className="mb-3 rounded-px3 border-2 border-blushdeep bg-blush/25 px-3 py-2 text-[12px]">
+        <p className="mb-3 rounded-px3 border-[1.5px] border-pinkdeep bg-pinksoft px-3 py-2 text-[12px]">
           {store.error}
         </p>
       )}

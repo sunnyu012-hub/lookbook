@@ -2,20 +2,29 @@ import { cn } from '@/lib/cn'
 
 interface Props {
   score: number
+  /** 채워진 칸 색 */
   color: string
   segments?: number
   className?: string
+  /** 낮은 값에서 앞쪽 칸을 진하게 — 게임 HP 바 느낌 */
+  height?: number
 }
 
-/** HP 바 — 그라데이션 없이 칸이 딱딱 끊어지는 세그먼트 바. */
-export function EnergyBar({ score, color, segments = 10, className }: Props) {
-  const filled = Math.round((Math.min(100, Math.max(0, score)) / 100) * segments)
+/**
+ * 세그먼트 픽셀 바. 그라데이션을 쓰지 않고 칸이 또렷하게 끊어지게 만든다.
+ */
+export function EnergyBar({ score, color, segments = 10, className, height = 14 }: Props) {
+  const clamped = Math.min(100, Math.max(0, score))
+  const filled = Math.round((clamped / 100) * segments)
 
   return (
     <div
-      className={cn('flex gap-[3px] rounded-px2 border-2 border-ink bg-creamdeep p-[3px]', className)}
+      className={cn(
+        'flex gap-[3px] rounded-px2 border-[1.5px] border-borderdeep bg-creamdeep p-[3px]',
+        className,
+      )}
       role="meter"
-      aria-valuenow={score}
+      aria-valuenow={clamped}
       aria-valuemin={0}
       aria-valuemax={100}
       aria-label="Energy"
@@ -23,8 +32,11 @@ export function EnergyBar({ score, color, segments = 10, className }: Props) {
       {Array.from({ length: segments }, (_, i) => (
         <span
           key={i}
-          className="h-3 flex-1 rounded-[1px] transition-colors duration-200"
-          style={{ backgroundColor: i < filled ? color : 'rgba(90,75,62,0.12)' }}
+          className="flex-1 rounded-[1px] transition-colors duration-200"
+          style={{
+            height,
+            backgroundColor: i < filled ? color : 'rgba(107, 74, 61, 0.10)',
+          }}
         />
       ))}
     </div>

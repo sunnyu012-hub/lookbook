@@ -4,8 +4,8 @@
  * 가중치·정규화 함수만 이 파일에서 고치면 앱 전체에 반영된다.
  */
 import type { CheckinInput, EnergyMode } from '@/types'
-import type { IconName } from './sprites.generated'
-import { CHARACTER_STATES } from './sprites.generated'
+import type { PixelAsset } from './pixelAssets.generated'
+import { MODE_ICON, MODE_PILL } from './pixelAssets'
 
 export const WEIGHTS = {
   sleep: 0.3,
@@ -80,15 +80,17 @@ export function scoreToMode(score: number): EnergyMode {
 
 export interface ModeMeta {
   key: EnergyMode
-  /** 화면에 그대로 찍는 라틴 라벨 (픽셀 폰트용) */
+  /** 화면에 그대로 찍는 라틴 라벨 */
   label: string
-  icon: IconName
+  /** 모드를 상징하는 픽셀 아이템 */
+  icon: PixelAsset
+  /** 시트에서 잘라온 상태 배지 */
+  pill: PixelAsset
   /** 게임 말투의 짧은 한 줄 */
   message: string
-  /** 캐릭터 스프라이트 시트의 상태 이름 */
-  sprite: (typeof CHARACTER_STATES)[number]
+  /** 강조 색 (숫자·바) */
   hex: string
-  /** 패널 배경으로 쓰는 옅은 색 */
+  /** 옅은 배경색 */
   soft: string
 }
 
@@ -96,38 +98,38 @@ export const MODE_META: Record<EnergyMode, ModeMeta> = {
   RECOVERY: {
     key: 'RECOVERY',
     label: 'RECOVERY',
-    icon: 'moon',
-    message: '오늘은 HP 회복이 우선이에요.',
-    sprite: 'recovery',
-    hex: '#9A8AD1',
-    soft: '#EDE9FA',
+    icon: MODE_ICON.RECOVERY,
+    pill: MODE_PILL.RECOVERY,
+    message: '오늘은 HP를 천천히 채워봐요.',
+    hex: '#8B76C9',
+    soft: '#EFE9FB',
   },
   EASY: {
     key: 'EASY',
     label: 'EASY',
-    icon: 'sprout',
+    icon: MODE_ICON.EASY,
+    pill: MODE_PILL.EASY,
     message: '천천히 움직여도 충분한 하루!',
-    sprite: 'easy',
-    hex: '#7A9E74',
-    soft: '#E8F1E5',
+    hex: '#7DB994',
+    soft: '#E6F4EA',
   },
   NORMAL: {
     key: 'NORMAL',
     label: 'NORMAL',
-    icon: 'sun',
+    icon: MODE_ICON.NORMAL,
+    pill: MODE_PILL.NORMAL,
     message: '평범하지만 좋은 모험의 날.',
-    sprite: 'normal',
-    hex: '#7FB3D8',
-    soft: '#E4F1F9',
+    hex: '#6FA8CE',
+    soft: '#E5F1FA',
   },
   POWER: {
     key: 'POWER',
     label: 'POWER',
-    icon: 'bolt',
+    icon: MODE_ICON.POWER,
+    pill: MODE_PILL.POWER,
     message: '에너지가 가득 찼어요!',
-    sprite: 'power',
-    hex: '#E0B34E',
-    soft: '#FBF0D5',
+    hex: '#E79A66',
+    soft: '#FDEBDC',
   },
 }
 

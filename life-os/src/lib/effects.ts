@@ -3,14 +3,15 @@
  * 점수 계산 자체는 energy.ts 그대로 쓰고, 여기서는 각 항목의 기여도만 풀어낸다.
  */
 import type { CheckinInput } from '@/types'
-import type { IconName } from './sprites.generated'
+import type { PixelAsset } from './pixelAssets.generated'
+import { icons } from './pixelAssets'
 import { WEIGHTS, energyBreakdown } from './energy'
 
 export interface Effect {
   key: string
   /** 화면에 찍는 라틴 라벨 */
   label: string
-  icon: IconName
+  icon: PixelAsset
   /** 에너지 점수 기여도 (양수 = 버프) */
   delta: number
   note: string
@@ -25,46 +26,46 @@ const MIN_DELTA = 3
 interface Spec {
   key: keyof ReturnType<typeof energyBreakdown>
   weight: number
-  buff: { label: string; icon: IconName; note: string }
-  debuff: { label: string; icon: IconName; note: string }
+  buff: { label: string; icon: PixelAsset; note: string }
+  debuff: { label: string; icon: PixelAsset; note: string }
 }
 
 const SPECS: Spec[] = [
   {
     key: 'sleep',
     weight: WEIGHTS.sleep,
-    buff: { label: 'WELL SLEPT', icon: 'bed', note: '충분히 잔 날' },
-    debuff: { label: 'SLEEP DEBT', icon: 'bed', note: '수면 시간이 모자란 날' },
+    buff: { label: 'WELL SLEPT', icon: icons.sleep, note: '푹 잘 잤어요' },
+    debuff: { label: 'SLEEP DEBT', icon: icons.sleep, note: '잠이 모자라…' },
   },
   {
     key: 'fatigue',
     weight: WEIGHTS.fatigue,
-    buff: { label: 'FRESH', icon: 'bolt', note: '피로가 거의 없어요' },
-    debuff: { label: 'WORN OUT', icon: 'zzz', note: '피로가 쌓여 있어요' },
+    buff: { label: 'FRESH', icon: icons.energy, note: '기운이 남아 있어요' },
+    debuff: { label: 'WORN OUT', icon: icons.fatigue, note: '피로가 쌓였어요' },
   },
   {
     key: 'body',
     weight: WEIGHTS.body,
-    buff: { label: 'BODY OK', icon: 'star', note: '몸이 가벼워요' },
-    debuff: { label: 'BODY SORE', icon: 'star_off', note: '몸이 아프거나 뻐근해요' },
+    buff: { label: 'BODY OK', icon: icons.body, note: '몸이 가벼워요' },
+    debuff: { label: 'BODY SORE', icon: icons.body, note: '온몸이 뻐근해' },
   },
   {
     key: 'focus',
     weight: WEIGHTS.focus,
-    buff: { label: 'SHARP MIND', icon: 'gem', note: '집중이 잘 되는 날' },
-    debuff: { label: 'FOGGY HEAD', icon: 'gem_off', note: '집중이 흐트러진 날' },
+    buff: { label: 'SHARP MIND', icon: icons.focus, note: '집중이 잘 돼요' },
+    debuff: { label: 'FOGGY HEAD', icon: icons.focus, note: '머리가 멍해요' },
   },
   {
     key: 'mood',
     weight: WEIGHTS.mood,
-    buff: { label: 'GOOD MOOD', icon: 'face_good', note: '기분이 좋아요' },
-    debuff: { label: 'LOW MOOD', icon: 'face_tired', note: '기분이 가라앉았어요' },
+    buff: { label: 'GOOD MOOD', icon: icons.mood, note: '오늘 좀 괜찮은데?' },
+    debuff: { label: 'LOW MOOD', icon: icons.mood, note: '기분이 가라앉았어요' },
   },
   {
     key: 'sleepQuality',
     weight: WEIGHTS.sleepQuality,
-    buff: { label: 'DEEP SLEEP', icon: 'moon', note: '푹 잔 밤' },
-    debuff: { label: 'RESTLESS', icon: 'moon', note: '자다 깬 밤' },
+    buff: { label: 'DEEP SLEEP', icon: icons.sleep, note: '푹 잔 밤' },
+    debuff: { label: 'RESTLESS', icon: icons.sleep, note: '자다 깬 밤' },
   },
 ]
 

@@ -1,14 +1,15 @@
 import type { TabKey } from '@/types'
-import type { IconName } from '@/lib/sprites.generated'
+import { icons } from '@/lib/pixelAssets'
 import { cn } from '@/lib/cn'
 import { haptic } from '@/hooks/useHaptic'
-import { PixelIcon } from '@/components/pixel/PixelIcon'
+import { PixelImage } from '@/components/pixel/PixelImage'
+import { PixelSparkle } from '@/components/pixel/PixelSparkle'
 
-const TABS: { key: TabKey; label: string; icon: IconName }[] = [
-  { key: 'today', label: 'Today', icon: 'home' },
-  { key: 'checkin', label: 'Save', icon: 'floppy' },
-  { key: 'history', label: 'Log', icon: 'book' },
-  { key: 'insights', label: 'Stats', icon: 'star' },
+const TABS = [
+  { key: 'today' as TabKey, label: 'Today', asset: icons.home },
+  { key: 'checkin' as TabKey, label: 'Save', asset: icons.save },
+  { key: 'history' as TabKey, label: 'Log', asset: icons.log },
+  { key: 'insights' as TabKey, label: 'Stats', asset: icons.xp },
 ]
 
 interface Props {
@@ -19,10 +20,10 @@ interface Props {
 export function TabBar({ active, onChange }: Props) {
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-30 border-t-2 border-ink bg-ivory"
+      className="fixed inset-x-0 bottom-0 z-30 border-t-[1.5px] border-border bg-ivory/95 backdrop-blur-sm"
       style={{ paddingBottom: 'var(--safe-bottom)' }}
     >
-      <div className="mx-auto flex h-[var(--tabbar-h)] w-full max-w-[460px] items-stretch gap-1 px-2 py-1.5">
+      <div className="mx-auto flex h-[var(--tabbar-h)] w-full max-w-[460px] items-stretch px-2">
         {TABS.map((tab) => {
           const isActive = tab.key === active
           return (
@@ -34,20 +35,33 @@ export function TabBar({ active, onChange }: Props) {
                 haptic()
                 onChange(tab.key)
               }}
-              className={cn(
-                'flex flex-1 flex-col items-center justify-center gap-1 rounded-px2 border-2 transition-colors duration-150',
-                isActive ? 'border-ink bg-butter' : 'border-transparent',
-              )}
+              className="relative flex flex-1 flex-col items-center justify-center gap-1"
             >
-              <PixelIcon name={tab.icon} size={16} className={isActive ? 'animate-bob' : ''} />
+              {isActive && (
+                <PixelSparkle size={9} variant={2} className="absolute right-[22%] top-[14%]" />
+              )}
+              <PixelImage
+                asset={tab.asset}
+                height={22}
+                className={cn(
+                  'transition-transform duration-150',
+                  isActive ? '-translate-y-[1px]' : 'opacity-45 saturate-[0.7]',
+                )}
+              />
               <span
                 className={cn(
                   'font-pixel text-[9px] uppercase leading-none tracking-[0.06em]',
-                  isActive ? 'text-ink' : 'text-inkdim',
+                  isActive ? 'text-pinkdeep' : 'text-inkfaint',
                 )}
               >
                 {tab.label}
               </span>
+              <span
+                className={cn(
+                  'h-[2px] w-5 rounded-full transition-colors duration-150',
+                  isActive ? 'bg-pink' : 'bg-transparent',
+                )}
+              />
             </button>
           )
         })}

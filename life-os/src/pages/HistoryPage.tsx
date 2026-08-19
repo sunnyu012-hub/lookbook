@@ -2,10 +2,11 @@ import { useMemo, useState } from 'react'
 import type { Checkin, EnergyMode } from '@/types'
 import { CalendarGrid } from '@/components/pixel/CalendarGrid'
 import { DaySheet } from '@/components/pixel/DaySheet'
-import { PixelIcon } from '@/components/pixel/PixelIcon'
+import { PixelImage } from '@/components/pixel/PixelImage'
 import { PixelPanel } from '@/components/pixel/PixelPanel'
 import { formatShort, isSameMonth, monthLabel } from '@/lib/date'
 import { MODE_META } from '@/lib/energy'
+import { icons } from '@/lib/pixelAssets'
 
 const ORDER: EnergyMode[] = ['RECOVERY', 'EASY', 'NORMAL', 'POWER']
 
@@ -62,7 +63,7 @@ export function HistoryPage({ checkins, byDate, onEdit, onDelete }: Props) {
   return (
     <div className="space-y-3">
       <header>
-        <h1 className="font-pixel text-[18px] uppercase leading-none tracking-[0.04em]">
+        <h1 className="font-pixel text-[16px] uppercase leading-none tracking-[0.04em]">
           Adventure Log
         </h1>
         <div className="mt-3 flex items-center justify-between">
@@ -71,7 +72,7 @@ export function HistoryPage({ checkins, byDate, onEdit, onDelete }: Props) {
               type="button"
               aria-label="이전 달"
               onClick={() => shift(-1)}
-              className="press h-8 w-8 rounded-px2 border-2 border-ink bg-ivory font-pixel text-[12px]"
+              className="press h-8 w-8 rounded-px3 border-[1.5px] border-border bg-ivory font-pixel text-[12px] shadow-hard"
             >
               ‹
             </button>
@@ -81,7 +82,7 @@ export function HistoryPage({ checkins, byDate, onEdit, onDelete }: Props) {
               aria-label="다음 달"
               disabled={isCurrentMonth}
               onClick={() => shift(1)}
-              className="press h-8 w-8 rounded-px2 border-2 border-ink bg-ivory font-pixel text-[12px] disabled:opacity-30"
+              className="press h-8 w-8 rounded-px3 border-[1.5px] border-border bg-ivory font-pixel text-[12px] shadow-hard disabled:opacity-30"
             >
               ›
             </button>
@@ -105,14 +106,14 @@ export function HistoryPage({ checkins, byDate, onEdit, onDelete }: Props) {
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-1">
         {ORDER.map((mode) => (
           <span key={mode} className="flex items-center gap-1">
-            <PixelIcon name={MODE_META[mode].icon} size={16} />
+            <PixelImage asset={MODE_META[mode].icon} height={18} />
             <span className="plabel">{mode}</span>
           </span>
         ))}
       </div>
 
       {recentNotes.length > 0 && (
-        <PixelPanel title="Recent Notes" icon="book">
+        <PixelPanel title="Recent Notes" icon={icons.work} sparkle>
           <ul className="space-y-2.5">
             {recentNotes.map((entry) => (
               <li key={entry.date} className="flex gap-2.5">
@@ -121,7 +122,7 @@ export function HistoryPage({ checkins, byDate, onEdit, onDelete }: Props) {
                   onClick={() => setSelected(entry.date)}
                   className="flex flex-1 items-start gap-2.5 text-left"
                 >
-                  <PixelIcon name={MODE_META[entry.mode].icon} size={16} className="mt-0.5" />
+                  <PixelImage asset={MODE_META[entry.mode].icon} height={18} className="mt-0.5" />
                   <span className="flex-1">
                     <span className="plabel">{formatShort(entry.date)}</span>
                     <span className="mt-1 block text-[13px] leading-relaxed">“{entry.memo}”</span>

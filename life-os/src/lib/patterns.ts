@@ -3,13 +3,14 @@
  * 표본이 부족하면 아예 만들지 않는다. 상관을 인과처럼 말하지 않는다 (문구에 '~한 날은' 만 쓴다).
  */
 import type { Checkin } from '@/types'
-import type { IconName } from './sprites.generated'
+import type { PixelAsset } from './pixelAssets.generated'
+import { gear, icons } from './pixelAssets'
 
 export interface Pattern {
   id: string
   /** 라틴 라벨 (픽셀 폰트) */
   title: string
-  icon: IconName
+  icon: PixelAsset
   kind: 'buff' | 'debuff'
   /** 한 줄 설명 */
   body: string
@@ -47,7 +48,7 @@ export function findPatterns(checkins: Checkin[]): Pattern[] {
     out.push({
       id: 'sleep',
       title: up ? 'GOOD SLEEP BUFF' : 'SLEEP PATTERN',
-      icon: 'bed',
+      icon: icons.sleep,
       kind: up ? 'buff' : 'debuff',
       body: up
         ? `7시간 이상 잔 날은 ENERGY 가 평균 ${Math.round(slept.diff)} 높았어요.`
@@ -66,8 +67,8 @@ export function findPatterns(checkins: Checkin[]): Pattern[] {
     const up = moved.diff > 0
     out.push({
       id: 'exercise',
-      title: up ? 'MOVE BUFF' : 'MOVE PATTERN',
-      icon: 'shoe',
+      title: up ? 'CLIMBING LOVER' : 'MOVE PATTERN',
+      icon: gear.sneakers,
       kind: up ? 'buff' : 'debuff',
       body: up
         ? `운동한 날은 ENERGY 가 평균 ${Math.round(moved.diff)} 높았어요.`
@@ -86,7 +87,7 @@ export function findPatterns(checkins: Checkin[]): Pattern[] {
     out.push({
       id: 'late-caffeine',
       title: 'LATE COFFEE DEBUFF',
-      icon: 'coffee',
+      icon: icons.caffeine,
       kind: 'debuff',
       body: `오후 3시 이후에 카페인을 마신 날은 수면 질이 평균 ${Math.abs(late.diff).toFixed(1)} 낮게 기록됐어요.`,
       sample: `${late.aCount}일 vs ${late.bCount}일`,

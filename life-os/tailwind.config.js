@@ -4,30 +4,43 @@ export default {
   theme: {
     extend: {
       colors: {
-        // 종이 / 잉크
-        cream: '#F6EFE2',
-        creamdeep: '#EDE3D2',
-        ivory: '#FFFBF2',
-        ink: '#5A4B3E',
-        inkdim: '#8A7A6B',
-        inkfaint: '#B3A48F',
+        // 바탕 — 따뜻한 크림
+        cream: '#FDF6EC',
+        creamdeep: '#F7E7D4',
+        ivory: '#FFFCF7',
 
-        // 역할이 정해진 소프트 게임 컬러
-        sage: '#A8C69F',
-        sagedeep: '#7A9E74',
-        lavender: '#C4B8E8',
-        lavenderdeep: '#9A8AD1',
-        butter: '#F5D57C',
-        butterdeep: '#E0B34E',
-        blush: '#E9A9B0',
-        blushdeep: '#D3848E',
-        sky: '#AED4EC',
-        skydeep: '#7FB3D8',
-        bark: '#D8B087',
-        barkdeep: '#A87C56',
+        // 주조색 — 스트로베리 핑크
+        pink: '#F7A8B8',
+        pinkdeep: '#DE7E92',
+        pinksoft: '#FDE7EC',
+
+        // 보조 — 피치 / 버터 / 민트 / 베이비블루
+        peach: '#FBC49B',
+        peachdeep: '#E79A66',
+        peachsoft: '#FDEBDC',
+        butter: '#FBE08A',
+        butterdeep: '#DFB63F',
+        buttersoft: '#FDF4D6',
+        mint: '#B9E3C6',
+        mintdeep: '#7DB994',
+        mintsoft: '#E6F4EA',
+        sky: '#B9DCF2',
+        skydeep: '#6FA8CE',
+        skysoft: '#E5F1FA',
+
+        // Sleep / Recovery 전용 포인트
+        lavender: '#CDBDF0',
+        lavenderdeep: '#8B76C9',
+        lavendersoft: '#EFE9FB',
+
+        // 글자 / 테두리 — 따뜻한 갈색 계열 (검정 대신)
+        ink: '#6B4A3D',
+        inkdim: '#9C7767',
+        inkfaint: '#C2A493',
+        border: '#EBD3B9',
+        borderdeep: '#D9B694',
       },
       fontFamily: {
-        // 픽셀 폰트는 라틴/숫자 전용. 한글 본문은 시스템 산세리프.
         pixel: ['Silkscreen', 'ui-monospace', 'monospace'],
         sans: [
           'Pretendard',
@@ -39,38 +52,38 @@ export default {
           'sans-serif',
         ],
       },
-      borderRadius: {
-        px: '2px',
-        px2: '4px',
-        px3: '6px',
-        px4: '8px',
-      },
+      borderRadius: { px: '2px', px2: '4px', px3: '6px', px4: '10px', px5: '14px' },
       boxShadow: {
-        hard: '2px 2px 0 0 rgba(90, 75, 62, 0.25)',
-        hardlg: '3px 3px 0 0 rgba(90, 75, 62, 0.25)',
-        inset: 'inset 0 2px 0 0 rgba(90, 75, 62, 0.12)',
+        hard: '2px 2px 0 0 rgba(107, 74, 61, 0.12)',
+        hardpink: '2px 2px 0 0 rgba(222, 126, 146, 0.22)',
       },
       keyframes: {
-        bob: { '0%,100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-2px)' } },
-        float: {
-          '0%': { opacity: '0', transform: 'translate(0, 0) scale(0.9)' },
-          '25%': { opacity: '1' },
-          '100%': { opacity: '0', transform: 'translate(6px, -18px) scale(1)' },
+        breathe: { '0%,100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-2px)' } },
+        floaty: { '0%,100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-3px)' } },
+        hop: { '0%,100%': { transform: 'translateY(0)' }, '40%': { transform: 'translateY(-3px)' }, '60%': { transform: 'translateY(-1px)' } },
+        twinkle: { '0%,100%': { opacity: '1' }, '50%': { opacity: '0.4' } },
+        zzzrise: {
+          '0%': { opacity: '0', transform: 'translate(0,4px) scale(0.9)' },
+          '30%': { opacity: '1' },
+          '100%': { opacity: '0', transform: 'translate(8px,-16px) scale(1)' },
         },
-        twinkle: { '0%,100%': { opacity: '0.15', transform: 'scale(0.85)' }, '50%': { opacity: '1', transform: 'scale(1)' } },
-        pop: { '0%': { transform: 'scale(0.7)' }, '60%': { transform: 'scale(1.15)' }, '100%': { transform: 'scale(1)' } },
-        rise: { '0%': { opacity: '0', transform: 'translateY(6px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
-        blinkfade: { '0%,100%': { opacity: '1' }, '50%': { opacity: '0.35' } },
-        drift: { '0%': { transform: 'translateX(0)' }, '100%': { transform: 'translateX(6px)' } },
+        pop: { '0%': { transform: 'scale(0.6)' }, '65%': { transform: 'scale(1.12)' }, '100%': { transform: 'scale(1)' } },
+        risein: { '0%': { opacity: '0', transform: 'translateY(6px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+        xpfloat: {
+          '0%': { opacity: '0', transform: 'translateY(2px)' },
+          '25%': { opacity: '1' },
+          '100%': { opacity: '0', transform: 'translateY(-14px)' },
+        },
       },
       animation: {
-        bob: 'bob 2s steps(2) infinite',
-        float: 'float 2.6s ease-out infinite',
-        twinkle: 'twinkle 1.4s steps(3) infinite',
+        breathe: 'breathe 3.4s ease-in-out infinite',
+        floaty: 'floaty 2.6s ease-in-out infinite',
+        hop: 'hop 1.1s ease-in-out infinite',
+        twinkle: 'twinkle 2.4s ease-in-out infinite',
+        zzzrise: 'zzzrise 3.2s ease-out infinite',
         pop: 'pop 220ms cubic-bezier(0.3, 1.4, 0.6, 1) both',
-        rise: 'rise 260ms ease-out both',
-        blinkfade: 'blinkfade 1.2s steps(2) infinite',
-        drift: 'drift 6s ease-in-out infinite alternate',
+        risein: 'risein 240ms ease-out both',
+        xpfloat: 'xpfloat 900ms ease-out both',
       },
     },
   },

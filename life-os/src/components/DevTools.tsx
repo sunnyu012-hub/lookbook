@@ -18,7 +18,7 @@ export function DevTools({ onChanged }: Props) {
           seedMockData()
           onChanged()
         }}
-        className="press rounded-px2 border-2 border-ink/25 bg-ivory px-3 py-1.5 font-pixel text-[9px] uppercase text-inkdim"
+        className="press rounded-px3 border-[1.5px] border-border bg-ivory px-3 py-1.5 font-pixel text-[9px] uppercase text-inkdim"
       >
         Seed sample
       </button>
@@ -28,7 +28,7 @@ export function DevTools({ onChanged }: Props) {
           localStore.clear()
           onChanged()
         }}
-        className="press rounded-px2 border-2 border-ink/25 bg-ivory px-3 py-1.5 font-pixel text-[9px] uppercase text-inkdim"
+        className="press rounded-px3 border-[1.5px] border-border bg-ivory px-3 py-1.5 font-pixel text-[9px] uppercase text-inkdim"
       >
         Clear local
       </button>

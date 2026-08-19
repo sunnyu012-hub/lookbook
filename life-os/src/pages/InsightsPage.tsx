@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import type { Checkin, EnergyMode } from '@/types'
-import { PixelIcon } from '@/components/pixel/PixelIcon'
+import { PixelImage } from '@/components/pixel/PixelImage'
 import { PixelPanel } from '@/components/pixel/PixelPanel'
 import { PixelButton } from '@/components/pixel/PixelButton'
 import { EnergyBar } from '@/components/pixel/EnergyBar'
@@ -8,6 +8,8 @@ import { buildInsights } from '@/lib/insights'
 import { findPatterns } from '@/lib/patterns'
 import { formatSleep } from '@/lib/date'
 import { MODE_META, modeOf } from '@/lib/energy'
+import { MODE_CHARACTER, icons } from '@/lib/pixelAssets'
+import { PixelSparkle } from '@/components/pixel/PixelSparkle'
 import { cn } from '@/lib/cn'
 
 const ORDER: EnergyMode[] = ['RECOVERY', 'EASY', 'NORMAL', 'POWER']
@@ -27,9 +29,14 @@ export function InsightsPage({ checkins, onStartCheckin, devAction }: Props) {
 
   return (
     <div className="space-y-3">
-      <header className="flex items-end justify-between">
-        <div>
-          <h1 className="font-pixel text-[18px] uppercase leading-none tracking-[0.04em]">
+      <header className="flex items-center gap-3">
+        <PixelImage
+          asset={MODE_CHARACTER[modeOf(insights.avgScore30 ?? insights.avgScore7 ?? 60).key]}
+          height={52}
+          className="animate-floaty"
+        />
+        <div className="flex-1">
+          <h1 className="font-pixel text-[16px] uppercase leading-none tracking-[0.04em]">
             Player Stats
           </h1>
           <p className="plabel mt-2">Last 30 days</p>
@@ -38,12 +45,12 @@ export function InsightsPage({ checkins, onStartCheckin, devAction }: Props) {
       </header>
 
       {nothingToShow ? (
-        <PixelPanel title="Not Enough Data" icon="book">
+        <PixelPanel title="Not Enough Data" icon={icons.work}>
           <p className="body-ko">
             아직 계산할 기록이 적어요. 며칠만 더 저장하면 평균과 패턴이 열려요.
           </p>
-          <PixelButton icon="floppy" full className="mt-3" onClick={onStartCheckin}>
-            Daily Save
+          <PixelButton icon={icons.save} full className="mt-3" onClick={onStartCheckin}>
+            Save Today
           </PixelButton>
           {devAction && <div className="mt-3 flex justify-center">{devAction}</div>}
         </PixelPanel>
@@ -73,11 +80,11 @@ export function InsightsPage({ checkins, onStartCheckin, devAction }: Props) {
           </div>
 
           {insights.modeDaysTotal > 0 && (
-            <PixelPanel title="Mode Days" icon="moon">
+            <PixelPanel title="Mode Days" icon={icons.sleep}>
               <div className="grid grid-cols-4 gap-2">
                 {ORDER.map((mode) => (
                   <div key={mode} className="text-center">
-                    <PixelIcon name={MODE_META[mode].icon} size={24} />
+                    <PixelImage asset={MODE_META[mode].icon} height={26} className="mx-auto" />
                     <p
                       className="mt-1.5 font-pixel text-[18px] leading-none"
                       style={{ color: MODE_META[mode].hex }}
@@ -92,12 +99,12 @@ export function InsightsPage({ checkins, onStartCheckin, devAction }: Props) {
           )}
 
           {insights.avgFatigue != null && (
-            <PixelPanel title="Fatigue Level" icon="bolt">
+            <PixelPanel title="Fatigue Level" icon={icons.fatigue}>
               <div className="mb-2 flex items-baseline justify-between">
                 <span className="text-[12px] text-inkdim">평균 피로도 (낮을수록 가벼움)</span>
                 <span className="font-pixel text-[14px]">{insights.avgFatigue.toFixed(1)} / 5</span>
               </div>
-              <EnergyBar score={(insights.avgFatigue / 5) * 100} color="#D3848E" segments={5} />
+              <EnergyBar score={(insights.avgFatigue / 5) * 100} color="#DE7E92" segments={5} />
             </PixelPanel>
           )}
 
@@ -108,17 +115,19 @@ export function InsightsPage({ checkins, onStartCheckin, devAction }: Props) {
                 <div
                   key={pattern.id}
                   className={cn(
-                    'rounded-px3 border-2 border-ink p-3 shadow-hardlg',
-                    pattern.kind === 'buff' ? 'bg-sage/25' : 'bg-blush/25',
+                    'rounded-px4 border-[1.5px] p-3 shadow-hard',
+                    pattern.kind === 'buff'
+                      ? 'border-mintdeep/40 bg-mintsoft'
+                      : 'border-pinkdeep/40 bg-pinksoft',
                   )}
                 >
                   <div className="flex items-center gap-2">
-                    <PixelIcon name="sparkle" size={16} className="animate-twinkle" />
+                    <PixelSparkle size={13} />
                     <p className="font-pixel text-[12px] uppercase">{pattern.title}</p>
                     <span className="ml-auto plabel">{pattern.sample}</span>
                   </div>
                   <p className="mt-2 flex items-start gap-2 text-[13px] leading-relaxed">
-                    <PixelIcon name={pattern.icon} size={16} className="mt-0.5" />
+                    <PixelImage asset={pattern.icon} height={20} className="mt-0.5" />
                     {pattern.body}
                   </p>
                 </div>

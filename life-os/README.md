@@ -8,12 +8,15 @@
 ## 디자인 콘셉트
 
 Cozy Pixel RPG × 타마고치 × 라이프 트래커.
-90년대 게임을 그대로 복제한 레트로가 아니라, 요즘 감성으로 다시 그린 귀여운 픽셀 RPG를 목표로 한다.
+앱을 열면 대시보드가 아니라 **내 캐릭터가 사는 작은 방**이 먼저 보인다.
 
-- 배경은 따뜻한 크림, 강조색은 sage / lavender / butter / blush / sky 다섯 가지. 각 색에 역할이 있다.
+- 배경은 따뜻한 크림, 주조색은 스트로베리 핑크, 보조색은 피치 / 버터 / 민트 / 베이비블루.
+  라벤더·퍼플은 Sleep·Recovery 상태에만 쓴다.
+- 검정 외곽선을 쓰지 않는다. 글자·테두리 모두 따뜻한 갈색(`ink` `border`) 계열.
 - 픽셀 폰트(Silkscreen)는 타이틀·숫자·라틴 라벨에만. 한글 본문은 읽기 편한 산세리프.
-- 모서리는 2~8px, 그림자는 blur 없는 `2px 2px` 하드 섀도우, 테두리는 2px.
-- 애니메이션은 전부 짧고 작다. `prefers-reduced-motion` 을 켜면 모두 멈춘다.
+- 모서리는 2~14px, 그림자는 blur 없는 `2px 2px` 하드 섀도우, 테두리는 1.5px.
+- Room 은 물건이 많아도 되지만 UI 는 단순하게 — 이 대비를 유지한다.
+- 애니메이션은 1~3px 범위로만. `prefers-reduced-motion` 을 켜면 모두 멈춘다.
 
 ## 스택
 
@@ -22,39 +25,61 @@ React 18 · TypeScript · Vite · Tailwind CSS · Supabase · Vercel · PWA
 외부 라이브러리는 React / Supabase 클라이언트뿐이다. 라우터·차트·애니메이션·상태관리 라이브러리는
 직접 구현했다 (탭 전환, 세그먼트 HP 바, 스프라이트 애니메이션, 바텀시트, 카운트업).
 
-## 픽셀 아트 파이프라인
+## 픽셀 에셋 파이프라인
 
-에셋은 손으로 찍은 도트를 코드로 정리해 `public/sprites/` 에 굽는다.
+에셋은 전부 `assets-source/asset-sheet.png` (알파가 있는 원본 스프라이트 시트) 한 장에서 나온다.
 
 ```bash
-python3 tools/pixel_art.py    # icons.png · character.png · room.png · 앱 아이콘 · TS 매니페스트
+python3 scripts/process-pixel-assets.py
 ```
 
-| 파일 | 규격 | 쓰임 |
+이 스크립트가 하는 일:
+
+1. 알파 채널 기준으로 연결 요소를 찾아 스프라이트를 자동 분리한다 (`scripts/detect_components.py`).
+2. 각 스프라이트를 여백까지 잘라 `public/assets/pixel/<카테고리>/<이름>.png` 로 저장한다.
+3. `public/assets/pixel/manifest.json` 과 타입이 붙은 레지스트리
+   `src/lib/pixelAssets.generated.ts` 를 생성한다.
+4. 캐릭터 스프라이트로 PWA 앱 아이콘(180·192·512)까지 만든다.
+
+현재 자동 추출된 에셋은 **103개**다.
+
+| 카테고리 | 개수 | 내용 |
 | --- | --- | --- |
-| `public/sprites/icons.png` | 16px 격자, 8열 | 모든 UI 아이콘 (`PixelIcon`) |
-| `public/sprites/character.png` | 32px, 2프레임 × 4상태 | 캐릭터 idle 애니메이션 |
-| `public/sprites/room.png` | 160×112 | 코지 픽셀 방 배경 |
+| `characters` | 7 | idle · recovery · easy · normal · power · 뒷모습 2종 |
+| `pets` | 7 | 고양이 포즈 |
+| `icons` | 22 | sleep · fatigue · mood · body · focus · appetite · caffeine · exercise · climbing · water · shower · food · clean · outfit · work · camera · music · save · energy · xp · home · log |
+| `items` | 14 | 커피 · 빵 · 과일 · 우유 등 |
+| `furniture` | 21 | 침대 · 러그 · 책상 · 행거 · 거울 · 책장 · 창문 4종 · 포스터 등 |
+| `fashion` | 10 | 티셔츠 · 청바지 · 토트백 · 백팩 · 캡 등 |
+| `gear` | 5 | 클라이밍화 · 덤벨 · 요가매트 · 러닝화 · 헤드폰 |
+| `effects` | 9 | sparkle 2종 · 하트 · Zzz · 구름 · 무지개 · 전구줄 등 |
+| `ui` | 8 | 로고 배너 · 모드 배지(pill) 5종 · save 버튼 · 마스코트 |
 
-`tools/pixel_art.py` 는 `src/lib/sprites.generated.ts` 도 함께 만든다. 아이콘 순서와 코드가
-어긋날 일이 없다. **직접 그린 PNG로 교체할 때**는 같은 격자 규격만 지키면 되고, 아이콘 순서가
-달라지면 매니페스트의 `ICON_NAMES` 만 맞춰주면 된다. 스프라이트 시트를 통째로 바꿔도 컴포넌트
-코드는 손대지 않는다.
+**에셋 경로를 컴포넌트에 직접 쓰지 않는다.** 전부 레지스트리를 통해 쓴다.
 
-브라우저에서 도트가 뭉개지지 않도록 모든 스프라이트에 `image-rendering: pixelated` 를 건다
-(`.pixel-img`).
+```ts
+import { icons, MODE_CHARACTER } from '@/lib/pixelAssets'
 
-## 시작하기
-
-```bash
-npm install
-npm run dev          # http://localhost:5173
-npm run build        # 타입체크 + 프로덕션 빌드
-npm run preview
+<PixelImage asset={icons.climbing} height={20} />
+<PixelImage asset={MODE_CHARACTER.RECOVERY} height={80} />
 ```
 
-`.env` 가 없으면 앱은 **로컬 저장소 모드**로 동작한다 (localStorage). Supabase 없이 모든 화면을
-그대로 쓸 수 있고, Insights 화면 하단의 `Seed sample` 버튼으로 34일치 샘플 데이터를 채워 검증할 수 있다.
+시트를 새로 그려 교체할 때는 파일만 덮어쓰고 스크립트를 다시 돌리면 된다.
+스프라이트 순서가 바뀌면 `scripts/process-pixel-assets.py` 의 `MAP` 인덱스만 맞춰주면 되고,
+확인용 대조표는 `python3 scripts/contact_sheet.py` 로 만든다.
+
+### 아직 에셋이 없어 코드로 그린 것
+
+시스템 이모지로 대체하지 않고, 순수 UI 도형으로만 처리한 부분이다.
+
+- 방의 **벽/바닥 면** — CSS 단색 레이어 (그 위의 물건은 전부 실제 스프라이트)
+- 퀘스트 **체크 표시** — CSS 도형 (시트에 체크 아이콘이 없음)
+
+### 추출은 했지만 아직 화면에 안 쓰는 것
+
+`characters/back-bag` `characters/back-coat` `ui/mascot` `furniture/window-morning|sunset|night`
+`fashion/*` 대부분 — 방 확장이나 옷 기록 기능을 붙일 때 쓰라고 남겨 뒀다.
+시트에 있던 **표정 6종**은 서로 차이가 거의 없어 5단계 척도로 쓰기 어렵다고 판단해 추출하지 않았다.
 
 ## Supabase 연결
 
@@ -86,7 +111,7 @@ Vercel 프로젝트 환경변수에 위 `VITE_*` 값을 넣으면 된다.
 
 `public/manifest.webmanifest` + `public/sw.js` + iOS 메타 태그가 들어 있다.
 배포된 주소를 Safari 로 열고 공유 → **홈 화면에 추가** 하면 상태바까지 앱처럼 뜬다.
-앱 아이콘도 같은 캐릭터 도트로 만들어 둔다. 서비스워커는 프로덕션 빌드에서만 등록된다.
+앱 아이콘은 캐릭터 스프라이트로 자동 생성된다. 서비스워커는 프로덕션 빌드에서만 등록된다.
 
 ## Energy Score
 
@@ -109,34 +134,45 @@ Vercel 프로젝트 환경변수에 위 `VITE_*` 값을 넣으면 된다.
 ## 구조
 
 ```
+assets-source/         원본 스프라이트 시트 (에셋의 단일 소스)
+scripts/               에셋 분리 파이프라인 (pixelsheet · detect_components · process-pixel-assets · contact_sheet)
+public/assets/pixel/   잘린 PNG + manifest.json
 src/
   components/
     layout/      AppShell, TabBar
-    pixel/       PixelIcon, PixelPanel, PixelButton, PixelToast, EnergyBar, PipRow,
-                 IconPicker, CharacterScene, CalendarGrid, DaySheet
+    pixel/       PixelImage, PixelSparkle, PixelPanel, PixelButton, PixelToast,
+                 EnergyBar, PipRow, RoomScene, CalendarGrid, DaySheet
     DevTools.tsx 로컬 모드 전용 샘플 데이터 도구
   hooks/         useCheckins, useCheckinForm, useQuests, useCountUp, useHaptic
   lib/           energy(점수) · effects(버프/디버프) · quests · patterns · insights(통계)
+                 roomLayout(방 배치) · pixelAssets(에셋 레지스트리)
                  repository(데이터 접근) · localStore · supabase · mappers · date · mock · env · cn
-                 sprites.generated.ts (tools/pixel_art.py 가 생성)
   pages/         TodayPage, CheckinPage, HistoryPage, InsightsPage
   types/         도메인 타입 + DB 행 타입
-tools/pixel_art.py   픽셀 에셋 생성기
 supabase/schema.sql
 ```
 
 ## 화면
 
-- **Today (🏠)** — 캐릭터 상태 화면. 코지 픽셀 방 안의 캐릭터가 오늘 모드에 따라 눕고(RECOVERY),
-  앉고(EASY), 서고(NORMAL), 두 팔을 든다(POWER). 아래로 PLAYER STATUS(HP 바 + MOOD/FOCUS/BODY),
-  TODAY'S MODE, CURRENT EFFECTS, DAILY QUEST.
-- **Check-in (💾 Daily Save)** — 설문이 아니라 저장 화면. 수면은 −/+ 스테퍼, 피로는 표정 5종,
-  기분은 날씨 5종, 나머지는 하트·다이아·별 핍으로 고른다. 고르는 동안 우상단 점수가 즉시 반응한다.
-- **History (📖 Adventure Log)** — 월간 픽셀 캘린더. 날짜마다 모드 아이콘과 점수. 날짜를 누르면
-  게임 일지 같은 상세 창이 열리고 거기서 수정·삭제한다. 아래에 최근 메모 세 줄.
-- **Insights (⭐ Player Stats)** — 최근 7일/30일 평균, 평균 수면·기분, 모드별 일수, 평균 피로도,
-  그리고 **DISCOVERED** 패턴(잘 잔 날 버프, 운동 버프, 늦은 카페인 디버프).
-  표본이 부족한 분석은 계산하지 않고 화면에서도 감춘다 (`lib/insights.ts` · `lib/patterns.ts`).
+- **Today (🏠)** — 화면의 주인공은 캐릭터가 사는 방이다. 침대·러그·책상·행거·거울·책장·창문·
+  화분·클라이밍화·토트백이 놓인 cute maximalist 방에서, 캐릭터가 모드에 따라 다르게 지낸다
+  (RECOVERY는 쿠션에 파묻혀 Zzz, EASY는 빈백에서 컵을 들고, NORMAL은 책상에서 노트북,
+  POWER는 러그 위에서 점프 + sparkle). 고양이도 모드마다 다른 자리에 있다.
+  그 아래로 ENERGY 바 + TODAY'S MODE → PLAYER STATUS → CURRENT EFFECTS → TODAY'S QUEST 순으로 스크롤한다.
+- **Check-in (💾)** — 설문이 아니라 저장 화면. 항목마다 시트의 픽셀 아이콘이 붙고,
+  1~5 척도는 그 아이콘을 5칸 늘어놓아 채운 만큼만 또렷하게 보여준다. 고르면 2px 떠오른다.
+  상단의 캐릭터와 점수는 입력하는 동안 실시간으로 바뀐다.
+- **History (📖 Adventure Log)** — 월간 캘린더에 날짜별 모드 아이콘과 점수. 날짜를 누르면
+  그날의 캐릭터와 함께 작은 RPG 일지가 열린다. 아래에 최근 메모 세 줄.
+- **Insights (⭐ Player Stats)** — 평균 에너지/수면/기분, 모드별 일수, 평균 피로도, 그리고
+  **DISCOVERED** 패턴. 표본이 부족하면 계산하지 않고 화면에서도 감춘다.
+
+### 방을 바꾸고 싶다면
+
+`src/lib/roomLayout.ts` 하나만 고치면 된다. 방을 100×100 좌표로 보고
+`{ asset, x, bottom, width, layer }` 를 나열하는 구조라서 물건을 더 놓거나 빼기 쉽고,
+`CHARACTER_PLACEMENT` / `PET_PLACEMENT` / `MODE_EFFECTS` 로 모드별 연출을 바꾼다.
+레이어는 wall → furniture → props → character → pet → effects 순으로 쌓인다.
 
 ### Buff / Debuff
 
