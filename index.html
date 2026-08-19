@@ -113,6 +113,11 @@
   button, .chip{transition:transform .06s ease-out, opacity .06s ease-out}
   .ptr{position:fixed; top:-46px; left:0; right:0; height:46px; z-index:25; display:flex; align-items:center; justify-content:center;
     font-size:13px; font-weight:600; color:var(--ink-2); background:var(--bg); transition:transform .2s ease-out}
+  .cropcount{color:#fff; font-size:14px; font-weight:700; min-width:66px; text-align:center}
+  .look-row.selected{background:var(--pink-soft)}
+  .lr-check{flex:0 0 auto; width:24px; height:24px; border-radius:50%; border:1.5px solid var(--pink); color:var(--pink);
+    display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; align-self:center}
+  .look-row.selected .lr-check{background:var(--pink); color:#fff}
   .backdrop{position:fixed; inset:0; background:rgba(38,34,31,.4); z-index:30; display:flex; align-items:flex-end; justify-content:center; animation:fade .2s ease-out}
   /* 사진 편집(회전·크롭) */
   .cropwrap{position:fixed; inset:0; z-index:40; background:rgba(20,17,15,.93); display:flex; flex-direction:column; justify-content:center; gap:14px; padding:16px; animation:fade .2s ease-out}
@@ -389,93 +394,151 @@ function autoLevels(d){
     d[i+2]=Math.max(0,Math.min(255,y+(B-y)*1.12));
   }
 }
-/* ----- 사진 편집(회전·크롭) — 라이브러리 없이 canvas + CSS transform ----- */
+/* ----- 사진 편집(회전·크롭·자동보정) — 라이브러리 없이 canvas + CSS transform -----
+   여러 장을 한 번에 받아 스와이프/‹›로 넘기며 편집한다. 한 장짜리는 editPhoto()로 감싸 쓴다. */
 const CROP_RATIOS=[['3:4',3/4],['1:1',1],['4:5',4/5],['원본',0]];
-// 편집한 JPEG blob 반환. 취소=null, 이미지를 못 읽으면 undefined(편집 건너뛰고 원본 경로로).
-function editPhoto(file){return new Promise(resolve=>{
-  const url=URL.createObjectURL(file), img=new Image();
-  img.onerror=()=>{URL.revokeObjectURL(url);resolve(undefined);};
-  img.onload=async()=>{
-    if(!img.naturalWidth||!img.naturalHeight){URL.revokeObjectURL(url);return resolve(undefined);}
-    // 폰 사진은 4000px가 넘어 보정·누끼가 느리다. 출력이 1100px이므로 미리 줄여두고 작업한다.
-    const cap=1400, k=Math.min(1,cap/Math.max(img.naturalWidth,img.naturalHeight));
-    let iw=Math.round(img.naturalWidth*k), ih=Math.round(img.naturalHeight*k);
-    const orig=document.createElement('canvas');orig.width=iw;orig.height=ih;
-    orig.getContext('2d').drawImage(img,0,0,iw,ih);
-    const setSrc=c=>new Promise(r=>{img.onload=r;img.src=c.toDataURL('image/jpeg',.92);});
-    await setSrc(orig);
-    let ri=0, rot=0, zoom=1, dx=0, dy=0, fxAuto=false;
-    const wrap=document.createElement('div');wrap.className='cropwrap';
-    wrap.innerHTML=`<div class="cropbox" id="cbox"></div>
-      <div class="croptools">
-        <div class="croprow">${CROP_RATIOS.map((r,k)=>`<button class="cropbtn${k?'':' on'}" data-ratio="${k}">${r[0]}</button>`).join('')}</div>
-        <div class="croprow"><button class="cropbtn" data-rot="-90">↺</button><input type="range" id="czoom" min="1" max="3" step="0.01" value="1"><button class="cropbtn" data-rot="90">↻</button></div>
-        <div class="croprow"><button class="cropbtn" id="cauto">✨ 자동보정</button></div>
-        <div class="crophint">드래그로 위치, 슬라이더로 확대</div>
-        <div class="croprow"><button class="cropbtn" id="ccancel">취소</button><button class="cropbtn on" id="cok">확인</button></div>
-      </div>`;
-    document.body.appendChild(wrap);
-    const box=wrap.querySelector('#cbox');box.appendChild(img);
+// 반환: 편집 결과 배열(각 원소 = JPEG blob, 못 읽은 사진은 undefined). 전체 취소면 null.
+function editPhotos(files){return new Promise(resolve=>{
+  const n=files.length; if(!n)return resolve(null);
+  const shot=Array.from({length:n},()=>({ri:0,rot:0,zoom:1,dx:0,dy:0,auto:false}));
+  const orig=new Array(n), bad=new Array(n).fill(false);
+  let cur=0, iw=0, ih=0;
 
-    const dims=()=>rot%180?[ih,iw]:[iw,ih];      // 회전 후 보이는 크기
-    // 자를 땐 프레임을 꽉 채우고(cover), '원본'이면 전체가 보이게(contain)
-    const base=()=>{const[w,h]=dims(),fw=box.clientWidth,fh=box.clientHeight;
-      return CROP_RATIOS[ri][1]?Math.max(fw/w,fh/h):Math.min(fw/w,fh/h);};
-    function apply(){
-      const[w,h]=dims(),r=CROP_RATIOS[ri][1]||w/h;
-      // 프레임 크기는 직접 계산한다. flex 안에서 aspect-ratio는 세로가 눌려 비율이 깨짐.
-      const aw=Math.min(innerWidth*.92,440),ah=innerHeight*.55;
-      let bw=aw,bh=bw/r; if(bh>ah){bh=ah;bw=bh*r;}
-      box.style.width=Math.round(bw)+'px';box.style.height=Math.round(bh)+'px';
-      const fw=box.clientWidth,fh=box.clientHeight,s=base()*zoom;
-      const mx=Math.max(0,(w*s-fw)/2),my=Math.max(0,(h*s-fh)/2);   // 프레임 밖으로 못 빠져나가게
-      dx=Math.min(mx,Math.max(-mx,dx));dy=Math.min(my,Math.max(-my,dy));
-      img.style.cssText=`position:absolute;left:50%;top:50%;width:${iw}px;height:${ih}px;margin-left:${-iw/2}px;margin-top:${-ih/2}px;transform:translate(${dx}px,${dy}px) rotate(${rot}deg) scale(${s})`;
-    }
-    // 미리보기와 같은 순서(scale→rotate→translate)로 그려야 결과가 화면과 일치한다
-    function render(){
-      const fw=box.clientWidth,fh=box.clientHeight,k=Math.min(1100/Math.max(fw,fh),4);
-      const ow=Math.round(fw*k),oh=Math.round(fh*k);
-      const c=document.createElement('canvas');c.width=ow;c.height=oh;
-      const ctx=c.getContext('2d');
-      ctx.fillStyle='#fff';ctx.fillRect(0,0,ow,oh);                // '원본' 비율일 때 생기는 여백
-      ctx.translate(ow/2+dx*k,oh/2+dy*k);
-      ctx.rotate(rot*Math.PI/180);
-      const s=base()*zoom*k;ctx.scale(s,s);
-      ctx.drawImage(img,-iw/2,-ih/2);
-      return new Promise(r=>c.toBlob(b=>r(b),'image/jpeg',.82));
-    }
-    const close=v=>{wrap.remove();URL.revokeObjectURL(url);resolve(v);};
-    const fin=async v=>{close(await v);popNav();};
-    pushNav(()=>close(null));                    // 뒤로가기 = 편집 취소
-
-    let drag=null;
-    box.addEventListener('pointerdown',e=>{drag={x:e.clientX-dx,y:e.clientY-dy};box.setPointerCapture(e.pointerId);});
-    box.addEventListener('pointermove',e=>{if(!drag)return;dx=e.clientX-drag.x;dy=e.clientY-drag.y;apply();});
-    box.addEventListener('pointerup',()=>{drag=null;});
-    box.addEventListener('pointercancel',()=>{drag=null;});
-    // 토글할 때마다 원본에서 다시 계산한다(효과가 겹겹이 누적되지 않게)
-    let fxBusy=false;
-    async function applyFx(){
-      if(fxBusy)return; fxBusy=true;
+  const wrap=document.createElement('div');wrap.className='cropwrap';
+  wrap.innerHTML=`<div class="cropbox" id="cbox"><img id="cimg" alt=""></div>
+    <div class="croptools">
+      <div class="croprow">${CROP_RATIOS.map((r,k)=>`<button class="cropbtn${k?'':' on'}" data-ratio="${k}">${r[0]}</button>`).join('')}</div>
+      <div class="croprow"><button class="cropbtn" data-rot="-90">↺</button><input type="range" id="czoom" min="1" max="3" step="0.01" value="1"><button class="cropbtn" data-rot="90">↻</button></div>
+      <div class="croprow"><button class="cropbtn" id="cauto">✨ 자동보정</button></div>
+      ${n>1?`<div class="croprow"><button class="cropbtn" id="cprev">‹</button><span class="cropcount" id="ccount">1 / ${n}</span><button class="cropbtn" id="cnext">›</button></div>`:''}
+      <div class="crophint" id="chint"></div>
+      <div class="croprow"><button class="cropbtn" id="ccancel">취소</button><button class="cropbtn on" id="cok">${n>1?`완료 (${n}장)`:'확인'}</button></div>
+    </div>`;
+  document.body.appendChild(wrap);
+  const box=wrap.querySelector('#cbox'), img=wrap.querySelector('#cimg');
+  const st=()=>shot[cur];
+  const dims=()=>st().rot%180?[ih,iw]:[iw,ih];
+  // 자를 땐 프레임을 꽉 채우고(cover), '원본'이면 전체가 보이게(contain)
+  const base=()=>{const[w,h]=dims(),fw=box.clientWidth,fh=box.clientHeight;
+    return CROP_RATIOS[st().ri][1]?Math.max(fw/w,fh/h):Math.min(fw/w,fh/h);};
+  function apply(){
+    const s0=st(), [w,h]=dims(), r=CROP_RATIOS[s0.ri][1]||w/h;
+    // 프레임 크기는 직접 계산한다. flex 안에서 aspect-ratio는 세로가 눌려 비율이 깨짐.
+    const aw=Math.min(innerWidth*.92,440), ah=innerHeight*(n>1?.46:.55);
+    let bw=aw,bh=bw/r; if(bh>ah){bh=ah;bw=bh*r;}
+    box.style.width=Math.round(bw)+'px';box.style.height=Math.round(bh)+'px';
+    const fw=box.clientWidth,fh=box.clientHeight,s=base()*s0.zoom;
+    const mx=Math.max(0,(w*s-fw)/2),my=Math.max(0,(h*s-fh)/2);   // 프레임 밖으로 못 빠져나가게
+    s0.dx=Math.min(mx,Math.max(-mx,s0.dx));s0.dy=Math.min(my,Math.max(-my,s0.dy));
+    img.style.cssText=`position:absolute;left:50%;top:50%;width:${iw}px;height:${ih}px;margin-left:${-iw/2}px;margin-top:${-ih/2}px;transform:translate(${s0.dx}px,${s0.dy}px) rotate(${s0.rot}deg) scale(${s})`;
+  }
+  function syncTools(){
+    wrap.querySelectorAll('[data-ratio]').forEach(b=>b.classList.toggle('on',+b.dataset.ratio===st().ri));
+    wrap.querySelector('#cauto').classList.toggle('on',st().auto);
+    wrap.querySelector('#czoom').value=st().zoom;
+    const cc=wrap.querySelector('#ccount'); if(cc)cc.textContent=`${cur+1} / ${n}`;
+    wrap.querySelector('#chint').textContent=n>1?'드래그로 위치 · 끝에서 더 밀면 다음 사진':'드래그로 위치, 슬라이더로 확대';
+  }
+  // 원본을 한 번만 읽어 캐시한다. 폰 사진은 4000px가 넘어 보정이 느리므로 미리 줄인다.
+  function load(i){
+    if(orig[i]||bad[i])return Promise.resolve();
+    return new Promise(done=>{
+      const u=URL.createObjectURL(files[i]), im=new Image();
+      im.onerror=()=>{bad[i]=true;URL.revokeObjectURL(u);done();};
+      im.onload=()=>{
+        if(!im.naturalWidth||!im.naturalHeight){bad[i]=true;URL.revokeObjectURL(u);return done();}
+        const cap=1400,k=Math.min(1,cap/Math.max(im.naturalWidth,im.naturalHeight));
+        const c=document.createElement('canvas');
+        c.width=Math.round(im.naturalWidth*k);c.height=Math.round(im.naturalHeight*k);
+        c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+        orig[i]=c;URL.revokeObjectURL(u);done();
+      };
+      im.src=u;
+    });
+  }
+  const setSrc=c=>new Promise(r=>{img.onload=r;img.src=c.toDataURL('image/jpeg',.92);});
+  // 효과는 매번 원본에서 다시 계산한다(겹겹이 누적되지 않게)
+  // 로딩 중에 또 넘기면 cur만 바뀌고 화면이 안 따라오므로, 끝난 뒤 최신 cur로 한 번 더 그린다
+  let busy=false, pending=false;
+  async function show(){
+    if(busy){pending=true;return;}
+    busy=true;
+    do{
+      pending=false;
+      const i=cur;                                 // 로딩 중에 또 넘어갈 수 있어 인덱스를 고정한다
+      await load(i);
+      if(i!==cur){pending=true;continue;}          // 그 사이 넘어갔으면 새 사진으로 다시
+      if(bad[i]){                                  // 못 읽는 사진은 건너뛴다
+        if(bad.every(Boolean)){busy=false;return fin(bad.map(()=>undefined));}
+        if(n===1){busy=false;return fin(undefined);}
+        showToast(`${i+1}번째 사진을 못 읽어 건너뛰어요`);
+        cur=i<n-1?i+1:i-1; pending=true; continue;
+      }
+      const src=orig[i]; iw=src.width; ih=src.height;
       const c=document.createElement('canvas');c.width=iw;c.height=ih;
-      const x=c.getContext('2d');x.drawImage(orig,0,0);
-      if(fxAuto){const im=x.getImageData(0,0,iw,ih);autoLevels(im.data);x.putImageData(im,0,0);}
+      const x=c.getContext('2d');x.drawImage(src,0,0);
+      if(st().auto){const im=x.getImageData(0,0,iw,ih);autoLevels(im.data);x.putImageData(im,0,0);}
       await setSrc(c);
-      apply(); fxBusy=false;
+      apply();syncTools();
+    }while(pending);
+    busy=false;
+  }
+  function go(d){const t=cur+d; if(t<0||t>=n)return; cur=t; show();}
+  // 미리보기와 같은 순서(scale→rotate→translate)로 그려야 결과가 화면과 일치한다
+  function renderOne(){
+    const s0=st(), fw=box.clientWidth, fh=box.clientHeight, k=Math.min(1100/Math.max(fw,fh),4);
+    const ow=Math.round(fw*k),oh=Math.round(fh*k);
+    const c=document.createElement('canvas');c.width=ow;c.height=oh;
+    const ctx=c.getContext('2d');
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,ow,oh);   // '원본' 비율일 때 생기는 여백
+    ctx.translate(ow/2+s0.dx*k,oh/2+s0.dy*k);
+    ctx.rotate(s0.rot*Math.PI/180);
+    const s=base()*s0.zoom*k;ctx.scale(s,s);
+    ctx.drawImage(img,-iw/2,-ih/2);
+    return new Promise(r=>c.toBlob(b=>r(b),'image/jpeg',.82));
+  }
+  // 지금 보고 있지 않은 사진은 각자의 설정대로 다시 띄워 그린다
+  async function renderAll(){
+    const out=new Array(n), keep=cur;
+    for(let i=0;i<n;i++){
+      if(bad[i]){out[i]=undefined;continue;}
+      cur=i; await show(); out[i]=await renderOne();
     }
-    wrap.querySelector('#cauto').onclick=()=>{fxAuto=!fxAuto;wrap.querySelector('#cauto').classList.toggle('on',fxAuto);applyFx();};
-    wrap.querySelector('#czoom').oninput=e=>{zoom=+e.target.value;apply();};
-    wrap.onclick=e=>{const b=e.target.closest('button');if(!b||b.id==='cauto')return;
-      if(b.dataset.ratio!==undefined){ri=+b.dataset.ratio;dx=dy=0;
-        wrap.querySelectorAll('[data-ratio]').forEach(x=>x.classList.toggle('on',x===b));apply();}
-      else if(b.dataset.rot){rot=(rot+ +b.dataset.rot+360)%360;dx=dy=0;apply();}
-      else if(b.id==='ccancel')fin(null);
-      else if(b.id==='cok')fin(render());};
-    apply();
-  };
-  img.src=url;
+    cur=keep; return out;
+  }
+  const close=v=>{wrap.remove();resolve(v);};
+  const fin=async v=>{close(await v);popNav();};
+  pushNav(()=>close(null));                        // 뒤로가기 = 편집 취소
+
+  let drag=null;
+  box.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,dx:st().dx,dy:st().dy,nav:null};box.setPointerCapture(e.pointerId);});
+  box.addEventListener('pointermove',e=>{
+    if(!drag||drag.nav)return;
+    const mx=e.clientX-drag.x, my=e.clientY-drag.y;
+    const want=drag.dx+mx;
+    st().dx=want; st().dy=drag.dy+my; apply();      // apply()가 프레임 밖으로 안 나가게 잘라준다
+    // 끝까지 민 뒤 더 밀면 다음/이전 사진으로 (사진앱과 같은 느낌). 잘려나간 거리로 판단한다.
+    const over=want-st().dx;
+    if(n>1&&Math.abs(over)>70&&Math.abs(mx)>60&&Math.abs(mx)>Math.abs(my)*1.5)drag.nav=over>0?-1:1;
+  });
+  box.addEventListener('pointerup',()=>{
+    if(!drag)return;
+    if(drag.nav)go(drag.nav);
+    drag=null;
+  });
+  box.addEventListener('pointercancel',()=>{drag=null;});
+  wrap.querySelector('#czoom').oninput=e=>{st().zoom=+e.target.value;apply();};
+  wrap.querySelector('#cauto').onclick=()=>{st().auto=!st().auto;show();};
+  if(n>1){wrap.querySelector('#cprev').onclick=()=>go(-1);wrap.querySelector('#cnext').onclick=()=>go(1);}
+  wrap.onclick=e=>{const b=e.target.closest('button');if(!b||['cauto','cprev','cnext'].includes(b.id))return;
+    if(b.dataset.ratio!==undefined){st().ri=+b.dataset.ratio;st().dx=st().dy=0;syncTools();apply();}
+    else if(b.dataset.rot){st().rot=(st().rot+ +b.dataset.rot+360)%360;st().dx=st().dy=0;apply();}
+    else if(b.id==='ccancel')fin(null);
+    else if(b.id==='cok')fin(renderAll());};
+  show();
 });}
+// 한 장짜리 — 편집한 blob, 취소=null, 못 읽으면 undefined
+async function editPhoto(file){const r=await editPhotos([file]);return r===null?null:r[0];}
 function pickImage(){return new Promise(res=>{
   const i=document.createElement('input');i.type='file';i.accept='image/*';
   i.style.cssText='position:fixed;left:-9999px;top:0;opacity:0;width:1px;height:1px';
@@ -522,7 +585,7 @@ const WD=['월','화','수','목','금','토','일'];
 const TPO_TAGS=['데일리룩','출근룩','데이트룩','하객룩','여행룩','캠퍼스룩','운동룩','파티룩','면접룩','소개팅룩','나들이룩','집콕룩','휴양지룩','페스티벌룩','졸업/입학룩'];
 const STYLE_TAGS=['미니멀','캐주얼','포멀','클래식','러블리','걸리시','시크','페미닌','보이시','스트릿','락시크','빈티지','스포티','아메카지','프레피','Y2K','고프코어','청순','모던','에스닉'];
 const TAG_PRESETS=[...TPO_TAGS,...STYLE_TAGS];
-const state={tab:'closet', items:[], looks:[], days:[], wish:[], albumBy:'category', album:null, selectMode:false, selected:new Set(), wishStatus:null, weekWeather:null, lookView:'card', catFilter:null, ownerFilter:null, favOnly:false, tagFilter:null, search:'', lookSearch:'', sortWear:false, backupDismissed:false,
+const state={tab:'closet', items:[], looks:[], days:[], wish:[], albumBy:'category', album:null, selectMode:false, selectKind:'item', selected:new Set(), wishStatus:null, weekWeather:null, lookView:'card', catFilter:null, ownerFilter:null, favOnly:false, tagFilter:null, search:'', lookSearch:'', sortWear:false, backupDismissed:false,
   closetOwner:'me', lookOwner:'me', myItems:[], myLooks:[], partnerItems:[], partnerLooks:[],
   week:mondayOf(new Date()), month:startOfMonth(new Date())};
 let MYNAME='나', PARTNERNAME='', MYCODE='';
@@ -571,10 +634,13 @@ function bulkAdd(){
   const i=document.createElement('input');i.type='file';i.accept='image/*';i.multiple=true;
   i.style.cssText='position:fixed;left:-9999px;top:0;opacity:0;width:1px;height:1px';
   i.onchange=async()=>{const files=[...i.files];i.remove();if(!files.length)return;
+    const edited=await editPhotos(files);        // 여러 장을 스와이프로 넘기며 편집
+    if(edited===null)return;                     // 전체 취소
     const useAI=hasAI();let n=0,ai=0,aiFail=0,failMsg='';
     for(let k=0;k<files.length;k++){const f=files[k];
       showToast(`${files.length}장 중 ${k+1}번째 ${useAI?'AI 분석':'추가'} 중…`);
-      try{const blob=await shrink(f);const pid=uid();await storePhoto(pid,blob);
+      try{const blob=edited[k]||await shrink(f);   // 편집 못한 사진은 기존 경로
+        const pid=uid();await storePhoto(pid,blob);
         const obj={id:uid(),name:'',category:'상의',photoId:pid,materials:[],colors:[]};
         if(useAI){try{const r=await classifyPhoto(pid);if(r&&typeof r==='object'){
           if(r.name)obj.name=r.name;
@@ -632,14 +698,18 @@ function itemCards(list){
     ${i.owner?`<span class="tagchip">${esc(i.owner)}</span>`:''}
     ${(i.colors||[]).slice(0,3).map(c=>`<span class="swatch" style="background:${colorHex(c)}"></span>`).join('')}</div></div></div>`;}).join('')+`</div>`;
 }
-function selectBar(){
-  if(!state.selectMode)return `<button class="textcta" data-action="selectmode">선택</button>`;
+// 옷·룩 공용. state.selectKind로 지금 무엇을 고르는 중인지 구분한다(선택 집합은 하나만 쓴다).
+function selectBar(kind){
+  kind=kind||'item';
+  if(!state.selectMode||state.selectKind!==kind)return `<button class="textcta" data-action="selectmode" data-kind="${kind}">선택</button>`;
   const n=state.selected.size;
   return `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px">
     <button class="textcta" data-action="cancelselect" style="margin:0">취소</button>
-    <div style="display:flex;gap:14px;align-items:center">
+    <div style="display:flex;gap:13px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
       ${n===1?`<button class="textcta" data-action="editselected" style="margin:0">편집</button>`:''}
-      ${n?`<button class="textcta" data-action="moveselected" style="margin:0">이동</button>`:''}
+      ${n&&kind==='item'?`<button class="textcta" data-action="photoselected" style="margin:0">사진</button>`:''}
+      ${n?(kind==='look'?`<button class="textcta" data-action="shareselected" style="margin:0">공유 전환</button>`
+                        :`<button class="textcta" data-action="moveselected" style="margin:0">이동</button>`):''}
       <button class="textcta" data-action="deleteselected" style="margin:0;color:var(--danger)">${n}개 삭제</button>
     </div></div>`;
 }
@@ -658,11 +728,39 @@ function moveSelected(){
   });
 }
 async function deleteSelected(){
+  const look=state.selectKind==='look', store=look?'looks':'items';
   const ids=[...state.selected];if(!ids.length){state.selectMode=false;render();return;}
-  const objs=ids.map(id=>itemById(id)).filter(Boolean);
-  for(const id of ids)await del('items',id);
+  const objs=ids.map(id=>look?lookById(id):itemById(id)).filter(Boolean);
+  for(const id of ids)await del(store,id);
   state.selectMode=false;state.selected=new Set();await refresh();
-  showToast(`${objs.length}개 삭제됨`,async()=>{for(const o of objs)await put('items',o);await refresh();});
+  showToast(`${objs.length}개 삭제됨`,async()=>{for(const o of objs)await put(store,o);await refresh();});
+}
+// 고른 옷들의 사진만 이어서 편집한다(스와이프로 다음 옷)
+async function editSelectedPhotos(){
+  const items=[...state.selected].map(itemById).filter(i=>i&&i.photoId);
+  if(!items.length){showToast('사진이 있는 옷을 골라주세요');return;}
+  showToast('사진 불러오는 중…');
+  const blobs=[],targets=[];
+  for(const it of items){const b=await getPhotoBlob(it.photoId);if(b){blobs.push(b);targets.push(it);}}
+  if(!blobs.length){showToast('사진을 불러오지 못했어요');return;}
+  const out=await editPhotos(blobs);
+  if(out===null)return;                       // 취소하면 아무것도 바꾸지 않는다
+  let done=0;
+  for(let k=0;k<targets.length;k++){
+    if(!out[k])continue;
+    const pid=uid();await storePhoto(pid,out[k]);
+    targets[k].photoId=pid;await put('items',targets[k]);done++;
+  }
+  state.selectMode=false;state.selected=new Set();await refresh();
+  showToast(`${done}장 사진을 바꿨어요 ✨`);
+}
+// 고른 룩을 한 번에 공유/비공개로. 하나라도 비공개면 전부 공유로 맞춘다.
+async function shareSelected(){
+  const looks=[...state.selected].map(lookById).filter(Boolean);if(!looks.length)return;
+  const on=!looks.every(l=>l.shared);
+  for(const l of looks){l.shared=on;await put('looks',l);}
+  state.selectMode=false;state.selected=new Set();await refresh();
+  showToast(on?`${looks.length}개를 ${PARTNERNAME||'상대'}에게 공유했어요 💛`:`${looks.length}개를 나만 보기로 바꿨어요 🔒`);
 }
 function lookUse(lookId){return state.days.filter(d=>d.lookId===lookId).length;}
 function statsSheet(){
@@ -829,14 +927,16 @@ function viewLooks(){
     <button class="chip ${state.favOnly?'on':''}" data-action="lookfilter" data-kind="fav">즐겨찾기</button>`+
     usedTags.map(t=>`<button class="chip ${state.tagFilter===t?'on':''}" data-action="lookfilter" data-kind="tag" data-tag="${esc(t)}">${esc(t)}</button>`).join('')+`</div>`;
   if(!state.looks.length)return head+tog+aiBtn+chips+`<div class="empty-state"><div class="big">✨</div>${partner?`${esc(PARTNERNAME)}이(가) 공유한 룩이 아직 없어요.`:'아직 저장된 룩이 없어요.<br>좋아하는 착장을 룩으로 남겨보세요.'}</div>`;
-  const lock=l=>partner?'':`<button class="looklock ${l.shared?'on':''}" data-action="looklock" data-id="${l.id}" title="${l.shared?'공유중 — 누르면 나만 보기':'나만 보기 — 누르면 공유'}">${l.shared?'🔓 공유중':'🔒 나만'}</button>`;
-  const card=l=>`<div class="card" data-action="look" data-id="${l.id}">
+  const sm=state.selectMode&&state.selectKind==='look';
+  const lock=l=>(partner||sm)?'':`<button class="looklock ${l.shared?'on':''}" data-action="looklock" data-id="${l.id}" title="${l.shared?'공유중 — 누르면 나만 보기':'나만 보기 — 누르면 공유'}">${l.shared?'🔓 공유중':'🔒 나만'}</button>`;
+  const card=l=>`<div class="card ${sm&&state.selected.has(l.id)?'selected':''}" data-action="${sm?'toggleselect':'look'}" data-id="${l.id}">
     ${lock(l)}
-    ${l.favorite?'<div class="heart">♥</div>':''}
+    ${sm?`<div class="checkmark">${state.selected.has(l.id)?'✓':''}</div>`:(l.favorite?'<div class="heart">♥</div>':'')}
     <img class="ph" data-photo="${lookThumb(l)||''}" alt="">
     <div class="body"><div class="name">${esc(l.name||'룩')}</div>
     <div class="sub">${stars(l.rating)} ${(l.tags||[]).slice(0,2).map(t=>`<span class="tagchip">${esc(t)}</span>`).join('')}</div></div></div>`;
-  const row=l=>`<div class="look-row" data-action="look" data-id="${l.id}">
+  const row=l=>`<div class="look-row ${sm&&state.selected.has(l.id)?'selected':''}" data-action="${sm?'toggleselect':'look'}" data-id="${l.id}">
+    ${sm?`<div class="lr-check">${state.selected.has(l.id)?'✓':''}</div>`:''}
     <img class="lr-thumb" data-photo="${lookThumb(l)||''}" alt="">
     <div class="lr-info"><div class="name">${esc(l.name||'룩')} ${l.favorite?'<span style="color:var(--pink)">♥</span>':''}</div>
     <div class="sub">${stars(l.rating)} ${(l.tags||[]).slice(0,3).map(t=>`<span class="tagchip">${esc(t)}</span>`).join('')}</div></div>${lock(l)}</div>`;
@@ -849,7 +949,8 @@ function viewLooks(){
   else if(state.lookView==='list')body=`<div class="look-list">${list.map(row).join('')}</div>`;
   else if(state.lookView==='single')body=`<div class="look-single">${list.map(card).join('')}</div>`;
   else body=`<div class="grid">${list.map(card).join('')}</div>`;
-  return head+tog+aiBtn+searchBox+chips+vt+body;
+  const selBar=partner?'':selectBar('look');
+  return head+tog+aiBtn+searchBox+chips+vt+selBar+body;
 }
 async function viewWeek(){
   const days=await all('days');const byId={};days.forEach(d=>byId[d.id]=d);
@@ -1538,16 +1639,19 @@ function showOnboarding(){
 /* 꾸욱 눌러서 선택 — 이미 있는 선택 모드를 그대로 쓴다(새 모드를 만들지 않음) */
 let _lpFired=false;
 (()=>{
-  let timer=null,sx=0,sy=0,card=null;
+  let timer=null,sx=0,sy=0,card=null,kind='item';
   const clear=()=>{clearTimeout(timer);timer=null;card=null;};
   document.body.addEventListener('touchstart',e=>{
-    if(state.tab!=='closet'||state.closetOwner!=='me'||e.touches.length!==1)return;
-    const c=e.target.closest('.card[data-action="item"]');if(!c)return;
+    if(e.touches.length!==1)return;
+    const looks=state.tab==='looks';
+    if(looks?(state.lookOwner==='partner'&&PARTNER):(state.tab!=='closet'||state.closetOwner!=='me'))return;
+    const c=e.target.closest(looks?'[data-action="look"]':'.card[data-action="item"]');if(!c)return;
+    kind=looks?'look':'item';
     card=c;sx=e.touches[0].clientX;sy=e.touches[0].clientY;
     timer=setTimeout(()=>{
       if(!card)return;
       if(navigator.vibrate)navigator.vibrate(15);
-      state.selectMode=true;state.selected.add(card.dataset.id);
+      state.selectMode=true;state.selectKind=kind;state.selected.add(card.dataset.id);
       _lpFired=true;                       // 손 떼면 따라오는 click은 무시(상세가 열리지 않게)
       render();clear();
     },450);
@@ -1610,10 +1714,14 @@ document.body.addEventListener('click',e=>{
   else if(a==='album'){pushNav(()=>{state.album=null;render();});state.album=el.dataset.key;render();}
   else if(a==='albumback'){state.selectMode=false;state.selected.clear();state.album=null;render();popNav();}
   else if(a==='albumby'){state.albumBy=el.dataset.by;state.album=null;render();}
-  else if(a==='selectmode'){state.selectMode=true;state.selected.clear();render();}
+  else if(a==='selectmode'){state.selectMode=true;state.selectKind=el.dataset.kind||'item';state.selected.clear();render();}
   else if(a==='cancelselect'){state.selectMode=false;state.selected.clear();render();}
-  else if(a==='editselected'){const it=itemById([...state.selected][0]);if(it){state.selectMode=false;state.selected.clear();itemForm(it);}}
+  else if(a==='editselected'){const id=[...state.selected][0];
+    const o=state.selectKind==='look'?lookById(id):itemById(id);
+    if(o){state.selectMode=false;state.selected.clear();state.selectKind==='look'?lookForm(o):itemForm(o);}}
   else if(a==='moveselected')moveSelected();
+  else if(a==='shareselected')shareSelected();
+  else if(a==='photoselected')editSelectedPhotos();
   else if(a==='toggleselect'){const id=el.dataset.id;if(state.selected.has(id))state.selected.delete(id);else state.selected.add(id);render();}
   else if(a==='deleteselected')deleteSelected();
   else if(a==='bulkadd')bulkAdd();
