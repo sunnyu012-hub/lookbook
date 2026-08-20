@@ -28,22 +28,54 @@ export function startOfWeek(now: Date = new Date()): Date {
   return d
 }
 
-export function isThisWeek(iso: string, now: Date = new Date()): boolean {
-  const t = new Date(iso).getTime()
-  return t >= startOfWeek(now).getTime()
+/** 이번 주에 해당하는 날짜 키들. dailyLog 를 훑을 때 쓴다. */
+export function weekDayKeys(now: Date = new Date()): string[] {
+  const start = startOfWeek(now)
+  const keys: string[] = []
+  const cursor = new Date(start)
+  while (cursor <= now) {
+    keys.push(toDayKey(cursor))
+    cursor.setDate(cursor.getDate() + 1)
+  }
+  return keys
 }
 
 export type Daypart = 'morning' | 'afternoon' | 'evening'
 
+/** 05:00~11:59 아침, 12:00~17:59 오후, 18:00~04:59 저녁 */
 export function daypart(now: Date = new Date()): Daypart {
   const h = now.getHours()
-  if (h < 12) return 'morning'
-  if (h < 18) return 'afternoon'
+  if (h >= 5 && h < 12) return 'morning'
+  if (h >= 12 && h < 18) return 'afternoon'
   return 'evening'
 }
 
 export const GREETING: Record<Daypart, string> = {
-  morning: 'Good morning',
-  afternoon: 'Good afternoon',
-  evening: 'Good evening',
+  morning: '좋은 아침이야',
+  afternoon: '좋은 오후야',
+  evening: '좋은 저녁이야',
+}
+
+const SUBCOPY = [
+  '작은 한 걸음도 경험치가 돼.',
+  '한 번에 하나씩이면 충분해.',
+  '조금 나아간 것도 나아간 거야.',
+  '오늘을 작은 모험으로 만들어보자.',
+]
+
+/**
+ * 서브카피는 하루 단위로 고른다.
+ * 매 렌더마다 무작위로 뽑으면 화면이 깜빡이는 것처럼 바뀐다.
+ */
+export function subcopyForDay(now: Date = new Date()): string {
+  const seed = Math.floor(now.getTime() / 86_400_000)
+  return SUBCOPY[seed % SUBCOPY.length]
+}
+
+/** 완료 시각 표시용 — "오후 8:42" */
+export function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString('ko-KR', {
+    hour: 'numeric',
+    minute: '2-digit',
+  })
 }

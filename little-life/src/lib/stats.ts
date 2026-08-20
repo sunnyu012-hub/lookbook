@@ -1,51 +1,39 @@
-import type { Category, Quest } from '@/types'
+import type { Category, CategoryStats, DailyLog, Quest } from '@/types'
 import { CATEGORIES } from '@/types'
-import { isThisWeek, isToday } from './date'
+import { isToday, todayKey, weekDayKeys } from './date'
 
-export type CategoryExp = Record<Category, number>
-
-function emptyCategoryExp(): CategoryExp {
+export function emptyCategoryStats(): CategoryStats {
   return CATEGORIES.reduce((acc, c) => {
     acc[c] = 0
     return acc
-  }, {} as CategoryExp)
+  }, {} as CategoryStats)
 }
 
-/** 완료된 퀘스트만 카테고리별로 EXP 를 모은다. */
-export function categoryExp(quests: Quest[]): CategoryExp {
-  const result = emptyCategoryExp()
-  for (const q of quests) {
-    if (q.completed) result[q.category] += q.exp
+export interface TodaySummary {
+  completed: number
+  earnedExp: number
+}
+
+export function todaySummary(log: DailyLog, now: Date = new Date()): TodaySummary {
+  const entry = log[todayKey(now)]
+  return { completed: entry?.completed ?? 0, earnedExp: entry?.exp ?? 0 }
+}
+
+export function weekCompletedCount(log: DailyLog, now: Date = new Date()): number {
+  return weekDayKeys(now).reduce((sum, key) => sum + (log[key]?.completed ?? 0), 0)
+}
+
+/** 이번 주 카테고리별 EXP. 주간 한 줄 인사이트가 이걸 본다. */
+export function weekCategoryExp(log: DailyLog, now: Date = new Date()): CategoryStats {
+  const result = emptyCategoryStats()
+  for (const key of weekDayKeys(now)) {
+    const byCategory = log[key]?.byCategory
+    if (!byCategory) continue
+    for (const c of CATEGORIES) {
+      result[c] += byCategory[c] ?? 0
+    }
   }
   return result
-}
-
-export interface QuestStats {
-  totalCompleted: number
-  weekCompleted: number
-  todayTotal: number
-  todayCompleted: number
-}
-
-export function questStats(quests: Quest[], now: Date = new Date()): QuestStats {
-  let totalCompleted = 0
-  let weekCompleted = 0
-  let todayTotal = 0
-  let todayCompleted = 0
-
-  for (const q of quests) {
-    if (q.completed && q.completedAt) {
-      totalCompleted += 1
-      if (isThisWeek(q.completedAt, now)) weekCompleted += 1
-    }
-    // 오늘 만든 퀘스트, 또는 오늘 완료한 퀘스트를 "오늘의 퀘스트" 로 본다.
-    if (isTodayQuest(q, now)) {
-      todayTotal += 1
-      if (q.completed) todayCompleted += 1
-    }
-  }
-
-  return { totalCompleted, weekCompleted, todayTotal, todayCompleted }
 }
 
 /**
@@ -60,13 +48,16 @@ export function isTodayQuest(quest: Quest, now: Date = new Date()): boolean {
   return quest.completedAt ? isToday(quest.completedAt, now) : false
 }
 
-/** 미완료가 위로, 완료는 아래로. 같은 그룹 안에서는 최근에 만든 것이 위로. */
-export function sortQuests(quests: Quest[]): Quest[] {
-  return [...quests].sort((a, b) => {
-    if (a.completed !== b.completed) return a.completed ? 1 : -1
-    if (a.completed && b.completed) {
-      return (b.completedAt ?? '').localeCompare(a.completedAt ?? '')
-    }
-    return b.createdAt.localeCompare(a.createdAt)
-  })
+/** 최근에 만든 것이 위로. */
+export function sortByNewest(quests: Quest[]): Quest[] {
+  return [...quests].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+}
+
+/** 최근에 완료한 것이 위로. */
+export function sortByRecentlyCompleted(quests: Quest[]): Quest[] {
+  return [...quests].sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? ''))
+}
+
+export function filterByCategory(quests: Quest[], category: Category | 'ALL'): Quest[] {
+  return category === 'ALL' ? quests : quests.filter((q) => q.category === category)
 }

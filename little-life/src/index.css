@@ -8,14 +8,15 @@
   }
 
   body {
-    @apply bg-ivory font-sans text-ink antialiased;
+    @apply bg-canvas font-sans text-ink antialiased;
     /* iOS 에서 당겨서 새로고침되는 걸 막는다 — 앱처럼 쓰기 위해 */
     overscroll-behavior-y: none;
   }
 
   /* 터치할 때 파란 하이라이트가 뜨면 앱 느낌이 깨진다 */
   button,
-  a {
+  a,
+  input {
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -27,6 +28,7 @@
   }
 }
 
+/* 모션을 줄이도록 설정한 기기에서는 움직임을 거의 없앤다 */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -34,5 +36,6 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

@@ -6,11 +6,11 @@ interface ProgressBarProps {
   className?: string
   /**
    * 채움 색. 기본값과 합쳐 쓰지 않고 통째로 갈아끼운다 —
-   * `bg-ink` 와 `bg-clay` 를 같이 넘기면 어느 쪽이 이길지 CSS 순서에 달려서 색이 뒤집힌다.
+   * `bg-ink` 와 `bg-sage` 를 같이 넘기면 어느 쪽이 이길지 CSS 순서에 달려서 색이 뒤집힌다.
    */
   barClassName?: string
-  /** 트랙 두께 */
   thickness?: 'sm' | 'md'
+  'aria-label'?: string
 }
 
 const THICKNESS = { sm: 'h-1.5', md: 'h-2.5' }
@@ -21,12 +21,14 @@ export function ProgressBar({
   className,
   barClassName = 'bg-ink',
   thickness = 'md',
+  'aria-label': ariaLabel,
 }: ProgressBarProps) {
   const pct = Math.min(100, Math.max(0, value * 100))
   return (
     <div
-      className={cn('w-full overflow-hidden rounded-pill bg-ivorydeep', THICKNESS[thickness], className)}
+      className={cn('w-full overflow-hidden rounded-pill bg-sunken', THICKNESS[thickness], className)}
       role="progressbar"
+      aria-label={ariaLabel}
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={Math.round(pct)}

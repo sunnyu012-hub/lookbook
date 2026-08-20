@@ -4,34 +4,51 @@ interface QuestCheckButtonProps {
   completed: boolean
   onClick?: () => void
   label: string
+  size?: 'sm' | 'md'
 }
 
-/** 동그란 완료 버튼. 체크 표시는 선을 그리듯 나타난다. */
-export function QuestCheckButton({ completed, onClick, label }: QuestCheckButtonProps) {
+const SIZE = {
+  sm: { box: 'h-11 w-11', ring: 'h-9 w-9', icon: 'h-4 w-4' },
+  md: { box: 'h-12 w-12', ring: 'h-10 w-10', icon: 'h-[18px] w-[18px]' },
+}
+
+/**
+ * 동그란 완료 버튼.
+ *
+ * 보이는 원은 작게 두고 터치 영역은 44px 이상으로 잡았다.
+ */
+export function QuestCheckButton({ completed, onClick, label, size = 'sm' }: QuestCheckButtonProps) {
+  const s = SIZE[size]
+
   return (
     <button
       type="button"
       onClick={completed ? undefined : onClick}
       disabled={completed}
       aria-label={label}
-      className={cn(
-        'flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all duration-200 ease-out',
-        completed
-          ? 'bg-sage text-milk'
-          : 'bg-milk text-transparent ring-[1.5px] ring-inset ring-line hover:ring-sage active:scale-90',
-      )}
+      className={cn('flex shrink-0 items-center justify-center', s.box)}
     >
-      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden>
-        <path
-          d="M5 12.5 L10 17 L19 7.5"
-          stroke="currentColor"
-          strokeWidth="2.6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={completed ? 'animate-checkdraw' : undefined}
-          strokeDasharray="24"
-        />
-      </svg>
+      <span
+        className={cn(
+          'flex items-center justify-center rounded-full transition-all duration-200 ease-out',
+          s.ring,
+          completed
+            ? 'bg-sage-deep text-surface'
+            : 'bg-surface text-transparent ring-[1.5px] ring-inset ring-line',
+        )}
+      >
+        <svg viewBox="0 0 24 24" className={s.icon} fill="none" aria-hidden>
+          <path
+            d="M5 12.5 L10 17 L19 7.5"
+            stroke="currentColor"
+            strokeWidth="2.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={completed ? 'animate-checkdraw' : undefined}
+            strokeDasharray="26"
+          />
+        </svg>
+      </span>
     </button>
   )
 }

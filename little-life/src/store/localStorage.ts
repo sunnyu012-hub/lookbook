@@ -1,15 +1,30 @@
-import type { AppState, Category, Difficulty, Quest } from '@/types'
+import type {
+  AppState,
+  Category,
+  CategoryStats,
+  DailyLog,
+  DayStat,
+  Difficulty,
+  Quest,
+} from '@/types'
 import { CATEGORIES, DIFFICULTIES } from '@/types'
+import { emptyCategoryStats } from '@/lib/stats'
 import type { StateRepository } from './repository'
 import { STATE_VERSION, createDefaultState } from './defaultState'
 
-const STORAGE_KEY = 'little-life:state:v1'
+const STORAGE_KEY = 'little-life-v1'
 
 /**
- * 저장된 JSON 은 사용자가 손댈 수도 있고 예전 버전일 수도 있다.
- * 깨진 값 하나 때문에 앱 전체가 흰 화면이 되면 안 되니까
- * 읽을 때 한 번 걸러낸다.
+ * 저장된 JSON 은 예전 버전일 수도 있고 손으로 고쳐졌을 수도 있다.
+ * 값 하나가 깨졌다고 앱이 흰 화면이 되면 안 되니까 읽을 때 한 번 걸러낸다.
+ * 사용자에게는 오류를 보여주지 않고 조용히 기본값으로 메운다.
  */
+
+function numberOr(value: unknown, fallback: number, min = 0): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback
+  return Math.max(min, Math.floor(value))
+}
+
 function sanitizeQuest(raw: unknown): Quest | null {
   if (!raw || typeof raw !== 'object') return null
   const q = raw as Record<string, unknown>
@@ -22,7 +37,6 @@ function sanitizeQuest(raw: unknown): Quest | null {
   const difficulty = DIFFICULTIES.includes(q.difficulty as Difficulty)
     ? (q.difficulty as Difficulty)
     : 'NORMAL'
-  const exp = typeof q.exp === 'number' && Number.isFinite(q.exp) ? Math.max(0, q.exp) : 0
   const completed = q.completed === true
   const createdAt = typeof q.createdAt === 'string' ? q.createdAt : new Date().toISOString()
   const completedAt = typeof q.completedAt === 'string' ? q.completedAt : null
@@ -32,7 +46,7 @@ function sanitizeQuest(raw: unknown): Quest | null {
     title,
     category,
     difficulty,
-    exp,
+    exp: numberOr(q.exp, 0),
     completed,
     createdAt,
     // 완료 표시는 있는데 시각이 없으면 생성 시각으로 메운다.
@@ -40,41 +54,82 @@ function sanitizeQuest(raw: unknown): Quest | null {
   }
 }
 
+function sanitizeCategoryStats(raw: unknown): CategoryStats {
+  const stats = emptyCategoryStats()
+  if (!raw || typeof raw !== 'object') return stats
+  const source = raw as Record<string, unknown>
+  for (const c of CATEGORIES) {
+    stats[c] = numberOr(source[c], 0)
+  }
+  return stats
+}
+
+function sanitizeDailyLog(raw: unknown): DailyLog {
+  if (!raw || typeof raw !== 'object') return {}
+  const source = raw as Record<string, unknown>
+  const log: DailyLog = {}
+
+  for (const [key, value] of Object.entries(source)) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) continue
+    if (!value || typeof value !== 'object') continue
+    const entry = value as Record<string, unknown>
+
+    const byCategorySource = (entry.byCategory ?? {}) as Record<string, unknown>
+    const byCategory: DayStat['byCategory'] = {}
+    for (const c of CATEGORIES) {
+      const exp = numberOr(byCategorySource[c], 0)
+      if (exp > 0) byCategory[c] = exp
+    }
+
+    log[key] = {
+      completed: numberOr(entry.completed, 0),
+      exp: numberOr(entry.exp, 0),
+      byCategory,
+    }
+  }
+
+  return log
+}
+
 function sanitizeState(raw: unknown): AppState | null {
   if (!raw || typeof raw !== 'object') return null
   const s = raw as Record<string, unknown>
-  const base = createDefaultState()
-
   const user = (s.user ?? {}) as Record<string, unknown>
-  const quests = Array.isArray(s.quests)
-    ? s.quests.map(sanitizeQuest).filter((q): q is Quest => q !== null)
-    : []
 
   return {
     version: STATE_VERSION,
     user: {
-      name: typeof user.name === 'string' && user.name.trim() ? user.name.trim() : base.user.name,
+      name: typeof user.name === 'string' && user.name.trim() ? user.name.trim() : 'Yuli',
       level: numberOr(user.level, 1, 1),
-      currentExp: numberOr(user.currentExp, 0, 0),
-      totalExp: numberOr(user.totalExp, 0, 0),
+      currentExp: numberOr(user.currentExp, 0),
+      totalExp: numberOr(user.totalExp, 0),
+      totalCompletedQuests: numberOr(user.totalCompletedQuests, 0),
     },
-    quests,
+    quests: Array.isArray(s.quests)
+      ? s.quests.map(sanitizeQuest).filter((q): q is Quest => q !== null)
+      : [],
+    categoryStats: sanitizeCategoryStats(s.categoryStats),
+    dailyLog: sanitizeDailyLog(s.dailyLog),
   }
-}
-
-function numberOr(value: unknown, fallback: number, min: number): number {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback
-  return Math.max(min, Math.floor(value))
 }
 
 export class LocalStorageRepository implements StateRepository {
   async load(): Promise<AppState | null> {
+    let raw: string | null = null
     try {
-      const raw = window.localStorage.getItem(STORAGE_KEY)
-      if (!raw) return null
-      return sanitizeState(JSON.parse(raw))
-    } catch {
+      raw = window.localStorage.getItem(STORAGE_KEY)
+    } catch (error) {
       // 시크릿 모드 등 localStorage 를 못 쓰는 경우에도 앱은 그냥 돌아가야 한다.
+      console.error('[little-life] 저장소를 읽지 못했습니다.', error)
+      return null
+    }
+
+    if (!raw) return null
+
+    try {
+      return sanitizeState(JSON.parse(raw))
+    } catch (error) {
+      console.error('[little-life] 저장된 데이터가 손상되어 기본값으로 시작합니다.', error)
       return null
     }
   }
@@ -82,19 +137,21 @@ export class LocalStorageRepository implements StateRepository {
   async save(state: AppState): Promise<void> {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
-    } catch {
-      /* 저장 실패는 조용히 넘긴다 — 사용자를 혼내지 않는다 */
+    } catch (error) {
+      console.error('[little-life] 저장하지 못했습니다.', error)
     }
   }
 
   async clear(): Promise<void> {
     try {
       window.localStorage.removeItem(STORAGE_KEY)
-    } catch {
-      /* noop */
+    } catch (error) {
+      console.error('[little-life] 저장소를 비우지 못했습니다.', error)
     }
   }
 }
 
 /** 앱 전체가 쓰는 단일 저장소. Supabase 로 바꿀 때 이 한 줄만 교체한다. */
 export const repository: StateRepository = new LocalStorageRepository()
+
+export { STORAGE_KEY, createDefaultState }

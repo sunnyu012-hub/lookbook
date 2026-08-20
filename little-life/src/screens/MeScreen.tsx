@@ -1,117 +1,60 @@
-import { useMemo, useState } from 'react'
-import type { Quest, User } from '@/types'
+import { useMemo } from 'react'
+import type { AppState } from '@/types'
 import { CATEGORIES } from '@/types'
 import { Card } from '@/components/ui/Card'
-import { ProgressBar } from '@/components/ui/ProgressBar'
-import { CharacterAvatar } from '@/components/character/CharacterAvatar'
-import { categoryStyle } from '@/lib/categories'
-import { expToNextLevel } from '@/lib/level'
-import { categoryExp, questStats } from '@/lib/stats'
+import { ProfileHeader } from '@/components/profile/ProfileHeader'
+import { StatCard } from '@/components/profile/StatCard'
+import { CategoryGrowthBar } from '@/components/profile/CategoryGrowthBar'
+import { WeeklyInsightCard } from '@/components/profile/WeeklyInsightCard'
+import { weekCompletedCount } from '@/lib/stats'
+import { weeklyInsight } from '@/lib/insights'
 
 interface MeScreenProps {
-  user: User
-  quests: Quest[]
+  state: AppState
   onRename: (name: string) => void
 }
 
-export function MeScreen({ user, quests, onRename }: MeScreenProps) {
-  const [editing, setEditing] = useState(false)
-  const [draftName, setDraftName] = useState(user.name)
+export function MeScreen({ state, onRename }: MeScreenProps) {
+  const { user, categoryStats, dailyLog } = state
 
-  const stats = useMemo(() => questStats(quests), [quests])
-  const byCategory = useMemo(() => categoryExp(quests), [quests])
-  const maxCategoryExp = Math.max(1, ...CATEGORIES.map((c) => byCategory[c]))
-
-  const commitName = () => {
-    onRename(draftName)
-    setEditing(false)
-  }
+  const weekCompleted = useMemo(() => weekCompletedCount(dailyLog), [dailyLog])
+  const insight = useMemo(() => weeklyInsight(dailyLog), [dailyLog])
+  const maxCategoryExp = Math.max(...CATEGORIES.map((c) => categoryStats[c]))
 
   return (
     <div className="animate-risein">
-      <header className="flex items-center gap-4">
-        <div className="h-16 w-16 shrink-0 rounded-full bg-milk p-1 ring-1 ring-line">
-          <CharacterAvatar mood="happy" />
-        </div>
-        <div className="min-w-0 flex-1">
-          {editing ? (
-            <input
-              value={draftName}
-              autoFocus
-              maxLength={20}
-              onChange={(e) => setDraftName(e.target.value)}
-              onBlur={commitName}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') commitName()
-                if (e.key === 'Escape') {
-                  setDraftName(user.name)
-                  setEditing(false)
-                }
-              }}
-              className="h-9 w-full rounded-xl border border-line bg-milk px-3 text-[20px] font-semibold text-ink outline-none"
-            />
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                setDraftName(user.name)
-                setEditing(true)
-              }}
-              className="block truncate text-left text-[22px] font-semibold tracking-[-0.01em] text-ink"
-            >
-              {user.name}
-            </button>
-          )}
-          <p className="mt-0.5 font-game text-[12px] tracking-[0.08em] text-inkdim">
-            LV.{user.level} · {user.currentExp} / {expToNextLevel(user.level)} EXP
-          </p>
-        </div>
-      </header>
+      <ProfileHeader user={user} onRename={onRename} />
 
-      <section className="mt-6 grid grid-cols-2 gap-2.5">
-        <StatTile label="TOTAL EXP" value={user.totalExp} />
-        <StatTile label="LEVEL" value={user.level} />
-        <StatTile label="QUEST CLEAR" value={stats.totalCompleted} />
-        <StatTile label="THIS WEEK" value={stats.weekCompleted} />
+      <section className="mt-7 grid grid-cols-2 gap-2.5">
+        <StatCard label="Total EXP" value={user.totalExp} />
+        <StatCard label="Quests Completed" value={user.totalCompletedQuests} />
+        <StatCard label="This Week" value={weekCompleted} />
+        <StatCard label="Current Level" value={user.level} />
       </section>
 
-      <section className="mt-6">
-        <h2 className="mb-3 font-game text-[12px] tracking-[0.18em] text-inkdim">CATEGORY EXP</h2>
-        <Card className="space-y-3.5 py-5">
-          {CATEGORIES.map((c) => {
-            const exp = byCategory[c]
-            const style = categoryStyle(c)
-            return (
-              <div key={c}>
-                <div className="mb-1.5 flex items-baseline justify-between">
-                  <span className={`font-game text-[11px] tracking-[0.12em] ${style.text}`}>{c}</span>
-                  <span className="font-game text-[11px] tracking-[0.06em] text-inkdim">{exp}</span>
-                </div>
-                <ProgressBar
-                  value={exp / maxCategoryExp}
-                  thickness="sm"
-                  barClassName={style.bar}
-                />
-              </div>
-            )
-          })}
+      <section className="mt-7">
+        <h2 className="mb-3 text-[16px] font-semibold text-ink">Growth by Category</h2>
+        <Card className="space-y-4 py-5">
+          {CATEGORIES.map((category) => (
+            <CategoryGrowthBar
+              key={category}
+              category={category}
+              exp={categoryStats[category]}
+              max={maxCategoryExp}
+            />
+          ))}
         </Card>
       </section>
 
-      <p className="mt-6 text-center text-[12px] leading-relaxed text-inkfaint">
-        쉬어간 날도 모험의 일부예요.
+      <section className="mt-5">
+        <WeeklyInsightCard message={insight} />
+      </section>
+
+      <p className="mt-7 text-center text-[12px] leading-relaxed text-inkfaint">
+        쉬어간 날도 모험의 일부야.
         <br />
-        언제 돌아와도 이어서 시작할 수 있어요.
+        언제 돌아와도 이어서 시작할 수 있어.
       </p>
     </div>
-  )
-}
-
-function StatTile({ label, value }: { label: string; value: number }) {
-  return (
-    <Card className="px-4 py-3.5">
-      <p className="font-game text-[10px] tracking-[0.14em] text-inkfaint">{label}</p>
-      <p className="mt-1 font-game text-[24px] leading-none text-ink">{value}</p>
-    </Card>
   )
 }

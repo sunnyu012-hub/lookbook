@@ -1,84 +1,129 @@
 import { useMemo, useState } from 'react'
-import type { Category, Quest } from '@/types'
-import { CATEGORIES } from '@/types'
-import { QuestCard } from '@/components/quest/QuestCard'
+import type { Quest } from '@/types'
+import { FullQuestCard } from '@/components/quest/FullQuestCard'
+import {
+  CategoryFilter,
+  type CategoryFilterValue,
+} from '@/components/quest/CategoryFilter'
 import { Button } from '@/components/ui/Button'
-import { Chip } from '@/components/ui/Chip'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { ProgressBar } from '@/components/ui/ProgressBar'
-import { isTodayQuest, sortQuests } from '@/lib/stats'
+import {
+  filterByCategory,
+  isTodayQuest,
+  sortByNewest,
+  sortByRecentlyCompleted,
+} from '@/lib/stats'
 
 interface QuestScreenProps {
   quests: Quest[]
   onComplete: (id: string) => void
-  onDelete: (id: string) => void
+  onRequestDelete: (quest: Quest) => void
   onAddQuest: () => void
 }
 
-type Filter = 'ALL' | Category
+export function QuestScreen({
+  quests,
+  onComplete,
+  onRequestDelete,
+  onAddQuest,
+}: QuestScreenProps) {
+  const [filter, setFilter] = useState<CategoryFilterValue>('ALL')
 
-const FILTERS: Filter[] = ['ALL', ...CATEGORIES]
+  const today = useMemo(() => quests.filter((q) => isTodayQuest(q)), [quests])
+  // 진행률은 필터와 무관하게 오늘 전체를 기준으로 센다.
+  const doneToday = today.filter((q) => q.completed).length
 
-export function QuestScreen({ quests, onComplete, onDelete, onAddQuest }: QuestScreenProps) {
-  const [filter, setFilter] = useState<Filter>('ALL')
-
-  const today = useMemo(() => sortQuests(quests.filter((q) => isTodayQuest(q))), [quests])
-  const visible = useMemo(
-    () => (filter === 'ALL' ? today : today.filter((q) => q.category === filter)),
-    [today, filter],
+  // 필터는 Active / Completed 양쪽에 똑같이 적용한다.
+  const visible = useMemo(() => filterByCategory(today, filter), [today, filter])
+  const active = useMemo(() => sortByNewest(visible.filter((q) => !q.completed)), [visible])
+  const completed = useMemo(
+    () => sortByRecentlyCompleted(visible.filter((q) => q.completed)),
+    [visible],
   )
 
-  const done = today.filter((q) => q.completed).length
-  const total = today.length
+  const nothingInFilter = active.length === 0 && completed.length === 0
 
   return (
     <div className="animate-risein">
       <header>
-        <h1 className="text-[26px] font-semibold tracking-[-0.01em] text-ink">Today</h1>
-        <div className="mt-3 flex items-center gap-3">
-          <ProgressBar
-            value={total === 0 ? 0 : done / total}
-            thickness="sm"
-            barClassName="bg-sage-deep"
-            className="flex-1"
-          />
-          <span className="font-game text-[12px] tracking-[0.06em] text-inkdim">
-            {done} / {total}
-          </span>
-        </div>
+        <h1 className="text-[24px] font-semibold tracking-[-0.01em] text-ink">Quest Log</h1>
+        <p className="mt-1 text-[13px] text-inkdim">
+          {today.length === 0
+            ? '오늘 만들어둔 퀘스트가 아직 없어.'
+            : `${doneToday} of ${today.length} completed today`}
+        </p>
       </header>
 
-      {/* 필터 — 가로로 넘치면 스크롤된다 */}
-      <div className="-mx-5 mt-5 overflow-x-auto px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="flex w-max gap-2">
-          {FILTERS.map((f) => (
-            <Chip key={f} active={f === filter} onClick={() => setFilter(f)}>
-              {f}
-            </Chip>
-          ))}
-        </div>
+      <div className="mt-5">
+        <CategoryFilter value={filter} onChange={setFilter} />
       </div>
 
-      <section className="mt-5">
-        {visible.length === 0 ? (
+      {nothingInFilter ? (
+        <div className="mt-6">
           <EmptyState
-            title={filter === 'ALL' ? '오늘의 퀘스트가 비어 있어요' : `${filter} 퀘스트가 없어요`}
-            hint="하나 만들어두면 캐릭터가 기다릴게요"
+            title={filter === 'ALL' ? '지금은 남은 퀘스트가 없어.' : '여긴 아직 비어 있어.'}
+            hint={
+              filter === 'ALL'
+                ? '필요할 때 언제든 새로 만들면 돼.'
+                : '이 분야의 퀘스트를 하나 만들어봐도 좋아.'
+            }
+            action={
+              <Button size="sm" onClick={onAddQuest}>
+                Create Quest
+              </Button>
+            }
           />
-        ) : (
-          <ul className="space-y-2.5">
-            {visible.map((quest) => (
-              <li key={quest.id}>
-                <QuestCard quest={quest} onComplete={onComplete} onDelete={onDelete} />
-              </li>
-            ))}
-          </ul>
-        )}
+        </div>
+      ) : (
+        <div className="mt-6 space-y-7">
+          {active.length > 0 && (
+            <section>
+              <SectionTitle label="Active" count={active.length} />
+              <ul className="space-y-2.5">
+                {active.map((quest) => (
+                  <li key={quest.id}>
+                    <FullQuestCard
+                      quest={quest}
+                      onComplete={onComplete}
+                      onRequestDelete={onRequestDelete}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
-        <Button size="lg" variant="soft" className="mt-5 w-full" onClick={onAddQuest}>
-          <span className="text-lg leading-none">+</span> ADD QUEST
-        </Button>
-      </section>
+          {completed.length > 0 && (
+            <section>
+              <SectionTitle label="Completed" count={completed.length} />
+              <ul className="space-y-2">
+                {completed.map((quest) => (
+                  <li key={quest.id}>
+                    <FullQuestCard
+                      quest={quest}
+                      onComplete={onComplete}
+                      onRequestDelete={onRequestDelete}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </div>
+      )}
+
+      <Button variant="soft" size="md" className="mt-7 w-full" onClick={onAddQuest}>
+        <span className="text-[17px] leading-none">+</span> Add Quest
+      </Button>
+    </div>
+  )
+}
+
+function SectionTitle({ label, count }: { label: string; count: number }) {
+  return (
+    <div className="mb-3 flex items-baseline gap-2">
+      <h2 className="text-[15px] font-semibold text-ink">{label}</h2>
+      <span className="font-game text-[11px] tracking-[0.06em] text-inkfaint">{count}</span>
     </div>
   )
 }

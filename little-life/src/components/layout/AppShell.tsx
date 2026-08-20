@@ -11,9 +11,10 @@ interface AppShellProps {
  */
 export function AppShell({ children, tabBar }: AppShellProps) {
   return (
-    <div className="min-h-[100dvh] bg-ivory">
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-[430px] flex-col bg-ivory">
-        <main className="flex-1 px-5 pb-[104px] pt-[calc(env(safe-area-inset-top)+20px)]">
+    <div className="min-h-[100dvh] bg-canvas">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-[430px] flex-col">
+        {/* 아래 여백은 떠 있는 내비게이션에 가려지지 않을 만큼 준다 */}
+        <main className="flex-1 px-5 pb-[calc(env(safe-area-inset-bottom)+108px)] pt-[calc(env(safe-area-inset-top)+22px)]">
           {children}
         </main>
       </div>

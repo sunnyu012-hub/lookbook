@@ -1,9 +1,9 @@
-# LITTLE LIFE
+# LITTLE LIFE v0.1
 
 > 내 하루가 곧 캐릭터의 모험이 된다.
 
 현실에서 작은 퀘스트를 완료하면 EXP를 얻고 캐릭터가 자라는 생활 RPG.
-개인용 모바일 웹앱이고, MVP는 백엔드·로그인 없이 localStorage만 쓴다.
+개인용 모바일 웹앱이고, v0.1은 백엔드·로그인 없이 localStorage만 쓴다.
 
 ## 실행
 
@@ -26,45 +26,52 @@ npm run typecheck  # 타입만 확인
 
 ```
 src/
-├── types/          데이터 모델 (User, Quest, AppState)
+├── types/          User, Quest, CategoryStats, DailyLog, AppState
 ├── lib/            순수 로직 — 화면과 무관
-│   ├── level.ts        레벨 곡선 / EXP 적용   ← 밸런스는 여기만 수정
-│   ├── difficulty.ts   난이도별 EXP
-│   ├── categories.ts   카테고리 정의 + 색
-│   ├── stats.ts        집계 / 정렬
-│   └── date.ts         오늘·이번 주 판정
+│   ├── level.ts        requiredExp / applyExp   ← 밸런스는 여기만 수정
+│   ├── difficulty.ts   난이도별 EXP (10 / 20 / 40)
+│   ├── titles.ts       레벨 구간별 칭호
+│   ├── categories.ts   카테고리 색 매핑
+│   ├── stats.ts        오늘·이번 주 집계, 정렬, 필터
+│   ├── insights.ts     이번 주 한 줄 (규칙 기반)
+│   └── date.ts         시간대 인사, 날짜 키
 ├── store/          저장소 — Supabase 교체 지점
-│   ├── repository.ts     인터페이스 (async)
-│   ├── localStorage.ts   현재 구현 + 손상된 데이터 방어
-│   └── defaultState.ts
-├── hooks/
-│   ├── useGameState.ts  상태 변경 로직 전부
-│   ├── useFeedback.ts   +EXP / LEVEL UP 연출
-│   └── useCountUp.ts
+│   ├── repository.ts     StateRepository 인터페이스 (async)
+│   ├── localStorage.ts   현재 구현 + 손상 데이터 방어
+│   └── defaultState.ts   첫 실행 샘플 퀘스트
+├── hooks/          useGameState · useFeedback · useCountUp
 ├── components/
-│   ├── ui/          Card, Button, Chip, ProgressBar, BottomSheet …
-│   ├── character/   CharacterAvatar(SVG), CharacterStage, LevelMeter
-│   ├── quest/       QuestCard, AddQuestSheet
-│   ├── feedback/    ExpToastLayer, LevelUpOverlay
-│   └── layout/      AppShell, TabBar
-└── screens/         HomeScreen, QuestScreen, MeScreen
+│   ├── character/  CharacterAvatar, RoomBackground, CharacterRoomCard,
+│   │               LevelBadge, ExpProgress
+│   ├── home/       GreetingHeader, TodayQuestSection, CompactQuestCard, DailySummary
+│   ├── quest/      FullQuestCard, CategoryFilter, QuestCreationSheet, QuestMenu
+│   ├── profile/    ProfileHeader, StatCard, CategoryGrowthBar, WeeklyInsightCard
+│   ├── feedback/   ExpToastLayer, LevelUpOverlay
+│   ├── navigation/ BottomNavigation
+│   └── ui/         Card, Button, ProgressBar, BottomSheet, ConfirmDialog, Toast …
+└── screens/        HomeScreen · QuestScreen · MeScreen
 ```
 
 ### 나중에 손댈 자리
 
-- **밸런스** — `lib/level.ts`의 `BASE_EXP`, `GROWTH`, `lib/difficulty.ts`의 EXP 표
+- **밸런스** — `lib/level.ts`의 `BASE_EXP` / `STEP`, `lib/difficulty.ts`의 EXP 표
 - **Supabase 연결** — `StateRepository`를 구현한 클래스를 하나 더 만들고
-  `store/localStorage.ts` 마지막 줄의 `repository` export만 교체한다.
+  `store/localStorage.ts` 마지막의 `repository` export만 교체한다.
   인터페이스가 이미 async라서 화면 코드는 건드릴 필요 없다.
-- **캐릭터** — `CharacterAvatar`만 갈아끼우면 된다. 옷/헤어/아이템/펫은
+- **캐릭터** — `CharacterAvatar`만 갈아끼우면 된다. 헤어/의상/액세서리/펫은
   `character/types.ts`의 `CharacterLook`에 필드를 늘리고,
-  배경·소품은 `CharacterStage`에 붙인다.
+  방 오브젝트는 `RoomBackground`, 배치는 `CharacterRoomCard`에서 다룬다.
 - **데이터 확장** — `AppState`에 필드를 추가하고 `STATE_VERSION`을 올린 뒤
   `localStorage.ts`의 `sanitizeState`에서 기본값을 채운다.
 
 ## 설계 메모
 
-- **사용자를 혼내지 않는다.** 연속 기록, 경고, 캐릭터가 시무룩해지는 연출은 넣지 않았다.
-  며칠 쉬었다 돌아와도 미완료 퀘스트가 그대로 남아 있어 바로 이어서 할 수 있다.
-- **퀘스트를 지워도 이미 받은 EXP는 회수하지 않는다.** 한 번 한 일을 나중에 빼앗지 않는다.
+- **통계는 퀘스트에서 유도하지 않고 따로 쌓는다.**
+  `categoryStats`(누적)와 `dailyLog`(날짜별)를 별도로 두기 때문에,
+  완료한 퀘스트를 지워도 이미 받은 EXP와 기록이 사라지지 않는다.
 - **EXP는 생성 시점에 굳혀 저장한다.** 난이도 밸런스를 바꿔도 과거 기록이 흔들리지 않는다.
+- **사용자를 혼내지 않는다.** 연속 기록, 경고, 캐릭터가 시무룩해지는 연출은 넣지 않았다.
+  미완료 퀘스트는 날짜가 지나도 남아 있어서, 며칠 쉬었다 돌아와도 바로 이어서 할 수 있다.
+- **`prefers-reduced-motion`** 을 켠 기기에서는 애니메이션이 거의 사라진다.
+- 카피는 짧은 라벨(Today's Quest, Complete, Growth by Category)은 영문,
+  말을 거는 문장은 한국어로 통일했다.
