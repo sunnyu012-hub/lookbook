@@ -41,7 +41,25 @@ const CHARACTER_SPOT: Record<EnergyMode, { anchor: AnchorName; height: number; m
   POWER: { anchor: 'rug', height: 37, motion: 'hop' },
 }
 
-/** 고양이는 캐릭터를 피해 앉는다 */
+/** 고양이는 캐릭터를 피해 앉는다 — 사람이 침대면 고양이는 러그로 */
+function pickPet(input: SceneInput, character: CharacterPick) {
+  const base = PET_SPOT[input.mode ?? 'EASY']
+  if (character.state === 'working') {
+    return { anchor: 'catBed' as AnchorName, asset: pets.catSit, height: 15 }
+  }
+  if (character.state === 'cozy' || input.nightDone) {
+    return { anchor: 'rugEdge' as AnchorName, asset: pets.catCurl, height: 11 }
+  }
+  if (character.state === 'happy' || character.state === 'climbing') {
+    return { anchor: 'bedFoot' as AnchorName, asset: pets.catWalk, height: 12 }
+  }
+  if (character.anchor === 'bed') {
+    return { anchor: 'rugEdge' as AnchorName, asset: pets.catCurl, height: 11 }
+  }
+  return base
+}
+
+/** 모드별 기본 자리 */
 const PET_SPOT: Record<EnergyMode, { anchor: AnchorName; asset: PixelAsset; height: number }> = {
   RECOVERY: { anchor: 'rugEdge', asset: pets.catCurl, height: 11 },
   EASY: { anchor: 'rugEdge', asset: pets.catLying, height: 12 },
@@ -103,13 +121,93 @@ export interface SceneInput {
   prefs: Preferences
   /** 오늘 투약을 적었는지 */
   injectedToday: boolean
+  /** 오늘 적어 둔 이벤트 태그 */
+  events?: string[]
+  /** 밤 마무리를 마쳤는지 */
+  nightDone?: boolean
+  /** 오늘 완료한 퀘스트 수 */
+  questsDone?: number
+  /** 지금 시간대 */
+  time?: TimeOfDay
+}
+
+/**
+ * 캐릭터가 지금 어떤 상태인지.
+ * 우선순위: 강한 일시 상태 → 오늘 한 일 → 시간대 → 모드 → 기본
+ */
+export type CharacterState =
+  | 'sleepy'
+  | 'resting'
+  | 'working'
+  | 'climbing'
+  | 'cozy'
+  | 'happy'
+  | 'lowEnergy'
+  | 'mode'
+
+export interface CharacterPick {
+  state: CharacterState
+  anchor: AnchorName
+  height: number
+  motion: Motion
+  /** 읽어 주는 한 줄 */
+  note: string
+}
+
+export function pickCharacter(input: SceneInput): CharacterPick {
+  const mode = input.mode ?? 'EASY'
+  const c = input.checkin
+  const events = input.events ?? []
+  const has = (t: string) => events.includes(t)
+
+  // 1. 강한 일시 상태
+  if (c?.sleepHours != null && c.sleepHours < 5) {
+    return { state: 'sleepy', anchor: 'bed', height: 23, motion: 'breathe', note: '잠이 많이 모자란 날' }
+  }
+  if ((c?.fatigue ?? 0) >= 5 || has('피곤함')) {
+    return { state: 'resting', anchor: 'bed', height: 23, motion: 'breathe', note: '오늘은 쉬는 중' }
+  }
+  if (mode === 'RECOVERY' && (c?.bodyPain ?? 0) >= 4) {
+    return { state: 'lowEnergy', anchor: 'bed', height: 23, motion: 'breathe', note: '몸이 무거운 날' }
+  }
+
+  // 2. 오늘 한 일
+  if (has('클라이밍')) {
+    return { state: 'climbing', anchor: 'rug', height: 37, motion: 'hop', note: '클라이밍 다녀온 날' }
+  }
+  if (has('야근') || has('집중 업무') || ((c?.focus ?? 0) >= 4 && (has('출근') || has('재택')))) {
+    return { state: 'working', anchor: 'desk', height: 35, motion: 'breathe', note: '일하는 중' }
+  }
+  if ((input.questsDone ?? 0) >= 10) {
+    return { state: 'happy', anchor: 'rug', height: 37, motion: 'hop', note: '퀘스트를 많이 해낸 날' }
+  }
+
+  // 3. 밤 / 시간대
+  if (input.nightDone || input.time === 'night') {
+    return { state: 'cozy', anchor: 'bed', height: 23, motion: 'breathe', note: '하루를 닫는 중' }
+  }
+
+  // 4. 모드
+  const spot = CHARACTER_SPOT[mode]
+  return { state: 'mode', anchor: spot.anchor, height: spot.height, motion: spot.motion, note: '오늘의 나' }
+}
+
+/** 상태마다 어떤 캐릭터 그림을 쓸지 */
+const STATE_CHARACTER: Partial<Record<CharacterState, PixelAsset>> = {
+  sleepy: MODE_CHARACTER.RECOVERY,
+  resting: MODE_CHARACTER.RECOVERY,
+  lowEnergy: MODE_CHARACTER.RECOVERY,
+  cozy: MODE_CHARACTER.RECOVERY,
+  working: MODE_CHARACTER.NORMAL,
+  climbing: MODE_CHARACTER.POWER,
+  happy: MODE_CHARACTER.POWER,
 }
 
 /**
  * 오늘 기록에서 방에 놓을 소품을 고른다.
  * 앞에서부터 최대 3개까지만 쓴다 — 방이 아이템 창고가 되지 않게.
  */
-function dynamicProps({ checkin, mode, prefs, injectedToday }: SceneInput): Sprite[] {
+function dynamicProps({ checkin, mode, prefs, injectedToday, events = [], nightDone }: SceneInput): Sprite[] {
   const out: Sprite[] = []
   const push = (
     key: string,
@@ -121,20 +219,22 @@ function dynamicProps({ checkin, mode, prefs, injectedToday }: SceneInput): Spri
     out.push({ key, asset, layer: 'props', motion: 'none', shadow: true, label, ...place(anchor, o) })
   }
 
+  const has = (t: string) => events.includes(t)
+
   // 클라이밍한 날 — 신발이 바닥에 나와 있다
-  if (checkin?.exercise && (checkin.exerciseType ?? '').includes('클라이밍')) {
+  if (has('클라이밍') || (checkin?.exercise && (checkin.exerciseType ?? '').includes('클라이밍'))) {
     push('climbing', gear.climbingShoes, 'floorLeft', { height: 7 }, '클라이밍 신발')
   } else if (checkin?.exercise) {
     push('sneakers', gear.sneakers, 'floorLeft', { height: 7 }, '운동화')
   }
 
   // 오래 일한 날 — 책상 위에 커피
-  if ((checkin?.workHours ?? 0) >= 6 || checkin?.caffeineConsumed) {
+  if ((checkin?.workHours ?? 0) >= 6 || checkin?.caffeineConsumed || has('카페인') || has('야근')) {
     push('coffee', items.coffeeMug, 'tableTop', { height: 6 }, '커피')
   }
 
-  // 쉬는 날 — 따뜻한 우유 한 잔
-  if (mode === 'RECOVERY') {
+  // 밤을 닫았거나 쉬는 날 — 따뜻한 것 한 잔
+  if (mode === 'RECOVERY' || nightDone) {
     push('warm', items.coffeeMug, 'bedFoot', { dx: 8, dy: 4, height: 6 }, '따뜻한 것')
   }
 
@@ -174,18 +274,18 @@ export interface RoomSceneState {
 
 export function buildScene(input: SceneInput): RoomSceneState {
   const mode = input.mode ?? 'EASY'
-  const spot = CHARACTER_SPOT[mode]
-  const petSpot = PET_SPOT[mode]
+  const pick = pickCharacter(input)
+  const petSpot = pickPet(input, pick)
 
   const character: Sprite = {
     key: 'character',
-    asset: MODE_CHARACTER[mode],
+    asset: STATE_CHARACTER[pick.state] ?? MODE_CHARACTER[mode],
     layer: 'character',
-    motion: spot.motion,
+    motion: pick.motion,
     // 침대 위에 있으면 바닥 그림자를 깔지 않는다
-    shadow: spot.anchor !== 'bed',
-    label: '오늘의 나',
-    ...place(spot.anchor, { height: spot.height }),
+    shadow: pick.anchor !== 'bed',
+    label: pick.note,
+    ...place(pick.anchor, { height: pick.height }),
   }
 
   const pet: Sprite = {

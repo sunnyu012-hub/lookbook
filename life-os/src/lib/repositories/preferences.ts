@@ -25,6 +25,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   relationshipStartDate: null,
   partnerName: null,
   sleepGoalHours: 8,
+  favoriteQuests: [],
 }
 
 interface PreferencesRow {
@@ -42,6 +43,7 @@ interface PreferencesRow {
   relationship_start_date: string | null
   partner_name: string | null
   sleep_goal_hours: number
+  favorite_quests: string[] | null
 }
 
 const n = (v: unknown): number | null =>
@@ -62,6 +64,7 @@ function rowToPreferences(row: PreferencesRow): Preferences {
     relationshipStartDate: row.relationship_start_date,
     partnerName: row.partner_name,
     sleepGoalHours: Number(row.sleep_goal_hours ?? DEFAULT_PREFERENCES.sleepGoalHours),
+    favoriteQuests: row.favorite_quests ?? [],
   }
 }
 
@@ -81,6 +84,7 @@ function toRow(p: Preferences, userId: string) {
     relationship_start_date: p.relationshipStartDate || null,
     partner_name: p.partnerName?.trim() || null,
     sleep_goal_hours: p.sleepGoalHours,
+    favorite_quests: p.favoriteQuests ?? [],
     updated_at: new Date().toISOString(),
   }
 }

@@ -6,6 +6,7 @@ import type {
   LifeEvent,
   LifeEventInput,
   MounjaroLog,
+  NightCheckout,
   Scale5,
   WeightLog,
 } from '@/types'
@@ -18,6 +19,7 @@ import { formatShort, isSameMonth, monthLabel, todayKey } from '@/lib/date'
 import { MODE_META, modeMetaOrNull } from '@/lib/energy'
 import { CATEGORY_META, CATEGORY_ORDER } from '@/lib/lifeCategories'
 import { icons, items as pixelItems } from '@/lib/pixelAssets'
+import { iconOfTag, tintOfTag } from '@/lib/events'
 import { haptic } from '@/hooks/useHaptic'
 import { cn } from '@/lib/cn'
 
@@ -37,6 +39,10 @@ const monthOf = (date?: string) => {
 
 interface Props {
   checkins: Checkin[]
+  /** 날짜별 "오늘 있었던 일" 태그 */
+  tagsByDate: Record<string, string[]>
+  /** 날짜별 밤 기록 */
+  nightsByDate: Map<string, NightCheckout>
   byDate: Map<string, Checkin>
   weightsByDate: Map<string, WeightLog>
   mounjaroByDate: Map<string, MounjaroLog>
@@ -49,6 +55,8 @@ interface Props {
 
 export function TimelinePage({
   checkins,
+  tagsByDate,
+  nightsByDate,
   byDate,
   weightsByDate,
   mounjaroByDate,
@@ -98,6 +106,8 @@ export function TimelinePage({
       ...weightsByDate.keys(),
       ...mounjaroByDate.keys(),
       ...eventsByDate.keys(),
+      ...Object.keys(tagsByDate),
+      ...nightsByDate.keys(),
     ])
     return Array.from(dates)
       .sort((a, b) => (a < b ? 1 : -1))
@@ -107,8 +117,10 @@ export function TimelinePage({
         weight: weightsByDate.get(date) ?? null,
         mounjaro: mounjaroByDate.get(date) ?? null,
         events: eventsByDate.get(date) ?? [],
+        tags: tagsByDate[date] ?? [],
+        night: nightsByDate.get(date) ?? null,
       }))
-  }, [checkins, byDate, weightsByDate, mounjaroByDate, eventsByDate])
+  }, [checkins, byDate, weightsByDate, mounjaroByDate, eventsByDate, tagsByDate, nightsByDate])
 
   return (
     <div className="space-y-3">
@@ -254,6 +266,8 @@ export function TimelinePage({
           weight={weightsByDate.get(selected) ?? null}
           mounjaro={mounjaroByDate.get(selected) ?? null}
           events={eventsByDate.get(selected) ?? []}
+          tags={tagsByDate[selected] ?? []}
+          night={nightsByDate.get(selected) ?? null}
           onClose={() => setSelected(null)}
           onEdit={(date) => {
             setSelected(null)
@@ -275,6 +289,8 @@ function DayRow({
   weight,
   mounjaro,
   events,
+  tags,
+  night,
   onOpen,
   onRemoveEvent,
 }: {
@@ -283,11 +299,13 @@ function DayRow({
   weight: WeightLog | null
   mounjaro: MounjaroLog | null
   events: LifeEvent[]
+  tags: string[]
+  night: NightCheckout | null
   onOpen: () => void
   onRemoveEvent: (id: string) => Promise<void>
 }) {
   const meta = modeMetaOrNull(checkin?.mode)
-  const line = checkin?.highlight || checkin?.memo || null
+  const line = checkin?.highlight || checkin?.memo || night?.bestThing || checkin?.memo || null
 
   return (
     <li className="flex gap-3 border-l-[1.5px] border-dashed border-border pl-3">
@@ -303,10 +321,26 @@ function DayRow({
             </span>
           )}
           {meta && <PixelImage asset={meta.icon} height={16} />}
+          {night && <PixelImage asset={icons.sleep} height={14} />}
           <span className="ml-auto text-[11px] text-inkfaint">›</span>
         </button>
 
         {line && <p className="mt-1.5 text-[13px] leading-relaxed text-ink">{line}</p>}
+
+        {tags.length > 0 && (
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {tags.map((tag) => (
+              <span
+                key={tag}
+                className="flex items-center gap-1 rounded-full px-2 py-[3px] text-[11px] leading-none"
+                style={{ backgroundColor: tintOfTag(tag) }}
+              >
+                <PixelImage asset={iconOfTag(tag)} height={11} />
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
 
         <ul className="mt-1.5 space-y-1">
           {events.map((e) => (

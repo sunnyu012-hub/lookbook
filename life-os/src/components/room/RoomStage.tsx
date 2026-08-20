@@ -34,14 +34,29 @@ interface Props {
   mode: EnergyMode | null
   prefs: Preferences
   injectedToday?: boolean
+  /** 오늘 적어 둔 이벤트 태그 */
+  events?: string[]
+  /** 밤 마무리를 마쳤는지 */
+  nightDone?: boolean
+  /** 오늘 완료한 퀘스트 수 */
+  questsDone?: number
   className?: string
 }
 
-export function RoomStage({ checkin, mode, prefs, injectedToday = false, className }: Props) {
+export function RoomStage({
+  checkin,
+  mode,
+  prefs,
+  injectedToday = false,
+  events,
+  nightDone,
+  questsDone,
+  className,
+}: Props) {
   const time = useMemo(() => timeOfDay(), [])
   const scene = useMemo(
-    () => buildScene({ checkin, mode, prefs, injectedToday }),
-    [checkin, mode, prefs, injectedToday],
+    () => buildScene({ checkin, mode, prefs, injectedToday, events, nightDone, questsDone, time }),
+    [checkin, mode, prefs, injectedToday, events, nightDone, questsDone, time],
   )
 
   return (

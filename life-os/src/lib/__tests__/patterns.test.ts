@@ -89,3 +89,44 @@ describe('goodDayTraits', () => {
     expect(r.traits[0].goodRate).toBeGreaterThan(r.traits[0].otherRate)
   })
 })
+
+describe('이벤트 태그 패턴', () => {
+  const withTag = days(6)
+  const without = days(8, 10)
+  const eventLog = Object.fromEntries(withTag.map((d) => [d, ['야근']]))
+  const checkins = [
+    ...withTag.map((d) => c(d, 40)),
+    ...without.map((d) => c(d, 70)),
+  ]
+
+  it('태그가 있는 날과 없는 날의 점수 차이를 찾아 준다', () => {
+    const found = discoverPatterns({ checkins, prefs, eventLog }).find((p) => p.id === 'tag:야근')
+    expect(found).toBeDefined()
+    expect(found!.sample).toBe(`${withTag.length}일 vs ${without.length}일`)
+  })
+
+  it('태그 패턴은 인과가 아니라 동시 발생으로만 말한다', () => {
+    const found = discoverPatterns({ checkins, prefs, eventLog }).find((p) => p.id === 'tag:야근')!
+    expect(found.body).toContain('원인은 아니에요')
+    expect(found.kind).toBe('neutral')
+    for (const banned of ['때문에', '탓', '치료', '고쳐']) {
+      expect(found.body).not.toContain(banned)
+    }
+  })
+
+  it('표본이 최소 인원보다 적은 태그는 만들지 않는다', () => {
+    const few = days(MIN_GROUP - 1)
+    const log = Object.fromEntries(few.map((d) => [d, ['출장']]))
+    const list = [...few.map((d) => c(d, 30)), ...days(10, 10).map((d) => c(d, 80))]
+    expect(discoverPatterns({ checkins: list, prefs, eventLog: log }).some((p) => p.id === 'tag:출장')).toBe(false)
+  })
+
+  it('태그 패턴은 아무리 많아도 3개까지만 보여 준다', () => {
+    const tags = ['야근', '생리', '이사', '시험', '출장']
+    const log = Object.fromEntries(withTag.map((d) => [d, tags]))
+    const found = discoverPatterns({ checkins, prefs, eventLog: log }).filter((p) =>
+      p.id.startsWith('tag:'),
+    )
+    expect(found.length).toBeLessThanOrEqual(3)
+  })
+})

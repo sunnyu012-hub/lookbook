@@ -92,9 +92,9 @@ export function CheckinPage({
         </div>
         <div className="flex-1">
           <h1 className="font-pixel text-[16px] uppercase leading-none tracking-[0.04em]">
-            Check-in
+            Morning check-in
           </h1>
-          <p className="body-ko mt-1.5">적고 싶은 만큼만.</p>
+          <p className="body-ko mt-1.5">오늘을 시작하는 내 상태.</p>
         </div>
         <div className="text-right">
           <p className="plabel">{pixelDate(date)}</p>
@@ -144,6 +144,21 @@ export function CheckinPage({
             format={formatSleep}
             ariaLabel="잔 시간"
             max={16}
+          />
+        </FieldRow>
+        <Divider />
+        <FieldRow
+          icon={fx.sparkle01}
+          label="일어난 느낌"
+          hint="개운할수록 많이"
+          filled={form.wakeFreshness != null}
+          onClear={() => set('wakeFreshness', null)}
+        >
+          <ScalePips
+            asset={fx.sparkle01}
+            value={form.wakeFreshness}
+            onChange={(v) => set('wakeFreshness', v as Scale5 | null)}
+            label="일어난 느낌"
           />
         </FieldRow>
         <Divider />

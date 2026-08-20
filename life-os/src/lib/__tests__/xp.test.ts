@@ -22,14 +22,18 @@ describe('xpBreakdown', () => {
       weights: [{ id: 'w', userId: 'u', date: '2026-08-20', weightKg: 60, createdAt: '', updatedAt: '' } as WeightLog],
       mounjaro: [{ id: 'm', userId: 'u', date: '2026-08-20', doseMg: 5, sideEffects: [], createdAt: '', updatedAt: '' } as MounjaroLog],
       lifeEvents: [{ id: 'e', userId: 'u', date: '2026-08-20', title: 't', category: 'note', createdAt: '', updatedAt: '' } as LifeEvent],
-      questLog: { '2026-08-20': ['water'] },
+      nights: [{ date: '2026-08-20' }],
+      eventLog: { '2026-08-20': ['데이트'] },
+      questXp: 21,
     })
-    expect(xp.checkin).toBe(XP_RULES.checkinDetailed + XP_RULES.checkinQuick)
+    // 아침 기록 2번 + 자세히 적은 날 1번의 보너스
+    expect(xp.checkin).toBe(XP_RULES.morningCheckin * 2 + XP_RULES.detailedBonus)
+    expect(xp.night).toBe(XP_RULES.nightCheckout)
     expect(xp.weight).toBe(XP_RULES.weightLog)
     expect(xp.mounjaro).toBe(XP_RULES.mounjaroLog)
     expect(xp.lifeEvent).toBe(XP_RULES.lifeEvent)
-    expect(xp.quest).toBeGreaterThan(0)
-    expect(xp.total).toBe(xp.checkin + xp.weight + xp.mounjaro + xp.lifeEvent + xp.quest)
+    expect(xp.events).toBe(XP_RULES.eventTags)
+    expect(xp.quest).toBe(21)
   })
 
   it('체중이 줄어든 것에는 XP 가 붙지 않는다 — 기록 횟수만 본다', () => {

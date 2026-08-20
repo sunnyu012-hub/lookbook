@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import type { Checkin, LifeEvent, MounjaroLog, WeightLog } from '@/types'
+import type { Checkin, LifeEvent, MounjaroLog, NightCheckout, WeightLog } from '@/types'
 import { EnergyBar } from './EnergyBar'
 import { PipRow } from './PipRow'
 import { PixelImage } from './PixelImage'
@@ -8,6 +8,7 @@ import { formatShort, formatSleep } from '@/lib/date'
 import { modeMetaOrNull } from '@/lib/energy'
 import { MODE_CHARACTER, characters, effects as fx, icons, items as pixelItems } from '@/lib/pixelAssets'
 import { CATEGORY_META } from '@/lib/lifeCategories'
+import { iconOfTag, tintOfTag } from '@/lib/events'
 
 interface Props {
   date: string
@@ -16,6 +17,10 @@ interface Props {
   weight?: WeightLog | null
   mounjaro?: MounjaroLog | null
   events?: LifeEvent[]
+  /** 그날 적어 둔 "있었던 일" 태그 */
+  tags?: string[]
+  /** 그날의 밤 기록 */
+  night?: NightCheckout | null
   onClose: () => void
   onEdit: (date: string) => void
   onDelete: (date: string) => void
@@ -29,6 +34,8 @@ export function DaySheet({
   weight = null,
   mounjaro = null,
   events = [],
+  tags = [],
+  night = null,
   onClose,
   onEdit,
   onDelete,
@@ -63,6 +70,44 @@ export function DaySheet({
           </div>
           {meta && <PixelImage asset={meta.pill} height={22} />}
         </header>
+
+        {tags.length > 0 && (
+          <div className="mb-3 flex flex-wrap gap-1">
+            {tags.map((tag) => (
+              <span
+                key={tag}
+                className="flex items-center gap-1 rounded-full px-2 py-[3px] text-[11.5px] leading-none"
+                style={{ backgroundColor: tintOfTag(tag) }}
+              >
+                <PixelImage asset={iconOfTag(tag)} height={12} />
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {night && (
+          <div className="mb-3 rounded-px3 border border-dashed border-border bg-cream px-3 py-2.5">
+            <p className="plabel mb-1.5 flex items-center gap-1.5">
+              <PixelImage asset={icons.sleep} height={13} />
+              밤 기록
+            </p>
+            {night.daySatisfaction != null && (
+              <p className="text-[12.5px] text-inkdim">
+                하루 만족도 {night.daySatisfaction} / 5
+              </p>
+            )}
+            {night.bestThing && (
+              <p className="mt-1 text-[13px] leading-relaxed">좋았던 것 — {night.bestThing}</p>
+            )}
+            {night.hardestThing && (
+              <p className="mt-1 text-[13px] leading-relaxed">힘들었던 것 — {night.hardestThing}</p>
+            )}
+            {night.diary && (
+              <p className="mt-1 text-[13px] leading-relaxed">“{night.diary}”</p>
+            )}
+          </div>
+        )}
 
         {checkin ? (
           <>
