@@ -12,7 +12,12 @@ import { effects as fx, gear, icons, items } from '../pixelAssets'
 import { fromDateKey } from '../date'
 import { compareGroups, mean, type GroupComparison } from './stats'
 import { comparePhases } from './mounjaro'
-import { iconOfTag } from '../events'
+import { domainsOfTag, iconOfTag } from '../events'
+import { rankDomains, type LifeDomain } from '../domains'
+
+/** 태그가 주로 어느 영역에 쌓이는지 */
+const dominantDomain = (tag: string): LifeDomain | undefined =>
+  rankDomains(domainsOfTag(tag))[0]?.key
 
 export interface Pattern {
   id: string
@@ -24,6 +29,15 @@ export interface Pattern {
   body: string
   /** 표본 수 — 화면에 같이 보여줘서 과신하지 않게 한다 */
   sample: string
+  /** 비교한 두 집단의 크기 — Insight 층이 신뢰도를 매길 때 쓴다 */
+  nA?: number
+  nB?: number
+  /** 차이의 크기 (100점 만점 기준) */
+  diff?: number
+  /** 이 패턴이 어느 삶의 영역 이야기인지 */
+  domain?: LifeDomain
+  /** 이어지는 My Manual 챕터 */
+  manualKey?: string
 }
 
 /** 두 집단을 비교하려면 각각 이만큼은 있어야 한다 */
@@ -45,6 +59,8 @@ interface FactorSpec {
   id: string
   title: { on: string; off: string }
   icon: PixelAsset
+  domain?: LifeDomain
+  manualKey?: string
   /** true / false / null(판단 불가 — 비교에서 제외) */
   test: (c: Checkin, ctx: PatternContext) => boolean | null
   /** 비교할 값 */
@@ -62,6 +78,8 @@ export interface PatternContext {
 const FACTORS: FactorSpec[] = [
   {
     id: 'sleep',
+    domain: 'recovery',
+    manualKey: 'sleep',
     title: { on: 'GOOD SLEEP BUFF', off: 'SLEEP PATTERN' },
     icon: icons.sleep,
     test: (c, ctx) =>
@@ -75,6 +93,8 @@ const FACTORS: FactorSpec[] = [
   },
   {
     id: 'exercise',
+    domain: 'body',
+    manualKey: 'activity',
     title: { on: 'MOVED BUFF', off: 'MOVE PATTERN' },
     icon: gear.sneakers,
     test: (c) => (c.exercise == null ? null : Boolean(c.exercise)),
@@ -85,6 +105,8 @@ const FACTORS: FactorSpec[] = [
   },
   {
     id: 'outdoor',
+    domain: 'joy',
+    manualKey: 'activity',
     title: { on: 'OUTSIDE BUFF', off: 'INDOOR PATTERN' },
     icon: fx.rainbow,
     test: (c) => (c.outdoor == null ? null : Boolean(c.outdoor)),
@@ -95,6 +117,8 @@ const FACTORS: FactorSpec[] = [
   },
   {
     id: 'alcohol',
+    domain: 'nourish',
+    manualKey: 'food',
     title: { on: 'DRINKS PATTERN', off: 'DRINKS PATTERN' },
     icon: items.smoothie,
     test: (c) => (c.alcohol == null ? null : Boolean(c.alcohol)),
@@ -105,6 +129,8 @@ const FACTORS: FactorSpec[] = [
   },
   {
     id: 'late-caffeine',
+    domain: 'nourish',
+    manualKey: 'food',
     title: { on: 'LATE COFFEE', off: 'LATE COFFEE' },
     icon: icons.caffeine,
     test: (c) =>
@@ -121,6 +147,8 @@ const FACTORS: FactorSpec[] = [
   },
   {
     id: 'stress',
+    domain: 'mind',
+    manualKey: 'mind',
     title: { on: 'HIGH STRESS', off: 'HIGH STRESS' },
     icon: icons.work,
     test: (c) => (c.stress == null ? null : c.stress >= 4),
@@ -131,6 +159,7 @@ const FACTORS: FactorSpec[] = [
   },
   {
     id: 'weekend',
+    domain: 'recovery',
     title: { on: 'WEEKEND', off: 'WEEKEND' },
     icon: icons.home,
     test: (c) => {
@@ -144,6 +173,7 @@ const FACTORS: FactorSpec[] = [
   },
   {
     id: 'love',
+    domain: 'connect',
     title: { on: 'TOGETHER', off: 'TOGETHER' },
     icon: fx.heart,
     test: (c, ctx) => ctx.loveDates.has(c.date),
@@ -181,6 +211,11 @@ function runFactor(spec: FactorSpec, checkins: Checkin[], ctx: PatternContext): 
     kind: up ? 'buff' : 'debuff',
     body: spec.body(cmp.diff, ctx),
     sample: `${cmp.nA}일 vs ${cmp.nB}일`,
+    nA: cmp.nA,
+    nB: cmp.nB,
+    diff: cmp.diff,
+    domain: spec.domain,
+    manualKey: spec.manualKey,
   }
 }
 
@@ -217,6 +252,10 @@ export function discoverPatterns({
     const { comparison } = comparePhases(checkins, mounjaroLogs, prefs.mounjaroIntervalDays, MIN_GROUP)
     if (comparison.enough && Math.abs(comparison.diff) >= MIN_SCORE_DIFF) {
       out.push({
+        nA: comparison.nA,
+        nB: comparison.nB,
+        diff: comparison.diff,
+        manualKey: 'mounjaro',
         id: 'mounjaro-phase',
         title: 'CYCLE PATTERN',
         icon: icons.log,
@@ -261,6 +300,10 @@ function tagPatterns(checkins: Checkin[], eventLog: Record<string, string[]>): P
       kind: 'neutral',
       body: `"${tag}"를 적은 날에는 Overall 이 평균 ${Math.abs(cmp.diff)}점 ${up ? '높게' : '낮게'} 나타났어요. 같이 적혀 있었다는 뜻이지, 원인은 아니에요.`,
       sample: `${cmp.nA}일 vs ${cmp.nB}일`,
+      nA: cmp.nA,
+      nB: cmp.nB,
+      diff: cmp.diff,
+      domain: dominantDomain(tag),
     })
   }
 

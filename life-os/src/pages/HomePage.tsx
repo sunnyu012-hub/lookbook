@@ -10,6 +10,9 @@ import { EffectsView } from '@/components/home/EffectsView'
 import { QuestView } from '@/components/home/QuestView'
 import { MyLife, buildLifeModules, type LifeSection } from '@/components/home/MyLife'
 import { EventSheet } from '@/components/home/EventSheet'
+import { CapacityCard } from '@/components/home/CapacityCard'
+import type { Capacity } from '@/lib/wellness/capacity'
+import type { RecoveryCurve } from '@/lib/analytics/recoveryCurve'
 import type { QuestStore } from '@/hooks/useQuests'
 import { pixelDate, todayKey } from '@/lib/date'
 import { loggingStreak } from '@/lib/xp'
@@ -43,6 +46,14 @@ interface Props {
   onStartCheckin: () => void
   onOpenLife: (section: LifeSection) => void
   onOpenLog: () => void
+  /** 오늘의 결 — 하루 일정을 짜 주지는 않는다 */
+  capacity: Capacity | null
+  /** 요즘 흐름 — 여기엔 화살표 한 줄만, 자세한 건 눌러서 */
+  curve: RecoveryCurve
+  onOpenRhythm: () => void
+  /** 일요일 저녁에만 슬쩍 뜬다 */
+  weeklyDue: boolean
+  onOpenWeekly: () => void
 }
 
 /**
@@ -70,6 +81,11 @@ export function HomePage({
   onStartCheckin,
   onOpenLife,
   onOpenLog,
+  capacity,
+  curve,
+  onOpenRhythm,
+  weeklyDue,
+  onOpenWeekly,
 }: Props) {
   const [tab, setTab] = useState<HomeTab>('status')
   const [eventsOpen, setEventsOpen] = useState(false)
@@ -132,6 +148,7 @@ export function HomePage({
           events={events}
           nightDone={nightDone}
           questsDone={questStore.doneCount}
+          capacity={capacity?.type ?? null}
         />
       </div>
 
@@ -140,6 +157,8 @@ export function HomePage({
       ) : (
         <>
           <TodayHUD today={today} streak={streak} onStartCheckin={onStartCheckin} />
+
+          <CapacityCard capacity={capacity} curve={curve} onOpenCurve={onOpenRhythm} />
 
           {/* ── 오늘 있었던 일 ── */}
           <section>
@@ -211,6 +230,27 @@ export function HomePage({
             >
               <PixelImage asset={pets.catCurl} height={18} />
               {nightDone ? '밤 기록 고치기' : '하루 마무리하기'}
+            </button>
+          )}
+
+          {/* ── 주간 돌아보기 — 주가 끝나갈 때만 슬쩍 ── */}
+          {weeklyDue && (
+            <button
+              type="button"
+              onClick={() => {
+                haptic()
+                onOpenWeekly()
+              }}
+              className="press flex w-full items-center gap-2 rounded-px4 border-[1.5px] border-dashed border-borderdeep bg-cream px-3.5 py-3 text-left"
+            >
+              <PixelImage asset={pets.catSit} height={20} />
+              <span className="flex-1">
+                <span className="ptitle block">Weekly reset</span>
+                <span className="mt-1 block text-[11.5px] text-inkdim">
+                  이번 주를 잠깐 돌아볼까요?
+                </span>
+              </span>
+              <span className="font-pixel text-[11px] text-inkfaint">›</span>
             </button>
           )}
         </>

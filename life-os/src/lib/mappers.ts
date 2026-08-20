@@ -52,6 +52,7 @@ export function rowToCheckin(row: CheckinRow): Checkin {
     tags: row.tags ?? [],
     highlight: row.highlight,
     memo: row.memo,
+    contextNote: row.context_note,
 
     energyScore: n(row.energy_score),
     mode: row.mode,
@@ -125,6 +126,7 @@ export function inputToRow(
     tags: input.tags ?? [],
     highlight: text(input.highlight),
     memo: text(input.memo),
+    context_note: text(input.contextNote),
 
     energy_score: score.overall,
     mode: score.mode,
@@ -151,6 +153,7 @@ export function inputToCheckin(
     tags: input.tags ?? [],
     highlight: text(input.highlight),
     memo: text(input.memo),
+    contextNote: text(input.contextNote),
     ...base,
     energyScore: score.overall,
     mode: score.mode,

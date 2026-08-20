@@ -5,6 +5,7 @@ import { ROOM_ASPECT, isOnFloor, widthFromHeight } from '@/lib/room/anchors'
 import { buildScene, timeOfDay, type Motion, type Sprite } from '@/lib/room/scene'
 import { RoomBase } from './RoomBase'
 import { cn } from '@/lib/cn'
+import type { CapacityType } from '@/lib/wellness/capacity'
 
 /**
  * 오늘의 방.
@@ -40,6 +41,7 @@ interface Props {
   nightDone?: boolean
   /** 오늘 완료한 퀘스트 수 */
   questsDone?: number
+  capacity?: CapacityType | null
   className?: string
 }
 
@@ -51,12 +53,14 @@ export function RoomStage({
   events,
   nightDone,
   questsDone,
+  capacity,
   className,
 }: Props) {
   const time = useMemo(() => timeOfDay(), [])
   const scene = useMemo(
-    () => buildScene({ checkin, mode, prefs, injectedToday, events, nightDone, questsDone, time }),
-    [checkin, mode, prefs, injectedToday, events, nightDone, questsDone, time],
+    () =>
+      buildScene({ checkin, mode, prefs, injectedToday, events, nightDone, questsDone, time, capacity }),
+    [checkin, mode, prefs, injectedToday, events, nightDone, questsDone, time, capacity],
   )
 
   return (
