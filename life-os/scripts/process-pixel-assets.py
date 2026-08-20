@@ -22,137 +22,151 @@ from detect_components import detect
 from pixelsheet import crop, read_png, write_png
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SHEET = os.path.join(ROOT, 'assets-source', 'asset-sheet.png')
 OUT_ROOT = os.path.join(ROOT, 'public', 'assets', 'pixel')
 
-# 카테고리/이름 -> 시트에서 검출된 컴포넌트 인덱스
+# ── 시트 두 장을 함께 쓴다
+#   v3 : 새 시트 (캐릭터 · 고양이 · 대부분의 아이콘)
+#   v1 : 예전 시트 (v3 에 없는 것만 — 카메라 · 구름 · 무지개 · 아령 · 집 · 가구 등)
+SHEETS = {
+    'v3': os.path.join(ROOT, 'assets-source', 'asset-sheet-v3.png'),
+    'v1': os.path.join(ROOT, 'assets-source', 'asset-sheet.png'),
+}
+DEFAULT_SHEET = 'v3'
+
+# 카테고리/이름 -> 컴포넌트 인덱스.
+#   숫자만 쓰면 v3 시트, ('v1', 번호) 로 쓰면 예전 시트에서 가져온다.
 MAP = {
     'characters': {
-        'idle': 4,
-        'recovery': 19,
-        'easy': 5,
-        'normal': 6,
-        'power': 7,
-        'back-bag': 60,
-        'back-coat': 61,
+        'idle': 69,          # 앉아서 책 보는 모습
+        'recovery': 142,     # 쿠션에 엎드려 자는 모습
+        'easy': 71,          # 음료 들고 서 있는 모습
+        'normal': 141,       # 노트북 앞에 앉은 모습
+        # power 는 두 스프라이트가 붙어 검출돼서 SUBCROPS 에서 잘라낸다
+        'back-bag': 72,
+        'back-coat': 111,
     },
     'pets': {
-        'cat-sit': 13,
-        'cat-lying': 14,
-        'cat-curl': 15,
-        'cat-walk': 26,
-        'cat-white': 27,
-        'cat-stand': 28,
-        'cat-box': 29,
+        'cat-sit': 175,
+        'cat-lying': 185,
+        'cat-curl': 194,
+        'cat-walk': 170,
+        'cat-white': 172,
+        'cat-stand': 171,
+        'cat-box': 186,
     },
     'icons': {
-        'sleep': 72,
-        'fatigue': 73,
-        'mood': 74,
-        'body': 75,
-        'focus': 76,
-        'appetite': 77,
-        'caffeine': 78,
-        'exercise': 88,
-        'climbing': 89,
-        'water': 90,
-        'shower': 91,
-        'food': 92,
-        'clean': 93,
-        'outfit': 114,
-        'work': 115,
-        'camera': 116,
-        'music': 117,
-        'save': 118,
-        'energy': 119,
-        'xp': 120,
+        'sleep': 55,         # 보라 달
+        'mood': 132,         # 분홍 하트
+        'body': 19,          # 팔 근육
+        'focus': 32,         # 작은 노트북
+        'appetite': 47,      # 토스트
+        'caffeine': 54,      # 머그
+        'climbing': 82,      # 초크백
+        'energy': 67,        # 번개
+        'exercise': 145,     # 운동화
+        'food': 166,         # 샐러드 볼
+        'log': 62,           # 펼친 책
+        'music': 74,         # 음표
+        'outfit': 94,        # 나시
+        'save': 192,         # 플로피
+        'shower': 126,       # 물방울 말풍선
+        'water': 104,        # 물방울
+        'work': 4,           # 노트북
+        'xp': 189,           # 별
+        # v3 에 마땅한 그림이 없는 것들
+        'fatigue': ('v1', 73),
+        'camera': ('v1', 116),
+        'clean': ('v1', 93),
     },
     'items': {
-        'iced-coffee': 69,
-        'smoothie': 79,
-        'water-bottle': 80,
-        'milk': 81,
-        'toast': 82,
-        'sandwich': 83,
-        'fruit-bowl': 84,
-        'coffee-mug': 86,
-        'onigiri': 87,
-        'banana': 94,
-        'croissant': 95,
-        'apple': 96,
-        'peach': 97,
-        'chocolate': 105,
+        'coffee-mug': 53,
+        'milk': 44,
+        'smoothie': 42,
+        'iced-coffee': 42,
+        'water-bottle': 43,
+        'onigiri': ('v1', 87),
+        'croissant': ('v1', 95),
+        'apple': 167,
+        'fruit-bowl': 166,
+        'chocolate': ('v1', 105),
+        'toast': 47,
+        'banana': ('v1', 94),
+        'peach': ('v1', 97),
+        'sandwich': ('v1', 83),
     },
     'gear': {
-        'climbing-shoes': 123,
-        'headphones': 125,
-        'dumbbell': 126,
-        'yoga-mat': 127,
-        'sneakers': 128,
+        'climbing-shoes': 80,
+        'sneakers': 145,
+        'yoga-mat': 196,     # 돌돌 만 매트
+        'headphones': 25,
+        'dumbbell': ('v1', 126),
     },
     'furniture': {
-        'lamp': 132,
-        'beanbag': 133,
-        'nightstand': 134,
-        'bed': 136,
-        'rug': 138,
-        'desk': 145,
-        'clothing-rack': 155,
-        'mirror': 156,
-        'bookshelf': 158,
+        'hanging-plant': 107,
         'plant': 169,
-        'hanging-plant': 153,
-        'clock': 171,
-        'photo-frames': 172,
-        'pinboard': 178,
-        'laundry-basket': 180,
-        'window-day': 188,
-        'window-morning': 189,
-        'window-sunset': 190,
-        'window-night': 191,
-        'poster-sky': 175,
-        'poster-pink': 176,
+        'clock': 119,
+        'photo-frames': 164,
+        'pinboard': 160,
+        'poster-sky': 182,
+        'poster-pink': 179,
+        # 방 배경 그림에 이미 들어 있는 가구들 — 다른 화면에서 쓸 수 있게 남겨 둔다
+        'lamp': ('v1', 132),
+        'beanbag': ('v1', 133),
+        'nightstand': ('v1', 134),
+        'bed': ('v1', 136),
+        'rug': ('v1', 138),
+        'desk': ('v1', 145),
+        'clothing-rack': ('v1', 155),
+        'mirror': ('v1', 156),
+        'bookshelf': ('v1', 158),
+        'laundry-basket': ('v1', 180),
+        'window-day': ('v1', 188),
+        'window-morning': ('v1', 189),
+        'window-sunset': ('v1', 190),
+        'window-night': ('v1', 191),
     },
     'fashion': {
-        'tshirt-pink': 141,
-        'tshirt-bow': 142,
-        'jeans': 143,
-        'tote-climb': 146,
-        'tote-make': 147,
-        'backpack': 148,
-        'shorts-black': 150,
-        'shorts-denim': 152,
-        'cap': 161,
-        'bag-black': 179,
+        'backpack': 76,
+        'bag-black': 77,
+        'cap': 147,
+        'jeans': 121,
+        'shorts-black': 122,
+        'shorts-denim': 131,
+        'tshirt-pink': 100,
+        'tshirt-bow': 94,
+        'tote-climb': ('v1', 146),
+        'tote-make': ('v1', 147),
     },
     'effects': {
-        'sparkle-01': 16,
-        'sparkle-02': 21,
-        'heart': 22,
-        'heart-bubble': 30,
-        'zzz-bubble': 31,
-        'cloud': 25,
-        'rainbow': 36,
-        'string-lights': 66,
-        'flower': 35,
+        'heart': 132,
+        'heart-bubble': 123,
+        'sparkle-01': 135,
+        'sparkle-02': 136,
+        'zzz-bubble': 125,
+        'flower': 159,
+        'cloud': ('v1', 25),
+        'rainbow': ('v1', 36),
+        'string-lights': ('v1', 66),
     },
     'ui': {
-        'pill-idle': 37,
-        'pill-recovery': 38,
-        'pill-easy': 39,
-        'pill-normal': 40,
-        'pill-power': 41,
-        'logo': 85,
-        'save-button': 187,
-        'mascot': 174,
+        'pill-recovery': 10,
+        'pill-easy': 18,
+        'pill-normal': 31,
+        'pill-power': 46,
+        'pill-idle': ('v1', 37),
+        'logo': ('v1', 85),
+        'save-button': ('v1', 187),
+        'mascot': ('v1', 174),
     },
 }
 
 # 배경 타일이 붙어 있어 통째로 못 자르는 것들: 부모 컴포넌트 안에서 비율로 잘라내고
 # 가장자리에서 flood fill 로 단색 배경을 지운다.
 SUBCROPS = {
-    ('icons', 'home'): (186, 0.040, 0.09, 0.196, 0.62),
-    ('icons', 'log'): (186, 0.545, 0.09, 0.700, 0.62),
+    # v3 에서 두 스프라이트가 붙어 검출된 덩어리의 위쪽(만세하는 모습)만 쓴다
+    ('characters', 'power'): ('v3', 110, 0.0, 0.0, 1.0, 0.50),
+    # v1 시트의 배경 타일이 붙어 있던 것들
+    ('icons', 'home'): ('v1', 186, 0.040, 0.09, 0.196, 0.62),
 }
 
 
@@ -197,48 +211,58 @@ def drop_flat_background(px, w, h, tolerance=26):
 
 
 def main():
-    print('시트 분석 중…')
-    sw, sh, comps = detect(SHEET, gap=1)
-    print(f'  {len(comps)} 개 스프라이트 검출')
-    _w, _h, sheet = read_png(SHEET)
+    sheets = {}
+    for key, path in SHEETS.items():
+        print(f'{key} 시트 분석 중…')
+        sw, sh, comps = detect(path, gap=1)
+        _w, _h, px = read_png(path)
+        sheets[key] = (sw, sh, comps, px)
+        print(f'  {len(comps)} 개 스프라이트 검출')
 
     manifest = {}
     written = 0
+    used = {key: 0 for key in SHEETS}
 
-    for category, entries in MAP.items():
+    def resolve(entry):
+        """숫자면 기본 시트, (시트, 번호) 면 그 시트."""
+        if isinstance(entry, tuple):
+            return entry[0], entry[1]
+        return DEFAULT_SHEET, entry
+
+    def save(category, name, cw, ch, cpx):
         out_dir = os.path.join(OUT_ROOT, category)
         os.makedirs(out_dir, exist_ok=True)
-        manifest.setdefault(category, {})
-        for name, index in entries.items():
-            x0, y0, x1, y1, _area = comps[index]
-            cw, ch, cpx = crop(sheet, sw, x0, y0, x1, y1)
-            cw, ch, cpx = trim(cpx, cw, ch)
-            write_png(os.path.join(out_dir, f'{name}.png'), cw, ch, cpx)
-            manifest[category][name] = {
-                'src': f'/assets/pixel/{category}/{name}.png',
-                'width': cw,
-                'height': ch,
-            }
-            written += 1
-
-    for (category, name), (index, fx0, fy0, fx1, fy1) in SUBCROPS.items():
-        out_dir = os.path.join(OUT_ROOT, category)
-        os.makedirs(out_dir, exist_ok=True)
-        x0, y0, x1, y1, _area = comps[index]
-        bw, bh = x1 - x0, y1 - y0
-        cw, ch, cpx = crop(
-            sheet, sw,
-            x0 + int(bw * fx0), y0 + int(bh * fy0),
-            x0 + int(bw * fx1), y0 + int(bh * fy1),
-        )
-        cpx = drop_flat_background(cpx, cw, ch)
-        cw, ch, cpx = trim(cpx, cw, ch)
         write_png(os.path.join(out_dir, f'{name}.png'), cw, ch, cpx)
         manifest.setdefault(category, {})[name] = {
             'src': f'/assets/pixel/{category}/{name}.png',
             'width': cw,
             'height': ch,
         }
+
+    for category, entries in MAP.items():
+        for name, entry in entries.items():
+            key, index = resolve(entry)
+            sw, _sh, comps, px = sheets[key]
+            x0, y0, x1, y1, _area = comps[index]
+            cw, ch, cpx = crop(px, sw, x0, y0, x1, y1)
+            cw, ch, cpx = trim(cpx, cw, ch)
+            save(category, name, cw, ch, cpx)
+            used[key] += 1
+            written += 1
+
+    for (category, name), (key, index, fx0, fy0, fx1, fy1) in SUBCROPS.items():
+        sw, _sh, comps, px = sheets[key]
+        x0, y0, x1, y1, _area = comps[index]
+        bw, bh = x1 - x0, y1 - y0
+        cw, ch, cpx = crop(
+            px, sw,
+            x0 + int(bw * fx0), y0 + int(bh * fy0),
+            x0 + int(bw * fx1), y0 + int(bh * fy1),
+        )
+        cpx = drop_flat_background(cpx, cw, ch)
+        cw, ch, cpx = trim(cpx, cw, ch)
+        save(category, name, cw, ch, cpx)
+        used[key] += 1
         written += 1
 
     os.makedirs(OUT_ROOT, exist_ok=True)
@@ -247,7 +271,8 @@ def main():
 
     write_registry(manifest)
     build_app_icons()
-    print(f'  {written} 개 파일 기록 → public/assets/pixel/')
+    counts = ' · '.join(f'{k} {v}개' for k, v in used.items())
+    print(f'  {written} 개 파일 기록 ({counts}) → public/assets/pixel/')
 
 
 def camel(name):
@@ -258,7 +283,7 @@ def camel(name):
 def write_registry(manifest):
     lines = [
         '// 이 파일은 scripts/process-pixel-assets.py 가 생성한다. 직접 고치지 말 것.',
-        '// 에셋 원본: assets-source/asset-sheet.png',
+        '// 에셋 원본: assets-source/asset-sheet-v3.png (없는 것만 asset-sheet.png)',
         '',
         'export interface PixelAsset {',
         '  src: string',
