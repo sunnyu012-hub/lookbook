@@ -1,7 +1,7 @@
 import type { Checkin } from '@/types'
 import { cn } from '@/lib/cn'
 import { monthGrid } from '@/lib/date'
-import { modeMeta } from '@/lib/energy'
+import { modeMetaOrNull } from '@/lib/energy'
 import { PixelImage } from './PixelImage'
 
 interface Props {
@@ -31,7 +31,7 @@ export function CalendarGrid({ year, month, byDate, selected, onSelect }: Props)
         {cells.map((cell, i) => {
           if (!cell.key) return <div key={`pad-${i}`} />
           const checkin = byDate.get(cell.key)
-          const meta = checkin ? modeMeta(checkin.mode) : null
+          const meta = modeMetaOrNull(checkin?.mode)
 
           return (
             <button
@@ -52,7 +52,7 @@ export function CalendarGrid({ year, month, byDate, selected, onSelect }: Props)
                 <>
                   <PixelImage asset={meta.icon} height={17} />
                   <span className="font-pixel text-[9px] leading-none" style={{ color: meta.hex }}>
-                    {checkin!.energyScore}
+                    {checkin?.energyScore ?? '·'}
                   </span>
                 </>
               ) : (

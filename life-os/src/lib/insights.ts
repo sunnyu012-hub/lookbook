@@ -2,10 +2,12 @@
 import type { Checkin, EnergyMode } from '@/types'
 import { recentKeys } from './date'
 
+const nums = (xs: (number | null | undefined)[]) => xs.filter((x): x is number => x != null)
 const avg = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length
 
-function average(values: number[], min: number): number | null {
-  return values.length >= min ? avg(values) : null
+function average(values: (number | null | undefined)[], min: number): number | null {
+  const list = nums(values)
+  return list.length >= min ? avg(list) : null
 }
 
 export interface Insights {
@@ -44,11 +46,11 @@ export function buildInsights(checkins: Checkin[]): Insights {
     POWER: 0,
   }
   in30.forEach((c) => {
-    modeDays[c.mode] += 1
+    if (c.mode) modeDays[c.mode] += 1
   })
 
-  const withEx = in30.filter((c) => c.exercise)
-  const withoutEx = in30.filter((c) => !c.exercise)
+  const withEx = nums(in30.filter((c) => c.exercise).map((c) => c.energyScore))
+  const withoutEx = nums(in30.filter((c) => c.exercise === false).map((c) => c.energyScore))
   const exerciseComparable =
     withEx.length >= MIN_SAMPLES.exercise && withoutEx.length >= MIN_SAMPLES.exercise
 
@@ -62,11 +64,11 @@ export function buildInsights(checkins: Checkin[]): Insights {
     avgFatigue: average(in30.map((c) => c.fatigue), MIN_SAMPLES.metric),
     avgMood: average(in30.map((c) => c.mood), MIN_SAMPLES.metric),
     modeDays,
-    modeDaysTotal: in30.length,
+    modeDaysTotal: in30.filter((c) => c.mode).length,
     exercise: exerciseComparable
       ? {
-          withAvg: avg(withEx.map((c) => c.energyScore)),
-          withoutAvg: avg(withoutEx.map((c) => c.energyScore)),
+          withAvg: avg(withEx),
+          withoutAvg: avg(withoutEx),
           withDays: withEx.length,
           withoutDays: withoutEx.length,
         }

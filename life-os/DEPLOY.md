@@ -161,3 +161,15 @@ http://localhost:5173/#access_token=stub-access-token&refresh_token=stub-refresh
 ```
 
 스텁은 데이터를 메모리에만 들고 있고, 운영에는 쓰지 않는다.
+
+## Supabase 확장 마이그레이션 (Life OS 확장)
+
+체중 · Mounjaro · D-Day · 타임라인 · 설정 화면을 쓰려면 SQL 을 한 번 더 실행해야 한다.
+
+1. Supabase 대시보드 → 왼쪽 **SQL Editor** → **New query**
+2. `life-os/supabase/migrations/001_life_os_expansion.sql` 내용을 통째로 붙여 넣기
+3. **Run** (초록색 실행 버튼)
+4. `Success. No rows returned` 이 나오면 정상이다 — 테이블을 만드는 문장은 원래 결과 행이 없다
+
+여러 번 실행해도 안전하고, 이미 저장된 기록은 지워지지 않는다.
+자세한 순서는 `life-os/supabase/README.md` 참고.

@@ -8,7 +8,8 @@ import { PixelSparkle } from '@/components/pixel/PixelSparkle'
 const TABS = [
   { key: 'today' as TabKey, label: 'Today', asset: icons.home },
   { key: 'checkin' as TabKey, label: 'Save', asset: icons.save },
-  { key: 'history' as TabKey, label: 'Log', asset: icons.log },
+  { key: 'body' as TabKey, label: 'Body', asset: icons.body },
+  { key: 'timeline' as TabKey, label: 'Log', asset: icons.log },
   { key: 'insights' as TabKey, label: 'Stats', asset: icons.xp },
 ]
 

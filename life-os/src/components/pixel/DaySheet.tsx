@@ -1,24 +1,38 @@
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import type { Checkin } from '@/types'
+import type { Checkin, LifeEvent, MounjaroLog, WeightLog } from '@/types'
 import { EnergyBar } from './EnergyBar'
 import { PipRow } from './PipRow'
 import { PixelImage } from './PixelImage'
 import { formatShort, formatSleep } from '@/lib/date'
-import { modeMeta } from '@/lib/energy'
-import { MODE_CHARACTER, icons } from '@/lib/pixelAssets'
+import { modeMetaOrNull } from '@/lib/energy'
+import { MODE_CHARACTER, characters, effects as fx, icons, items as pixelItems } from '@/lib/pixelAssets'
+import { CATEGORY_META } from '@/lib/lifeCategories'
 
 interface Props {
   date: string
   dayNumber: number | null
   checkin: Checkin | null
+  weight?: WeightLog | null
+  mounjaro?: MounjaroLog | null
+  events?: LifeEvent[]
   onClose: () => void
   onEdit: (date: string) => void
   onDelete: (date: string) => void
 }
 
 /** 그날의 기록을 작은 RPG 일지처럼 */
-export function DaySheet({ date, dayNumber, checkin, onClose, onEdit, onDelete }: Props) {
+export function DaySheet({
+  date,
+  dayNumber,
+  checkin,
+  weight = null,
+  mounjaro = null,
+  events = [],
+  onClose,
+  onEdit,
+  onDelete,
+}: Props) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', onKey)
@@ -29,7 +43,7 @@ export function DaySheet({ date, dayNumber, checkin, onClose, onEdit, onDelete }
     }
   }, [onClose])
 
-  const meta = checkin ? modeMeta(checkin.mode) : null
+  const meta = modeMetaOrNull(checkin?.mode)
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true">
@@ -40,7 +54,7 @@ export function DaySheet({ date, dayNumber, checkin, onClose, onEdit, onDelete }
         style={{ paddingBottom: 'calc(var(--safe-bottom) + 18px)' }}
       >
         <header className="mb-3 flex items-center gap-3">
-          {meta && <PixelImage asset={MODE_CHARACTER[checkin!.mode]} height={54} />}
+          <PixelImage asset={checkin?.mode ? MODE_CHARACTER[checkin.mode] : characters.idle} height={54} />
           <div className="flex-1">
             <p className="font-pixel text-[14px] uppercase leading-none">
               {dayNumber ? `Day ${String(dayNumber).padStart(3, '0')}` : formatShort(date)}
@@ -50,33 +64,43 @@ export function DaySheet({ date, dayNumber, checkin, onClose, onEdit, onDelete }
           {meta && <PixelImage asset={meta.pill} height={22} />}
         </header>
 
-        {checkin && meta ? (
+        {checkin ? (
           <>
-            <div className="mb-3">
-              <div className="mb-1.5 flex items-center gap-1.5">
-                <PixelImage asset={icons.energy} height={16} />
-                <span className="plabel text-ink">Energy</span>
-                <span className="ml-auto font-pixel text-[14px]">
-                  {checkin.energyScore}
-                  <span className="text-[10px] text-inkdim"> / 100</span>
-                </span>
+            {checkin.energyScore != null && meta && (
+              <div className="mb-3">
+                <div className="mb-1.5 flex items-center gap-1.5">
+                  <PixelImage asset={icons.energy} height={16} />
+                  <span className="plabel text-ink">Energy</span>
+                  <span className="ml-auto font-pixel text-[14px]">
+                    {checkin.energyScore}
+                    <span className="text-[10px] text-inkdim"> / 100</span>
+                  </span>
+                </div>
+                <EnergyBar score={checkin.energyScore} color={meta.hex} height={12} />
               </div>
-              <EnergyBar score={checkin.energyScore} color={meta.hex} height={12} />
-            </div>
+            )}
 
             <dl className="divide-y divide-dashed divide-border border-y border-dashed border-border">
-              <Row label="Sleep" icon={icons.sleep}>
-                <span className="font-pixel text-[12px]">{formatSleep(checkin.sleepHours)}</span>
-              </Row>
-              <Row label="Mood" icon={icons.mood}>
-                <PipRow asset={icons.mood} value={checkin.mood} size={15} label="Mood" />
-              </Row>
-              <Row label="Focus" icon={icons.focus}>
-                <PipRow asset={icons.focus} value={checkin.focus} size={15} label="Focus" />
-              </Row>
-              <Row label="Body" icon={icons.body}>
-                <PipRow asset={icons.body} value={5 - checkin.bodyPain} size={15} label="Body" />
-              </Row>
+              {checkin.sleepHours != null && (
+                <Row label="Sleep" icon={icons.sleep}>
+                  <span className="font-pixel text-[12px]">{formatSleep(checkin.sleepHours)}</span>
+                </Row>
+              )}
+              {checkin.mood != null && (
+                <Row label="Mood" icon={icons.mood}>
+                  <PipRow asset={icons.mood} value={checkin.mood} size={15} label="Mood" />
+                </Row>
+              )}
+              {checkin.focus != null && (
+                <Row label="Focus" icon={icons.focus}>
+                  <PipRow asset={icons.focus} value={checkin.focus} size={15} label="Focus" />
+                </Row>
+              )}
+              {checkin.bodyPain != null && (
+                <Row label="Body" icon={icons.body}>
+                  <PipRow asset={icons.body} value={5 - checkin.bodyPain} size={15} label="Body" />
+                </Row>
+              )}
               <Row label="Items" icon={icons.caffeine}>
                 <span className="flex items-center gap-2 text-[12px] text-inkdim">
                   {checkin.caffeineConsumed && (
@@ -95,6 +119,38 @@ export function DaySheet({ date, dayNumber, checkin, onClose, onEdit, onDelete }
                 </span>
               </Row>
             </dl>
+
+            {(weight || mounjaro || events.length > 0) && (
+              <ul className="mt-3 space-y-1.5">
+                {weight && (
+                  <li className="flex items-center gap-2 text-[12.5px]">
+                    <PixelImage asset={pixelItems.milk} height={16} />
+                    <span className="text-inkdim">체중</span>
+                    <span className="ml-auto font-pixel text-[12px]">{weight.weightKg}kg</span>
+                  </li>
+                )}
+                {mounjaro && (
+                  <li className="flex items-center gap-2 text-[12.5px]">
+                    <PixelImage asset={icons.log} height={16} />
+                    <span className="text-inkdim">투약 기록</span>
+                    <span className="ml-auto font-pixel text-[12px]">{mounjaro.doseMg}mg</span>
+                  </li>
+                )}
+                {events.map((e) => (
+                  <li key={e.id} className="flex items-center gap-2 text-[12.5px]">
+                    <PixelImage asset={CATEGORY_META[e.category].icon} height={16} />
+                    <span className="truncate">{e.title}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {checkin.highlight && (
+              <p className="mt-3 flex items-start gap-1.5 text-[13px] leading-relaxed">
+                <PixelImage asset={fx.sparkle01} height={14} className="mt-0.5" />
+                {checkin.highlight}
+              </p>
+            )}
 
             {checkin.memo && (
               <p className="mt-3 rounded-px3 border border-dashed border-border bg-cream px-3 py-2 text-[13px] leading-relaxed">

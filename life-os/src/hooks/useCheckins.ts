@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Checkin, CheckinInput } from '@/types'
 import { todayKey } from '@/lib/date'
 import { checkinRepository } from '@/lib/repository'
+import type { ScoreContext } from '@/lib/scoring'
 import type { AuthState } from './useSession'
 
 /**
@@ -33,8 +34,8 @@ export function useCheckins(authState: AuthState = 'local') {
   }, [refresh])
 
   const save = useCallback(
-    async (input: CheckinInput) => {
-      const saved = await checkinRepository.save(input)
+    async (input: CheckinInput, ctx?: ScoreContext) => {
+      const saved = await checkinRepository.save(input, ctx)
       await refresh()
       return saved
     },

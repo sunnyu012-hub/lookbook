@@ -13,6 +13,30 @@ const USER = { id: '11111111-2222-3333-4444-555555555555', email: 'me@example.co
 const rows = []
 const quests = []
 
+/** 확장 테이블 — 전부 메모리에만 산다 */
+const weightLogs = []
+const mounjaroLogs = []
+const ddayEvents = []
+const lifeEvents = []
+const userPreferences = []
+
+const TABLES = {
+  weight_logs: weightLogs,
+  mounjaro_logs: mounjaroLogs,
+  dday_events: ddayEvents,
+  life_events: lifeEvents,
+  user_preferences: userPreferences,
+}
+
+/** 같은 행으로 볼 기준 (upsert 의 onConflict 와 같다) */
+const KEYS = {
+  weight_logs: ['user_id', 'date'],
+  mounjaro_logs: ['user_id', 'date'],
+  dday_events: ['id'],
+  life_events: ['id'],
+  user_preferences: ['user_id'],
+}
+
 const json = (res, status, body) => {
   res.writeHead(status, {
     'content-type': 'application/json',
@@ -107,6 +131,40 @@ createServer(async (req, res) => {
       const before = rows.length
       for (let i = rows.length - 1; i >= 0; i--) if (matches(rows[i], params)) rows.splice(i, 1)
       console.log('[stub] delete', before - rows.length, '건')
+      return json(res, 200, [])
+    }
+  }
+
+  // ── 확장 테이블 (체중 / 투약 / D-Day / 라이프 이벤트 / 설정)
+  const table = url.pathname.startsWith('/rest/v1/') ? url.pathname.slice('/rest/v1/'.length) : null
+  if (table && TABLES[table]) {
+    const store = TABLES[table]
+    const key = KEYS[table]
+
+    if (req.method === 'GET') return json(res, 200, store.filter((r) => matches(r, params)))
+
+    if (req.method === 'POST') {
+      const body = await readBody(req)
+      const incoming = Array.isArray(body) ? body : [body]
+      const saved = incoming.map((item) => {
+        const idx = store.findIndex((r) => key.every((k) => r[k] === item[k]))
+        const row = {
+          id: idx >= 0 ? store[idx].id : item.id || crypto.randomUUID(),
+          created_at: idx >= 0 ? store[idx].created_at : new Date().toISOString(),
+          ...item,
+        }
+        if (idx >= 0) store[idx] = row
+        else store.push(row)
+        return row
+      })
+      console.log(`[stub] ${table} upsert`, saved.length, '건')
+      return json(res, 201, saved)
+    }
+
+    if (req.method === 'DELETE') {
+      const before = store.length
+      for (let i = store.length - 1; i >= 0; i--) if (matches(store[i], params)) store.splice(i, 1)
+      console.log(`[stub] ${table} delete`, before - store.length, '건')
       return json(res, 200, [])
     }
   }
