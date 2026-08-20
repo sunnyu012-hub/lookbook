@@ -105,6 +105,7 @@
   .presets button.on{background:var(--c);border-color:var(--c);color:#fff;font-weight:700}
   .presets button.on .dot{background:#fff}
   .presets button .x{font-style:normal;opacity:.5;font-weight:700;margin-left:2px}
+  .presets button sup{font-size:10px;opacity:.75;margin-left:1px}
   .presets button .x:hover{opacity:1}
 
   .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
@@ -317,10 +318,13 @@
           <div class="row"><label>주시 단어</label><input id="watch" placeholder="속기,자격증"></div>
           <div class="row"><label>블로그 주소</label><input id="blogUrl" placeholder="blog.naver.com/아이디"></div>
           <div class="saverow">
-            <input id="pname" placeholder="이 설정 이름 (예: 파워콘텐츠)" maxlength="20">
-            <button class="pri" id="psave" type="button">설정 저장</button>
+            <button class="pri" id="psaveCur" type="button" style="flex:1">현재 채널 기준 저장</button>
           </div>
-          <p class="foot" id="pmsg">저장한 설정은 위쪽 버튼 줄에 채널로 추가됩니다. 메인키워드는 글마다 달라서 저장되지 않습니다.</p>
+          <div class="saverow" style="border:0;padding-top:0;margin-top:6px">
+            <input id="pname" placeholder="새 채널 이름 (예: 파워콘텐츠)" maxlength="20">
+            <button class="ghost" id="psave" type="button">새 채널로</button>
+          </div>
+          <p class="foot" id="pmsg">기본 채널 4개도 값을 고쳐 저장할 수 있습니다(수정하면 이름 옆에 * 표시). 되돌리려면 채널 이름 옆 × 를 누르세요. 메인키워드와 블로그 주소는 따로 관리되어 이 저장에 포함되지 않습니다.</p>
         </div>
         <div class="card"><h2>세부 수치</h2><div id="stats"></div></div>
         <div class="card"><h2>금지어 · 주시 단어 <span style="color:var(--muted)">부분일치</span></h2><div class="chips" id="chips"></div></div>
@@ -415,8 +419,9 @@ let ranks=DB.get('bc.ranks',{});   // 키워드별 순위 이력
 let editingId=null, activeCh=null, selDate=null;
 let cur=new Date(); cur.setDate(1);
 
-const channels=()=>Object.keys(PRESETS).concat(Object.keys(mine));
-const cfgOf=n=>PRESETS[n]||mine[n];
+const channels=()=>Object.keys(PRESETS).concat(Object.keys(mine).filter(n=>!PRESETS[n]));
+// 저장된 값이 있으면 그것이 우선한다. 기본 4개도 이 방식으로 수정된다.
+const cfgOf=n=>mine[n]||PRESETS[n];
 function chColor(n){
   const i=channels().indexOf(n);
   return PALETTE[(i<0?0:i)%PALETTE.length];
@@ -514,9 +519,13 @@ function msg(el,t){$(el).textContent=t}
 function storePresets(next){ if(!DB.set('bc.presets',next))return false; mine=next; return true }
 
 function tabs(){
-  $('#tabs').innerHTML=channels().map(n=>
-    '<button type="button" data-n="'+esc(n)+'" style="--c:'+chColor(n)+'"'+(n===activeCh?' class="on"':'')+'>'+
-    '<i class="dot"></i>'+esc(n)+(PRESETS[n]?'':'<i class="x" title="삭제">×</i>')+'</button>').join('');
+  $('#tabs').innerHTML=channels().map(n=>{
+    const edited=!!mine[n], base=!!PRESETS[n];
+    const x=edited?'<i class="x" title="'+(base?'기본값으로 되돌리기':'채널 삭제')+'">×</i>':'';
+    return '<button type="button" data-n="'+esc(n)+'" style="--c:'+chColor(n)+'"'+(n===activeCh?' class="on"':'')+'>'+
+      '<i class="dot"></i>'+esc(n)+(base&&edited?'<sup title="기본값에서 수정됨">*</sup>':'')+x+'</button>';
+  }).join('');
+  if($('#psaveCur')) $('#psaveCur').textContent=activeCh+' 기준 저장';
 }
 function setChannel(n){ activeCh=n; tabs(); apply(cfgOf(n)); $('#blogUrl').value=blogOf(n) }
 const blogOf=ch=>String(blogs[ch]||'').trim();
@@ -529,26 +538,39 @@ $('#tabs').onclick=e=>{
   const b=e.target.closest('button'); if(!b) return;
   const n=b.dataset.n;
   if(e.target.classList.contains('x')){
+    const base=!!PRESETS[n];
+    if(!confirm(base?('"'+n+'" 기준을 기본값으로 되돌릴까요?'):('"'+n+'" 채널을 삭제할까요? 이 채널로 저장한 글은 남습니다.'))) return;
     const next=Object.assign({},mine); delete next[n];
-    if(!storePresets(next)){msg('#pmsg','삭제 실패: 브라우저 저장소를 쓸 수 없습니다.');return}
-    if(activeCh===n) activeCh=Object.keys(PRESETS)[0];
-    tabs(); apply(cfgOf(activeCh)); fillChannelSelects();
-    msg('#pmsg','"'+n+'" 삭제됨. 이 채널로 저장한 글은 그대로 남아 있습니다.');
+    if(!storePresets(next)){msg('#pmsg','저장소를 쓸 수 없어 실패했습니다.');return}
+    if(!base&&activeCh===n) activeCh=Object.keys(PRESETS)[0];
+    tabs(); apply(cfgOf(activeCh)); $('#blogUrl').value=blogOf(activeCh); fillChannelSelects();
+    msg('#pmsg',base?('"'+n+'" 기준을 기본값으로 되돌렸습니다.'):('"'+n+'" 채널을 삭제했습니다. 저장한 글은 그대로 남아 있습니다.'));
     return;
   }
   setChannel(n);
 };
 
+function saveCfgAs(n){
+  const cfg={};SAVED.forEach(f=>cfg[f]=$('#'+f).value);
+  const next=Object.assign({},mine); next[n]=cfg;
+  if(!storePresets(next)){msg('#pmsg','저장 실패: 브라우저 저장소를 쓸 수 없습니다.');return false}
+  tabs(); fillChannelSelects();
+  return true;
+}
+// 기본 4개도 여기서 수정된다. 되돌리려면 탭의 × 를 누른다.
+$('#psaveCur').onclick=()=>{
+  if(saveCfgAs(activeCh))
+    msg('#pmsg','"'+activeCh+'" 기준을 저장했습니다.'+(PRESETS[activeCh]?' 되돌리려면 채널 이름 옆 × 를 누르세요.':''));
+};
 $('#psave').onclick=()=>{
   const n=$('#pname').value.trim();
-  if(!n){msg('#pmsg','이름을 입력하세요.');$('#pname').focus();return}
-  if(PRESETS[n]){msg('#pmsg','"'+n+'"은 기본 설정 이름이라 쓸 수 없습니다.');return}
-  const cfg={};SAVED.forEach(f=>cfg[f]=$('#'+f).value);
-  const isNew=!mine[n];
-  const next=Object.assign({},mine); next[n]=cfg;
-  if(!storePresets(next)){msg('#pmsg','저장 실패: 브라우저 저장소를 쓸 수 없습니다.');return}
-  $('#pname').value=''; activeCh=n; tabs(); fillChannelSelects();
-  msg('#pmsg',isNew?'"'+n+'" 저장됨':'"'+n+'" 덮어썼습니다.');
+  if(!n){msg('#pmsg','새 채널 이름을 입력하세요.');$('#pname').focus();return}
+  const isNew=!mine[n]&&!PRESETS[n];
+  activeCh=n;
+  if(saveCfgAs(n)){
+    $('#pname').value='';
+    msg('#pmsg',isNew?('"'+n+'" 채널을 만들었습니다.'):('"'+n+'" 기준을 덮어썼습니다.'));
+  }
 };
 
 /* ── 원고 보관함 ── */
