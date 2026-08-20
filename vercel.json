@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "cd life-os && npm install",
+  "buildCommand": "cd life-os && npm run build",
+  "outputDirectory": "life-os/dist",
+  "rewrites": [{ "source": "/(.*)", "destination": "/" }]
+}
