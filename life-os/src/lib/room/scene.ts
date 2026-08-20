@@ -35,18 +35,18 @@ export interface Sprite extends Placed {
 
 /** 모드마다 캐릭터가 앉는 자리와 크기 */
 const CHARACTER_SPOT: Record<EnergyMode, { anchor: AnchorName; height: number; motion: Motion }> = {
-  RECOVERY: { anchor: 'bed', height: 15, motion: 'breathe' },
-  EASY: { anchor: 'beanbag', height: 28, motion: 'floaty' },
-  NORMAL: { anchor: 'desk', height: 23, motion: 'breathe' },
-  POWER: { anchor: 'rug', height: 25, motion: 'hop' },
+  RECOVERY: { anchor: 'bed', height: 23, motion: 'breathe' },
+  EASY: { anchor: 'beanbag', height: 40, motion: 'floaty' },
+  NORMAL: { anchor: 'desk', height: 35, motion: 'breathe' },
+  POWER: { anchor: 'rug', height: 37, motion: 'hop' },
 }
 
 /** 고양이는 캐릭터를 피해 앉는다 */
 const PET_SPOT: Record<EnergyMode, { anchor: AnchorName; asset: PixelAsset; height: number }> = {
-  RECOVERY: { anchor: 'rugEdge', asset: pets.catCurl, height: 6 },
-  EASY: { anchor: 'rugEdge', asset: pets.catLying, height: 7 },
-  NORMAL: { anchor: 'catBed', asset: pets.catSit, height: 9 },
-  POWER: { anchor: 'bedFoot', asset: pets.catWalk, height: 7 },
+  RECOVERY: { anchor: 'rugEdge', asset: pets.catCurl, height: 11 },
+  EASY: { anchor: 'rugEdge', asset: pets.catLying, height: 12 },
+  NORMAL: { anchor: 'catBed', asset: pets.catSit, height: 15 },
+  POWER: { anchor: 'bedFoot', asset: pets.catWalk, height: 12 },
 }
 
 /** 모드마다 아주 옅은 효과 하나 (POWER 만 반짝임 두어 개) */
@@ -57,24 +57,24 @@ function modeEffects(mode: EnergyMode): Sprite[] {
     case 'RECOVERY':
       return [
         { key: 'zzz', asset: fx.zzzBubble, layer: 'effects', motion: 'zzz',
-          ...at('bed', { dx: -4, dy: -15, height: 7 }) },
+          ...at('bed', { dx: -3, dy: -20, height: 9 }) },
       ]
     case 'EASY':
       return [
         { key: 'sparkle', asset: fx.sparkle01, layer: 'effects', motion: 'twinkle',
-          ...at('beanbag', { dx: 7, dy: -26, height: 4 }) },
+          ...at('beanbag', { dx: 9, dy: -36, height: 5 }) },
       ]
     case 'NORMAL':
       return [
         { key: 'sparkle', asset: fx.sparkle01, layer: 'effects', motion: 'twinkle',
-          ...at('desk', { dx: 10, dy: -18, height: 4 }) },
+          ...at('desk', { dx: 12, dy: -28, height: 5 }) },
       ]
     case 'POWER':
       return [
         { key: 'sp1', asset: fx.sparkle01, layer: 'effects', motion: 'twinkle',
-          ...at('rug', { dx: -10, dy: -18, height: 4 }) },
+          ...at('rug', { dx: -12, dy: -28, height: 5 }) },
         { key: 'sp2', asset: fx.sparkle02, layer: 'effects', motion: 'twinkle', delay: 800,
-          ...at('rug', { dx: 9, dy: -23, height: 3.5 }) },
+          ...at('rug', { dx: 11, dy: -34, height: 4.5 }) },
       ]
   }
 }
@@ -85,13 +85,13 @@ function moodEffect(checkin: Checkin | null): Sprite | null {
   if (checkin.mood >= 5) {
     return {
       key: 'heart', asset: fx.heart, layer: 'effects', motion: 'floaty',
-      ...place('wallRight', { dx: -9, dy: 2, height: 5 }),
+      ...place('wallRight', { dx: -9, dy: 2, height: 7 }),
     }
   }
   if (checkin.mood <= 2) {
     return {
       key: 'cloud', asset: fx.cloud, layer: 'effects', motion: 'floaty',
-      ...place('wallRight', { dx: -9, dy: 1, height: 6 }),
+      ...place('wallRight', { dx: -9, dy: 1, height: 8 }),
     }
   }
   return null
@@ -123,24 +123,24 @@ function dynamicProps({ checkin, mode, prefs, injectedToday }: SceneInput): Spri
 
   // 클라이밍한 날 — 신발이 바닥에 나와 있다
   if (checkin?.exercise && (checkin.exerciseType ?? '').includes('클라이밍')) {
-    push('climbing', gear.climbingShoes, 'floorLeft', { height: 5 }, '클라이밍 신발')
+    push('climbing', gear.climbingShoes, 'floorLeft', { height: 7 }, '클라이밍 신발')
   } else if (checkin?.exercise) {
-    push('sneakers', gear.sneakers, 'floorLeft', { height: 5 }, '운동화')
+    push('sneakers', gear.sneakers, 'floorLeft', { height: 7 }, '운동화')
   }
 
   // 오래 일한 날 — 책상 위에 커피
   if ((checkin?.workHours ?? 0) >= 6 || checkin?.caffeineConsumed) {
-    push('coffee', items.coffeeMug, 'tableTop', { height: 4 }, '커피')
+    push('coffee', items.coffeeMug, 'tableTop', { height: 6 }, '커피')
   }
 
   // 쉬는 날 — 따뜻한 우유 한 잔
   if (mode === 'RECOVERY') {
-    push('warm', items.coffeeMug, 'bedFoot', { dx: 8, dy: 4, height: 4 }, '따뜻한 것')
+    push('warm', items.coffeeMug, 'bedFoot', { dx: 8, dy: 4, height: 6 }, '따뜻한 것')
   }
 
   // 투약을 적은 날 — 협탁 위 작은 표시 (숫자는 붙이지 않는다)
   if (prefs.mounjaroEnabled && injectedToday) {
-    push('mark', icons.log, 'floorRight', { dy: -3, height: 4 }, '오늘 적어 둔 기록')
+    push('mark', icons.log, 'floorRight', { dy: -3, height: 6 }, '오늘 적어 둔 기록')
   }
 
   return out.slice(0, 3)
@@ -157,7 +157,7 @@ function worldObjects({ prefs }: SceneInput): Sprite[] {
     out.push({
       key: 'love-memo', asset: fx.heartBubble, layer: 'objects', motion: 'floaty',
       label: '핀보드에 붙여 둔 하트',
-      ...place('pinboard', { height: 6 }),
+      ...place('pinboard', { height: 8 }),
     })
   }
 
