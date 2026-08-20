@@ -682,8 +682,9 @@ function renderCal(){
   for(let i=0;i<start;i++) html+='<div class="cell void"></div>';
   for(let d=1;d<=days;d++){
     const key=y+'-'+pad(m+1)+'-'+pad(d);
+    // 칸이 좁아 제목 대신 메인키워드를 쓴다. 키워드가 없으면 제목으로 대신하고, 전체 제목은 툴팁에 남긴다.
     const evs=(byDate[key]||[]).map(p=>
-      '<div class="ev'+(p.status==='발행'?'':' plan')+'" style="--c:'+chColor(p.ch)+'" data-load="'+p.id+'" title="'+esc(p.title)+'">'+esc(p.title)+'</div>').join('');
+      '<div class="ev'+(p.status==='발행'?'':' plan')+'" style="--c:'+chColor(p.ch)+'" data-load="'+p.id+'" title="'+esc(p.title)+(p.kw?' — '+esc(p.kw):'')+'">'+esc(p.kw||p.title)+'</div>').join('');
     html+='<div class="cell'+(key===TODAY?' today':'')+(key===selDate?' sel':'')+'" data-date="'+key+'">'+
       '<span class="d">'+d+'</span>'+evs+'</div>';
   }
