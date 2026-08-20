@@ -80,11 +80,13 @@ npm run dev
      그 브랜치에 아직 앱이 없다는 뜻이다.
    - 목록이 안 뜨면 그냥 Deploy 한 뒤 **Settings → Build and Deployment → Root Directory** 에
      `life-os` 를 직접 입력해도 된다 (여기는 글자 입력칸이다).
-3. **Framework Preset 이 `Vite` 인지 반드시 확인한다.**
+3. **Install / Build Command 의 Override 스위치는 모두 꺼 둔다.** 켜 두면 저장소의
+   `life-os/vercel.json` 대신 그 값이 쓰여서, 코드를 고쳐도 계속 같은 오류가 난다.
+4. **Framework Preset 이 `Vite` 인지 반드시 확인한다.**
    `Other` 로 남아 있으면 Vercel 이 빌드를 아예 돌리지 않고 폴더를 그대로 올려서,
    배포 주소가 `404: NOT_FOUND` 가 된다. Build Command / Output Directory 는 건드리지 않는다
    (`vercel.json` 에 이미 들어 있다).
-4. **Environment Variables** 에 3단계의 두 값을 그대로 넣는다. 나중에
+5. **Environment Variables** 에 3단계의 두 값을 그대로 넣는다. 나중에
    **Settings → Environment Variables** 에서 추가해도 된다.
    ```
    VITE_SUPABASE_URL
@@ -92,8 +94,8 @@ npm run dev
    ```
    Production / Preview 둘 다 체크. 환경변수는 **빌드할 때 코드에 박히므로**, 나중에 추가했다면
    반드시 재배포해야 반영된다.
-5. **Deploy**.
-6. 배포된 주소를 2단계의 **Site URL / Redirect URLs** 에 추가하고 저장한다.
+6. **Deploy**.
+7. 배포된 주소를 2단계의 **Site URL / Redirect URLs** 에 추가하고 저장한다.
    (이걸 빼먹으면 메일 링크를 눌렀을 때 로그인 화면으로 되돌아온다)
 
 이후 `claude/...` 브랜치에 푸시하면 Preview 배포가, 기본 브랜치에 머지하면 Production 배포가 자동으로 나간다.
@@ -122,6 +124,8 @@ npm run dev
 | 배포 주소가 `404: NOT_FOUND` | 빌드가 돌지 않은 것. Framework Preset 이 `Vite` 인지, Root Directory 가 `life-os` 인지 확인하고 재배포 |
 | 배포 주소에 예전 lookbook 페이지가 뜸 | Root Directory 가 `./` 인 채로 배포됐다. `life-os` 로 바꾸고 재배포 |
 | 환경변수를 넣었는데 그대로임 | 저장만으로는 반영되지 않는다. Deployments → `⋯` → Redeploy (Build Cache 체크 해제) |
+| 코드를 고쳤는데 같은 오류가 계속 남 | **Redeploy 는 그 배포가 썼던 커밋을 그대로 다시 빌드한다.** 최신 코드로 배포하려면 새 커밋을 푸시하거나, 목록에서 최신 커밋의 배포를 확인해야 한다 |
+| 지운 명령이 계속 실행됨 | Settings → Build and Deployment 의 **Install / Build Command 에 Override 스위치가 켜져** 있는지 확인. 켜져 있으면 저장소의 설정 대신 그 값이 쓰인다. Root Directory 만 지정하고 나머지 Override 는 모두 끈 상태가 정답 |
 
 ---
 
