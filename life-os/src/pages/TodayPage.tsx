@@ -8,12 +8,13 @@ import { PixelImage } from '@/components/pixel/PixelImage'
 import { PixelPanel } from '@/components/pixel/PixelPanel'
 import { PixelSparkle, SparkleBurst } from '@/components/pixel/PixelSparkle'
 import { useCountUp } from '@/hooks/useCountUp'
-import { useQuests } from '@/hooks/useQuests'
+import type { QuestStore } from '@/hooks/useQuests'
 import { pixelDate, todayKey } from '@/lib/date'
 import { modeMeta } from '@/lib/energy'
 import { buildEffects } from '@/lib/effects'
 import { questsFor, totalXp } from '@/lib/quests'
 import { icons, ui } from '@/lib/pixelAssets'
+import type { LevelState } from '@/lib/level'
 import { cn } from '@/lib/cn'
 
 interface Props {
@@ -21,18 +22,27 @@ interface Props {
   dayNumber: number
   loading: boolean
   onStartCheckin: () => void
+  questStore: QuestStore
+  level: LevelState
 }
 
-export function TodayPage({ today, dayNumber, loading, onStartCheckin }: Props) {
+export function TodayPage({
+  today,
+  dayNumber,
+  loading,
+  onStartCheckin,
+  questStore,
+  level,
+}: Props) {
   const meta = today ? modeMeta(today.mode) : null
   const score = useCountUp(today?.energyScore ?? 0, 700)
   const quests = questsFor(today?.mode ?? 'NORMAL')
-  const { done, toggle } = useQuests(todayKey())
+  const done = questStore.doneFor(todayKey())
   const effects = today ? buildEffects(today) : []
   const [justDone, setJustDone] = useState<string | null>(null)
 
   const handleQuest = (id: string) => {
-    toggle(id)
+    questStore.toggle(todayKey(), id)
     if (!done.includes(id)) {
       setJustDone(id)
       setTimeout(() => setJustDone((cur) => (cur === id ? null : cur)), 900)
@@ -45,7 +55,7 @@ export function TodayPage({ today, dayNumber, loading, onStartCheckin }: Props) 
         <PixelImage asset={ui.logo} height={40} alt="Life OS" />
         <div className="text-right">
           <p className="font-pixel text-[12px] leading-none text-pinkdeep">
-            Day {String(dayNumber).padStart(3, '0')}
+            LV.{level.level} · Day {String(dayNumber).padStart(3, '0')}
           </p>
           <p className="plabel mt-1.5">{pixelDate(todayKey())}</p>
         </div>

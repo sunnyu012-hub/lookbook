@@ -10,6 +10,9 @@ import { formatSleep } from '@/lib/date'
 import { MODE_META, modeOf } from '@/lib/energy'
 import { MODE_CHARACTER, icons } from '@/lib/pixelAssets'
 import { PixelSparkle } from '@/components/pixel/PixelSparkle'
+import { LevelCard } from '@/components/pixel/LevelCard'
+import { PasswordSetup } from '@/components/PasswordSetup'
+import type { LevelState } from '@/lib/level'
 import { cn } from '@/lib/cn'
 
 const ORDER: EnergyMode[] = ['RECOVERY', 'EASY', 'NORMAL', 'POWER']
@@ -21,9 +24,17 @@ interface Props {
   /** Supabase 로그인 중일 때만 들어온다 */
   account?: string | null
   onSignOut?: () => void
+  level: LevelState
 }
 
-export function InsightsPage({ checkins, onStartCheckin, devAction, account, onSignOut }: Props) {
+export function InsightsPage({
+  checkins,
+  onStartCheckin,
+  devAction,
+  account,
+  onSignOut,
+  level,
+}: Props) {
   const insights = useMemo(() => buildInsights(checkins), [checkins])
   const patterns = useMemo(() => findPatterns(checkins), [checkins])
 
@@ -32,13 +43,8 @@ export function InsightsPage({ checkins, onStartCheckin, devAction, account, onS
 
   return (
     <div className="space-y-3">
-      <header className="flex items-center gap-3">
-        <PixelImage
-          asset={MODE_CHARACTER[modeOf(insights.avgScore30 ?? insights.avgScore7 ?? 60).key]}
-          height={52}
-          className="animate-floaty"
-        />
-        <div className="flex-1">
+      <header className="flex items-end justify-between">
+        <div>
           <h1 className="font-pixel text-[16px] uppercase leading-none tracking-[0.04em]">
             Player Stats
           </h1>
@@ -46,6 +52,8 @@ export function InsightsPage({ checkins, onStartCheckin, devAction, account, onS
         </div>
         <p className="plabel">{insights.totalCount} saves</p>
       </header>
+
+      <LevelCard level={level} character={MODE_CHARACTER[modeOf(insights.avgScore30 ?? 60).key]} />
 
       {nothingToShow ? (
         <PixelPanel title="Not Enough Data" icon={icons.work}>
@@ -146,16 +154,19 @@ export function InsightsPage({ checkins, onStartCheckin, devAction, account, onS
       )}
 
       {account && (
-        <div className="flex items-center gap-2 px-1 pt-2">
-          <span className="truncate text-[11px] text-inkfaint">{account}</span>
-          <button
-            type="button"
-            onClick={onSignOut}
-            className="press ml-auto rounded-px3 border-[1.5px] border-border bg-ivory px-3 py-1.5 font-pixel text-[9px] uppercase text-inkdim"
-          >
-            Sign out
-          </button>
-        </div>
+        <>
+          <PasswordSetup />
+          <div className="flex items-center gap-2 px-1 pt-1">
+            <span className="truncate text-[11px] text-inkfaint">{account}</span>
+            <button
+              type="button"
+              onClick={onSignOut}
+              className="press ml-auto rounded-px3 border-[1.5px] border-border bg-ivory px-3 py-1.5 font-pixel text-[9px] uppercase text-inkdim"
+            >
+              Sign out
+            </button>
+          </div>
+        </>
       )}
     </div>
   )

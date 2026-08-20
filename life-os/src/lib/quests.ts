@@ -35,5 +35,16 @@ export function questsFor(mode: EnergyMode): Quest[] {
   return BY_MODE[mode]
 }
 
+/** id → XP. 모드가 달라도 같은 퀘스트는 같은 XP 라서 한 곳에 모아 둔다. */
+export const QUEST_XP: Record<string, number> = Object.fromEntries(
+  Object.values(BY_MODE)
+    .flat()
+    .map((q) => [q.id, q.xp]),
+)
+
+/** 완료한 퀘스트 id 목록의 XP 합 */
+export const xpOf = (questIds: string[]) =>
+  questIds.reduce((sum, id) => sum + (QUEST_XP[id] ?? 0), 0)
+
 export const totalXp = (quests: Quest[], done: string[]) =>
   quests.filter((q) => done.includes(q.id)).reduce((sum, q) => sum + q.xp, 0)

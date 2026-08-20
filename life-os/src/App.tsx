@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { TabKey } from '@/types'
 import { AppShell } from '@/components/layout/AppShell'
 import { AuthGate } from '@/components/AuthGate'
@@ -9,7 +9,9 @@ import { HistoryPage } from '@/pages/HistoryPage'
 import { InsightsPage } from '@/pages/InsightsPage'
 import { TodayPage } from '@/pages/TodayPage'
 import { useCheckins } from '@/hooks/useCheckins'
+import { useQuests } from '@/hooks/useQuests'
 import { useSession } from '@/hooks/useSession'
+import { SAVE_XP, levelFromXp } from '@/lib/level'
 import { PixelImage } from '@/components/pixel/PixelImage'
 import { characters } from '@/lib/pixelAssets'
 import { todayKey } from '@/lib/date'
@@ -26,6 +28,21 @@ export default function App() {
   const [toast, setToast] = useState<ToastState | null>(null)
   const auth = useSession()
   const store = useCheckins(auth.state)
+  const questStore = useQuests(auth.state)
+
+  // 체크인 저장과 퀘스트 완료가 XP 를 만든다
+  const totalXp = questStore.questXp + store.checkins.length * SAVE_XP
+  const level = levelFromXp(totalXp)
+
+  // 레벨이 오르는 순간에만 알려준다 (첫 로딩은 제외)
+  const lastLevel = useRef<number | null>(null)
+  useEffect(() => {
+    if (store.loading || questStore.loading) return
+    if (lastLevel.current !== null && level.level > lastLevel.current) {
+      setToast({ title: `Level Up! LV.${level.level}`, detail: '한 칸 더 자랐어요.' })
+    }
+    lastLevel.current = level.level
+  }, [level.level, store.loading, questStore.loading])
 
   const openCheckin = useCallback((date: string = todayKey()) => {
     setEditingDate(date)
@@ -68,6 +85,8 @@ export default function App() {
           dayNumber={dayNumber}
           loading={store.loading}
           onStartCheckin={() => openCheckin(todayKey())}
+          questStore={questStore}
+          level={level}
         />
       )}
 
@@ -102,6 +121,7 @@ export default function App() {
           devAction={<DevTools onChanged={() => void store.refresh()} />}
           account={auth.email}
           onSignOut={() => void auth.signOut()}
+          level={level}
         />
       )}
 

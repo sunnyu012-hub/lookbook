@@ -11,6 +11,7 @@ import { createServer } from 'node:http'
 const PORT = Number(process.argv[2] ?? 54321)
 const USER = { id: '11111111-2222-3333-4444-555555555555', email: 'me@example.com' }
 const rows = []
+const quests = []
 
 const json = (res, status, body) => {
   res.writeHead(status, {
@@ -66,6 +67,21 @@ createServer(async (req, res) => {
   if (url.pathname === '/auth/v1/logout') return json(res, 204, {})
 
   // ── rest
+  if (url.pathname === '/rest/v1/daily_quests') {
+    if (req.method === 'GET') return json(res, 200, quests.filter((r) => matches(r, params)))
+    if (req.method === 'POST') {
+      const body = await readBody(req)
+      const incoming = Array.isArray(body) ? body : [body]
+      incoming.forEach((item) => {
+        const idx = quests.findIndex((r) => r.user_id === item.user_id && r.date === item.date)
+        if (idx >= 0) quests[idx] = { ...quests[idx], ...item }
+        else quests.push(item)
+      })
+      console.log('[stub] quest upsert', incoming.map((r) => `${r.date}:${(r.quest_ids || []).join('|')}`).join(', '))
+      return json(res, 201, incoming)
+    }
+  }
+
   if (url.pathname === '/rest/v1/daily_checkins') {
     if (req.method === 'GET') {
       return json(res, 200, rows.filter((r) => matches(r, params)))

@@ -26,34 +26,32 @@ export interface RoomItem {
 export const FLOOR_LINE = 46
 
 export const ROOM_ITEMS: RoomItem[] = [
-  // ── 벽 (뒤쪽)
-  { key: 'lights-l', asset: effects.stringLights, x: 0, bottom: 88, width: 25, layer: 'wall' },
-  { key: 'lights-r', asset: effects.stringLights, x: 70, bottom: 88, width: 25, layer: 'wall' },
-  { key: 'window', asset: furniture.windowDay, x: 4, bottom: 52, width: 24, layer: 'wall' },
-  { key: 'clock', asset: furniture.clock, x: 31, bottom: 79, width: 7, layer: 'wall' },
-  { key: 'poster', asset: furniture.posterSky, x: 30, bottom: 58, width: 9, layer: 'wall' },
-  { key: 'frames', asset: furniture.photoFrames, x: 41, bottom: 60, width: 12, layer: 'wall' },
-  { key: 'pinboard', asset: furniture.pinboard, x: 56, bottom: 58, width: 15, layer: 'wall' },
-  { key: 'hanging', asset: furniture.hangingPlant, x: 86, bottom: 58, width: 12, layer: 'wall', sway: true },
+  // ── 벽: 창문(왼쪽 기준점) → 액자 무리(가운데, 아랫변을 맞춤) → 행잉플랜트(오른쪽)
+  { key: 'lights', asset: effects.stringLights, x: 2, bottom: 86, width: 22, layer: 'wall' },
+  { key: 'lights-r', asset: effects.stringLights, x: 74, bottom: 86, width: 22, layer: 'wall' },
+  { key: 'window', asset: furniture.windowDay, x: 4, bottom: 52, width: 25, layer: 'wall' },
+  { key: 'clock', asset: furniture.clock, x: 33, bottom: 76, width: 7, layer: 'wall' },
+  { key: 'poster', asset: furniture.posterSky, x: 33, bottom: 58, width: 9, layer: 'wall' },
+  { key: 'frames', asset: furniture.photoFrames, x: 45, bottom: 58, width: 12, layer: 'wall' },
+  { key: 'pinboard', asset: furniture.pinboard, x: 60, bottom: 58, width: 15, layer: 'wall' },
+  { key: 'hanging', asset: furniture.hangingPlant, x: 87, bottom: 60, width: 11, layer: 'wall', sway: true },
 
-  // ── 뒷줄 가구 (캐릭터 뒤)
-  { key: 'rack', asset: furniture.clothingRack, x: 0, bottom: 24, width: 20, layer: 'furniture' },
-  { key: 'mirror', asset: furniture.mirror, x: 18, bottom: 22, width: 10, layer: 'furniture' },
-  { key: 'shelf', asset: furniture.bookshelf, x: 28, bottom: 22, width: 10, layer: 'furniture' },
-  { key: 'lamp', asset: furniture.lamp, x: 37, bottom: 22, width: 7, layer: 'furniture' },
-  { key: 'desk', asset: furniture.desk, x: 44, bottom: 18, width: 27, layer: 'furniture' },
-  { key: 'plant', asset: furniture.plant, x: 72, bottom: 20, width: 8, layer: 'furniture' },
-  { key: 'basket', asset: furniture.laundryBasket, x: 86, bottom: 17, width: 10, layer: 'furniture' },
+  // ── 뒷줄: 바닥에 닿는 선(bottom 20)을 모두 맞춰 한 줄로 세운다
+  { key: 'rack', asset: furniture.clothingRack, x: 0, bottom: 20, width: 20, layer: 'furniture' },
+  { key: 'mirror', asset: furniture.mirror, x: 21, bottom: 20, width: 9, layer: 'furniture' },
+  { key: 'shelf', asset: furniture.bookshelf, x: 32, bottom: 20, width: 10, layer: 'furniture' },
+  { key: 'plant', asset: furniture.plant, x: 44, bottom: 20, width: 7, layer: 'furniture' },
+  { key: 'desk', asset: furniture.desk, x: 53, bottom: 20, width: 28, layer: 'furniture' },
+  { key: 'basket', asset: furniture.laundryBasket, x: 88, bottom: 20, width: 9, layer: 'furniture' },
 
-  // ── 앞줄 (캐릭터가 서는 바닥)
-  { key: 'rug', asset: furniture.rug, x: 10, bottom: 0, width: 33, layer: 'furniture' },
-  { key: 'bed', asset: furniture.bed, x: 64, bottom: 2, width: 34, layer: 'furniture' },
-  { key: 'beanbag', asset: furniture.beanbag, x: 1, bottom: 5, width: 18, layer: 'furniture' },
+  // ── 앞줄: 왼쪽 빈백 / 가운데 러그 / 오른쪽 침대
+  { key: 'beanbag', asset: furniture.beanbag, x: 1, bottom: 4, width: 17, layer: 'furniture' },
+  { key: 'rug', asset: furniture.rug, x: 13, bottom: 1, width: 31, layer: 'furniture' },
+  { key: 'bed', asset: furniture.bed, x: 63, bottom: 2, width: 34, layer: 'furniture' },
 
-  // ── 생활 소품 (취미가 보이는 물건들)
-  { key: 'climbing', asset: gear.climbingShoes, x: 47, bottom: 2, width: 11, layer: 'props' },
-  { key: 'sneakers', asset: gear.sneakers, x: 57, bottom: 1, width: 9, layer: 'props' },
-  { key: 'tote', asset: fashion.toteClimb, x: 21, bottom: 15, width: 8, layer: 'props' },
+  // ── 소품은 둘만. 러그 오른쪽 가장자리에 나란히 둔다
+  { key: 'tote', asset: fashion.toteClimb, x: 9, bottom: 27, width: 7, layer: 'props' },
+  { key: 'climbing', asset: gear.climbingShoes, x: 46, bottom: 3, width: 11, layer: 'props' },
 ]
 
 export interface Placement {
@@ -67,10 +65,10 @@ export interface Placement {
 }
 
 export const CHARACTER_PLACEMENT: Record<EnergyMode, Placement> = {
-  RECOVERY: { x: 1, bottom: 2, width: 32, hides: ['beanbag'], motion: 'breathe' },
-  EASY: { x: 3, bottom: 3, width: 27, hides: ['beanbag'], motion: 'floaty' },
-  NORMAL: { x: 45, bottom: 8, width: 28, hides: ['desk'], motion: 'breathe' },
-  POWER: { x: 24, bottom: 3, width: 21, hides: [], motion: 'hop' },
+  RECOVERY: { x: 0, bottom: 2, width: 31, hides: ['beanbag'], motion: 'breathe' },
+  EASY: { x: 1, bottom: 3, width: 26, hides: ['beanbag'], motion: 'floaty' },
+  NORMAL: { x: 52, bottom: 9, width: 29, hides: ['desk'], motion: 'breathe' },
+  POWER: { x: 21, bottom: 3, width: 21, hides: [], motion: 'hop' },
 }
 
 export interface PetPlacement {
@@ -81,10 +79,10 @@ export interface PetPlacement {
 }
 
 export const PET_PLACEMENT: Record<EnergyMode, PetPlacement> = {
-  RECOVERY: { asset: pets.catBox, x: 35, bottom: 2, width: 13 },
-  EASY: { asset: pets.catLying, x: 31, bottom: 2, width: 13 },
-  NORMAL: { asset: pets.catCurl, x: 20, bottom: 2, width: 13 },
-  POWER: { asset: pets.catWalk, x: 11, bottom: 2, width: 12 },
+  RECOVERY: { asset: pets.catBox, x: 33, bottom: 2, width: 12 },
+  EASY: { asset: pets.catLying, x: 29, bottom: 2, width: 13 },
+  NORMAL: { asset: pets.catCurl, x: 24, bottom: 2, width: 12 },
+  POWER: { asset: pets.catWalk, x: 3, bottom: 2, width: 12 },
 }
 
 export interface RoomEffect {

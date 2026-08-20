@@ -1,43 +1,50 @@
-import { useCallback, useEffect, useState } from 'react'
-
-const KEY = 'life-os:quests:v1'
-
-type Store = Record<string, string[]>
-
-function read(): Store {
-  try {
-    const raw = localStorage.getItem(KEY)
-    return raw ? (JSON.parse(raw) as Store) : {}
-  } catch {
-    return {}
-  }
-}
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { questRepository, type QuestLog } from '@/lib/questRepository'
+import { xpOf } from '@/lib/quests'
+import type { AuthState } from './useSession'
 
 /**
- * 퀘스트 완료 체크는 아직 서버에 저장하지 않는다 (기기 로컬).
- * XP 시스템을 붙일 때 daily_checkins 옆 테이블로 옮기면 된다.
+ * 퀘스트 완료 기록 전체.
+ * 오늘 화면은 오늘 것만 쓰지만, 레벨을 계산하려면 지난 기록까지 필요하다.
  */
-export function useQuests(date: string) {
-  const [done, setDone] = useState<string[]>([])
+export function useQuests(authState: AuthState = 'local') {
+  const [log, setLog] = useState<QuestLog>({})
+  const [loading, setLoading] = useState(true)
+  const ready = authState === 'local' || authState === 'signed-in'
 
   useEffect(() => {
-    setDone(read()[date] ?? [])
-  }, [date])
+    if (!ready) return
+    let alive = true
+    questRepository
+      .list()
+      .then((next) => alive && setLog(next))
+      .catch(() => undefined)
+      .finally(() => alive && setLoading(false))
+    return () => {
+      alive = false
+    }
+  }, [ready])
 
-  const toggle = useCallback(
-    (questId: string) => {
-      setDone((prev) => {
-        const next = prev.includes(questId)
-          ? prev.filter((id) => id !== questId)
-          : [...prev, questId]
-        const store = read()
-        store[date] = next
-        localStorage.setItem(KEY, JSON.stringify(store))
-        return next
-      })
-    },
-    [date],
+  const toggle = useCallback((date: string, questId: string) => {
+    setLog((prev) => {
+      const current = prev[date] ?? []
+      const next = current.includes(questId)
+        ? current.filter((id) => id !== questId)
+        : [...current, questId]
+      // 화면은 먼저 바꾸고 저장은 뒤따라간다 (체크가 늦게 반응하면 답답하니까)
+      void questRepository.setForDate(date, next).catch(() => undefined)
+      return { ...prev, [date]: next }
+    })
+  }, [])
+
+  const questXp = useMemo(
+    () => Object.values(log).reduce((sum, ids) => sum + xpOf(ids), 0),
+    [log],
   )
 
-  return { done, toggle }
+  const doneFor = useCallback((date: string) => log[date] ?? [], [log])
+
+  return { log, doneFor, toggle, questXp, loading }
 }
+
+export type QuestStore = ReturnType<typeof useQuests>
