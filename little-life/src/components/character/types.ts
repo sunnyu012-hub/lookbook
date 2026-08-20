@@ -7,8 +7,9 @@
  *
  * mood 에 슬픔이나 아픔은 넣지 않는다.
  * 퀘스트를 안 했다고 캐릭터가 시무룩해지는 앱은 만들지 않기로 했다.
+ * resting 은 "할 일이 없어서 쉬는 중" 이지 "못 해서 처진 상태" 가 아니다.
  */
-export type CharacterMood = 'idle' | 'questClear' | 'levelUp'
+export type CharacterMood = 'idle' | 'questClear' | 'levelUp' | 'resting'
 
 export interface CharacterLook {
   mood: CharacterMood

@@ -5,7 +5,7 @@ import { CategoryFilter, type CategoryFilterValue } from '@/components/quest/Cat
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { CountPill, ScreenHeader, SectionHeader } from '@/components/layout/ScreenHeader'
-import { UI } from '@/lib/assets'
+import { CHARACTER_FACE, UI } from '@/lib/assets'
 import {
   filterByCategory,
   isTodayQuest,
@@ -61,6 +61,7 @@ export function QuestScreen({
       {nothingInFilter ? (
         <div className="mt-5">
           <EmptyState
+            face={filter === 'ALL' ? CHARACTER_FACE.happy : CHARACTER_FACE.surprised}
             title={filter === 'ALL' ? '지금은 남은 퀘스트가 없어.' : '여긴 아직 비어 있어.'}
             hint={
               filter === 'ALL'

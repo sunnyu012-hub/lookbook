@@ -16,28 +16,44 @@ interface CharacterRoomCardProps {
 }
 
 /**
+ * 포즈마다 그림 비율이 달라서 자리를 따로 잡아준다.
+ * 앉은 그림은 옆으로 넓고, 서 있는 그림은 세로로 길다.
+ */
+const PLACEMENT: Record<CharacterMood, { width: string; bottom: string }> = {
+  idle: { width: '38%', bottom: '7%' },
+  questClear: { width: '40%', bottom: '7%' },
+  levelUp: { width: '46%', bottom: '7%' },
+  resting: { width: '56%', bottom: '9%' },
+}
+
+/**
  * HOME 의 주인공 카드.
  *
  * 방 · 캐릭터 · 레벨 · EXP 를 한 덩어리로 묶는다.
  * 나중에 방 꾸미기나 펫이 붙으면 전부 이 카드 안에서 해결된다.
  */
 export function CharacterRoomCard({ user, mood, overlay }: CharacterRoomCardProps) {
+  const place = PLACEMENT[mood]
+
   return (
     <section className="overflow-hidden rounded-card border border-line bg-surface shadow-soft">
       <div className="relative aspect-[16/12] w-full">
-        <RoomScene />
+        <RoomScene hideBeanbag={mood === 'resting'} />
 
         {/* 캐릭터는 러그 위에 선다 */}
-        <div className="absolute bottom-[7%] left-1/2 h-[62%] w-[38%] -translate-x-1/2">
+        <div
+          className="absolute left-1/2 h-[62%] -translate-x-1/2 transition-[width,bottom] duration-300 ease-out"
+          style={{ width: place.width, bottom: place.bottom }}
+        >
           <CharacterAvatar mood={mood} />
         </div>
 
-        {mood !== 'idle' && (
+        {(mood === 'questClear' || mood === 'levelUp') && (
           <img
             src={EFFECT.sparkle}
             alt=""
             aria-hidden
-            className="absolute bottom-[52%] left-[26%] w-[13%] animate-sparkle select-none"
+            className="absolute bottom-[52%] left-[24%] w-[13%] animate-sparkle select-none"
           />
         )}
 

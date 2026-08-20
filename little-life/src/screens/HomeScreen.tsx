@@ -35,6 +35,11 @@ export function HomeScreen({
   )
   const summary = useMemo(() => todaySummary(state.dailyLog), [state.dailyLog])
 
+  // 오늘 할 게 남지 않았으면 빈백에 앉아 쉰다.
+  // 연출이 도는 동안에는 그쪽 포즈가 이긴다.
+  const restingMood: CharacterMood = openQuests.length === 0 ? 'resting' : 'idle'
+  const shownMood: CharacterMood = mood === 'idle' ? restingMood : mood
+
   return (
     <div className="animate-risein space-y-4">
       <ScreenHeader
@@ -53,7 +58,7 @@ export function HomeScreen({
 
       <CharacterRoomCard
         user={state.user}
-        mood={mood}
+        mood={shownMood}
         overlay={<ExpToastLayer toasts={expToasts} />}
       />
 

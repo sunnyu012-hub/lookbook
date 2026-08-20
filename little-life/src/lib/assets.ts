@@ -15,6 +15,7 @@ export const CHARACTER: Record<CharacterMood, string> = {
   idle: `${base}/character/idle.webp`,
   questClear: `${base}/character/quest-clear.webp`,
   levelUp: `${base}/character/celebrate.webp`,
+  resting: `${base}/character/resting.webp`,
 }
 
 /** ME 화면 프로필용 얼굴. */
@@ -25,10 +26,15 @@ export const CHARACTER_FACE = {
   sulky: `${base}/character/face-sulky.webp`,
 }
 
-/** 아직 화면에 쓰지 않지만 남겨둔 포즈 — 나중에 휴식 상태 등에 쓸 수 있다. */
+/**
+ * 아직 화면에 쓰지 않고 남겨둔 것들.
+ * 지우지 않고 표에 두는 편이 나중에 찾기 쉽다.
+ */
 export const CHARACTER_EXTRA = {
-  resting: `${base}/character/resting.webp`,
-  levelUpPose: `${base}/character/level-up.webp`,
+  /** 팔 들고 윙크하는 포즈 — 업적 같은 게 생기면 쓸 만하다 */
+  cheerPose: `${base}/character/level-up.webp`,
+  /** 삐친 얼굴. 캐릭터가 사용자를 탓하지 않기로 해서 화면에서는 쓰지 않는다 */
+  faceSulky: `${base}/character/face-sulky.webp`,
 }
 
 export const ROOM = {

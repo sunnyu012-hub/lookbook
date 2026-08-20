@@ -12,6 +12,7 @@ const ANIMATION: Record<CharacterLook['mood'], string> = {
   idle: 'animate-breathe',
   questClear: 'animate-bouncesm',
   levelUp: 'animate-bouncelg',
+  resting: 'animate-breathe',
 }
 
 /**
