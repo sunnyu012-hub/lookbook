@@ -1,201 +1,90 @@
 import { useMemo, useState } from 'react'
-import type {
-  MounjaroInput,
-  MounjaroLog,
-  Preferences,
-  WeightInput,
-  WeightLog,
-} from '@/types'
-import { LineChart } from '@/components/pixel/LineChart'
+import type { Checkin, MounjaroInput, MounjaroLog, Preferences } from '@/types'
 import { PixelImage } from '@/components/pixel/PixelImage'
 import { PixelPanel } from '@/components/pixel/PixelPanel'
 import { NumberField } from '@/components/checkin/Fields'
 import { formatShort, todayKey } from '@/lib/date'
-import {
-  cycleProfile,
-  goalProgress,
-  loggingCadence,
-  mounjaroCycle,
-  sideEffectCounts,
-  weightMilestones,
-  weightSummary,
-} from '@/lib/analytics'
-import { effects as fx, icons, items as pixelItems } from '@/lib/pixelAssets'
+import { cycleProfile, mounjaroCycle, sideEffectCounts } from '@/lib/analytics'
+import { icons } from '@/lib/pixelAssets'
 import { haptic } from '@/hooks/useHaptic'
 import { cn } from '@/lib/cn'
 
 const SIDE_EFFECTS = ['메스꺼움', '더부룩함', '두통', '피로', '변비', '식욕 없음']
 
-interface Props {
-  prefs: Preferences
-  weights: WeightLog[]
-  mounjaro: MounjaroLog[]
-  checkins: import('@/types').Checkin[]
-  onSaveWeight: (input: WeightInput) => Promise<unknown>
-  onRemoveWeight: (date: string) => Promise<void>
-  onSaveMounjaro: (input: MounjaroInput) => Promise<unknown>
-  onRemoveMounjaro: (date: string) => Promise<void>
-  onOpenSettings: () => void
-}
-
-export function BodyPage({
+/**
+ * Mounjaro — 내가 적어 두는 기록장.
+ * 이 앱은 의료 앱이 아니다. 용량이나 투약 여부를 추천하지 않는다.
+ * "다음 예정일" 은 설정에 직접 넣은 주기로 날짜만 더한 값이다.
+ */
+export function MounjaroPanel({
   prefs,
-  weights,
   mounjaro,
   checkins,
-  onSaveWeight,
-  onRemoveWeight,
-  onSaveMounjaro,
-  onRemoveMounjaro,
+  onSave,
+  onRemove,
   onOpenSettings,
-}: Props) {
+}: {
+  prefs: Preferences
+  mounjaro: MounjaroLog[]
+  checkins: Checkin[]
+  onSave: (input: MounjaroInput) => Promise<unknown>
+  onRemove: (date: string) => Promise<void>
+  onOpenSettings: () => void
+}) {
   const today = todayKey()
-  const summary = useMemo(() => weightSummary(weights, prefs, today), [weights, prefs, today])
-  const progress = goalProgress(summary, prefs)
-  const milestones = useMemo(() => weightMilestones(weights, prefs), [weights, prefs])
-  const cadence = loggingCadence(weights)
   const cycle = useMemo(() => mounjaroCycle(mounjaro, prefs, today), [mounjaro, prefs, today])
+
+  if (!prefs.mounjaroEnabled) {
+    return (
+      <button
+        type="button"
+        onClick={onOpenSettings}
+        className="press flex w-full items-center justify-center gap-2 rounded-px4 border-[1.5px] border-dashed border-borderdeep bg-cream py-3 text-[12.5px] text-inkdim"
+      >
+        <PixelImage asset={icons.log} height={16} />
+        투약 기록을 쓰려면 설정에서 켜 주세요
+      </button>
+    )
+  }
 
   return (
     <div className="space-y-3">
-      <header>
-        <h1 className="font-pixel text-[16px] uppercase leading-none tracking-[0.04em]">Body</h1>
-        <p className="body-ko mt-2">몸에 대한 기록을 모아 두는 곳이에요.</p>
-      </header>
-
-      {/* ── 체중 ── */}
-      <PixelPanel title="Weight" icon={pixelItems.milk} sparkle>
-        <div className="flex items-end gap-3">
-          <p className="font-pixel text-[28px] leading-none tabular-nums">
-            {summary.smoothed ?? '--'}
-            <span className="ml-1 text-[12px] text-inkdim">kg</span>
-          </p>
-          <div className="flex-1 pb-1 text-right">
-            {summary.change30 !== null && (
-              <p className="text-[12px] text-inkdim">
-                최근 30일 {summary.change30 > 0 ? '+' : ''}
-                {summary.change30}kg
-              </p>
-            )}
-            {summary.latest && (
-              <p className="plabel mt-1">마지막 기록 {formatShort(summary.latest.date)}</p>
-            )}
-          </div>
-        </div>
-        <p className="mt-1.5 text-[11px] leading-relaxed text-inkfaint">
-          7일 평균이에요. 하루하루의 숫자는 물이나 식사만으로도 쉽게 오르내려서, 흐름만 보는 게 편해요.
-        </p>
-
-        <div className="mt-3">
-          <LineChart
-            points={summary.points}
-            line={summary.line}
-            color="#7DB994"
-            ariaLabel="체중 흐름"
-            guide={
-              prefs.goalWeightKg != null
-                ? { value: prefs.goalWeightKg, label: `목표 ${prefs.goalWeightKg}kg` }
-                : null
+      <PixelPanel title="Cycle" icon={icons.log}>
+        <div className="grid grid-cols-3 gap-2">
+          <Cell label="Cycle day" value={cycle.cycleDay !== null ? `D+${cycle.cycleDay - 1}` : '—'} />
+          <Cell
+            label="Next"
+            value={
+              cycle.daysUntilNext !== null
+                ? cycle.daysUntilNext >= 0
+                  ? `${cycle.daysUntilNext}일 뒤`
+                  : `${-cycle.daysUntilNext}일 지남`
+                : '—'
             }
-            format={(v) => `${Math.round(v * 10) / 10}kg`}
+            sub={cycle.nextDate ? formatShort(cycle.nextDate) : undefined}
+          />
+          <Cell
+            label="Logged dose"
+            value={cycle.currentDoseMg !== null ? `${cycle.currentDoseMg}mg` : '—'}
+            sub={cycle.lastDose ? formatShort(cycle.lastDose.date) : undefined}
           />
         </div>
-
-        {progress !== null && (
-          <div className="mt-2">
-            <div className="h-[8px] overflow-hidden rounded-full bg-border/40">
-              <div
-                className="h-full rounded-full bg-mint transition-[width] duration-500"
-                style={{ width: `${Math.round(progress * 100)}%` }}
-              />
-            </div>
-            <p className="plabel mt-1.5">
-              시작 {prefs.startingWeightKg}kg → 목표 {prefs.goalWeightKg}kg ·{' '}
-              {Math.round(progress * 100)}%
-            </p>
-          </div>
-        )}
-
-        <WeightForm
-          existing={weights.find((w) => w.date === today) ?? null}
-          onSave={onSaveWeight}
-          onRemove={onRemoveWeight}
-        />
-
-        {cadence !== null && (
-          <p className="mt-2 text-[11.5px] text-inkdim">
-            평균 {cadence}일에 한 번 재고 있어요. {summary.count}번 기록했어요.
-          </p>
-        )}
+        <p className="mt-2.5 text-[11px] leading-relaxed text-inkfaint">
+          다음 날짜는 설정에 적어 둔 주기({cycle.intervalDays}일)로 더한 값이에요. 이 앱은 의료 앱이
+          아니고, 투약 여부나 용량에 대해서는 어떤 판단도 하지 않아요.
+        </p>
       </PixelPanel>
 
-      {milestones.length > 0 && (
-        <PixelPanel title="Passed by" icon={fx.sparkle01}>
-          <ul className="divide-y divide-dashed divide-border/70">
-            {milestones.map((m) => (
-              <li key={`${m.value}-${m.date}`} className="flex items-center gap-2 py-2">
-                <PixelImage asset={fx.sparkle02} height={16} />
-                <span className="text-[13px]">{m.label}</span>
-                <span className="plabel ml-auto">{formatShort(m.date)}</span>
-              </li>
-            ))}
-          </ul>
-        </PixelPanel>
-      )}
+      <MounjaroSection
+        logs={mounjaro}
+        defaultDose={cycle.currentDoseMg ?? prefs.mounjaroDoseMg ?? null}
+        onSave={onSave}
+        onRemove={onRemove}
+      />
 
-      {/* ── Mounjaro ── */}
-      {prefs.mounjaroEnabled ? (
-        <>
-          <PixelPanel title="Cycle" icon={icons.log}>
-            <div className="grid grid-cols-3 gap-2">
-              <Cell
-                label="Cycle day"
-                value={cycle.cycleDay !== null ? `D+${cycle.cycleDay - 1}` : '—'}
-              />
-              <Cell
-                label="Next"
-                value={
-                  cycle.daysUntilNext !== null
-                    ? cycle.daysUntilNext >= 0
-                      ? `${cycle.daysUntilNext}일 뒤`
-                      : `${-cycle.daysUntilNext}일 지남`
-                    : '—'
-                }
-                sub={cycle.nextDate ? formatShort(cycle.nextDate) : undefined}
-              />
-              <Cell
-                label="Logged dose"
-                value={cycle.currentDoseMg !== null ? `${cycle.currentDoseMg}mg` : '—'}
-                sub={cycle.lastDose ? formatShort(cycle.lastDose.date) : undefined}
-              />
-            </div>
-            <p className="mt-2.5 text-[11px] leading-relaxed text-inkfaint">
-              다음 날짜는 설정에 적어 둔 주기({cycle.intervalDays}일)로 더한 값이에요. 이 앱은 의료
-              앱이 아니고, 투약 여부나 용량에 대해서는 어떤 판단도 하지 않아요.
-            </p>
-          </PixelPanel>
+      <CycleProfile checkins={checkins} logs={mounjaro} intervalDays={cycle.intervalDays} />
 
-          <MounjaroSection
-            logs={mounjaro}
-            defaultDose={cycle.currentDoseMg ?? prefs.mounjaroDoseMg ?? null}
-            onSave={onSaveMounjaro}
-            onRemove={onRemoveMounjaro}
-          />
-
-          <CycleProfile checkins={checkins} logs={mounjaro} intervalDays={cycle.intervalDays} />
-
-          <SideEffects logs={mounjaro} />
-        </>
-      ) : (
-        <button
-          type="button"
-          onClick={onOpenSettings}
-          className="press flex w-full items-center justify-center gap-2 rounded-px4 border-[1.5px] border-dashed border-borderdeep bg-cream py-3 text-[12.5px] text-inkdim"
-        >
-          <PixelImage asset={icons.log} height={16} />
-          투약 기록을 쓰려면 설정에서 켜 주세요
-        </button>
-      )}
+      <SideEffects logs={mounjaro} />
     </div>
   )
 }
@@ -206,65 +95,6 @@ function Cell({ label, value, sub }: { label: string; value: string; sub?: strin
       <p className="plabel truncate">{label}</p>
       <p className="mt-1 font-pixel text-[14px] leading-none tabular-nums">{value}</p>
       {sub && <p className="mt-1 text-[10.5px] text-inkfaint">{sub}</p>}
-    </div>
-  )
-}
-
-function WeightForm({
-  existing,
-  onSave,
-  onRemove,
-}: {
-  existing: WeightLog | null
-  onSave: (input: WeightInput) => Promise<unknown>
-  onRemove: (date: string) => Promise<void>
-}) {
-  const [value, setValue] = useState<number | null>(existing?.weightKg ?? null)
-  const [busy, setBusy] = useState(false)
-  const today = todayKey()
-
-  const submit = async () => {
-    if (value === null) return
-    setBusy(true)
-    try {
-      await onSave({ date: today, weightKg: value })
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <div className="mt-3 flex items-center gap-2 border-t border-dashed border-border pt-3">
-      <span className="text-[12.5px] text-inkdim">오늘</span>
-      <NumberField
-        value={value}
-        onChange={setValue}
-        suffix="kg"
-        ariaLabel="오늘 체중"
-        step="0.1"
-        width="w-[78px]"
-      />
-      <button
-        type="button"
-        disabled={busy || value === null}
-        onClick={() => {
-          haptic()
-          void submit()
-        }}
-        className="press ml-auto rounded-px3 border-[1.5px] border-pinkdeep bg-pink px-3 py-2 font-pixel text-[11px] uppercase text-white disabled:opacity-45"
-      >
-        {existing ? 'Update' : 'Save'}
-      </button>
-      {existing && (
-        <button
-          type="button"
-          aria-label="오늘 체중 기록 지우기"
-          onClick={() => void onRemove(today)}
-          className="px-1 text-[15px] leading-none text-inkfaint"
-        >
-          ×
-        </button>
-      )}
     </div>
   )
 }
@@ -541,7 +371,7 @@ function CycleProfile({
   logs,
   intervalDays,
 }: {
-  checkins: import('@/types').Checkin[]
+  checkins: Checkin[]
   logs: MounjaroLog[]
   intervalDays: number
 }) {

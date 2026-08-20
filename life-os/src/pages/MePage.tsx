@@ -7,6 +7,8 @@ import { PixelSparkle } from '@/components/pixel/PixelSparkle'
 import { EnergyBar } from '@/components/pixel/EnergyBar'
 import { LineChart } from '@/components/pixel/LineChart'
 import { LevelCard } from '@/components/pixel/LevelCard'
+import { loggingStreak } from '@/lib/xp'
+import { todayKey } from '@/lib/date'
 import { buildInsights } from '@/lib/insights'
 import { buildStory } from '@/lib/story'
 import {
@@ -52,7 +54,7 @@ interface Props {
   devAction?: React.ReactNode
 }
 
-export function StatsPage({
+export function MePage({
   checkins,
   weights,
   mounjaro,
@@ -74,10 +76,18 @@ export function StatsPage({
     () => buildStory({ checkins, weights, mounjaro, lifeEvents, prefs }),
     [checkins, weights, mounjaro, lifeEvents, prefs],
   )
+  const week = useMemo(
+    () => buildStory({ checkins, weights, mounjaro, lifeEvents, prefs, days: 7 }),
+    [checkins, weights, mounjaro, lifeEvents, prefs],
+  )
   const trend = useMemo(() => conditionTrend(checkins), [checkins])
   const base = useMemo(() => baseline(checkins, scoreContext), [checkins, scoreContext])
   const good = useMemo(() => goodDayTraits(checkins, prefs, lifeEvents), [checkins, prefs, lifeEvents])
   const drivers = useMemo(() => lowScoreDrivers(checkins), [checkins])
+  const streak = useMemo(
+    () => loggingStreak(checkins.map((c) => c.date), todayKey()),
+    [checkins],
+  )
 
   const nothingToShow =
     insights.avgScore7 == null && insights.avgScore30 == null && insights.avgSleepHours == null
@@ -86,10 +96,8 @@ export function StatsPage({
     <div className="space-y-3">
       <header className="flex items-end justify-between">
         <div>
-          <h1 className="font-pixel text-[16px] uppercase leading-none tracking-[0.04em]">
-            Player Stats
-          </h1>
-          <p className="plabel mt-2">Last 30 days</p>
+          <h1 className="font-pixel text-[16px] uppercase leading-none tracking-[0.04em]">Me</h1>
+          <p className="ko mt-2">지금까지의 나를 모아 둔 곳이에요.</p>
         </div>
         <button
           type="button"
@@ -101,7 +109,17 @@ export function StatsPage({
         </button>
       </header>
 
-      <LevelCard level={level} character={MODE_CHARACTER[modeOf(insights.avgScore30 ?? 60).key]} />
+      <LevelCard
+        level={level}
+        character={MODE_CHARACTER[modeOf(insights.avgScore30 ?? 60).key]}
+        name={prefs.displayName ?? undefined}
+      />
+
+      <div className="grid grid-cols-3 gap-2">
+        <MiniStat label="Streak" value={`${streak}일`} />
+        <MiniStat label="Saves" value={String(insights.totalCount)} />
+        <MiniStat label="Total XP" value={String(xp.total)} />
+      </div>
 
       <PixelPanel title="XP sources" icon={icons.xp}>
         <ul className="space-y-1.5">
@@ -138,9 +156,23 @@ export function StatsPage({
         </PixelPanel>
       ) : (
         <>
+          {/* 이번 주 */}
+          {week.length > 0 && (
+            <PixelPanel title="This week" icon={icons.energy}>
+              <ul className="space-y-2">
+                {week.map((line) => (
+                  <li key={line.key} className="flex gap-2 text-[13px] leading-relaxed">
+                    <PixelSparkle size={10} className="mt-1 shrink-0" />
+                    <span>{line.text}</span>
+                  </li>
+                ))}
+              </ul>
+            </PixelPanel>
+          )}
+
           {/* 지난 한 달의 이야기 */}
           {story.length > 0 && (
-            <PixelPanel title="Last 30 days" icon={icons.log} sparkle>
+            <PixelPanel title="Monthly review" icon={icons.log} sparkle>
               <ul className="space-y-2">
                 {story.map((line) => (
                   <li key={line.key} className="flex gap-2 text-[13px] leading-relaxed">
@@ -294,7 +326,7 @@ export function StatsPage({
 
           {patterns.length > 0 && (
             <div className="space-y-2">
-              <p className="plabel px-1">Discovered</p>
+              <p className="plabel px-1">My patterns</p>
               {patterns.map((pattern) => (
                 <div
                   key={pattern.id}
@@ -331,6 +363,15 @@ export function StatsPage({
       <p className="px-2 pb-2 text-center text-[11px] leading-relaxed text-inkdim">
         여기 숫자는 내가 적은 기록에서 나온 값이에요. 진단이나 치료 판단에는 쓰지 마세요.
       </p>
+    </div>
+  )
+}
+
+function MiniStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-px4 bg-ivory/90 px-2.5 py-2.5 text-center">
+      <p className="plabel">{label}</p>
+      <p className="mt-1.5 font-pixel text-[15px] leading-none tabular-nums">{value}</p>
     </div>
   )
 }

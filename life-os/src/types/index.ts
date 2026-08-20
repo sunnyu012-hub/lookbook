@@ -248,4 +248,4 @@ export interface Preferences {
   sleepGoalHours: number
 }
 
-export type TabKey = 'today' | 'checkin' | 'body' | 'timeline' | 'insights'
+export type TabKey = 'home' | 'checkin' | 'life' | 'log' | 'me'
