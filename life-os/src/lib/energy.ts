@@ -1,81 +1,22 @@
 /**
- * Energy Score — 단순 휴리스틱.
- * 의료적 판단이나 진단을 위한 점수가 아니다. 기록을 눈에 보이게 만드는 용도.
- * 가중치·정규화 함수만 이 파일에서 고치면 앱 전체에 반영된다.
+ * 모드(RECOVERY / EASY / NORMAL / POWER) 메타데이터.
+ *
+ * 점수 계산 자체는 lib/scoring 으로 옮겨 갔다 — 이 파일은 "점수를 어떻게 보여줄지" 만 담당한다.
+ * 예전 import 경로를 유지하려고 계산 함수도 그대로 다시 내보낸다.
  */
 import type { CheckinInput, EnergyMode } from '@/types'
 import type { PixelAsset } from './pixelAssets.generated'
 import { MODE_ICON, MODE_PILL } from './pixelAssets'
+import { DEFAULT_SCORE_CONTEXT, scoreCheckin, scoreToMode, type ScoreContext } from './scoring'
 
-export const WEIGHTS = {
-  sleep: 0.3,
-  fatigue: 0.25,
-  body: 0.15,
-  focus: 0.15,
-  mood: 0.1,
-  sleepQuality: 0.05,
-} as const
+export { scoreToMode, sleepHoursScore } from './scoring'
 
-const clamp = (v: number, min = 0, max = 100) => Math.min(max, Math.max(min, v))
-
-/** 1~5 값을 0~100 으로 (5가 좋음) */
-const scaleUp = (v: number) => clamp(((v - 1) / 4) * 100)
-
-/** 1~5 값을 0~100 으로 (1이 좋음 — 피로도처럼 낮을수록 좋은 값) */
-const scaleDown = (v: number) => clamp(((5 - v) / 4) * 100)
-
-/** 0~5 통증을 0~100 으로 (0이 좋음) */
-const painScore = (v: number) => clamp(((5 - v) / 5) * 100)
-
-/**
- * 수면 시간 점수.
- * 7~9시간을 100점으로 두고, 부족할수록 가파르게 / 과할수록 완만하게 깎는다.
- */
-export function sleepHoursScore(hours: number): number {
-  if (!Number.isFinite(hours) || hours <= 0) return 0
-  if (hours >= 7 && hours <= 9) return 100
-  if (hours < 7) return clamp(((hours - 3) / 4) * 100) // 3h → 0, 7h → 100
-  return clamp(100 - (hours - 9) * 12, 45, 100) // 과수면은 가볍게 감점
-}
-
-export interface EnergyBreakdown {
-  sleep: number
-  fatigue: number
-  body: number
-  focus: number
-  mood: number
-  sleepQuality: number
-}
-
-export function energyBreakdown(input: CheckinInput): EnergyBreakdown {
-  return {
-    sleep: sleepHoursScore(input.sleepHours),
-    fatigue: scaleDown(input.fatigue),
-    body: painScore(input.bodyPain),
-    focus: scaleUp(input.focus),
-    mood: scaleUp(input.mood),
-    sleepQuality: scaleUp(input.sleepQuality),
-  }
-}
-
-/** 0~100 정수 */
-export function calcEnergyScore(input: CheckinInput): number {
-  const b = energyBreakdown(input)
-  const total =
-    b.sleep * WEIGHTS.sleep +
-    b.fatigue * WEIGHTS.fatigue +
-    b.body * WEIGHTS.body +
-    b.focus * WEIGHTS.focus +
-    b.mood * WEIGHTS.mood +
-    b.sleepQuality * WEIGHTS.sleepQuality
-  return Math.round(clamp(total))
-}
-
-export function scoreToMode(score: number): EnergyMode {
-  if (score < 40) return 'RECOVERY'
-  if (score < 60) return 'EASY'
-  if (score < 80) return 'NORMAL'
-  return 'POWER'
+/** 0~100 정수. 적은 항목이 하나도 없으면 null */
+export function calcEnergyScore(
+  input: CheckinInput,
+  ctx: ScoreContext = DEFAULT_SCORE_CONTEXT,
+): number | null {
+  return scoreCheckin(input, ctx).overall
 }
 
 export interface ModeMeta {
@@ -141,3 +82,7 @@ export const MODE_META: Record<EnergyMode, ModeMeta> = {
 
 export const modeMeta = (mode: EnergyMode) => MODE_META[mode]
 export const modeOf = (score: number) => MODE_META[scoreToMode(score)]
+
+/** 점수가 없는 날(아직 안 적은 날)도 안전하게 다루기 위한 헬퍼 */
+export const modeMetaOrNull = (mode: EnergyMode | null | undefined) =>
+  mode ? MODE_META[mode] : null

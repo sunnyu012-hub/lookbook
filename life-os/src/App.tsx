@@ -1,17 +1,23 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { TabKey } from '@/types'
 import { AppShell } from '@/components/layout/AppShell'
 import { AuthGate } from '@/components/AuthGate'
 import { DevTools } from '@/components/DevTools'
 import { PixelToast } from '@/components/pixel/PixelToast'
+import { BodyPage } from '@/pages/BodyPage'
 import { CheckinPage } from '@/pages/CheckinPage'
-import { HistoryPage } from '@/pages/HistoryPage'
-import { InsightsPage } from '@/pages/InsightsPage'
+import { SettingsPage } from '@/pages/SettingsPage'
+import { StatsPage } from '@/pages/StatsPage'
+import { TimelinePage } from '@/pages/TimelinePage'
 import { TodayPage } from '@/pages/TodayPage'
 import { useCheckins } from '@/hooks/useCheckins'
+import { useDdays, useLifeEvents, useMounjaro, useWeights } from '@/hooks/useLifeData'
+import { usePreferences } from '@/hooks/usePreferences'
 import { useQuests } from '@/hooks/useQuests'
 import { useSession } from '@/hooks/useSession'
-import { SAVE_XP, levelFromXp } from '@/lib/level'
+import { levelFromXp } from '@/lib/level'
+import { xpBreakdown } from '@/lib/xp'
+import { buildSnapshot } from '@/lib/snapshot'
 import { PixelImage } from '@/components/pixel/PixelImage'
 import { characters } from '@/lib/pixelAssets'
 import { todayKey } from '@/lib/date'
@@ -24,15 +30,55 @@ interface ToastState {
 
 export default function App() {
   const [tab, setTab] = useState<TabKey>('today')
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [editingDate, setEditingDate] = useState<string>(todayKey())
   const [toast, setToast] = useState<ToastState | null>(null)
+
   const auth = useSession()
+  const prefStore = usePreferences(auth.state)
   const store = useCheckins(auth.state)
   const questStore = useQuests(auth.state)
+  const weightStore = useWeights(auth.state)
+  const mounjaroStore = useMounjaro(auth.state)
+  const eventStore = useLifeEvents(auth.state)
+  const ddayStore = useDdays(auth.state)
 
-  // 체크인 저장과 퀘스트 완료가 XP 를 만든다
-  const totalXp = questStore.questXp + store.checkins.length * SAVE_XP
-  const level = levelFromXp(totalXp)
+  // XP 는 "적은 행동" 에서만 나온다 (건강 수치가 좋아진 것에는 주지 않는다)
+  const xp = useMemo(
+    () =>
+      xpBreakdown({
+        checkins: store.checkins,
+        weights: weightStore.logs,
+        mounjaro: mounjaroStore.logs,
+        lifeEvents: eventStore.events,
+        questLog: questStore.log,
+      }),
+    [store.checkins, weightStore.logs, mounjaroStore.logs, eventStore.events, questStore.log],
+  )
+  const level = levelFromXp(xp.total)
+
+  const snapshot = useMemo(
+    () =>
+      buildSnapshot({
+        prefs: prefStore.prefs,
+        checkins: store.checkins,
+        weights: weightStore.logs,
+        mounjaro: mounjaroStore.logs,
+        lifeEvents: eventStore.events,
+        ddays: ddayStore.ddays,
+        onOpenBody: () => setTab('body'),
+        onOpenTimeline: () => setTab('timeline'),
+        onOpenSettings: () => setSettingsOpen(true),
+      }),
+    [
+      prefStore.prefs,
+      store.checkins,
+      weightStore.logs,
+      mounjaroStore.logs,
+      eventStore.events,
+      ddayStore.ddays,
+    ],
+  )
 
   // 레벨이 오르는 순간에만 알려준다 (첫 로딩은 제외)
   const lastLevel = useRef<number | null>(null)
@@ -50,6 +96,7 @@ export default function App() {
   }, [])
 
   const handleTab = (next: TabKey) => {
+    setSettingsOpen(false)
     if (next === 'checkin') setEditingDate(todayKey())
     setTab(next)
   }
@@ -69,60 +116,103 @@ export default function App() {
 
   if (auth.state === 'signed-out') return <AuthGate />
 
+  const firstError = store.error ?? prefStore.error ?? weightStore.error ?? mounjaroStore.error
+
   return (
     <AppShell active={tab} onTabChange={handleTab}>
       {storageMode === 'local' && <p className="plabel mb-3 text-right">Local Save</p>}
 
-      {store.error && (
+      {firstError && (
         <p className="mb-3 rounded-px3 border-[1.5px] border-pinkdeep bg-pinksoft px-3 py-2 text-[12px]">
-          {store.error}
+          {firstError}
         </p>
       )}
 
-      {tab === 'today' && (
-        <TodayPage
-          today={store.today}
-          dayNumber={dayNumber}
-          loading={store.loading}
-          onStartCheckin={() => openCheckin(todayKey())}
-          questStore={questStore}
-          level={level}
-        />
-      )}
-
-      {tab === 'checkin' && (
-        <CheckinPage
-          date={editingDate}
-          existing={existing}
-          onSave={store.save}
-          onSaved={() => {
-            setToast({ title: 'Save Complete!', detail: '오늘의 기록이 저장됐어요.' })
-            setTab('today')
-          }}
-        />
-      )}
-
-      {tab === 'history' && (
-        <HistoryPage
-          checkins={store.checkins}
-          byDate={store.byDate}
-          onEdit={openCheckin}
-          onDelete={async (date) => {
-            await store.remove(date)
-            setToast({ title: 'Deleted', detail: '기록을 지웠어요.' })
-          }}
-        />
-      )}
-
-      {tab === 'insights' && (
-        <InsightsPage
-          checkins={store.checkins}
-          onStartCheckin={() => openCheckin(todayKey())}
-          devAction={<DevTools onChanged={() => void store.refresh()} />}
+      {settingsOpen ? (
+        <SettingsPage
+          prefs={prefStore.prefs}
+          ddays={ddayStore.ddays}
           account={auth.email}
+          onSave={prefStore.save}
+          onSaveDday={ddayStore.save}
+          onRemoveDday={ddayStore.remove}
           onSignOut={() => void auth.signOut()}
-          level={level}
+          onClose={() => setSettingsOpen(false)}
         />
+      ) : (
+        <>
+          {tab === 'today' && (
+            <TodayPage
+              today={store.today}
+              dayNumber={dayNumber}
+              loading={store.loading}
+              onStartCheckin={() => openCheckin(todayKey())}
+              questStore={questStore}
+              level={level}
+              snapshot={snapshot}
+              scoreContext={prefStore.scoreContext}
+            />
+          )}
+
+          {tab === 'checkin' && (
+            <CheckinPage
+              date={editingDate}
+              existing={existing}
+              scoreContext={prefStore.scoreContext}
+              onSave={(input) => store.save(input, prefStore.scoreContext)}
+              onSaved={() => {
+                setToast({ title: 'Save Complete!', detail: '오늘의 기록이 저장됐어요.' })
+                setTab('today')
+              }}
+            />
+          )}
+
+          {tab === 'body' && (
+            <BodyPage
+              prefs={prefStore.prefs}
+              weights={weightStore.logs}
+              mounjaro={mounjaroStore.logs}
+              checkins={store.checkins}
+              onSaveWeight={weightStore.save}
+              onRemoveWeight={weightStore.remove}
+              onSaveMounjaro={mounjaroStore.save}
+              onOpenSettings={() => setSettingsOpen(true)}
+            />
+          )}
+
+          {tab === 'timeline' && (
+            <TimelinePage
+              checkins={store.checkins}
+              byDate={store.byDate}
+              weightsByDate={weightStore.byDate}
+              mounjaroByDate={mounjaroStore.byDate}
+              eventsByDate={eventStore.byDate}
+              onEdit={openCheckin}
+              onAddEvent={eventStore.save}
+              onRemoveEvent={eventStore.remove}
+              onDelete={async (date) => {
+                await store.remove(date)
+                setToast({ title: 'Deleted', detail: '기록을 지웠어요.' })
+              }}
+            />
+          )}
+
+          {tab === 'insights' && (
+            <StatsPage
+              checkins={store.checkins}
+              weights={weightStore.logs}
+              mounjaro={mounjaroStore.logs}
+              lifeEvents={eventStore.events}
+              prefs={prefStore.prefs}
+              scoreContext={prefStore.scoreContext}
+              level={level}
+              xp={xp}
+              onStartCheckin={() => openCheckin(todayKey())}
+              onOpenSettings={() => setSettingsOpen(true)}
+              devAction={<DevTools onChanged={() => void store.refresh()} />}
+            />
+          )}
+        </>
       )}
 
       {toast && (

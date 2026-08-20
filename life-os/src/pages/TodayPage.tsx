@@ -4,11 +4,13 @@ import { RoomScene } from '@/components/pixel/RoomScene'
 import { StatMeter, type MeterShape } from '@/components/pixel/StatMeter'
 import { PixelImage } from '@/components/pixel/PixelImage'
 import { PixelSparkle, SparkleBurst } from '@/components/pixel/PixelSparkle'
+import { SnapshotStrip, type SnapshotItem } from '@/components/pixel/SnapshotStrip'
 import { useCountUp } from '@/hooks/useCountUp'
 import type { QuestStore } from '@/hooks/useQuests'
-import { pixelDate, todayKey } from '@/lib/date'
-import { modeMeta } from '@/lib/energy'
-import { buildEffects } from '@/lib/effects'
+import { formatSleep, pixelDate, todayKey } from '@/lib/date'
+import { modeMetaOrNull } from '@/lib/energy'
+import { buildEffects } from '@/lib/scoring/effects'
+import type { ScoreContext } from '@/lib/scoring'
 import { questsFor, totalXp } from '@/lib/quests'
 import { icons, pets, type PixelAsset } from '@/lib/pixelAssets'
 import type { LevelState } from '@/lib/level'
@@ -21,6 +23,8 @@ interface Props {
   onStartCheckin: () => void
   questStore: QuestStore
   level: LevelState
+  snapshot?: SnapshotItem[]
+  scoreContext?: ScoreContext
 }
 
 export function TodayPage({
@@ -30,12 +34,14 @@ export function TodayPage({
   onStartCheckin,
   questStore,
   level,
+  snapshot = [],
+  scoreContext,
 }: Props) {
-  const meta = today ? modeMeta(today.mode) : null
+  const meta = modeMetaOrNull(today?.mode)
   const score = useCountUp(today?.energyScore ?? 0, 700)
   const quests = questsFor(today?.mode ?? 'NORMAL')
   const done = questStore.doneFor(todayKey())
-  const effects = today ? buildEffects(today) : []
+  const effects = today ? buildEffects(today, 4, scoreContext) : []
   const [justDone, setJustDone] = useState<string | null>(null)
 
   const handleQuest = (id: string) => {
@@ -74,6 +80,13 @@ export function TodayPage({
         <RoomScene mode={today?.mode ?? null} />
       </div>
 
+      {/* ── 02b 지금 내 삶 (한 줄) ── */}
+      {snapshot.length > 0 && (
+        <div className="pt-3">
+          <SnapshotStrip items={snapshot} />
+        </div>
+      )}
+
       {loading ? (
         <p className="plabel py-10 text-center">Loading…</p>
       ) : (
@@ -103,7 +116,7 @@ export function TodayPage({
                     className="h-[15px] flex-1 rounded-[2px] transition-colors duration-300"
                     style={{
                       backgroundColor:
-                        today && i < Math.round(today.energyScore / 10)
+                        today?.energyScore != null && i < Math.round(today.energyScore / 10)
                           ? meta!.hex
                           : 'rgba(107, 74, 61, 0.12)',
                     }}
@@ -111,7 +124,7 @@ export function TodayPage({
                 ))}
               </div>
               <p className="font-pixel text-[24px] leading-none tabular-nums">
-                {today ? score : '--'}
+                {today?.energyScore != null ? score : '--'}
                 <span className="ml-0.5 text-[11px] text-inkdim">/100</span>
               </p>
             </div>
@@ -138,16 +151,35 @@ export function TodayPage({
                 <div className="grid grid-cols-2 gap-x-4 gap-y-3">
                   <Stat icon={icons.mood} label="Mood" value={today.mood} shape="heart" color="#F19DB0" />
                   <Stat icon={icons.focus} label="Focus" value={today.focus} shape="diamond" color="#7FB8DC" />
-                  <Stat icon={icons.body} label="Body" value={5 - today.bodyPain} shape="bar" color="#EFC15F" />
-                  <Stat icon={icons.appetite} label="Appetite" value={today.appetite} shape="dot" color="#EFA477" />
-                  <div className="col-span-2 flex items-center gap-2 pt-0.5">
-                    <PixelImage asset={icons.sleep} height={18} />
-                    <span className="plabel text-ink">Sleep</span>
-                    <span className="ml-auto font-pixel text-[13px] tabular-nums">
-                      {today.sleepHours}H
-                    </span>
-                  </div>
+                  <Stat
+                    icon={icons.body}
+                    label="Body"
+                    value={today.bodyPain == null ? null : 5 - today.bodyPain}
+                    shape="bar"
+                    color="#EFC15F"
+                  />
+                  <Stat
+                    icon={icons.appetite}
+                    label="Appetite"
+                    value={today.appetite}
+                    shape="dot"
+                    color="#EFA477"
+                  />
+                  {today.sleepHours != null && (
+                    <div className="col-span-2 flex items-center gap-2 pt-0.5">
+                      <PixelImage asset={icons.sleep} height={18} />
+                      <span className="plabel text-ink">Sleep</span>
+                      <span className="ml-auto font-pixel text-[13px] tabular-nums">
+                        {formatSleep(today.sleepHours)}
+                      </span>
+                    </div>
+                  )}
                 </div>
+                {today.highlight && (
+                  <p className="ko mt-3 border-l-[2px] border-pink/70 pl-2.5 text-inkdim">
+                    {today.highlight}
+                  </p>
+                )}
               </Section>
 
               {/* ── 05 현재 효과 ── */}
@@ -296,15 +328,20 @@ function Stat({
 }: {
   icon: PixelAsset
   label: string
-  value: number
+  /** 안 적은 항목은 눈금 대신 — 을 보여준다 */
+  value: number | null | undefined
   shape: MeterShape
   color: string
 }) {
   return (
     <div className="flex items-center gap-2">
-      <PixelImage asset={icon} height={18} />
+      <PixelImage asset={icon} height={18} className={cn(value == null && 'opacity-40')} />
       <span className="plabel w-[54px] shrink-0">{label}</span>
-      <StatMeter value={value} shape={shape} color={color} />
+      {value == null ? (
+        <span className="text-[12px] text-inkfaint">—</span>
+      ) : (
+        <StatMeter value={value} shape={shape} color={color} />
+      )}
     </div>
   )
 }
