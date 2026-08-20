@@ -17,7 +17,12 @@ export function AppShell({ active, onTabChange, children }: Props) {
     <div className="min-h-[100dvh]">
       <main
         key={active}
-        className="mx-auto w-full max-w-[460px] animate-rise px-4 pb-[calc(var(--tabbar-h)+var(--safe-bottom)+24px)] pt-[calc(var(--safe-top)+16px)]"
+        className="mx-auto w-full max-w-[460px] animate-rise px-4"
+        style={{
+          // 상태바(시간·배터리) 아래에서 시작하게 한다
+          paddingTop: 'max(env(safe-area-inset-top, 0px), 12px)',
+          paddingBottom: 'calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + 24px)',
+        }}
       >
         {children}
       </main>

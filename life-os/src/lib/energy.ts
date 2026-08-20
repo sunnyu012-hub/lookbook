@@ -90,8 +90,10 @@ export interface ModeMeta {
   message: string
   /** 강조 색 (숫자·바) */
   hex: string
-  /** 옅은 배경색 */
+  /** 옅은 배경색 (배지·아이콘 뒤) */
   soft: string
+  /** 아주 옅은 띠 색 (넓은 면적에 쓰는 색) */
+  band: string
 }
 
 export const MODE_META: Record<EnergyMode, ModeMeta> = {
@@ -103,6 +105,7 @@ export const MODE_META: Record<EnergyMode, ModeMeta> = {
     message: '오늘은 HP를 천천히 채워봐요.',
     hex: '#8B76C9',
     soft: '#EFE9FB',
+    band: '#F8F5FD',
   },
   EASY: {
     key: 'EASY',
@@ -112,6 +115,7 @@ export const MODE_META: Record<EnergyMode, ModeMeta> = {
     message: '천천히 움직여도 충분한 하루!',
     hex: '#7DB994',
     soft: '#E6F4EA',
+    band: '#F3FAF5',
   },
   NORMAL: {
     key: 'NORMAL',
@@ -121,6 +125,7 @@ export const MODE_META: Record<EnergyMode, ModeMeta> = {
     message: '평범하지만 좋은 모험의 날.',
     hex: '#6FA8CE',
     soft: '#E5F1FA',
+    band: '#F2F8FC',
   },
   POWER: {
     key: 'POWER',
@@ -130,6 +135,7 @@ export const MODE_META: Record<EnergyMode, ModeMeta> = {
     message: '에너지가 가득 찼어요!',
     hex: '#E79A66',
     soft: '#FDEBDC',
+    band: '#FDF6EA',
   },
 }
 

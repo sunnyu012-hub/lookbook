@@ -83,6 +83,22 @@
     @apply text-[13px] leading-relaxed text-ink/85;
   }
 
+  /* 좌우 여백을 뚫고 화면 끝까지 — 방 장면처럼 한 장으로 보여야 하는 것에만 */
+  .bleed {
+    margin-left: -1rem;
+    margin-right: -1rem;
+  }
+
+  /* 박스 대신 쓰는 얇은 섹션 경계 */
+  .hairline {
+    border-top: 1px dashed rgba(217, 182, 148, 0.55);
+  }
+
+  /* 한글 본문 — 픽셀 폰트를 쓰지 않고 크기·자간으로 정돈한다 */
+  .ko {
+    @apply text-[13px] leading-[1.65] tracking-[-0.01em] text-ink/80;
+  }
+
   .press {
     @apply transition-transform duration-100 active:translate-y-[1px];
   }

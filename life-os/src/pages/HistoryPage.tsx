@@ -3,10 +3,9 @@ import type { Checkin, EnergyMode } from '@/types'
 import { CalendarGrid } from '@/components/pixel/CalendarGrid'
 import { DaySheet } from '@/components/pixel/DaySheet'
 import { PixelImage } from '@/components/pixel/PixelImage'
-import { PixelPanel } from '@/components/pixel/PixelPanel'
 import { formatShort, isSameMonth, monthLabel } from '@/lib/date'
 import { MODE_META } from '@/lib/energy'
-import { icons } from '@/lib/pixelAssets'
+
 
 const ORDER: EnergyMode[] = ['RECOVERY', 'EASY', 'NORMAL', 'POWER']
 
@@ -93,17 +92,15 @@ export function HistoryPage({ checkins, byDate, onEdit, onDelete }: Props) {
         </div>
       </header>
 
-      <PixelPanel bodyClassName="p-2.5">
-        <CalendarGrid
-          year={year}
-          month={month}
-          byDate={byDate}
-          selected={selected}
-          onSelect={setSelected}
-        />
-      </PixelPanel>
+      <CalendarGrid
+        year={year}
+        month={month}
+        byDate={byDate}
+        selected={selected}
+        onSelect={setSelected}
+      />
 
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-1">
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 px-1">
         {ORDER.map((mode) => (
           <span key={mode} className="flex items-center gap-1">
             <PixelImage asset={MODE_META[mode].icon} height={18} />
@@ -113,10 +110,13 @@ export function HistoryPage({ checkins, byDate, onEdit, onDelete }: Props) {
       </div>
 
       {recentNotes.length > 0 && (
-        <PixelPanel title="Recent Notes" icon={icons.work} sparkle>
-          <ul className="space-y-2.5">
+        <section className="mt-7">
+          <div className="mb-2.5 flex items-center gap-1.5">
+            <h2 className="plabel text-ink">Recent notes</h2>
+          </div>
+          <ul className="divide-y divide-dashed divide-border/70">
             {recentNotes.map((entry) => (
-              <li key={entry.date} className="flex gap-2.5">
+              <li key={entry.date} className="flex gap-2.5 py-2.5">
                 <button
                   type="button"
                   onClick={() => setSelected(entry.date)}
@@ -131,7 +131,7 @@ export function HistoryPage({ checkins, byDate, onEdit, onDelete }: Props) {
               </li>
             ))}
           </ul>
-        </PixelPanel>
+        </section>
       )}
 
       {selected && (

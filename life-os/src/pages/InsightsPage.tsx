@@ -174,7 +174,7 @@ export function InsightsPage({
 
 function StatCard({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
-    <div className="panel px-3 py-3">
+    <div className="rounded-px4 bg-ivory/90 px-3 py-3">
       <p className="plabel">{label}</p>
       <p
         className="mt-2 font-pixel text-[22px] leading-none"

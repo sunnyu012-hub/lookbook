@@ -20,8 +20,8 @@ interface Props {
 export function TabBar({ active, onChange }: Props) {
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-30 border-t-[1.5px] border-border bg-ivory/95 backdrop-blur-sm"
-      style={{ paddingBottom: 'var(--safe-bottom)' }}
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-cream/95 backdrop-blur-md"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       <div className="mx-auto flex h-[var(--tabbar-h)] w-full max-w-[460px] items-stretch px-2">
         {TABS.map((tab) => {
