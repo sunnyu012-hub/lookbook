@@ -24,135 +24,139 @@ from pixelsheet import crop, read_png, write_png
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT_ROOT = os.path.join(ROOT, 'public', 'assets', 'pixel')
 
-# ── 시트 두 장을 함께 쓴다
-#   v3 : 새 시트 (캐릭터 · 고양이 · 대부분의 아이콘)
-#   v1 : 예전 시트 (v3 에 없는 것만 — 카메라 · 구름 · 무지개 · 아령 · 집 · 가구 등)
+# ── 시트를 여러 장 함께 쓴다
+#   v4 : 캐릭터 · 고양이 (전신 포즈)
+#   v5 : 물건 · 옷 · 가구
+#   v3 : 상태 배지 · 반짝임 · 말풍선 · 하트 · 별처럼 v4/v5 에 없는 UI 조각
+#   v1 : 그래도 없는 것 (카메라 · 구름 · 무지개 · 전구줄 · 일부 가구)
 SHEETS = {
+    'v4': os.path.join(ROOT, 'assets-source', 'asset-sheet-v4.png'),
+    'v5': os.path.join(ROOT, 'assets-source', 'asset-sheet-v5.png'),
     'v3': os.path.join(ROOT, 'assets-source', 'asset-sheet-v3.png'),
     'v1': os.path.join(ROOT, 'assets-source', 'asset-sheet.png'),
 }
-DEFAULT_SHEET = 'v3'
+DEFAULT_SHEET = 'v5'
 
-# 카테고리/이름 -> 컴포넌트 인덱스.
-#   숫자만 쓰면 v3 시트, ('v1', 번호) 로 쓰면 예전 시트에서 가져온다.
+# 카테고리/이름 -> (시트, 컴포넌트 인덱스). 숫자만 쓰면 DEFAULT_SHEET.
 MAP = {
+    # 방에 세우는 캐릭터는 전부 전신 포즈만 쓴다 (상반신 컷은 쓰지 않는다)
     'characters': {
-        'idle': 69,          # 앉아서 책 보는 모습
-        'recovery': 142,     # 쿠션에 엎드려 자는 모습
-        'easy': 71,          # 음료 들고 서 있는 모습
-        'normal': 141,       # 노트북 앞에 앉은 모습
-        # power 는 두 스프라이트가 붙어 검출돼서 SUBCROPS 에서 잘라낸다
-        'back-bag': 72,
-        'back-coat': 111,
+        'idle': ('v4', 0),        # 서 있는 정면
+        'recovery': ('v4', 7),    # 쿠션 끌어안고 눈 감은 모습
+        'easy': ('v4', 26),       # 책상다리로 앉아 음료
+        'normal': ('v4', 4),      # 무릎에 노트북 (방의 책상과 겹치지 않게)
+        'power': ('v4', 27),      # 무릎 세우고 팔 번쩍
+        'back-bag': ('v4', 11),   # 가방 메고 걷는 뒷모습
+        'back-coat': ('v4', 24),  # 서 있는 뒷모습
     },
     'pets': {
-        'cat-sit': 175,
-        'cat-lying': 185,
-        'cat-curl': 194,
-        'cat-walk': 170,
-        'cat-white': 172,
-        'cat-stand': 171,
-        'cat-box': 186,
+        'cat-sit': ('v4', 41),
+        'cat-walk': ('v4', 42),
+        'cat-lying': ('v4', 44),
+        'cat-curl': ('v4', 63),
+        'cat-box': ('v4', 56),
+        'cat-stand': ('v4', 51),
+        'cat-white': ('v4', 46),
     },
     'icons': {
-        'sleep': 55,         # 보라 달
-        'mood': 132,         # 분홍 하트
-        'body': 19,          # 팔 근육
-        'focus': 32,         # 작은 노트북
-        'appetite': 47,      # 토스트
+        'focus': 7,          # 노트북
+        'work': 8,           # 노트북(어두운)
+        'log': 26,           # 펼친 책
+        'climbing': 76,      # 초크백
         'caffeine': 54,      # 머그
-        'climbing': 82,      # 초크백
-        'energy': 67,        # 번개
-        'exercise': 145,     # 운동화
-        'food': 166,         # 샐러드 볼
-        'log': 62,           # 펼친 책
-        'music': 74,         # 음표
-        'outfit': 94,        # 나시
-        'save': 192,         # 플로피
-        'shower': 126,       # 물방울 말풍선
-        'water': 104,        # 물방울
-        'work': 4,           # 노트북
-        'xp': 189,           # 별
-        # v3 에 마땅한 그림이 없는 것들
-        'fatigue': ('v1', 73),
+        'water': 59,         # 물병
+        'food': 65,          # 과일 볼
+        'appetite': 64,      # 주먹밥
+        'exercise': 106,     # 운동화
+        'outfit': 70,        # 티셔츠
+        'fatigue': 114,      # 베개
+        'clean': 128,        # 정리용 상자
+        # v5 에 없는 것
+        'sleep': ('v3', 55),
+        'mood': ('v3', 132),
+        'body': ('v3', 19),
+        'energy': ('v3', 67),
+        'music': ('v3', 74),
+        'save': ('v3', 192),
+        'shower': ('v3', 126),
+        'xp': ('v3', 189),
         'camera': ('v1', 116),
-        'clean': ('v1', 93),
     },
     'items': {
-        'coffee-mug': 53,
-        'milk': 44,
-        'smoothie': 42,
-        'iced-coffee': 42,
-        'water-bottle': 43,
-        'onigiri': ('v1', 87),
-        'croissant': ('v1', 95),
-        'apple': 167,
-        'fruit-bowl': 166,
+        'coffee-mug': 58,
+        'milk': 36,
+        'smoothie': 50,
+        'iced-coffee': 50,
+        'water-bottle': 59,
+        'onigiri': 64,
+        'apple': 56,
+        'banana': 66,
+        'fruit-bowl': 65,
+        'toast': ('v3', 47),
         'chocolate': ('v1', 105),
-        'toast': 47,
-        'banana': ('v1', 94),
+        'croissant': ('v1', 95),
         'peach': ('v1', 97),
         'sandwich': ('v1', 83),
     },
     'gear': {
-        'climbing-shoes': 80,
-        'sneakers': 145,
-        'yoga-mat': 196,     # 돌돌 만 매트
-        'headphones': 25,
-        'dumbbell': ('v1', 126),
+        'climbing-shoes': 103,
+        'sneakers': 106,
+        'yoga-mat': 116,     # 돌돌 만 매트
+        'headphones': 2,
+        'dumbbell': 88,
     },
     'furniture': {
-        'hanging-plant': 107,
-        'plant': 169,
-        'clock': 119,
-        'photo-frames': 164,
-        'pinboard': 160,
-        'poster-sky': 182,
-        'poster-pink': 179,
-        # 방 배경 그림에 이미 들어 있는 가구들 — 다른 화면에서 쓸 수 있게 남겨 둔다
-        'lamp': ('v1', 132),
-        'beanbag': ('v1', 133),
-        'nightstand': ('v1', 134),
+        'beanbag': 111,
+        'clock': 78,
+        'desk': 121,
+        'hanging-plant': 79,
+        'lamp': 80,
+        'mirror': 39,
+        'photo-frames': 49,
+        'pinboard': 81,
+        'plant': 62,
+        'poster-pink': 105,
+        'poster-sky': 102,
+        # 방 배경 그림에 이미 들어 있는 것들 — 다른 화면용으로만 남겨 둔다
         'bed': ('v1', 136),
-        'rug': ('v1', 138),
-        'desk': ('v1', 145),
-        'clothing-rack': ('v1', 155),
-        'mirror': ('v1', 156),
         'bookshelf': ('v1', 158),
+        'clothing-rack': ('v1', 155),
         'laundry-basket': ('v1', 180),
+        'nightstand': ('v1', 134),
+        'rug': ('v1', 138),
         'window-day': ('v1', 188),
         'window-morning': ('v1', 189),
         'window-sunset': ('v1', 190),
         'window-night': ('v1', 191),
     },
     'fashion': {
-        'backpack': 76,
-        'bag-black': 77,
-        'cap': 147,
-        'jeans': 121,
-        'shorts-black': 122,
-        'shorts-denim': 131,
-        'tshirt-pink': 100,
-        'tshirt-bow': 94,
-        'tote-climb': ('v1', 146),
+        'backpack': 41,
+        'bag-black': 42,
+        'cap': 87,
+        'jeans': 89,
+        'shorts-black': 92,
+        'shorts-denim': 90,
+        'tshirt-pink': 70,
+        'tshirt-bow': 72,
+        'tote-climb': 40,
         'tote-make': ('v1', 147),
     },
     'effects': {
-        'heart': 132,
-        'heart-bubble': 123,
-        'sparkle-01': 135,
-        'sparkle-02': 136,
-        'zzz-bubble': 125,
-        'flower': 159,
+        'heart': ('v3', 132),
+        'heart-bubble': ('v3', 123),
+        'sparkle-01': ('v3', 135),
+        'sparkle-02': ('v3', 136),
+        'zzz-bubble': ('v3', 125),
+        'flower': ('v3', 159),
         'cloud': ('v1', 25),
         'rainbow': ('v1', 36),
         'string-lights': ('v1', 66),
     },
     'ui': {
-        'pill-recovery': 10,
-        'pill-easy': 18,
-        'pill-normal': 31,
-        'pill-power': 46,
+        'pill-recovery': ('v3', 10),
+        'pill-easy': ('v3', 18),
+        'pill-normal': ('v3', 31),
+        'pill-power': ('v3', 46),
         'pill-idle': ('v1', 37),
         'logo': ('v1', 85),
         'save-button': ('v1', 187),
@@ -163,9 +167,7 @@ MAP = {
 # 배경 타일이 붙어 있어 통째로 못 자르는 것들: 부모 컴포넌트 안에서 비율로 잘라내고
 # 가장자리에서 flood fill 로 단색 배경을 지운다.
 SUBCROPS = {
-    # v3 에서 두 스프라이트가 붙어 검출된 덩어리의 위쪽(만세하는 모습)만 쓴다
-    ('characters', 'power'): ('v3', 110, 0.0, 0.0, 1.0, 0.50),
-    # v1 시트의 배경 타일이 붙어 있던 것들
+    # v1 시트의 배경 타일이 붙어 있던 것
     ('icons', 'home'): ('v1', 186, 0.040, 0.09, 0.196, 0.62),
 }
 

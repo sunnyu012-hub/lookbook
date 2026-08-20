@@ -57,7 +57,7 @@ function modeEffects(mode: EnergyMode): Sprite[] {
     case 'RECOVERY':
       return [
         { key: 'zzz', asset: fx.zzzBubble, layer: 'effects', motion: 'zzz',
-          ...at('bed', { dx: -3, dy: -20, height: 9 }) },
+          ...at('bed', { dx: -12, dy: -19, height: 9 }) },
       ]
     case 'EASY':
       return [
@@ -85,13 +85,13 @@ function moodEffect(checkin: Checkin | null): Sprite | null {
   if (checkin.mood >= 5) {
     return {
       key: 'heart', asset: fx.heart, layer: 'effects', motion: 'floaty',
-      ...place('wallRight', { dx: -9, dy: 2, height: 7 }),
+      ...place('wallRight', { dx: -24, dy: 4, height: 7 }),
     }
   }
   if (checkin.mood <= 2) {
     return {
       key: 'cloud', asset: fx.cloud, layer: 'effects', motion: 'floaty',
-      ...place('wallRight', { dx: -9, dy: 1, height: 8 }),
+      ...place('wallRight', { dx: -24, dy: 3, height: 8 }),
     }
   }
   return null
