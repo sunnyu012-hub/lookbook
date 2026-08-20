@@ -1,39 +1,39 @@
 {
   "characters": {
     "back-bag": {
-      "height": 203,
+      "height": 194,
       "src": "/assets/pixel/characters/back-bag.png",
-      "width": 104
+      "width": 94
     },
     "back-coat": {
-      "height": 177,
+      "height": 213,
       "src": "/assets/pixel/characters/back-coat.png",
-      "width": 96
+      "width": 94
     },
     "easy": {
-      "height": 188,
+      "height": 202,
       "src": "/assets/pixel/characters/easy.png",
-      "width": 96
+      "width": 109
     },
     "idle": {
-      "height": 188,
+      "height": 185,
       "src": "/assets/pixel/characters/idle.png",
-      "width": 105
+      "width": 130
     },
     "normal": {
-      "height": 127,
+      "height": 180,
       "src": "/assets/pixel/characters/normal.png",
-      "width": 121
+      "width": 148
     },
     "power": {
-      "height": 151,
+      "height": 199,
       "src": "/assets/pixel/characters/power.png",
-      "width": 145
+      "width": 127
     },
     "recovery": {
-      "height": 102,
+      "height": 178,
       "src": "/assets/pixel/characters/recovery.png",
-      "width": 147
+      "width": 144
     }
   },
   "effects": {
@@ -85,39 +85,39 @@
   },
   "fashion": {
     "backpack": {
-      "height": 100,
+      "height": 135,
       "src": "/assets/pixel/fashion/backpack.png",
-      "width": 91
+      "width": 116
     },
     "bag-black": {
-      "height": 100,
+      "height": 126,
       "src": "/assets/pixel/fashion/bag-black.png",
-      "width": 80
+      "width": 99
     },
     "cap": {
-      "height": 51,
+      "height": 69,
       "src": "/assets/pixel/fashion/cap.png",
-      "width": 74
+      "width": 100
     },
     "jeans": {
-      "height": 130,
+      "height": 153,
       "src": "/assets/pixel/fashion/jeans.png",
-      "width": 75
+      "width": 93
     },
     "shorts-black": {
-      "height": 59,
+      "height": 95,
       "src": "/assets/pixel/fashion/shorts-black.png",
-      "width": 86
+      "width": 114
     },
     "shorts-denim": {
-      "height": 59,
+      "height": 80,
       "src": "/assets/pixel/fashion/shorts-denim.png",
-      "width": 85
+      "width": 99
     },
     "tote-climb": {
-      "height": 89,
+      "height": 154,
       "src": "/assets/pixel/fashion/tote-climb.png",
-      "width": 62
+      "width": 94
     },
     "tote-make": {
       "height": 89,
@@ -125,21 +125,21 @@
       "width": 62
     },
     "tshirt-bow": {
-      "height": 83,
+      "height": 101,
       "src": "/assets/pixel/fashion/tshirt-bow.png",
-      "width": 70
+      "width": 83
     },
     "tshirt-pink": {
-      "height": 84,
+      "height": 90,
       "src": "/assets/pixel/fashion/tshirt-pink.png",
-      "width": 80
+      "width": 103
     }
   },
   "furniture": {
     "beanbag": {
-      "height": 77,
+      "height": 136,
       "src": "/assets/pixel/furniture/beanbag.png",
-      "width": 82
+      "width": 160
     },
     "bed": {
       "height": 120,
@@ -152,9 +152,9 @@
       "width": 54
     },
     "clock": {
-      "height": 60,
+      "height": 75,
       "src": "/assets/pixel/furniture/clock.png",
-      "width": 61
+      "width": 73
     },
     "clothing-rack": {
       "height": 108,
@@ -162,19 +162,19 @@
       "width": 89
     },
     "desk": {
-      "height": 107,
+      "height": 68,
       "src": "/assets/pixel/furniture/desk.png",
-      "width": 196
+      "width": 142
     },
     "hanging-plant": {
-      "height": 197,
+      "height": 230,
       "src": "/assets/pixel/furniture/hanging-plant.png",
-      "width": 79
+      "width": 86
     },
     "lamp": {
-      "height": 70,
+      "height": 122,
       "src": "/assets/pixel/furniture/lamp.png",
-      "width": 36
+      "width": 73
     },
     "laundry-basket": {
       "height": 82,
@@ -182,9 +182,9 @@
       "width": 69
     },
     "mirror": {
-      "height": 101,
+      "height": 263,
       "src": "/assets/pixel/furniture/mirror.png",
-      "width": 56
+      "width": 97
     },
     "nightstand": {
       "height": 63,
@@ -192,29 +192,29 @@
       "width": 46
     },
     "photo-frames": {
-      "height": 68,
+      "height": 82,
       "src": "/assets/pixel/furniture/photo-frames.png",
-      "width": 118
+      "width": 163
     },
     "pinboard": {
-      "height": 78,
+      "height": 144,
       "src": "/assets/pixel/furniture/pinboard.png",
-      "width": 101
+      "width": 98
     },
     "plant": {
-      "height": 133,
+      "height": 94,
       "src": "/assets/pixel/furniture/plant.png",
-      "width": 99
+      "width": 64
     },
     "poster-pink": {
-      "height": 113,
+      "height": 91,
       "src": "/assets/pixel/furniture/poster-pink.png",
-      "width": 86
+      "width": 65
     },
     "poster-sky": {
-      "height": 71,
+      "height": 104,
       "src": "/assets/pixel/furniture/poster-sky.png",
-      "width": 64
+      "width": 75
     },
     "rug": {
       "height": 67,
@@ -244,36 +244,36 @@
   },
   "gear": {
     "climbing-shoes": {
-      "height": 74,
+      "height": 94,
       "src": "/assets/pixel/gear/climbing-shoes.png",
-      "width": 96
+      "width": 115
     },
     "dumbbell": {
-      "height": 41,
+      "height": 153,
       "src": "/assets/pixel/gear/dumbbell.png",
-      "width": 48
+      "width": 42
     },
     "headphones": {
-      "height": 81,
+      "height": 84,
       "src": "/assets/pixel/gear/headphones.png",
-      "width": 106
+      "width": 95
     },
     "sneakers": {
-      "height": 53,
+      "height": 72,
       "src": "/assets/pixel/gear/sneakers.png",
-      "width": 92
+      "width": 113
     },
     "yoga-mat": {
-      "height": 81,
+      "height": 74,
       "src": "/assets/pixel/gear/yoga-mat.png",
-      "width": 108
+      "width": 124
     }
   },
   "icons": {
     "appetite": {
-      "height": 38,
+      "height": 72,
       "src": "/assets/pixel/icons/appetite.png",
-      "width": 40
+      "width": 60
     },
     "body": {
       "height": 38,
@@ -281,9 +281,9 @@
       "width": 38
     },
     "caffeine": {
-      "height": 61,
+      "height": 75,
       "src": "/assets/pixel/icons/caffeine.png",
-      "width": 62
+      "width": 66
     },
     "camera": {
       "height": 44,
@@ -291,14 +291,14 @@
       "width": 53
     },
     "clean": {
-      "height": 55,
+      "height": 83,
       "src": "/assets/pixel/icons/clean.png",
-      "width": 36
+      "width": 171
     },
     "climbing": {
-      "height": 69,
+      "height": 85,
       "src": "/assets/pixel/icons/climbing.png",
-      "width": 67
+      "width": 77
     },
     "energy": {
       "height": 33,
@@ -306,24 +306,24 @@
       "width": 27
     },
     "exercise": {
-      "height": 53,
+      "height": 72,
       "src": "/assets/pixel/icons/exercise.png",
-      "width": 92
+      "width": 113
     },
     "fatigue": {
-      "height": 47,
+      "height": 72,
       "src": "/assets/pixel/icons/fatigue.png",
-      "width": 58
+      "width": 92
     },
     "focus": {
-      "height": 37,
+      "height": 88,
       "src": "/assets/pixel/icons/focus.png",
-      "width": 39
+      "width": 116
     },
     "food": {
-      "height": 56,
+      "height": 73,
       "src": "/assets/pixel/icons/food.png",
-      "width": 69
+      "width": 79
     },
     "home": {
       "height": 39,
@@ -331,9 +331,9 @@
       "width": 42
     },
     "log": {
-      "height": 50,
+      "height": 71,
       "src": "/assets/pixel/icons/log.png",
-      "width": 95
+      "width": 125
     },
     "mood": {
       "height": 31,
@@ -346,9 +346,9 @@
       "width": 30
     },
     "outfit": {
-      "height": 83,
+      "height": 90,
       "src": "/assets/pixel/icons/outfit.png",
-      "width": 70
+      "width": 103
     },
     "save": {
       "height": 37,
@@ -366,14 +366,14 @@
       "width": 36
     },
     "water": {
-      "height": 33,
+      "height": 92,
       "src": "/assets/pixel/icons/water.png",
-      "width": 28
+      "width": 43
     },
     "work": {
-      "height": 70,
+      "height": 91,
       "src": "/assets/pixel/icons/work.png",
-      "width": 101
+      "width": 127
     },
     "xp": {
       "height": 43,
@@ -383,14 +383,14 @@
   },
   "items": {
     "apple": {
-      "height": 54,
+      "height": 66,
       "src": "/assets/pixel/items/apple.png",
-      "width": 48
+      "width": 63
     },
     "banana": {
-      "height": 48,
+      "height": 69,
       "src": "/assets/pixel/items/banana.png",
-      "width": 41
+      "width": 62
     },
     "chocolate": {
       "height": 48,
@@ -398,9 +398,9 @@
       "width": 40
     },
     "coffee-mug": {
-      "height": 62,
+      "height": 82,
       "src": "/assets/pixel/items/coffee-mug.png",
-      "width": 63
+      "width": 70
     },
     "croissant": {
       "height": 42,
@@ -408,24 +408,24 @@
       "width": 54
     },
     "fruit-bowl": {
-      "height": 56,
+      "height": 73,
       "src": "/assets/pixel/items/fruit-bowl.png",
-      "width": 69
+      "width": 79
     },
     "iced-coffee": {
-      "height": 69,
+      "height": 99,
       "src": "/assets/pixel/items/iced-coffee.png",
-      "width": 40
+      "width": 47
     },
     "milk": {
-      "height": 78,
+      "height": 101,
       "src": "/assets/pixel/items/milk.png",
-      "width": 34
+      "width": 43
     },
     "onigiri": {
-      "height": 47,
+      "height": 72,
       "src": "/assets/pixel/items/onigiri.png",
-      "width": 46
+      "width": 60
     },
     "peach": {
       "height": 39,
@@ -438,9 +438,9 @@
       "width": 54
     },
     "smoothie": {
-      "height": 69,
+      "height": 99,
       "src": "/assets/pixel/items/smoothie.png",
-      "width": 40
+      "width": 47
     },
     "toast": {
       "height": 38,
@@ -448,46 +448,46 @@
       "width": 40
     },
     "water-bottle": {
-      "height": 78,
+      "height": 92,
       "src": "/assets/pixel/items/water-bottle.png",
-      "width": 35
+      "width": 43
     }
   },
   "pets": {
     "cat-box": {
-      "height": 87,
+      "height": 112,
       "src": "/assets/pixel/pets/cat-box.png",
-      "width": 100
+      "width": 126
     },
     "cat-curl": {
-      "height": 73,
+      "height": 96,
       "src": "/assets/pixel/pets/cat-curl.png",
-      "width": 123
+      "width": 106
     },
     "cat-lying": {
-      "height": 92,
+      "height": 109,
       "src": "/assets/pixel/pets/cat-lying.png",
-      "width": 123
+      "width": 134
     },
     "cat-sit": {
-      "height": 94,
+      "height": 106,
       "src": "/assets/pixel/pets/cat-sit.png",
       "width": 70
     },
     "cat-stand": {
-      "height": 95,
+      "height": 87,
       "src": "/assets/pixel/pets/cat-stand.png",
-      "width": 128
+      "width": 137
     },
     "cat-walk": {
-      "height": 93,
+      "height": 112,
       "src": "/assets/pixel/pets/cat-walk.png",
-      "width": 155
+      "width": 102
     },
     "cat-white": {
-      "height": 100,
+      "height": 116,
       "src": "/assets/pixel/pets/cat-white.png",
-      "width": 89
+      "width": 116
     }
   },
   "ui": {
