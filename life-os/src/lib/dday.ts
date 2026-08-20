@@ -1,8 +1,9 @@
 /**
  * D-Day 계산.
  *
- * 한국식으로 "시작한 날 = 1일째" 로 센다 (count).
- * D+N 표기는 관례대로 시작일을 D-DAY 로 두고 그 다음 날부터 D+1 이다 (days).
+ * 한국식으로 센다 — **만난 날이 1일**이다.
+ * 그래서 화면에 찍는 값은 전부 count 기준이다 (시작일 = 1일, 다음 날 = 2일).
+ * days 는 순수한 경과일(시작일 = 0)이라 날짜 계산에만 쓰고 화면에는 내보내지 않는다.
  */
 import { addDays, fromDateKey, todayKey, toDateKey } from './date'
 
@@ -33,13 +34,13 @@ function milestoneCounts(upTo: number): Milestone[] {
 }
 
 export interface DdayResult {
-  /** 시작일로부터 지난 날 수 (시작일 = 0) */
+  /** 시작일로부터 지난 날 수 (시작일 = 0). 날짜 계산용 — 화면에는 쓰지 않는다 */
   days: number
-  /** 며칠째인지 (시작일 = 1일째) */
+  /** 며칠째인지 — 만난 날이 1일 */
   count: number
-  /** D+123 / D-5 / D-DAY */
+  /** 짧게 찍는 값: 283일 / D-5 / 시작 전이면 D-N */
   label: string
-  /** 124일째 */
+  /** 283일째 */
   countLabel: string
   isFuture: boolean
   nextMilestone: Milestone | null
@@ -71,7 +72,8 @@ export function ddayFrom(
   return {
     days,
     count,
-    label: days === 0 ? 'D-DAY' : days > 0 ? `D+${days}` : `D-${-days}`,
+    // 만난 날이 1일 — D+N 을 같이 보여주면 하루 적게 읽혀서 아예 쓰지 않는다
+    label: count > 0 ? `${count.toLocaleString()}일` : `D-${-days}`,
     countLabel: count > 0 ? `${count.toLocaleString()}일째` : `${-days}일 남음`,
     isFuture: days < 0,
     nextMilestone: next

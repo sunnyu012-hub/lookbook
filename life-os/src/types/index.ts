@@ -50,7 +50,6 @@ export interface CheckinInput {
   appetite?: N<Scale5>
   mealsCount?: N<number>
   mealQuality?: N<Scale5>
-  waterMl?: N<number>
   caffeineConsumed?: N<boolean>
   /** HH:MM */
   caffeineTime?: N<string>
@@ -63,7 +62,6 @@ export interface CheckinInput {
   exerciseType?: N<string>
   exerciseMinutes?: N<number>
   exerciseIntensity?: N<Scale5>
-  steps?: N<number>
   workHours?: N<number>
   screenMinutes?: N<number>
   outdoor?: N<boolean>
@@ -115,7 +113,6 @@ export interface CheckinRow {
   appetite: number | null
   meals_count: number | null
   meal_quality: number | null
-  water_ml: number | null
 
   caffeine_consumed: boolean | null
   caffeine_time: string | null
@@ -127,7 +124,6 @@ export interface CheckinRow {
   exercise_type: string | null
   exercise_minutes: number | null
   exercise_intensity: number | null
-  steps: number | null
   work_hours: number | null
   screen_minutes: number | null
   outdoor: boolean | null
@@ -249,9 +245,7 @@ export interface Preferences {
   relationshipStartDate: string | null
   partnerName: string | null
 
-  waterGoalMl: number
   sleepGoalHours: number
-  stepGoal: number
 }
 
 export type TabKey = 'today' | 'checkin' | 'body' | 'timeline' | 'insights'

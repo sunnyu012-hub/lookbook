@@ -24,9 +24,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   relationshipEnabled: false,
   relationshipStartDate: null,
   partnerName: null,
-  waterGoalMl: 2000,
   sleepGoalHours: 8,
-  stepGoal: 6000,
 }
 
 interface PreferencesRow {
@@ -43,9 +41,7 @@ interface PreferencesRow {
   relationship_enabled: boolean
   relationship_start_date: string | null
   partner_name: string | null
-  water_goal_ml: number
   sleep_goal_hours: number
-  step_goal: number
 }
 
 const n = (v: unknown): number | null =>
@@ -65,9 +61,7 @@ function rowToPreferences(row: PreferencesRow): Preferences {
     relationshipEnabled: Boolean(row.relationship_enabled),
     relationshipStartDate: row.relationship_start_date,
     partnerName: row.partner_name,
-    waterGoalMl: Number(row.water_goal_ml ?? DEFAULT_PREFERENCES.waterGoalMl),
     sleepGoalHours: Number(row.sleep_goal_hours ?? DEFAULT_PREFERENCES.sleepGoalHours),
-    stepGoal: Number(row.step_goal ?? DEFAULT_PREFERENCES.stepGoal),
   }
 }
 
@@ -86,9 +80,7 @@ function toRow(p: Preferences, userId: string) {
     relationship_enabled: p.relationshipEnabled,
     relationship_start_date: p.relationshipStartDate || null,
     partner_name: p.partnerName?.trim() || null,
-    water_goal_ml: p.waterGoalMl,
     sleep_goal_hours: p.sleepGoalHours,
-    step_goal: p.stepGoal,
     updated_at: new Date().toISOString(),
   }
 }

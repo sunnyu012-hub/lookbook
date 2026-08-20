@@ -100,10 +100,6 @@ const FACES: Partial<Record<MetricKey, { buff: Face; debuff: Face }>> = {
     buff: { label: 'GOOD FUEL', icon: items.onigiri, note: '잘 먹은 하루' },
     debuff: { label: 'THIN FUEL', icon: items.chocolate, note: '대충 먹은 하루' },
   },
-  hydration: {
-    buff: { label: 'HYDRATED', icon: icons.water, note: '물을 잘 마셨어요' },
-    debuff: { label: 'DRY', icon: icons.water, note: '물이 부족해요' },
-  },
 }
 
 /** 점수와 무관하지만 그날의 상태를 말해 주는 것들 */
