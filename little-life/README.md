@@ -75,3 +75,23 @@ src/
 - **`prefers-reduced-motion`** 을 켠 기기에서는 애니메이션이 거의 사라진다.
 - 카피는 짧은 라벨(Today's Quest, Complete, Growth by Category)은 영문,
   말을 거는 문장은 한국어로 통일했다.
+
+## 에셋
+
+`public/assets` 아래 WebP 38장 (합계 약 800 KB). 첨부받은 스프라이트 시트에서
+알파 채널 기준으로 조각을 잘라내 이름을 붙였다.
+
+```
+public/assets/
+├── character/  idle · quest-clear · celebrate · resting + 얼굴 4종
+├── room/       window · rug · beanbag · plant · shelf · desk · lamp · frame …
+├── badges/     카테고리 6종 · 난이도 3종 · exp · level-up · quest-clear · check
+└── effects/    sparkle · hearts · star · pop
+```
+
+경로는 `lib/assets.ts` 한 곳에만 적어둔다. 화면 컴포넌트는 파일명을 모르고,
+나중에 옷·펫이 늘어나도 이 표만 고치면 된다.
+
+배지 그림이 촘촘해서 20px 아래로 줄이면 뭉개진다.
+그래서 섹션 제목 옆 같은 작은 자리에는 그림을 쓰지 않고,
+28px 이상 확보되는 곳(카테고리 썸네일, 통계 칸, 난이도 선택)에만 쓴다.

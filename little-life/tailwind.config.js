@@ -4,31 +4,29 @@ export default {
   theme: {
     extend: {
       colors: {
-        // 바탕 / 표면
-        canvas: '#F8F5EF',
-        surface: '#FFFDF9',
-        sunken: '#F1EDE4',
+        // 목업에서 뽑아낸 색
+        canvas: '#FDF1E3',
+        surface: '#FFFBF4',
+        sunken: '#F5E7D6',
 
-        // 글자 — 순수 검정은 쓰지 않는다
-        ink: '#2F2C2A',
-        // 스펙의 #7A746E 는 본문 크기에서 대비가 살짝 모자라 아주 조금만 어둡게 잡았다
-        inkdim: '#6F6963',
-        inkfaint: '#9C958D',
-        line: '#EAE4DA',
+        // 주 액센트 — 코랄 핑크
+        coral: { soft: '#FCE1DC', DEFAULT: '#F7A096', deep: '#D96C61' },
+        // 완료 표시
+        leaf: { soft: '#E9F0E0', DEFAULT: '#7DA465', deep: '#5C7F48' },
 
-        // 카테고리 — soft 는 칩 배경, deep 은 그 위 글자(대비 4.5:1 이상)
-        sage: { soft: '#E7EFE3', DEFAULT: '#C9D7C1', deep: '#4F6848' }, // LIFE
-        dusty: { soft: '#E4EAF2', DEFAULT: '#BCCBDF', deep: '#45607F' }, // WORK
-        pink: { soft: '#F6E9E8', DEFAULT: '#E8C9C7', deep: '#7C5350' }, // BODY
-        butter: { soft: '#FBF3D9', DEFAULT: '#F3E3A1', deep: '#756019' }, // PLAY
-        lavender: { soft: '#EDE9F3', DEFAULT: '#CFC7E0', deep: '#5B4E7A' }, // MIND
-        rose: { soft: '#F7E7E9', DEFAULT: '#E9B8BE', deep: '#8A4B55' }, // HEART
+        // 글자 — 따뜻한 진갈색
+        ink: '#4A3B33',
+        inkdim: '#7C6A5F',
+        inkfaint: '#A9998C',
+        line: '#F0DFCB',
 
-        // 캐릭터 전용
-        skin: '#F7E2D2',
-        skinshade: '#EBCDB8',
-        hair: '#9A7B68',
-        hairdeep: '#7E6152',
+        // 카테고리 — 배지 그림과 어울리는 아주 연한 파스텔
+        sage: { soft: '#E8F0E0', DEFAULT: '#B7CDA6', deep: '#4F6B3E' }, // LIFE
+        dusty: { soft: '#E6EBF2', DEFAULT: '#AFC0D6', deep: '#4C6180' }, // WORK
+        pink: { soft: '#F8E6E4', DEFAULT: '#E9B7B2', deep: '#8A544E' }, // BODY
+        butter: { soft: '#FCF1D8', DEFAULT: '#F2D98E', deep: '#7A6018' }, // PLAY
+        lavender: { soft: '#EDEAF4', DEFAULT: '#C4BBDC', deep: '#5A4C7C' }, // MIND
+        rose: { soft: '#FBE6E9', DEFAULT: '#F0B4BC', deep: '#93505B' }, // HEART
       },
       fontFamily: {
         sans: [

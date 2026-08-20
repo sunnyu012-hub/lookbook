@@ -1,12 +1,11 @@
 import { useMemo, useState } from 'react'
 import type { Quest } from '@/types'
 import { FullQuestCard } from '@/components/quest/FullQuestCard'
-import {
-  CategoryFilter,
-  type CategoryFilterValue,
-} from '@/components/quest/CategoryFilter'
+import { CategoryFilter, type CategoryFilterValue } from '@/components/quest/CategoryFilter'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { CountPill, ScreenHeader, SectionHeader } from '@/components/layout/ScreenHeader'
+import { UI } from '@/lib/assets'
 import {
   filterByCategory,
   isTodayQuest,
@@ -45,21 +44,22 @@ export function QuestScreen({
 
   return (
     <div className="animate-risein">
-      <header>
-        <h1 className="text-[24px] font-semibold tracking-[-0.01em] text-ink">Quest Log</h1>
-        <p className="mt-1 text-[13px] text-inkdim">
-          {today.length === 0
-            ? '오늘 만들어둔 퀘스트가 아직 없어.'
-            : `${doneToday} of ${today.length} completed today`}
-        </p>
-      </header>
+      <ScreenHeader
+        title="QUEST"
+        trailing={
+          <span className="inline-flex items-center gap-1 rounded-pill bg-surface px-3 py-1.5 ring-1 ring-line">
+            <img src={UI.check} alt="" aria-hidden className="h-4 w-4 object-contain" />
+            <span className="font-game text-[12px] leading-none text-inkdim">
+              {doneToday} / {today.length}
+            </span>
+          </span>
+        }
+      />
 
-      <div className="mt-5">
-        <CategoryFilter value={filter} onChange={setFilter} />
-      </div>
+      <CategoryFilter value={filter} onChange={setFilter} />
 
       {nothingInFilter ? (
-        <div className="mt-6">
+        <div className="mt-5">
           <EmptyState
             title={filter === 'ALL' ? '지금은 남은 퀘스트가 없어.' : '여긴 아직 비어 있어.'}
             hint={
@@ -75,10 +75,13 @@ export function QuestScreen({
           />
         </div>
       ) : (
-        <div className="mt-6 space-y-7">
+        <div className="mt-5 space-y-6">
           {active.length > 0 && (
             <section>
-              <SectionTitle label="Active" count={active.length} />
+              <SectionHeader
+                title="Active"
+                trailing={<CountPill value={active.length} />}
+              />
               <ul className="space-y-2.5">
                 {active.map((quest) => (
                   <li key={quest.id}>
@@ -95,7 +98,10 @@ export function QuestScreen({
 
           {completed.length > 0 && (
             <section>
-              <SectionTitle label="Completed" count={completed.length} />
+              <SectionHeader
+                title="Completed"
+                trailing={<CountPill value={completed.length} tone="leaf" />}
+              />
               <ul className="space-y-2">
                 {completed.map((quest) => (
                   <li key={quest.id}>
@@ -112,18 +118,9 @@ export function QuestScreen({
         </div>
       )}
 
-      <Button variant="soft" size="md" className="mt-7 w-full" onClick={onAddQuest}>
+      <Button variant="soft" size="md" className="mt-6 w-full" onClick={onAddQuest}>
         <span className="text-[17px] leading-none">+</span> Add Quest
       </Button>
-    </div>
-  )
-}
-
-function SectionTitle({ label, count }: { label: string; count: number }) {
-  return (
-    <div className="mb-3 flex items-baseline gap-2">
-      <h2 className="text-[15px] font-semibold text-ink">{label}</h2>
-      <span className="font-game text-[11px] tracking-[0.06em] text-inkfaint">{count}</span>
     </div>
   )
 }

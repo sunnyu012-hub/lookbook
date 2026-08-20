@@ -5,6 +5,7 @@ import { BottomSheet } from '@/components/ui/BottomSheet'
 import { Button } from '@/components/ui/Button'
 import { DIFFICULTY_EXP, DIFFICULTY_LABEL } from '@/lib/difficulty'
 import { categoryStyle } from '@/lib/categories'
+import { CATEGORY_BADGE, DIFFICULTY_BADGE } from '@/lib/assets'
 import { cn } from '@/components/ui/cn'
 
 interface QuestCreationSheetProps {
@@ -91,13 +92,19 @@ export function QuestCreationSheet({ open, onClose, onCreate }: QuestCreationShe
                   aria-pressed={active}
                   onClick={() => setCategory(c)}
                   className={cn(
-                    'inline-flex h-11 items-center rounded-pill px-4 font-game text-[12px] tracking-[0.1em]',
+                    'inline-flex h-11 items-center gap-1 rounded-pill py-1 pl-1.5 pr-3.5 font-game text-[12px] tracking-[0.08em]',
                     'transition-transform duration-150 ease-out active:scale-[0.96]',
                     active
                       ? cn(style.chip, style.text, 'ring-[1.5px] ring-inset', style.ring)
                       : 'bg-canvas text-inkfaint ring-1 ring-inset ring-line',
                   )}
                 >
+                  <img
+                    src={CATEGORY_BADGE[c]}
+                    alt=""
+                    aria-hidden
+                    className={cn('h-7 w-7 object-contain', !active && 'opacity-60')}
+                  />
                   {c}
                 </button>
               )
@@ -120,15 +127,23 @@ export function QuestCreationSheet({ open, onClose, onCreate }: QuestCreationShe
                   aria-pressed={active}
                   onClick={() => setDifficulty(d)}
                   className={cn(
-                    'min-h-[64px] rounded-btn border py-3 text-center transition-transform duration-150 ease-out active:scale-[0.97]',
-                    active ? 'border-ink bg-ink text-surface' : 'border-line bg-canvas text-inkdim',
+                    'min-h-[104px] rounded-btn border py-3 text-center transition-transform duration-150 ease-out active:scale-[0.97]',
+                    active
+                      ? 'border-coral bg-coral-soft text-ink ring-[1.5px] ring-inset ring-coral'
+                      : 'border-line bg-canvas text-inkdim',
                   )}
                 >
-                  <span className="block text-[14px] font-medium">{DIFFICULTY_LABEL[d]}</span>
+                  <img
+                    src={DIFFICULTY_BADGE[d]}
+                    alt=""
+                    aria-hidden
+                    className={cn('mx-auto h-11 w-11 object-contain', !active && 'opacity-65')}
+                  />
+                  <span className="mt-1 block text-[13.5px] font-medium">{DIFFICULTY_LABEL[d]}</span>
                   <span
                     className={cn(
                       'mt-1 block font-game text-[11px] tracking-[0.04em]',
-                      active ? 'text-surface/70' : 'text-inkfaint',
+                      active ? 'text-coral-deep' : 'text-inkfaint',
                     )}
                   >
                     +{DIFFICULTY_EXP[d]} EXP

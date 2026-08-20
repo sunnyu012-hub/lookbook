@@ -1,3 +1,5 @@
+import { UI, EFFECT } from '@/lib/assets'
+
 interface DailySummaryProps {
   completed: number
   earnedExp: number
@@ -7,20 +9,33 @@ interface DailySummaryProps {
 export function DailySummary({ completed, earnedExp }: DailySummaryProps) {
   return (
     <div className="grid grid-cols-2 gap-2.5">
-      <SummaryTile label="Completed today" value={`${completed}`} unit="quests" />
-      <SummaryTile label="Earned today" value={`+${earnedExp}`} unit="EXP" />
+      <SummaryTile icon={UI.check} label="Completed" value={`${completed}`} unit="quests" />
+      <SummaryTile icon={EFFECT.star} label="Earned" value={`+${earnedExp}`} unit="EXP" />
     </div>
   )
 }
 
-function SummaryTile({ label, value, unit }: { label: string; value: string; unit: string }) {
+function SummaryTile({
+  icon,
+  label,
+  value,
+  unit,
+}: {
+  icon: string
+  label: string
+  value: string
+  unit: string
+}) {
   return (
-    <div className="rounded-card border border-line/70 bg-surface px-4 py-3.5 shadow-soft">
-      <p className="text-[12px] text-inkdim">{label}</p>
-      <p className="mt-1 font-game text-[22px] leading-none text-ink">
-        {value}
-        <span className="ml-1 text-[12px] text-inkdim">{unit}</span>
-      </p>
+    <div className="flex items-center gap-2.5 rounded-card border border-line bg-surface px-3.5 py-3">
+      <img src={icon} alt="" aria-hidden className="h-8 w-8 shrink-0 object-contain" />
+      <div className="min-w-0">
+        <p className="truncate text-[11.5px] text-inkdim">{label}</p>
+        <p className="mt-0.5 font-game text-[18px] leading-none text-ink">
+          {value}
+          <span className="ml-1 text-[11px] text-inkdim">{unit}</span>
+        </p>
+      </div>
     </div>
   )
 }

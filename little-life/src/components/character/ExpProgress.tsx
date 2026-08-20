@@ -13,14 +13,17 @@ export function ExpProgress({ level, currentExp }: ExpProgressProps) {
   const shown = useCountUp(currentExp)
 
   return (
-    <div>
+    <div className="flex items-center gap-2.5">
+      <span className="font-game text-[11px] tracking-[0.08em] text-inkdim">EXP</span>
       <ProgressBar
+        className="flex-1"
         value={levelProgress(level, currentExp)}
+        barClassName="bg-coral"
         aria-label={`${need} EXP 중 ${currentExp} EXP`}
       />
-      <p className="mt-1.5 text-right font-game text-[12px] tracking-[0.04em] text-inkdim">
-        {shown} / {need} EXP
-      </p>
+      <span className="shrink-0 font-game text-[11px] tracking-[0.02em] text-inkdim">
+        {shown} / {need}
+      </span>
     </div>
   )
 }

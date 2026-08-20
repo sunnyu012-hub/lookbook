@@ -1,7 +1,7 @@
 import type { Category } from '@/types'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { categoryStyle } from '@/lib/categories'
-import { CategoryIcon } from './CategoryIcon'
+import { CATEGORY_BADGE } from '@/lib/assets'
 
 interface CategoryGrowthBarProps {
   category: Category
@@ -14,20 +14,26 @@ export function CategoryGrowthBar({ category, exp, max }: CategoryGrowthBarProps
   const style = categoryStyle(category)
 
   return (
-    <div>
-      <div className="mb-1.5 flex items-center gap-1.5">
-        <CategoryIcon category={category} />
-        <span className={`font-game text-[11px] tracking-[0.1em] ${style.text}`}>{category}</span>
-        <span className="ml-auto font-game text-[11px] tracking-[0.04em] text-inkdim">
-          {exp} EXP
-        </span>
-      </div>
+    <div className="flex items-center gap-2.5">
+      <img
+        src={CATEGORY_BADGE[category]}
+        alt=""
+        aria-hidden
+        className="h-7 w-7 shrink-0 object-contain"
+      />
+      <span className={`w-[46px] shrink-0 font-game text-[11px] tracking-[0.04em] ${style.text}`}>
+        {category}
+      </span>
       <ProgressBar
+        className="flex-1"
         value={max > 0 ? exp / max : 0}
         thickness="sm"
         barClassName={style.bar}
         aria-label={`${category} 누적 ${exp} EXP`}
       />
+      <span className="w-[52px] shrink-0 text-right font-game text-[11px] text-inkdim">
+        {exp} EXP
+      </span>
     </div>
   )
 }

@@ -1,10 +1,12 @@
 import type { Quest } from '@/types'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { SectionHeader } from '@/components/layout/ScreenHeader'
 import { CompactQuestCard } from './CompactQuestCard'
 
 interface TodayQuestSectionProps {
   quests: Quest[]
+  doneToday: number
   onComplete: (id: string) => void
   onSeeAll: () => void
   onCreate: () => void
@@ -14,26 +16,33 @@ const LIMIT = 5
 
 export function TodayQuestSection({
   quests,
+  doneToday,
   onComplete,
   onSeeAll,
   onCreate,
 }: TodayQuestSectionProps) {
   const shown = quests.slice(0, LIMIT)
+  const total = quests.length + doneToday
 
   return (
     <section>
-      <div className="mb-3 flex items-baseline justify-between">
-        <h2 className="text-[16px] font-semibold text-ink">Today&apos;s Quest</h2>
-        {quests.length > 0 && (
-          <button
-            type="button"
-            onClick={onSeeAll}
-            className="-mr-1 py-1 pl-3 pr-1 text-[13px] text-inkdim active:scale-95"
-          >
-            See all
-          </button>
-        )}
-      </div>
+      <SectionHeader
+        title="Today's Quest"
+        trailing={
+          quests.length > 0 ? (
+            <button
+              type="button"
+              onClick={onSeeAll}
+              className="-mr-1 flex items-center gap-1 py-1 pl-3 pr-1 text-[12.5px] text-inkdim active:scale-95"
+            >
+              <span className="font-game text-[11px]">
+                {doneToday}/{total}
+              </span>
+              <span>See all</span>
+            </button>
+          ) : null
+        }
+      />
 
       {shown.length === 0 ? (
         <EmptyState

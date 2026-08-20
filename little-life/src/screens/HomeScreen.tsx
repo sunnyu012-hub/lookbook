@@ -5,8 +5,10 @@ import { ExpToastLayer } from '@/components/feedback/ExpToastLayer'
 import { GreetingHeader } from '@/components/home/GreetingHeader'
 import { TodayQuestSection } from '@/components/home/TodayQuestSection'
 import { DailySummary } from '@/components/home/DailySummary'
+import { ScreenHeader } from '@/components/layout/ScreenHeader'
 import { Button } from '@/components/ui/Button'
 import { isTodayQuest, sortByNewest, todaySummary } from '@/lib/stats'
+import { EFFECT } from '@/lib/assets'
 import type { ExpToast } from '@/hooks/useFeedback'
 import type { CharacterMood } from '@/components/character/types'
 
@@ -34,7 +36,19 @@ export function HomeScreen({
   const summary = useMemo(() => todaySummary(state.dailyLog), [state.dailyLog])
 
   return (
-    <div className="animate-risein space-y-6">
+    <div className="animate-risein space-y-4">
+      <ScreenHeader
+        title="HOME"
+        trailing={
+          <span className="inline-flex items-center gap-1 rounded-pill bg-surface px-3 py-1.5 ring-1 ring-line">
+            <img src={EFFECT.star} alt="" aria-hidden className="h-4 w-4 object-contain" />
+            <span className="font-game text-[12px] leading-none text-inkdim">
+              {state.user.totalExp.toLocaleString('ko-KR')}
+            </span>
+          </span>
+        }
+      />
+
       <GreetingHeader name={state.user.name} />
 
       <CharacterRoomCard
@@ -45,6 +59,7 @@ export function HomeScreen({
 
       <TodayQuestSection
         quests={openQuests}
+        doneToday={summary.completed}
         onComplete={onComplete}
         onSeeAll={onSeeAll}
         onCreate={onAddQuest}
