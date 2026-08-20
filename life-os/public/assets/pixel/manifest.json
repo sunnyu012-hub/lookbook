@@ -1,39 +1,39 @@
 {
   "characters": {
     "back-bag": {
-      "height": 83,
+      "height": 203,
       "src": "/assets/pixel/characters/back-bag.png",
-      "width": 52
+      "width": 104
     },
     "back-coat": {
-      "height": 82,
+      "height": 177,
       "src": "/assets/pixel/characters/back-coat.png",
-      "width": 51
+      "width": 96
     },
     "easy": {
-      "height": 171,
+      "height": 188,
       "src": "/assets/pixel/characters/easy.png",
-      "width": 151
+      "width": 96
     },
     "idle": {
-      "height": 172,
+      "height": 188,
       "src": "/assets/pixel/characters/idle.png",
-      "width": 114
+      "width": 105
     },
     "normal": {
-      "height": 173,
+      "height": 127,
       "src": "/assets/pixel/characters/normal.png",
-      "width": 150
+      "width": 121
     },
     "power": {
-      "height": 175,
+      "height": 151,
       "src": "/assets/pixel/characters/power.png",
-      "width": 123
+      "width": 145
     },
     "recovery": {
-      "height": 122,
+      "height": 102,
       "src": "/assets/pixel/characters/recovery.png",
-      "width": 172
+      "width": 147
     }
   },
   "effects": {
@@ -43,19 +43,19 @@
       "width": 59
     },
     "flower": {
-      "height": 23,
+      "height": 65,
       "src": "/assets/pixel/effects/flower.png",
-      "width": 25
+      "width": 61
     },
     "heart": {
-      "height": 21,
+      "height": 31,
       "src": "/assets/pixel/effects/heart.png",
-      "width": 23
+      "width": 35
     },
     "heart-bubble": {
-      "height": 55,
+      "height": 57,
       "src": "/assets/pixel/effects/heart-bubble.png",
-      "width": 64
+      "width": 61
     },
     "rainbow": {
       "height": 36,
@@ -63,14 +63,14 @@
       "width": 77
     },
     "sparkle-01": {
-      "height": 32,
+      "height": 33,
       "src": "/assets/pixel/effects/sparkle-01.png",
-      "width": 26
+      "width": 32
     },
     "sparkle-02": {
-      "height": 26,
+      "height": 36,
       "src": "/assets/pixel/effects/sparkle-02.png",
-      "width": 23
+      "width": 33
     },
     "string-lights": {
       "height": 34,
@@ -78,41 +78,41 @@
       "width": 67
     },
     "zzz-bubble": {
-      "height": 40,
+      "height": 58,
       "src": "/assets/pixel/effects/zzz-bubble.png",
-      "width": 50
+      "width": 59
     }
   },
   "fashion": {
     "backpack": {
-      "height": 83,
+      "height": 100,
       "src": "/assets/pixel/fashion/backpack.png",
-      "width": 74
+      "width": 91
     },
     "bag-black": {
-      "height": 76,
+      "height": 100,
       "src": "/assets/pixel/fashion/bag-black.png",
-      "width": 73
+      "width": 80
     },
     "cap": {
-      "height": 57,
+      "height": 51,
       "src": "/assets/pixel/fashion/cap.png",
-      "width": 69
+      "width": 74
     },
     "jeans": {
-      "height": 63,
+      "height": 130,
       "src": "/assets/pixel/fashion/jeans.png",
-      "width": 54
+      "width": 75
     },
     "shorts-black": {
-      "height": 63,
+      "height": 59,
       "src": "/assets/pixel/fashion/shorts-black.png",
-      "width": 64
+      "width": 86
     },
     "shorts-denim": {
-      "height": 57,
+      "height": 59,
       "src": "/assets/pixel/fashion/shorts-denim.png",
-      "width": 60
+      "width": 85
     },
     "tote-climb": {
       "height": 89,
@@ -125,14 +125,14 @@
       "width": 62
     },
     "tshirt-bow": {
-      "height": 50,
+      "height": 83,
       "src": "/assets/pixel/fashion/tshirt-bow.png",
-      "width": 63
+      "width": 70
     },
     "tshirt-pink": {
-      "height": 48,
+      "height": 84,
       "src": "/assets/pixel/fashion/tshirt-pink.png",
-      "width": 59
+      "width": 80
     }
   },
   "furniture": {
@@ -152,9 +152,9 @@
       "width": 54
     },
     "clock": {
-      "height": 50,
+      "height": 60,
       "src": "/assets/pixel/furniture/clock.png",
-      "width": 45
+      "width": 61
     },
     "clothing-rack": {
       "height": 108,
@@ -167,9 +167,9 @@
       "width": 196
     },
     "hanging-plant": {
-      "height": 81,
+      "height": 197,
       "src": "/assets/pixel/furniture/hanging-plant.png",
-      "width": 43
+      "width": 79
     },
     "lamp": {
       "height": 70,
@@ -192,29 +192,29 @@
       "width": 46
     },
     "photo-frames": {
-      "height": 58,
+      "height": 68,
       "src": "/assets/pixel/furniture/photo-frames.png",
-      "width": 48
+      "width": 118
     },
     "pinboard": {
-      "height": 81,
+      "height": 78,
       "src": "/assets/pixel/furniture/pinboard.png",
-      "width": 122
+      "width": 101
     },
     "plant": {
-      "height": 78,
+      "height": 133,
       "src": "/assets/pixel/furniture/plant.png",
-      "width": 44
+      "width": 99
     },
     "poster-pink": {
-      "height": 72,
+      "height": 113,
       "src": "/assets/pixel/furniture/poster-pink.png",
-      "width": 54
+      "width": 86
     },
     "poster-sky": {
-      "height": 74,
+      "height": 71,
       "src": "/assets/pixel/furniture/poster-sky.png",
-      "width": 53
+      "width": 64
     },
     "rug": {
       "height": 67,
@@ -244,9 +244,9 @@
   },
   "gear": {
     "climbing-shoes": {
-      "height": 52,
+      "height": 74,
       "src": "/assets/pixel/gear/climbing-shoes.png",
-      "width": 52
+      "width": 96
     },
     "dumbbell": {
       "height": 41,
@@ -254,36 +254,36 @@
       "width": 48
     },
     "headphones": {
-      "height": 67,
+      "height": 81,
       "src": "/assets/pixel/gear/headphones.png",
-      "width": 50
+      "width": 106
     },
     "sneakers": {
-      "height": 58,
+      "height": 53,
       "src": "/assets/pixel/gear/sneakers.png",
-      "width": 64
+      "width": 92
     },
     "yoga-mat": {
-      "height": 64,
+      "height": 81,
       "src": "/assets/pixel/gear/yoga-mat.png",
-      "width": 76
+      "width": 108
     }
   },
   "icons": {
     "appetite": {
-      "height": 46,
+      "height": 38,
       "src": "/assets/pixel/icons/appetite.png",
-      "width": 49
+      "width": 40
     },
     "body": {
-      "height": 50,
+      "height": 38,
       "src": "/assets/pixel/icons/body.png",
-      "width": 47
+      "width": 38
     },
     "caffeine": {
-      "height": 58,
+      "height": 61,
       "src": "/assets/pixel/icons/caffeine.png",
-      "width": 37
+      "width": 62
     },
     "camera": {
       "height": 44,
@@ -296,19 +296,19 @@
       "width": 36
     },
     "climbing": {
-      "height": 53,
+      "height": 69,
       "src": "/assets/pixel/icons/climbing.png",
       "width": 67
     },
     "energy": {
-      "height": 49,
+      "height": 33,
       "src": "/assets/pixel/icons/energy.png",
-      "width": 41
+      "width": 27
     },
     "exercise": {
-      "height": 54,
+      "height": 53,
       "src": "/assets/pixel/icons/exercise.png",
-      "width": 61
+      "width": 92
     },
     "fatigue": {
       "height": 47,
@@ -316,14 +316,14 @@
       "width": 58
     },
     "focus": {
-      "height": 55,
+      "height": 37,
       "src": "/assets/pixel/icons/focus.png",
-      "width": 67
+      "width": 39
     },
     "food": {
-      "height": 55,
+      "height": 56,
       "src": "/assets/pixel/icons/food.png",
-      "width": 55
+      "width": 69
     },
     "home": {
       "height": 39,
@@ -331,61 +331,61 @@
       "width": 42
     },
     "log": {
-      "height": 34,
+      "height": 50,
       "src": "/assets/pixel/icons/log.png",
-      "width": 40
+      "width": 95
     },
     "mood": {
-      "height": 46,
+      "height": 31,
       "src": "/assets/pixel/icons/mood.png",
-      "width": 52
+      "width": 35
     },
     "music": {
-      "height": 48,
+      "height": 30,
       "src": "/assets/pixel/icons/music.png",
-      "width": 52
+      "width": 30
     },
     "outfit": {
-      "height": 50,
+      "height": 83,
       "src": "/assets/pixel/icons/outfit.png",
-      "width": 57
+      "width": 70
     },
     "save": {
-      "height": 47,
+      "height": 37,
       "src": "/assets/pixel/icons/save.png",
-      "width": 45
+      "width": 37
     },
     "shower": {
-      "height": 51,
+      "height": 57,
       "src": "/assets/pixel/icons/shower.png",
-      "width": 56
+      "width": 59
     },
     "sleep": {
-      "height": 46,
+      "height": 35,
       "src": "/assets/pixel/icons/sleep.png",
-      "width": 65
+      "width": 36
     },
     "water": {
-      "height": 59,
+      "height": 33,
       "src": "/assets/pixel/icons/water.png",
-      "width": 29
+      "width": 28
     },
     "work": {
-      "height": 49,
+      "height": 70,
       "src": "/assets/pixel/icons/work.png",
-      "width": 52
+      "width": 101
     },
     "xp": {
-      "height": 48,
+      "height": 43,
       "src": "/assets/pixel/icons/xp.png",
-      "width": 48
+      "width": 46
     }
   },
   "items": {
     "apple": {
-      "height": 38,
+      "height": 54,
       "src": "/assets/pixel/items/apple.png",
-      "width": 39
+      "width": 48
     },
     "banana": {
       "height": 48,
@@ -398,9 +398,9 @@
       "width": 40
     },
     "coffee-mug": {
-      "height": 38,
+      "height": 62,
       "src": "/assets/pixel/items/coffee-mug.png",
-      "width": 43
+      "width": 63
     },
     "croissant": {
       "height": 42,
@@ -408,19 +408,19 @@
       "width": 54
     },
     "fruit-bowl": {
-      "height": 51,
+      "height": 56,
       "src": "/assets/pixel/items/fruit-bowl.png",
-      "width": 50
+      "width": 69
     },
     "iced-coffee": {
-      "height": 58,
+      "height": 69,
       "src": "/assets/pixel/items/iced-coffee.png",
-      "width": 39
+      "width": 40
     },
     "milk": {
-      "height": 64,
+      "height": 78,
       "src": "/assets/pixel/items/milk.png",
-      "width": 32
+      "width": 34
     },
     "onigiri": {
       "height": 47,
@@ -438,56 +438,56 @@
       "width": 54
     },
     "smoothie": {
-      "height": 58,
+      "height": 69,
       "src": "/assets/pixel/items/smoothie.png",
-      "width": 36
+      "width": 40
     },
     "toast": {
-      "height": 54,
+      "height": 38,
       "src": "/assets/pixel/items/toast.png",
-      "width": 45
+      "width": 40
     },
     "water-bottle": {
-      "height": 63,
+      "height": 78,
       "src": "/assets/pixel/items/water-bottle.png",
-      "width": 28
+      "width": 35
     }
   },
   "pets": {
     "cat-box": {
-      "height": 79,
+      "height": 87,
       "src": "/assets/pixel/pets/cat-box.png",
-      "width": 66
+      "width": 100
     },
     "cat-curl": {
-      "height": 51,
+      "height": 73,
       "src": "/assets/pixel/pets/cat-curl.png",
-      "width": 71
+      "width": 123
     },
     "cat-lying": {
-      "height": 54,
+      "height": 92,
       "src": "/assets/pixel/pets/cat-lying.png",
-      "width": 85
+      "width": 123
     },
     "cat-sit": {
-      "height": 60,
+      "height": 94,
       "src": "/assets/pixel/pets/cat-sit.png",
-      "width": 60
+      "width": 70
     },
     "cat-stand": {
-      "height": 81,
+      "height": 95,
       "src": "/assets/pixel/pets/cat-stand.png",
-      "width": 56
+      "width": 128
     },
     "cat-walk": {
-      "height": 56,
+      "height": 93,
       "src": "/assets/pixel/pets/cat-walk.png",
-      "width": 86
+      "width": 155
     },
     "cat-white": {
-      "height": 64,
+      "height": 100,
       "src": "/assets/pixel/pets/cat-white.png",
-      "width": 65
+      "width": 89
     }
   },
   "ui": {
@@ -502,9 +502,9 @@
       "width": 57
     },
     "pill-easy": {
-      "height": 26,
+      "height": 45,
       "src": "/assets/pixel/ui/pill-easy.png",
-      "width": 114
+      "width": 160
     },
     "pill-idle": {
       "height": 26,
@@ -512,19 +512,19 @@
       "width": 112
     },
     "pill-normal": {
-      "height": 26,
+      "height": 46,
       "src": "/assets/pixel/ui/pill-normal.png",
-      "width": 123
+      "width": 160
     },
     "pill-power": {
-      "height": 26,
+      "height": 45,
       "src": "/assets/pixel/ui/pill-power.png",
-      "width": 118
+      "width": 160
     },
     "pill-recovery": {
-      "height": 26,
+      "height": 45,
       "src": "/assets/pixel/ui/pill-recovery.png",
-      "width": 109
+      "width": 160
     },
     "save-button": {
       "height": 76,
