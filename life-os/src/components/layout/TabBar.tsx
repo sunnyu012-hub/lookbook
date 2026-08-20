@@ -1,16 +1,16 @@
 import type { TabKey } from '@/types'
-import { icons } from '@/lib/pixelAssets'
+import { effects as fx, icons, pets } from '@/lib/pixelAssets'
 import { cn } from '@/lib/cn'
 import { haptic } from '@/hooks/useHaptic'
 import { PixelImage } from '@/components/pixel/PixelImage'
 import { PixelSparkle } from '@/components/pixel/PixelSparkle'
 
 const TABS = [
-  { key: 'today' as TabKey, label: 'Today', asset: icons.home },
-  { key: 'checkin' as TabKey, label: 'Save', asset: icons.save },
-  { key: 'body' as TabKey, label: 'Body', asset: icons.body },
-  { key: 'timeline' as TabKey, label: 'Log', asset: icons.log },
-  { key: 'insights' as TabKey, label: 'Stats', asset: icons.xp },
+  { key: 'home' as TabKey, label: 'Home', asset: icons.home },
+  { key: 'checkin' as TabKey, label: 'Check-in', asset: icons.save },
+  { key: 'life' as TabKey, label: 'Life', asset: fx.heart },
+  { key: 'log' as TabKey, label: 'Log', asset: icons.log },
+  { key: 'me' as TabKey, label: 'Me', asset: pets.catSit },
 ]
 
 interface Props {
@@ -51,7 +51,7 @@ export function TabBar({ active, onChange }: Props) {
               />
               <span
                 className={cn(
-                  'font-pixel text-[9px] uppercase leading-none tracking-[0.06em]',
+                  'font-pixel text-[8.5px] uppercase leading-none tracking-[0.04em]',
                   isActive ? 'text-pinkdeep' : 'text-inkfaint',
                 )}
               >

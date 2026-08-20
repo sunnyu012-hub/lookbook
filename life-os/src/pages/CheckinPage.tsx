@@ -13,12 +13,13 @@ import {
   StepField,
   YesNo,
 } from '@/components/checkin/Fields'
+import { QuickActions } from '@/components/checkin/QuickActions'
 import { useCheckinForm } from '@/hooks/useCheckinForm'
 import { haptic } from '@/hooks/useHaptic'
 import { formatSleep, pixelDate, todayKey } from '@/lib/date'
 import { modeMetaOrNull } from '@/lib/energy'
 import { CONFIDENCE_LABEL, confidenceLevel, type ScoreContext } from '@/lib/scoring'
-import { MODE_CHARACTER, characters, effects as fx, gear, icons, items } from '@/lib/pixelAssets'
+import { MODE_CHARACTER, characters, effects as fx, gear, icons, items, pets } from '@/lib/pixelAssets'
 import type { PixelAsset } from '@/lib/pixelAssets'
 import { cn } from '@/lib/cn'
 
@@ -43,11 +44,25 @@ interface Props {
   date?: string
   existing: Checkin | null
   scoreContext?: ScoreContext
+  mounjaroEnabled?: boolean
   onSave: (input: CheckinInput) => Promise<Checkin>
   onSaved: (checkin: Checkin) => void
+  onSaveWeight: (input: import('@/types').WeightInput) => Promise<unknown>
+  onSaveMounjaro: (input: import('@/types').MounjaroInput) => Promise<unknown>
+  onSaveEvent: (input: import('@/types').LifeEventInput) => Promise<unknown>
 }
 
-export function CheckinPage({ date = todayKey(), existing, scoreContext, onSave, onSaved }: Props) {
+export function CheckinPage({
+  date = todayKey(),
+  existing,
+  scoreContext,
+  mounjaroEnabled = false,
+  onSave,
+  onSaved,
+  onSaveWeight,
+  onSaveMounjaro,
+  onSaveEvent,
+}: Props) {
   const { form, set, setMode, result, score } = useCheckinForm(date, existing, scoreContext)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -79,7 +94,7 @@ export function CheckinPage({ date = todayKey(), existing, scoreContext, onSave,
           <h1 className="font-pixel text-[16px] uppercase leading-none tracking-[0.04em]">
             Check-in
           </h1>
-          <p className="body-ko mt-1.5">적고 싶은 만큼만 적어도 괜찮아요.</p>
+          <p className="body-ko mt-1.5">적고 싶은 만큼만.</p>
         </div>
         <div className="text-right">
           <p className="plabel">{pixelDate(date)}</p>
@@ -110,7 +125,7 @@ export function CheckinPage({ date = todayKey(), existing, scoreContext, onSave,
                 : 'border-border bg-cream text-inkfaint',
             )}
           >
-            {m === 'quick' ? 'Quick · 30초' : 'Detailed · 전부'}
+            {m === 'quick' ? 'Quick' : 'More details'}
           </button>
         ))}
       </div>
@@ -161,48 +176,90 @@ export function CheckinPage({ date = todayKey(), existing, scoreContext, onSave,
           />
         </FieldRow>
 
-        {entryMode === 'detailed' && (
-          <>
-            <Divider />
-            <FieldRow
-              icon={icons.sleep}
-              label="수면의 질"
-              filled={form.sleepQuality != null}
-              onClear={() => set('sleepQuality', null)}
-            >
-              <ScalePips
-                asset={icons.sleep}
-                value={form.sleepQuality}
-                onChange={(v) => set('sleepQuality', v as Scale5 | null)}
-                label="수면의 질"
-              />
-            </FieldRow>
-          </>
-        )}
+        <Divider />
+        <FieldRow
+          icon={icons.sleep}
+          label="수면의 질"
+          filled={form.sleepQuality != null}
+          onClear={() => set('sleepQuality', null)}
+        >
+          <ScalePips
+            asset={icons.sleep}
+            value={form.sleepQuality}
+            onChange={(v) => set('sleepQuality', v as Scale5 | null)}
+            label="수면의 질"
+          />
+        </FieldRow>
+      </PixelPanel>
+
+      {/* ── 오늘 — Quick 에서도 늘 보이는 것들 ── */}
+      <PixelPanel title="Today" icon={icons.mood}>
+        <FieldRow
+          icon={icons.focus}
+          label="집중력"
+          filled={form.focus != null}
+          onClear={() => set('focus', null)}
+        >
+          <ScalePips
+            asset={icons.focus}
+            value={form.focus}
+            onChange={(v) => set('focus', v as Scale5 | null)}
+            label="집중력"
+          />
+        </FieldRow>
+        <Divider />
+        <FieldRow
+          icon={icons.body}
+          label="몸 통증"
+          hint="없으면 0"
+          filled={form.bodyPain != null}
+          onClear={() => set('bodyPain', null)}
+        >
+          <ScalePips
+            asset={icons.body}
+            value={form.bodyPain}
+            offset={1}
+            max={6}
+            size={17}
+            onChange={(v) => set('bodyPain', v as Pain5 | null)}
+            label="몸 통증"
+          />
+        </FieldRow>
+        <Divider />
+        <FieldRow
+          icon={icons.appetite}
+          label="식욕"
+          filled={form.appetite != null}
+          onClear={() => set('appetite', null)}
+        >
+          <ScalePips
+            asset={icons.appetite}
+            value={form.appetite}
+            onChange={(v) => set('appetite', v as Scale5 | null)}
+            label="식욕"
+          />
+        </FieldRow>
+        <Divider />
+        <FieldRow
+          icon={fx.cloud}
+          label="스트레스"
+          hint="많을수록 높음"
+          filled={form.stress != null}
+          onClear={() => set('stress', null)}
+        >
+          <ScalePips
+            asset={fx.cloud}
+            value={form.stress}
+            onChange={(v) => set('stress', v as Scale5 | null)}
+            label="스트레스"
+          />
+        </FieldRow>
       </PixelPanel>
 
       {entryMode === 'detailed' && (
         <>
           {/* ── 몸 ── */}
           <PixelPanel title="Body" icon={icons.body}>
-            <FieldRow
-              icon={icons.body}
-              label="몸 통증"
-              hint="없으면 0"
-              filled={form.bodyPain != null}
-              onClear={() => set('bodyPain', null)}
-            >
-              <ScalePips
-                asset={icons.body}
-                value={form.bodyPain}
-                offset={1}
-                max={6}
-                size={17}
-                onChange={(v) => set('bodyPain', v as Pain5 | null)}
-                label="몸 통증"
-              />
-            </FieldRow>
-            <Divider />
             <FieldRow
               icon={icons.focus}
               label="두통"
@@ -272,43 +329,14 @@ export function CheckinPage({ date = todayKey(), existing, scoreContext, onSave,
           {/* ── 마음 ── */}
           <PixelPanel title="Mind" icon={icons.focus}>
             <FieldRow
-              icon={icons.focus}
-              label="집중력"
-              filled={form.focus != null}
-              onClear={() => set('focus', null)}
-            >
-              <ScalePips
-                asset={icons.focus}
-                value={form.focus}
-                onChange={(v) => set('focus', v as Scale5 | null)}
-                label="집중력"
-              />
-            </FieldRow>
-            <Divider />
-            <FieldRow
-              icon={icons.work}
-              label="스트레스"
-              hint="많을수록 높음"
-              filled={form.stress != null}
-              onClear={() => set('stress', null)}
-            >
-              <ScalePips
-                asset={icons.work}
-                value={form.stress}
-                onChange={(v) => set('stress', v as Scale5 | null)}
-                label="스트레스"
-              />
-            </FieldRow>
-            <Divider />
-            <FieldRow
-              icon={fx.cloud}
+              icon={pets.catBox}
               label="불안"
               hint="많을수록 높음"
               filled={form.anxiety != null}
               onClear={() => set('anxiety', null)}
             >
               <ScalePips
-                asset={fx.cloud}
+                asset={pets.catBox}
                 value={form.anxiety}
                 onChange={(v) => set('anxiety', v as Scale5 | null)}
                 label="불안"
@@ -347,20 +375,6 @@ export function CheckinPage({ date = todayKey(), existing, scoreContext, onSave,
 
           {/* ── 연료 ── */}
           <PixelPanel title="Fuel" icon={icons.food}>
-            <FieldRow
-              icon={icons.appetite}
-              label="식욕"
-              filled={form.appetite != null}
-              onClear={() => set('appetite', null)}
-            >
-              <ScalePips
-                asset={icons.appetite}
-                value={form.appetite}
-                onChange={(v) => set('appetite', v as Scale5 | null)}
-                label="식욕"
-              />
-            </FieldRow>
-            <Divider />
             <FieldRow
               icon={icons.food}
               label="식사 횟수"
@@ -529,6 +543,13 @@ export function CheckinPage({ date = todayKey(), existing, scoreContext, onSave,
           {result.filled}/{result.totalMetrics} · {CONFIDENCE_LABEL[confidenceLevel(result.confidence)]}
         </span>
       </div>
+
+      <QuickActions
+        mounjaroEnabled={mounjaroEnabled}
+        onSaveWeight={onSaveWeight}
+        onSaveMounjaro={onSaveMounjaro}
+        onSaveEvent={onSaveEvent}
+      />
 
       {error && (
         <p className="rounded-px3 border-[1.5px] border-pinkdeep bg-pinksoft px-3 py-2 text-[12px]">

@@ -4,12 +4,13 @@ import { AppShell } from '@/components/layout/AppShell'
 import { AuthGate } from '@/components/AuthGate'
 import { DevTools } from '@/components/DevTools'
 import { PixelToast } from '@/components/pixel/PixelToast'
-import { BodyPage } from '@/pages/BodyPage'
+import { PixelImage } from '@/components/pixel/PixelImage'
 import { CheckinPage } from '@/pages/CheckinPage'
+import { HomePage } from '@/pages/HomePage'
+import { LifePage, type LifeTab } from '@/pages/LifePage'
+import { MePage } from '@/pages/MePage'
 import { SettingsPage } from '@/pages/SettingsPage'
-import { StatsPage } from '@/pages/StatsPage'
 import { TimelinePage } from '@/pages/TimelinePage'
-import { TodayPage } from '@/pages/TodayPage'
 import { useCheckins } from '@/hooks/useCheckins'
 import { useDdays, useLifeEvents, useMounjaro, useWeights } from '@/hooks/useLifeData'
 import { usePreferences } from '@/hooks/usePreferences'
@@ -17,8 +18,6 @@ import { useQuests } from '@/hooks/useQuests'
 import { useSession } from '@/hooks/useSession'
 import { levelFromXp } from '@/lib/level'
 import { xpBreakdown } from '@/lib/xp'
-import { buildSnapshot } from '@/lib/snapshot'
-import { PixelImage } from '@/components/pixel/PixelImage'
 import { characters } from '@/lib/pixelAssets'
 import { todayKey } from '@/lib/date'
 import { storageMode } from '@/lib/repository'
@@ -29,7 +28,8 @@ interface ToastState {
 }
 
 export default function App() {
-  const [tab, setTab] = useState<TabKey>('today')
+  const [tab, setTab] = useState<TabKey>('home')
+  const [lifeSection, setLifeSection] = useState<LifeTab>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [editingDate, setEditingDate] = useState<string>(todayKey())
   const [toast, setToast] = useState<ToastState | null>(null)
@@ -57,29 +57,6 @@ export default function App() {
   )
   const level = levelFromXp(xp.total)
 
-  const snapshot = useMemo(
-    () =>
-      buildSnapshot({
-        prefs: prefStore.prefs,
-        checkins: store.checkins,
-        weights: weightStore.logs,
-        mounjaro: mounjaroStore.logs,
-        lifeEvents: eventStore.events,
-        ddays: ddayStore.ddays,
-        onOpenBody: () => setTab('body'),
-        onOpenTimeline: () => setTab('timeline'),
-        onOpenSettings: () => setSettingsOpen(true),
-      }),
-    [
-      prefStore.prefs,
-      store.checkins,
-      weightStore.logs,
-      mounjaroStore.logs,
-      eventStore.events,
-      ddayStore.ddays,
-    ],
-  )
-
   // 레벨이 오르는 순간에만 알려준다 (첫 로딩은 제외)
   const lastLevel = useRef<number | null>(null)
   useEffect(() => {
@@ -92,12 +69,20 @@ export default function App() {
 
   const openCheckin = useCallback((date: string = todayKey()) => {
     setEditingDate(date)
+    setSettingsOpen(false)
     setTab('checkin')
+  }, [])
+
+  const openLife = useCallback((section: LifeTab) => {
+    setLifeSection(section)
+    setSettingsOpen(false)
+    setTab('life')
   }, [])
 
   const handleTab = (next: TabKey) => {
     setSettingsOpen(false)
     if (next === 'checkin') setEditingDate(todayKey())
+    if (next === 'life') setLifeSection(null)
     setTab(next)
   }
 
@@ -131,26 +116,29 @@ export default function App() {
       {settingsOpen ? (
         <SettingsPage
           prefs={prefStore.prefs}
-          ddays={ddayStore.ddays}
           account={auth.email}
           onSave={prefStore.save}
-          onSaveDday={ddayStore.save}
-          onRemoveDday={ddayStore.remove}
           onSignOut={() => void auth.signOut()}
           onClose={() => setSettingsOpen(false)}
         />
       ) : (
         <>
-          {tab === 'today' && (
-            <TodayPage
+          {tab === 'home' && (
+            <HomePage
               today={store.today}
+              checkins={store.checkins}
+              weights={weightStore.logs}
+              mounjaro={mounjaroStore.logs}
+              ddays={ddayStore.ddays}
+              prefs={prefStore.prefs}
+              level={level}
               dayNumber={dayNumber}
               loading={store.loading}
-              onStartCheckin={() => openCheckin(todayKey())}
               questStore={questStore}
-              level={level}
-              snapshot={snapshot}
               scoreContext={prefStore.scoreContext}
+              onStartCheckin={() => openCheckin(todayKey())}
+              onOpenLife={openLife}
+              onOpenLog={() => setTab('log')}
             />
           )}
 
@@ -159,29 +147,40 @@ export default function App() {
               date={editingDate}
               existing={existing}
               scoreContext={prefStore.scoreContext}
+              mounjaroEnabled={prefStore.prefs.mounjaroEnabled}
               onSave={(input) => store.save(input, prefStore.scoreContext)}
+              onSaveWeight={weightStore.save}
+              onSaveMounjaro={mounjaroStore.save}
+              onSaveEvent={eventStore.save}
               onSaved={() => {
                 setToast({ title: 'Save Complete!', detail: '오늘의 기록이 저장됐어요.' })
-                setTab('today')
+                setTab('home')
               }}
             />
           )}
 
-          {tab === 'body' && (
-            <BodyPage
+          {tab === 'life' && (
+            <LifePage
               prefs={prefStore.prefs}
+              checkins={store.checkins}
               weights={weightStore.logs}
               mounjaro={mounjaroStore.logs}
-              checkins={store.checkins}
+              lifeEvents={eventStore.events}
+              ddays={ddayStore.ddays}
+              section={lifeSection}
+              onSection={setLifeSection}
               onSaveWeight={weightStore.save}
               onRemoveWeight={weightStore.remove}
               onSaveMounjaro={mounjaroStore.save}
               onRemoveMounjaro={mounjaroStore.remove}
+              onSaveDday={ddayStore.save}
+              onRemoveDday={ddayStore.remove}
+              onOpenLog={() => setTab('log')}
               onOpenSettings={() => setSettingsOpen(true)}
             />
           )}
 
-          {tab === 'timeline' && (
+          {tab === 'log' && (
             <TimelinePage
               checkins={store.checkins}
               byDate={store.byDate}
@@ -198,8 +197,8 @@ export default function App() {
             />
           )}
 
-          {tab === 'insights' && (
-            <StatsPage
+          {tab === 'me' && (
+            <MePage
               checkins={store.checkins}
               weights={weightStore.logs}
               mounjaro={mounjaroStore.logs}
