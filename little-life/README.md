@@ -22,6 +22,9 @@ npm run preview    # 빌드 결과 확인
 npm run typecheck  # 타입만 확인
 ```
 
+아이폰 홈 화면에 앱처럼 올리는 순서는 [DEPLOY.md](./DEPLOY.md) 에 있다.
+오프라인에서도 열리고 퀘스트 완료까지 된다.
+
 ## 구조
 
 ```
