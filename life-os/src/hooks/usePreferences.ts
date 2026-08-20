@@ -33,10 +33,7 @@ export function usePreferences(authState: AuthState = 'local') {
     return saved
   }, [])
 
-  const scoreContext: ScoreContext = {
-    sleepGoalHours: prefs.sleepGoalHours,
-    waterGoalMl: prefs.waterGoalMl,
-  }
+  const scoreContext: ScoreContext = { sleepGoalHours: prefs.sleepGoalHours }
 
   return { prefs, scoreContext, loading, error, save, refresh }
 }

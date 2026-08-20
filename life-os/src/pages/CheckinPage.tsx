@@ -391,21 +391,6 @@ export function CheckinPage({ date = todayKey(), existing, scoreContext, onSave,
             </FieldRow>
             <Divider />
             <FieldRow
-              icon={icons.water}
-              label="물"
-              filled={form.waterMl != null}
-              onClear={() => set('waterMl', null)}
-            >
-              <NumberField
-                value={form.waterMl}
-                onChange={(v) => set('waterMl', v)}
-                suffix="ml"
-                ariaLabel="마신 물"
-                step="100"
-              />
-            </FieldRow>
-            <Divider />
-            <FieldRow
               icon={icons.caffeine}
               label="카페인"
               filled={form.caffeineConsumed != null}
@@ -469,21 +454,6 @@ export function CheckinPage({ date = todayKey(), existing, scoreContext, onSave,
                 </div>
               </div>
             )}
-            <Divider />
-            <FieldRow
-              icon={gear.sneakers}
-              label="걸음 수"
-              filled={form.steps != null}
-              onClear={() => set('steps', null)}
-            >
-              <NumberField
-                value={form.steps}
-                onChange={(v) => set('steps', v)}
-                suffix="보"
-                ariaLabel="걸음 수"
-                step="100"
-              />
-            </FieldRow>
             <Divider />
             <FieldRow
               icon={fx.rainbow}

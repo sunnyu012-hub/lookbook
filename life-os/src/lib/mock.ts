@@ -72,10 +72,8 @@ export function generateMockCheckins(days = 34): Checkin[] {
         digestion: pick5(base * 0.7 + rand() * 0.3),
         mealsCount: Math.round(1 + rand() * 2),
         mealQuality: pick5(base),
-        waterMl: Math.round((0.6 + rand() * 1.6) * 1000),
         outdoor: rand() < 0.5,
         alcohol: rand() < 0.15,
-        steps: Math.round(1500 + rand() * 9000),
         highlight: rand() < 0.25 ? '기억에 남는 일이 있었다' : null,
       })
     }

@@ -34,6 +34,7 @@ interface Props {
   onSaveWeight: (input: WeightInput) => Promise<unknown>
   onRemoveWeight: (date: string) => Promise<void>
   onSaveMounjaro: (input: MounjaroInput) => Promise<unknown>
+  onRemoveMounjaro: (date: string) => Promise<void>
   onOpenSettings: () => void
 }
 
@@ -45,6 +46,7 @@ export function BodyPage({
   onSaveWeight,
   onRemoveWeight,
   onSaveMounjaro,
+  onRemoveMounjaro,
   onOpenSettings,
 }: Props) {
   const today = todayKey()
@@ -173,10 +175,11 @@ export function BodyPage({
             </p>
           </PixelPanel>
 
-          <MounjaroForm
+          <MounjaroSection
+            logs={mounjaro}
             defaultDose={cycle.currentDoseMg ?? prefs.mounjaroDoseMg ?? null}
-            existing={mounjaro.find((m) => m.date === today) ?? null}
             onSave={onSaveMounjaro}
+            onRemove={onRemoveMounjaro}
           />
 
           <CycleProfile checkins={checkins} logs={mounjaro} intervalDays={cycle.intervalDays} />
@@ -266,18 +269,175 @@ function WeightForm({
   )
 }
 
-function MounjaroForm({
+function MounjaroSection({
+  logs,
   defaultDose,
-  existing,
   onSave,
+  onRemove,
 }: {
+  logs: MounjaroLog[]
   defaultDose: number | null
-  existing: MounjaroLog | null
   onSave: (input: MounjaroInput) => Promise<unknown>
+  onRemove: (date: string) => Promise<void>
 }) {
-  const [date, setDate] = useState(existing?.date ?? todayKey())
-  const [dose, setDose] = useState<number | null>(existing?.doseMg ?? defaultDose)
-  const [selected, setSelected] = useState<string[]>(existing?.sideEffects ?? [])
+  const today = todayKey()
+  /** null = 새로 적는 중, 값이 있으면 그 기록을 고치는 중 */
+  const [editing, setEditing] = useState<MounjaroLog | null>(null)
+
+  const recent = useMemo(
+    () => [...logs].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 8),
+    [logs],
+  )
+
+  return (
+    <>
+      <MounjaroForm
+        key={editing?.id ?? 'new'}
+        editing={editing}
+        defaultDose={defaultDose}
+        existingToday={logs.find((m) => m.date === today) ?? null}
+        onCancelEdit={() => setEditing(null)}
+        onSave={async (input) => {
+          // 날짜를 바꿔서 고쳤으면 예전 날짜의 기록은 지운다 (하루에 한 건이라서)
+          if (editing && editing.date !== input.date) await onRemove(editing.date)
+          await onSave(input)
+          setEditing(null)
+        }}
+      />
+
+      {recent.length > 0 && (
+        <PixelPanel title="Injection log" icon={icons.log}>
+          <ul className="divide-y divide-dashed divide-border/70">
+            {recent.map((log) => (
+              <InjectionRow
+                key={log.id}
+                log={log}
+                active={editing?.id === log.id}
+                onEdit={() => setEditing(editing?.id === log.id ? null : log)}
+                onRemove={() => onRemove(log.date)}
+              />
+            ))}
+          </ul>
+          {logs.length > recent.length && (
+            <p className="plabel mt-2">최근 {recent.length}건만 보여요 · 전체 {logs.length}건</p>
+          )}
+        </PixelPanel>
+      )}
+    </>
+  )
+}
+
+/** 기록 한 줄 — 고치기와 지우기. 지우기는 한 번 더 물어본다. */
+function InjectionRow({
+  log,
+  active,
+  onEdit,
+  onRemove,
+}: {
+  log: MounjaroLog
+  active: boolean
+  onEdit: () => void
+  onRemove: () => Promise<void>
+}) {
+  const [confirming, setConfirming] = useState(false)
+  const [busy, setBusy] = useState(false)
+
+  return (
+    <li
+      className={cn(
+        '-mx-1 flex items-center gap-2 rounded-px3 px-1 py-2',
+        active && 'bg-pinksoft',
+      )}
+    >
+      <span className="min-w-0 flex-1">
+        <span className="flex items-baseline gap-2">
+          <span className="plabel">{formatShort(log.date)}</span>
+          <span className="font-pixel text-[12px] tabular-nums">{log.doseMg}mg</span>
+        </span>
+        {(log.sideEffects?.length ?? 0) > 0 && (
+          <span className="mt-0.5 block truncate text-[11.5px] text-inkdim">
+            {log.sideEffects!.join(' · ')}
+          </span>
+        )}
+      </span>
+
+      {confirming ? (
+        <span className="flex items-center gap-1.5">
+          <span className="text-[11.5px] text-inkdim">지울까요?</span>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => {
+              haptic()
+              setBusy(true)
+              void onRemove().finally(() => {
+                setBusy(false)
+                setConfirming(false)
+              })
+            }}
+            className="press rounded-px2 border-[1.5px] border-pinkdeep bg-pink px-2.5 py-1 font-pixel text-[10px] uppercase text-white"
+          >
+            {busy ? '…' : 'Delete'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setConfirming(false)}
+            className="press rounded-px2 border-[1.5px] border-border bg-cream px-2.5 py-1 font-pixel text-[10px] uppercase text-inkdim"
+          >
+            No
+          </button>
+        </span>
+      ) : (
+        <span className="flex items-center gap-1">
+          <button
+            type="button"
+            aria-label={`${formatShort(log.date)} 기록 고치기`}
+            aria-pressed={active}
+            onClick={() => {
+              haptic()
+              onEdit()
+            }}
+            className={cn(
+              'press rounded-px2 border-[1.5px] px-2.5 py-1 font-pixel text-[10px] uppercase',
+              active ? 'border-pinkdeep bg-pink text-white' : 'border-border bg-cream text-inkdim',
+            )}
+          >
+            {active ? 'Editing' : 'Edit'}
+          </button>
+          <button
+            type="button"
+            aria-label={`${formatShort(log.date)} 기록 지우기`}
+            onClick={() => {
+              haptic()
+              setConfirming(true)
+            }}
+            className="px-1.5 text-[16px] leading-none text-inkfaint"
+          >
+            ×
+          </button>
+        </span>
+      )}
+    </li>
+  )
+}
+
+function MounjaroForm({
+  editing,
+  defaultDose,
+  existingToday,
+  onSave,
+  onCancelEdit,
+}: {
+  editing: MounjaroLog | null
+  defaultDose: number | null
+  existingToday: MounjaroLog | null
+  onSave: (input: MounjaroInput) => Promise<unknown>
+  onCancelEdit: () => void
+}) {
+  const base = editing ?? existingToday
+  const [date, setDate] = useState(editing?.date ?? todayKey())
+  const [dose, setDose] = useState<number | null>(base?.doseMg ?? defaultDose)
+  const [selected, setSelected] = useState<string[]>(base?.sideEffects ?? [])
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
 
@@ -293,8 +453,30 @@ function MounjaroForm({
     }
   }
 
+  const label = busy ? 'Saving…' : done ? 'Saved!' : editing ? 'Update log' : base ? 'Update log' : 'Save log'
+
   return (
-    <PixelPanel title="Log injection" icon={icons.save}>
+    <PixelPanel
+      title={editing ? 'Edit injection' : 'Log injection'}
+      icon={icons.save}
+      right={
+        editing ? (
+          <button
+            type="button"
+            onClick={onCancelEdit}
+            className="press rounded-px2 border-[1.5px] border-border bg-cream px-2 py-1 font-pixel text-[9px] uppercase text-inkdim"
+          >
+            Cancel
+          </button>
+        ) : undefined
+      }
+    >
+      {editing && (
+        <p className="mb-2 text-[12px] text-inkdim">
+          {formatShort(editing.date)} 기록을 고치는 중이에요. 날짜를 바꾸면 그날로 옮겨져요.
+        </p>
+      )}
+
       <div className="flex items-center gap-2">
         <input
           type="date"
@@ -344,7 +526,7 @@ function MounjaroForm({
         onClick={() => void submit()}
         className="press mt-3 w-full rounded-px4 border-[1.5px] border-pinkdeep bg-pink py-2.5 font-pixel text-[11px] uppercase text-white disabled:opacity-45"
       >
-        {busy ? 'Saving…' : done ? 'Saved!' : existing ? 'Update log' : 'Save log'}
+        {label}
       </button>
 
       <p className="mt-2 text-[11px] leading-relaxed text-inkfaint">

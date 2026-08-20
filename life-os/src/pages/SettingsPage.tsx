@@ -136,24 +136,6 @@ export function SettingsPage({
             width="w-[64px]"
           />
         </Field>
-        <Field label="목표 물">
-          <NumberField
-            value={draft.waterGoalMl}
-            onChange={(v) => set('waterGoalMl', v ?? 2000)}
-            suffix="ml"
-            ariaLabel="목표 물"
-            step="100"
-          />
-        </Field>
-        <Field label="목표 걸음">
-          <NumberField
-            value={draft.stepGoal}
-            onChange={(v) => set('stepGoal', v ?? 6000)}
-            suffix="보"
-            ariaLabel="목표 걸음"
-            step="500"
-          />
-        </Field>
         <p className="mt-2 text-[11px] leading-relaxed text-inkfaint">
           목표는 점수를 계산할 때 쓰는 기준일 뿐이에요. 빨리 도달하는 걸 앱이 재촉하지 않아요.
         </p>

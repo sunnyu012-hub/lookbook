@@ -9,7 +9,7 @@
  * 기본 7개 항목만 채운 예전 기록도 예전과 거의 같은 점수가 나오도록 맞춰 두었다.
  */
 import type { CheckinInput } from '@/types'
-import { band, clamp, present, up, down, toGoal } from './normalize'
+import { band, clamp, present, up, down } from './normalize'
 
 export type Dimension = 'recovery' | 'body' | 'mind' | 'fuel'
 
@@ -31,17 +31,14 @@ export type MetricKey =
   | 'appetite'
   | 'mealsCount'
   | 'mealQuality'
-  | 'hydration'
 
 /** 점수를 낼 때 참고하는 개인 목표치 — 값 자체는 설정(user_preferences)에서 온다 */
 export interface ScoreContext {
   sleepGoalHours: number
-  waterGoalMl: number
 }
 
 export const DEFAULT_SCORE_CONTEXT: ScoreContext = {
   sleepGoalHours: 8,
-  waterGoalMl: 2000,
 }
 
 export interface MetricDef {
@@ -112,8 +109,6 @@ export const METRICS: MetricDef[] = [
     raw: (i) => val(i.mealsCount), norm: (v) => band(v, 2, 4, 2, 3, 30) },
   { key: 'mealQuality', dim: 'fuel', weight: 0.025, label: '식사의 질',
     raw: (i) => val(i.mealQuality), norm: (v) => up(v, 1, 5) },
-  { key: 'hydration', dim: 'fuel', weight: 0.015, label: '수분',
-    raw: (i) => val(i.waterMl), norm: (v, c) => toGoal(v, c.waterGoalMl) },
 ]
 
 export const METRIC_BY_KEY: Record<MetricKey, MetricDef> = Object.fromEntries(

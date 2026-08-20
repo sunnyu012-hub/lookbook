@@ -20,19 +20,34 @@ describe('daysBetween', () => {
   })
 })
 
-describe('ddayFrom - since', () => {
-  it('시작한 날이 1일째, D-DAY', () => {
+describe('ddayFrom - since (만난 날이 1일)', () => {
+  it('시작한 날이 1일', () => {
     const r = ddayFrom('2026-08-20', 'since', '2026-08-20')
     expect(r.count).toBe(1)
     expect(r.days).toBe(0)
-    expect(r.label).toBe('D-DAY')
+    expect(r.label).toBe('1일')
     expect(r.countLabel).toBe('1일째')
   })
 
-  it('다음 날은 D+1 이고 2일째', () => {
+  it('다음 날은 2일', () => {
     const r = ddayFrom('2026-08-20', 'since', '2026-08-21')
-    expect(r.label).toBe('D+1')
+    expect(r.label).toBe('2일')
     expect(r.count).toBe(2)
+  })
+
+  it('화면에 찍는 값은 경과일(D+N)이 아니라 세는 날이다', () => {
+    // 2025-11-11 에 만났으면 2026-08-20 은 283일째 (D+282 로 보이면 안 된다)
+    const r = ddayFrom('2025-11-11', 'since', '2026-08-20')
+    expect(r.days).toBe(282)
+    expect(r.count).toBe(283)
+    expect(r.label).toBe('283일')
+    expect(r.countLabel).toBe('283일째')
+  })
+
+  it('1000일처럼 큰 수는 자릿점을 찍는다', () => {
+    const r = ddayFrom('2026-01-01', 'since', '2028-09-26')
+    expect(r.count).toBe(1000)
+    expect(r.label).toBe('1,000일')
   })
 
   it('100일째는 시작일 + 99일', () => {

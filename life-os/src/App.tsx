@@ -176,6 +176,7 @@ export default function App() {
               onSaveWeight={weightStore.save}
               onRemoveWeight={weightStore.remove}
               onSaveMounjaro={mounjaroStore.save}
+              onRemoveMounjaro={mounjaroStore.remove}
               onOpenSettings={() => setSettingsOpen(true)}
             />
           )}

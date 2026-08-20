@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { CheckinInput } from '@/types'
 import { scoreCheckin, scoreToMode, sleepHoursScore } from '../scoring'
-import { band, down, toGoal, up } from '../scoring/normalize'
+import { band, down, up } from '../scoring/normalize'
 
 const day = (over: Partial<CheckinInput> = {}): CheckinInput => ({ date: '2026-08-20', ...over })
 
@@ -23,11 +23,6 @@ describe('정규화', () => {
     expect(band(0, 2, 4, 2, 3, 30)).toBe(30)
   })
 
-  it('toGoal 은 목표를 넘겨도 100 에서 멈춘다', () => {
-    expect(toGoal(2000, 2000)).toBe(100)
-    expect(toGoal(4000, 2000)).toBe(100)
-    expect(toGoal(1000, 2000)).toBe(50)
-  })
 })
 
 describe('sleepHoursScore', () => {
@@ -87,7 +82,7 @@ describe('scoreCheckin', () => {
         sleepHours: 8, sleepQuality: 5, fatigue: 1,
         bodyPain: 0, headache: 0, nausea: 0, bloating: 0, digestion: 5,
         mood: 5, focus: 5, stress: 1, anxiety: 1, motivation: 5, socialEnergy: 5,
-        appetite: 5, mealsCount: 3, mealQuality: 5, waterMl: 2000,
+        appetite: 5, mealsCount: 3, mealQuality: 5,
       }),
     )
     expect(r.confidence).toBe(1)
@@ -110,7 +105,7 @@ describe('scoreCheckin', () => {
   })
 
   it('목표 수면 시간 설정이 점수에 반영된다', () => {
-    const ctx = { sleepGoalHours: 6, waterGoalMl: 2000 }
+    const ctx = { sleepGoalHours: 6 }
     expect(scoreCheckin(day({ sleepHours: 6 }), ctx).overall).toBe(100)
     expect(scoreCheckin(day({ sleepHours: 6 })).overall).toBeLessThan(100)
   })
