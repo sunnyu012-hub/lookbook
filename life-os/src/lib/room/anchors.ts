@@ -15,7 +15,7 @@
 export const ROOM_ASPECT = '3 / 2'
 
 /** 벽과 바닥이 만나는 높이 (위에서부터 %) — 그림자·소품 배치의 기준선 */
-export const FLOOR_LINE = 58
+export const FLOOR_LINE = 56
 
 export interface Anchor {
   x: number
@@ -31,27 +31,31 @@ export interface Anchor {
  * Room Base 그림이 바뀌면 이 표만 다시 맞추면 된다 — 다른 코드는 이름으로만 부른다.
  */
 export const ANCHORS = {
-  bed: { x: 73, y: 76, scale: 24, label: '침대' },
-  desk: { x: 55, y: 90, scale: 23, label: '낮은 책상' },
-  rug: { x: 33, y: 92, scale: 26, label: '러그' },
-  beanbag: { x: 15, y: 90, scale: 22, label: '왼쪽 바닥' },
-  center: { x: 45, y: 92, scale: 25, label: '방 가운데' },
-  window: { x: 50, y: 62, scale: 14, label: '창가' },
+  // ── 사람이 앉거나 서는 자리
+  bed: { x: 72, y: 72, scale: 21, label: '침대' },
+  desk: { x: 34, y: 93, scale: 23, label: '낮은 책상 옆' },
+  rug: { x: 40, y: 91, scale: 22, label: '러그' },
+  beanbag: { x: 22, y: 94, scale: 22, label: '거울 앞 바닥' },
+  center: { x: 40, y: 92, scale: 23, label: '방 가운데' },
+  window: { x: 51, y: 45, scale: 14, label: '창가' },
 
-  catBed: { x: 13, y: 95, scale: 12, label: '고양이 방석' },
-  bedFoot: { x: 62, y: 78, scale: 11, label: '침대 발치' },
-  rugEdge: { x: 44, y: 93, scale: 11, label: '러그 가장자리' },
-  windowSill: { x: 44, y: 60, scale: 10, label: '창턱' },
+  // ── 고양이 자리
+  catBed: { x: 27, y: 96, scale: 11, label: '러그 왼쪽' },
+  bedFoot: { x: 67, y: 88, scale: 10, label: '침대 발치 바닥' },
+  rugEdge: { x: 50, y: 96, scale: 11, label: '러그 앞' },
+  windowSill: { x: 51, y: 46, scale: 9, label: '창턱' },
 
-  nightstand: { x: 92, y: 70, scale: 8, label: '협탁' },
-  mirrorSide: { x: 27, y: 82, scale: 8, label: '거울 옆' },
-  tableTop: { x: 63, y: 82, scale: 7, label: '책상 위' },
-  floorLeft: { x: 24, y: 95, scale: 9, label: '왼쪽 바닥' },
-  floorRight: { x: 80, y: 95, scale: 9, label: '오른쪽 바닥' },
+  // ── 물건 놓는 자리
+  nightstand: { x: 94, y: 51, scale: 6, label: '협탁 위' },
+  mirrorSide: { x: 34, y: 66, scale: 7, label: '거울 옆' },
+  tableTop: { x: 47, y: 78, scale: 6, label: '책상 위' },
+  floorLeft: { x: 18, y: 95, scale: 8, label: '왼쪽 바닥' },
+  floorRight: { x: 88, y: 92, scale: 8, label: '오른쪽 바닥' },
 
-  pinboard: { x: 27, y: 22, scale: 9, label: '핀보드' },
-  wallRight: { x: 70, y: 20, scale: 8, label: '오른쪽 벽' },
-  shelfTop: { x: 11, y: 22, scale: 8, label: '선반 위' },
+  // ── 벽
+  pinboard: { x: 30, y: 17, scale: 8, label: '클라이밍 보드' },
+  wallRight: { x: 78, y: 22, scale: 8, label: '오른쪽 벽' },
+  shelfTop: { x: 13, y: 20, scale: 7, label: '선반 위' },
 } as const satisfies Record<string, Anchor>
 
 export type AnchorName = keyof typeof ANCHORS
