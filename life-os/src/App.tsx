@@ -10,8 +10,12 @@ import { HomePage } from '@/pages/HomePage'
 import { LifePage, type LifeTab } from '@/pages/LifePage'
 import { MePage } from '@/pages/MePage'
 import { SettingsPage } from '@/pages/SettingsPage'
-import { TimelinePage } from '@/pages/TimelinePage'
+import { ArchivePage } from '@/pages/ArchivePage'
 import { NightPage } from '@/pages/NightPage'
+import { LifeTreePage } from '@/pages/LifeTreePage'
+import { LifeBalanceDetail } from '@/pages/LifeBalancePage'
+import { RhythmPage } from '@/pages/RhythmPage'
+import { WeeklyResetPage } from '@/pages/WeeklyResetPage'
 import { QuestBoardPage } from '@/pages/QuestBoardPage'
 import { CollectionPage } from '@/pages/CollectionPage'
 import { ManualPage } from '@/pages/ManualPage'
@@ -23,6 +27,7 @@ import {
   useLifeEvents,
   useMounjaro,
   useNights,
+  useWeeklyResets,
   useWeights,
 } from '@/hooks/useLifeData'
 import { usePreferences } from '@/hooks/usePreferences'
@@ -33,6 +38,18 @@ import { xpBreakdown } from '@/lib/xp'
 import { earnedCount, evaluateBadges, markSeen, newlyEarned } from '@/lib/badges'
 import { buildManual } from '@/lib/manual'
 import { discoverPatterns } from '@/lib/analytics'
+import { buildInsightList } from '@/lib/analytics/insightEntity'
+import { computeLifeBalance } from '@/lib/analytics/lifeBalance'
+import { buildLifeTree, markTreeSeen, newlyOpened } from '@/lib/analytics/lifeTree'
+import { recoveryCurve } from '@/lib/analytics/recoveryCurve'
+import { todayCapacity } from '@/lib/wellness/capacity'
+import {
+  WEEKLY_RESET_XP,
+  activeFocusDomains,
+  focusByDate,
+  weekStartOf,
+  weekSummary,
+} from '@/lib/analytics/weeklyReset'
 import { dayXp } from '@/lib/quests/master'
 import { characters } from '@/lib/pixelAssets'
 import { todayKey } from '@/lib/date'
@@ -48,7 +65,9 @@ export default function App() {
   const [lifeSection, setLifeSection] = useState<LifeTab>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   /** 전체 화면으로 덮는 화면들 */
-  const [overlay, setOverlay] = useState<'night' | 'quests' | 'collection' | 'manual' | null>(null)
+  const [overlay, setOverlay] = useState<
+    'night' | 'quests' | 'collection' | 'manual' | 'tree' | 'rhythm' | 'weekly' | 'balance' | null
+  >(null)
   const [result, setResult] = useState<'start' | 'complete' | null>(null)
   const [editingDate, setEditingDate] = useState<string>(todayKey())
   const [toast, setToast] = useState<ToastState | null>(null)
@@ -62,10 +81,31 @@ export default function App() {
   const ddayStore = useDdays(auth.state)
   const nightStore = useNights(auth.state)
   const tagStore = useEventTags(auth.state)
+  const weeklyStore = useWeeklyResets(auth.state)
 
   const todayTags = tagStore.tagsFor(todayKey())
+
+  /** 오늘의 결 — 하루 일정을 짜 주지는 않고, 결만 정해서 추천과 방에 넘긴다 */
+  const capacity = useMemo(
+    () =>
+      todayCapacity({
+        checkin: store.today,
+        events: todayTags,
+        sleepGoalHours: prefStore.prefs.sleepGoalHours,
+      }),
+    [store.today, todayTags, prefStore.prefs.sleepGoalHours],
+  )
+
+  /** 지난 주에 "조금 더 챙기고 싶다" 고 고른 영역 */
+  const focusDomains = useMemo(
+    () => activeFocusDomains(weeklyStore.resets),
+    [weeklyStore.resets],
+  )
+
   const questStore = useQuests(auth.state, {
     mode: store.today?.mode ?? null,
+    capacity: capacity?.type ?? null,
+    focusDomains,
     events: todayTags,
     prefs: prefStore.prefs,
   })
@@ -81,6 +121,93 @@ export default function App() {
       }),
     [store.checkins, prefStore.prefs, eventStore.events, mounjaroStore.logs, tagStore.log],
   )
+
+  /**
+   * 모든 화면이 같은 관찰을 쓰도록 한 번만 만든다.
+   * Patterns / My Manual / Life Tree / Archive 가 전부 이 목록을 참조한다.
+   */
+  const insights = useMemo(
+    () =>
+      buildInsightList({
+        checkins: store.checkins,
+        prefs: prefStore.prefs,
+        lifeEvents: eventStore.events,
+        mounjaroLogs: mounjaroStore.logs,
+        eventLog: tagStore.log,
+      }),
+    [store.checkins, prefStore.prefs, eventStore.events, mounjaroStore.logs, tagStore.log],
+  )
+
+  const balanceInput = useMemo(
+    () => ({
+      checkins: store.checkins,
+      nights: nightStore.nights,
+      lifeEvents: eventStore.events,
+      eventLog: tagStore.log,
+      questLog: questStore.log,
+      customQuests: questStore.customQuests,
+      weeklyFocus: focusByDate(weeklyStore.resets),
+    }),
+    [
+      store.checkins,
+      nightStore.nights,
+      eventStore.events,
+      tagStore.log,
+      questStore.log,
+      questStore.customQuests,
+      weeklyStore.resets,
+    ],
+  )
+
+  const balance = useMemo(() => computeLifeBalance({ ...balanceInput, days: 7 }), [balanceInput])
+
+  const lifeTree = useMemo(
+    () =>
+      buildLifeTree({
+        checkins: store.checkins,
+        nights: nightStore.nights,
+        lifeEvents: eventStore.events,
+        weights: weightStore.logs,
+        mounjaro: mounjaroStore.logs,
+        eventLog: tagStore.log,
+        questLog: questStore.log,
+        customQuests: questStore.customQuests,
+        weeklyResets: weeklyStore.resets,
+      }),
+    [
+      store.checkins,
+      nightStore.nights,
+      eventStore.events,
+      weightStore.logs,
+      mounjaroStore.logs,
+      tagStore.log,
+      questStore.log,
+      questStore.customQuests,
+      weeklyStore.resets,
+    ],
+  )
+
+  const curve = useMemo(
+    () => recoveryCurve({ checkins: store.checkins, metric: 'overall', days: 7 }),
+    [store.checkins],
+  )
+
+  /** 이번 주 요약 — 주간 돌아보기 화면과 ME 에서 같이 쓴다 */
+  const thisWeek = useMemo(
+    () => weekSummary({ ...balanceInput, weekStart: weekStartOf() }),
+    [balanceInput],
+  )
+  const thisWeekReset = weeklyStore.byWeekStart.get(weekStartOf()) ?? null
+
+  /**
+   * 주간 돌아보기를 권할 때 — 금·토·일에만, 아직 안 썼을 때만.
+   * 매일 띄우면 숙제가 된다.
+   */
+  const weeklyDue = useMemo(() => {
+    if (thisWeekReset) return false
+    const day = new Date(`${todayKey()}T00:00:00`).getDay()
+    return day === 0 || day === 6 || day === 5
+  }, [thisWeekReset])
 
   /** 퀘스트 완료 총 횟수 (배지용) */
   const questsDoneTotal = useMemo(
@@ -104,6 +231,7 @@ export default function App() {
         eventLog: tagStore.log,
         questXp: questStore.questXp,
         discoveries: patterns.length,
+        weeklyResets: weeklyStore.resets.length,
       }),
     [
       store.checkins,
@@ -114,6 +242,7 @@ export default function App() {
       tagStore.log,
       questStore.questXp,
       patterns.length,
+      weeklyStore.resets.length,
     ],
   )
 
@@ -160,6 +289,7 @@ export default function App() {
         eventLog: tagStore.log,
         prefs: prefStore.prefs,
         scoreContext: prefStore.scoreContext,
+        insights,
       }),
     [
       store.checkins,
@@ -170,6 +300,7 @@ export default function App() {
       tagStore.log,
       prefStore.prefs,
       prefStore.scoreContext,
+      insights,
     ],
   )
 
@@ -186,6 +317,20 @@ export default function App() {
       markSeen(badges)
     }
   }, [badges, store.loading, questStore.loading])
+
+  // 새로 열린 Life Tree Node 를 한 번만 알려 준다
+  useEffect(() => {
+    if (store.loading || questStore.loading || weeklyStore.loading) return
+    const fresh = newlyOpened(lifeTree)
+    if (fresh.length > 0) {
+      const first = fresh.find((n) => n.parent !== null) ?? fresh[0]
+      setToast({
+        title: '✦ New part of you ✦',
+        detail: `${first.title} · ${first.ko} 이(가) 열렸어요.`,
+      })
+      markTreeSeen(lifeTree)
+    }
+  }, [lifeTree, store.loading, questStore.loading, weeklyStore.loading])
 
   // 레벨이 오르는 순간에만 알려준다 (첫 로딩은 제외)
   const lastLevel = useRef<number | null>(null)
@@ -284,6 +429,35 @@ export default function App() {
         />
       ) : overlay === 'manual' ? (
         <ManualPage chapters={manualChapters} onClose={() => setOverlay(null)} />
+      ) : overlay === 'tree' ? (
+        <LifeTreePage
+          tree={lifeTree}
+          insights={insights}
+          onClose={() => setOverlay(null)}
+          onOpenManual={() => setOverlay('manual')}
+        />
+      ) : overlay === 'balance' ? (
+        <LifeBalanceDetail
+          balanceInput={balanceInput}
+          onClose={() => setOverlay(null)}
+          onOpenTree={() => setOverlay('tree')}
+        />
+      ) : overlay === 'rhythm' ? (
+        <RhythmPage checkins={store.checkins} onClose={() => setOverlay(null)} />
+      ) : overlay === 'weekly' ? (
+        <WeeklyResetPage
+          summary={thisWeek}
+          existing={thisWeekReset}
+          onSave={weeklyStore.save}
+          onClose={() => setOverlay(null)}
+          onDone={() => {
+            setOverlay(null)
+            setToast({
+              title: 'Week closed',
+              detail: thisWeekReset ? '고쳐서 저장했어요.' : `이번 주를 닫았어요. +${WEEKLY_RESET_XP} XP`,
+            })
+          }}
+        />
       ) : settingsOpen ? (
         <SettingsPage
           prefs={prefStore.prefs}
@@ -316,6 +490,11 @@ export default function App() {
               onNight={() => setOverlay('night')}
               onOpenQuestBoard={() => setOverlay('quests')}
               onFavoriteQuest={toggleFavorite}
+              capacity={capacity}
+              curve={curve}
+              onOpenRhythm={() => setOverlay('rhythm')}
+              weeklyDue={weeklyDue}
+              onOpenWeekly={() => setOverlay('weekly')}
             />
           )}
 
@@ -359,18 +538,27 @@ export default function App() {
           )}
 
           {tab === 'log' && (
-            <TimelinePage
+            <ArchivePage
               checkins={store.checkins}
               byDate={store.byDate}
-              weightsByDate={weightStore.byDate}
-              mounjaroByDate={mounjaroStore.byDate}
-              eventsByDate={eventStore.byDate}
-              tagsByDate={tagStore.log}
+              nights={nightStore.nights}
               nightsByDate={nightStore.byDate}
+              weights={weightStore.logs}
+              weightsByDate={weightStore.byDate}
+              mounjaro={mounjaroStore.logs}
+              mounjaroByDate={mounjaroStore.byDate}
+              lifeEvents={eventStore.events}
+              eventsByDate={eventStore.byDate}
+              eventLog={tagStore.log}
+              questLog={questStore.log}
+              customQuests={questStore.customQuests}
+              weeklyResets={weeklyStore.resets}
+              insights={insights}
+              prefs={prefStore.prefs}
               onEdit={openCheckin}
               onAddEvent={eventStore.save}
               onRemoveEvent={eventStore.remove}
-              onDelete={async (date) => {
+              onDelete={async (date: string) => {
                 await store.remove(date)
                 setToast({ title: 'Deleted', detail: '기록을 지웠어요.' })
               }}
@@ -391,6 +579,15 @@ export default function App() {
               onOpenSettings={() => setSettingsOpen(true)}
               onOpenCollection={() => setOverlay('collection')}
               onOpenManual={() => setOverlay('manual')}
+              balance={balance}
+              onOpenBalance={() => setOverlay('balance')}
+              tree={lifeTree}
+              onOpenTree={() => setOverlay('tree')}
+              curve={curve}
+              onOpenRhythm={() => setOverlay('rhythm')}
+              insightList={insights}
+              weeklyResets={weeklyStore.resets.length}
+              onOpenWeekly={() => setOverlay('weekly')}
               badgesEarned={earnedCount(badges)}
               badgesTotal={badges.length}
               manualChapters={manualChapters}

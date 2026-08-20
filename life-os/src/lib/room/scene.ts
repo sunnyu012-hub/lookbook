@@ -15,6 +15,7 @@ import type { PixelAsset } from '../pixelAssets'
 import { effects as fx, gear, icons, items, pets } from '../pixelAssets'
 import { MODE_CHARACTER } from '../pixelAssets'
 import { place, type AnchorName, type Placed } from './anchors'
+import type { CapacityType } from '../wellness/capacity'
 
 export type RoomLayer = 'props' | 'character' | 'pet' | 'effects' | 'objects'
 
@@ -129,6 +130,8 @@ export interface SceneInput {
   questsDone?: number
   /** 지금 시간대 */
   time?: TimeOfDay
+  /** 오늘의 결 — 점수만으로는 안 잡히는 결을 방에 반영한다 */
+  capacity?: CapacityType | null
 }
 
 /**
@@ -187,7 +190,18 @@ export function pickCharacter(input: SceneInput): CharacterPick {
     return { state: 'cozy', anchor: 'bed', height: 23, motion: 'breathe', note: '하루를 닫는 중' }
   }
 
-  // 4. 모드
+  // 4. 오늘의 결 — 점수 구간과 결이 어긋날 때 여기서 잡아 준다
+  if (input.capacity === 'REST') {
+    return { state: 'resting', anchor: 'bed', height: 23, motion: 'breathe', note: '쉬어가는 날' }
+  }
+  if (input.capacity === 'GENTLE') {
+    return { state: 'cozy', anchor: 'beanbag', height: 29, motion: 'breathe', note: '살살 가는 날' }
+  }
+  if (input.capacity === 'OPEN' && mode !== 'RECOVERY') {
+    return { state: 'happy', anchor: 'rug', height: 37, motion: 'hop', note: '여유 있는 날' }
+  }
+
+  // 5. 모드
   const spot = CHARACTER_SPOT[mode]
   return { state: 'mode', anchor: spot.anchor, height: spot.height, motion: spot.motion, note: '오늘의 나' }
 }

@@ -10,6 +10,7 @@ import type {
   MounjaroLog,
   WeightInput,
   WeightLog,
+  WeeklyReset,
 } from '@/types'
 import { ddayRepository } from '@/lib/repositories/dday'
 import { lifeEventRepository } from '@/lib/repositories/lifeEvents'
@@ -17,6 +18,7 @@ import { mounjaroRepository } from '@/lib/repositories/mounjaro'
 import { weightRepository } from '@/lib/repositories/weight'
 import { nightRepository } from '@/lib/repositories/night'
 import { eventRepository, type EventLog } from '@/lib/repositories/events'
+import { weeklyResetRepository, type WeeklySaveInput } from '@/lib/repositories/weeklyReset'
 import { useCollection } from './useCollection'
 import type { AuthState } from './useSession'
 
@@ -106,6 +108,42 @@ export function useEventTags(authState: AuthState = 'local') {
   return { log, tagsFor, setForDate, loading }
 }
 
+/**
+ * 주간 돌아보기. 한 주 한 건이라 useCollection 의 id 기반 목록과 모양이 달라서 따로 둔다.
+ */
+export function useWeeklyResets(authState: AuthState = 'local') {
+  const [resets, setResets] = useState<WeeklyReset[]>([])
+  const [loading, setLoading] = useState(true)
+  const ready = authState === 'local' || authState === 'signed-in'
+
+  const reload = useCallback(() => {
+    if (!ready) return
+    weeklyResetRepository
+      .list()
+      .then(setResets)
+      .catch(() => undefined)
+      .finally(() => setLoading(false))
+  }, [ready])
+
+  useEffect(() => {
+    reload()
+  }, [reload])
+
+  const save = useCallback(async (input: WeeklySaveInput) => {
+    const saved = await weeklyResetRepository.save(input)
+    setResets((prev) => [saved, ...prev.filter((r) => r.weekStart !== saved.weekStart)])
+    return saved
+  }, [])
+
+  const byWeekStart = useMemo(
+    () => new Map(resets.map((r) => [r.weekStart, r])),
+    [resets],
+  )
+
+  return { resets, byWeekStart, save, loading, reload }
+}
+
+export type WeeklyStore = ReturnType<typeof useWeeklyResets>
 export type NightStore = ReturnType<typeof useNights>
 export type EventStore = ReturnType<typeof useEventTags>
 export type WeightStore = ReturnType<typeof useWeights>

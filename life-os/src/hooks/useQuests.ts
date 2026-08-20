@@ -13,6 +13,8 @@ import {
 } from '@/lib/quests/master'
 import { QUEST_POOL } from '@/lib/quests/pool'
 import type { Quest, QuestCategory } from '@/lib/quests/types'
+import type { CapacityType } from '@/lib/wellness/capacity'
+import type { LifeDomain } from '@/lib/domains'
 import type { AuthState } from './useSession'
 
 /** 사용자가 만든 퀘스트를 퀘스트 모양으로 */
@@ -32,6 +34,10 @@ interface Options {
   mode: EnergyMode | null
   events: string[]
   prefs: Preferences
+  /** 오늘의 결 — 추천 비중을 옮긴다 */
+  capacity?: CapacityType | null
+  /** 지난 주 돌아보기에서 고른 영역 */
+  focusDomains?: LifeDomain[]
 }
 
 /**
@@ -77,6 +83,8 @@ export function useQuests(authState: AuthState = 'local', options?: Options) {
     return recommend(
       {
         mode: options.mode,
+        capacity: options.capacity ?? null,
+        focusDomains: options.focusDomains ?? [],
         events: options.events,
         exclude: Object.keys(day.completions),
         custom: customQuests,

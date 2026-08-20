@@ -535,6 +535,28 @@ export function CheckinPage({
         </>
       )}
 
+      {/*
+        CONTEXT NOTE — memo 와 따로 둔다.
+        memo 는 아무 말이나 적는 칸이고, 이건 "오늘 컨디션에 영향을 준 것 같은 것" 이다.
+        Archive 검색과 나중의 텍스트 패턴 분석이 이 칸을 본다.
+      */}
+      <PixelPanel title="Context note" icon={icons.focus}>
+        <p className="ko mb-2 text-inkdim">
+          오늘 컨디션에 영향을 준 것 같다고 느끼는 게 있나요?
+        </p>
+        <textarea
+          value={form.contextNote ?? ''}
+          onChange={(e) => set('contextNote', e.target.value)}
+          rows={2}
+          maxLength={200}
+          placeholder="어제 늦게 잠 / 클라이밍 / 야근 / 그냥 피곤함…"
+          className="w-full resize-none bg-transparent text-[14px] leading-relaxed placeholder:text-inkfaint focus:outline-none"
+        />
+        <p className="mt-1.5 text-[11px] leading-relaxed text-inkfaint">
+          안 적어도 괜찮아요. 적어 두면 나중에 찾아볼 수 있어요.
+        </p>
+      </PixelPanel>
+
       <PixelPanel title="Memo" icon={icons.work}>
         <textarea
           value={form.memo ?? ''}

@@ -9,6 +9,8 @@ import { modeMetaOrNull } from '@/lib/energy'
 import { MODE_CHARACTER, characters, effects as fx, icons, items as pixelItems } from '@/lib/pixelAssets'
 import { CATEGORY_META } from '@/lib/lifeCategories'
 import { iconOfTag, tintOfTag } from '@/lib/events'
+import type { LifeDomain } from '@/lib/domains'
+import { DomainChips } from '@/components/life/LifeBalanceCard'
 
 interface Props {
   date: string
@@ -21,6 +23,10 @@ interface Props {
   tags?: string[]
   /** 그날의 밤 기록 */
   night?: NightCheckout | null
+  /** 그날 완료한 퀘스트 수 — 개별로 늘어놓지 않고 한 줄로만 */
+  questCount?: number
+  /** 그날 기록이 쌓인 영역 */
+  domains?: { key: LifeDomain; value: number }[]
   onClose: () => void
   onEdit: (date: string) => void
   onDelete: (date: string) => void
@@ -36,6 +42,8 @@ export function DaySheet({
   events = [],
   tags = [],
   night = null,
+  questCount = 0,
+  domains = [],
   onClose,
   onEdit,
   onDelete,
@@ -83,6 +91,24 @@ export function DaySheet({
                 {tag}
               </span>
             ))}
+          </div>
+        )}
+
+        {(questCount > 0 || domains.length > 0) && (
+          <div className="mb-3 space-y-2">
+            {questCount > 0 && (
+              <p className="flex items-center gap-2 text-[12.5px]">
+                <PixelImage asset={icons.xp} height={15} />
+                <span className="text-inkdim">퀘스트</span>
+                <span className="ml-auto font-pixel text-[12px]">{questCount}개 완료</span>
+              </p>
+            )}
+            {domains.length > 0 && (
+              <div>
+                <p className="plabel mb-1.5">LIFE DOMAINS</p>
+                <DomainChips domains={domains} limit={4} />
+              </div>
+            )}
           </div>
         )}
 

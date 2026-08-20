@@ -2,6 +2,8 @@ import type { Preferences } from '@/types'
 import { PixelImage } from '@/components/pixel/PixelImage'
 import { SparkleBurst } from '@/components/pixel/PixelSparkle'
 import { CATEGORY_META } from '@/lib/quests/categories'
+import { mappingOfQuest } from '@/lib/quests/domains'
+import { DOMAIN_META } from '@/lib/domains'
 import { questTitle, type Quest } from '@/lib/quests/types'
 import type { XpGain } from '@/lib/quests/master'
 import { haptic } from '@/hooks/useHaptic'
@@ -32,6 +34,7 @@ export function QuestRow({
   action?: { label: string; onClick: () => void; done?: boolean }
 }) {
   const meta = CATEGORY_META[quest.category]
+  const domainMeta = DOMAIN_META[mappingOfQuest(quest).primary]
   const done = count > 0
   const repeat = quest.repeatable
 
@@ -89,9 +92,22 @@ export function QuestRow({
         >
           {questTitle(quest, prefs.partnerName)}
         </span>
-        <span className="plabel mt-0.5 block">
-          {meta.ko}
-          {repeat && ' · 반복'}
+        <span className="mt-0.5 flex items-center gap-1.5">
+          <span className="plabel">
+            {meta.ko}
+            {repeat && ' · 반복'}
+          </span>
+          {/*
+            XP 는 오른쪽의 주 보상이고, Domain 은 여기 작은 표시로만 둔다.
+            둘을 같은 크기로 두면 화면이 복잡해지고 Domain 이 점수처럼 보인다.
+          */}
+          <span
+            className="flex items-center gap-[3px] rounded-full px-1.5 py-[2px] font-pixel text-[8px] uppercase leading-none"
+            style={{ backgroundColor: domainMeta.tint, color: domainMeta.accent }}
+          >
+            <PixelImage asset={domainMeta.icon} height={9} />
+            {domainMeta.label}
+          </span>
         </span>
       </span>
 

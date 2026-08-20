@@ -7,6 +7,8 @@
  */
 import type { PixelAsset } from './pixelAssets'
 import { effects as fx, gear, icons, items, pets } from './pixelAssets'
+import type { DomainWeights } from './domains'
+import { PRIMARY_VALUE, SECONDARY_VALUE, type DomainMapping } from './quests/domains'
 
 export type EventGroupKey = 'work' | 'activity' | 'social' | 'food' | 'body' | 'life'
 
@@ -93,4 +95,92 @@ export function iconOfTag(tag: string): PixelAsset {
   if (tag === '집콕' || tag === '재택') return pets.catCurl
   if (tag === '외식' || tag === '배달') return items.onigiri
   return groupOfTag(tag).icon
+}
+
+// ─────────────────────────────────────────────
+// 태그 → LIFE DOMAIN
+//
+// 태그는 "오늘 이런 일이 있었다" 라는 사실이다. 잘했다 못했다가 아니라
+// 그날의 기록이 어느 영역에 있었는지를 나타낸다.
+// 그래서 '끼니 부족' 도 NOURISH 에 쌓인다 — 먹는 일에 관한 기록이기 때문이다.
+// ─────────────────────────────────────────────
+
+const TAG_DOMAINS: Record<string, DomainMapping> = {
+  // work
+  야근: { primary: 'create' },
+  '바쁜 날': { primary: 'create' },
+  '집중 업무': { primary: 'create' },
+  '회의 많음': { primary: 'create', secondary: 'connect' },
+  '업무 여유': { primary: 'create', secondary: 'recovery' },
+  재택: { primary: 'create', secondary: 'home' },
+  출근: { primary: 'create' },
+  휴일: { primary: 'recovery' },
+
+  // activity
+  클라이밍: { primary: 'body', secondary: 'joy' },
+  걷기: { primary: 'body' },
+  러닝: { primary: 'body' },
+  스트레칭: { primary: 'body', secondary: 'recovery' },
+  운동: { primary: 'body' },
+  '많이 걸음': { primary: 'body' },
+  집콕: { primary: 'home', secondary: 'recovery' },
+  외출: { primary: 'joy', secondary: 'body' },
+
+  // social
+  데이트: { primary: 'connect', secondary: 'joy' },
+  '친구 만남': { primary: 'connect', secondary: 'joy' },
+  가족: { primary: 'connect' },
+  '혼자 시간': { primary: 'recovery', secondary: 'mind' },
+  모임: { primary: 'connect' },
+  약속: { primary: 'connect' },
+  '전화 많이 함': { primary: 'connect' },
+
+  // food
+  외식: { primary: 'nourish', secondary: 'joy' },
+  배달: { primary: 'nourish' },
+  집밥: { primary: 'nourish', secondary: 'home' },
+  '제대로 먹음': { primary: 'nourish' },
+  '끼니 부족': { primary: 'nourish' },
+  '간식 많음': { primary: 'nourish' },
+  카페인: { primary: 'nourish' },
+  '늦은 카페인': { primary: 'nourish' },
+
+  // body
+  근육통: { primary: 'body' },
+  피곤함: { primary: 'recovery' },
+  두통: { primary: 'body' },
+  어지럼: { primary: 'body' },
+  '몸이 가벼움': { primary: 'body' },
+  '몸이 무거움': { primary: 'body' },
+  '회복 중': { primary: 'recovery' },
+
+  // life
+  쇼핑: { primary: 'joy', secondary: 'create' },
+  청소: { primary: 'home' },
+  집안일: { primary: 'home' },
+  취미: { primary: 'joy' },
+  게임: { primary: 'joy' },
+  '콘텐츠 제작': { primary: 'create', secondary: 'joy' },
+  '사진 찍음': { primary: 'joy', secondary: 'create' },
+  '옷 꾸밈': { primary: 'create', secondary: 'joy' },
+  '새로운 장소': { primary: 'joy' },
+  '좋은 일': { primary: 'joy', secondary: 'mind' },
+  '스트레스 이벤트': { primary: 'mind' },
+}
+
+/** 그룹별 기본값 — 사용자가 직접 만든 태그도 그룹을 보고 매핑한다 */
+const GROUP_DOMAINS: Record<string, DomainMapping> = {
+  work: { primary: 'create' },
+  activity: { primary: 'body' },
+  social: { primary: 'connect' },
+  food: { primary: 'nourish' },
+  body: { primary: 'body' },
+  life: { primary: 'home' },
+}
+
+export function domainsOfTag(tag: string): DomainWeights {
+  const m = TAG_DOMAINS[tag] ?? GROUP_DOMAINS[groupOfTag(tag).key]
+  const out: DomainWeights = { [m.primary]: PRIMARY_VALUE }
+  if (m.secondary) out[m.secondary] = SECONDARY_VALUE
+  return out
 }

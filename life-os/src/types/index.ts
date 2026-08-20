@@ -72,6 +72,8 @@ export interface CheckinInput {
   tags?: N<string[]>
   highlight?: N<string>
   memo?: N<string>
+  /** "오늘 컨디션에 영향을 준 것 같다고 느끼는 게 있나요?" — 자유 기록, 검색 대상 */
+  contextNote?: N<string>
 }
 
 /** 저장된 체크인 (계산된 점수 포함) */
@@ -134,6 +136,7 @@ export interface CheckinRow {
   tags: string[] | null
   highlight: string | null
   memo: string | null
+  context_note: string | null
 
   energy_score: number | null
   mode: EnergyMode | null
@@ -293,6 +296,29 @@ export interface CustomQuestRow extends CustomQuestInput {
   id: string
   userId: string
   createdAt: string
+}
+
+// ─────────────────────────────────────────────
+// 주간 돌아보기 — 평가가 아니라 잠깐 멈춰서 보는 자리
+// ─────────────────────────────────────────────
+export interface WeeklyResetInput {
+  /** 그 주 월요일 (YYYY-MM-DD) */
+  weekStart: string
+  weekEnd: string
+  goodText?: N<string>
+  hardText?: N<string>
+  moreText?: N<string>
+  /** 다음 주에 조금 더 챙기고 싶은 영역 — 최대 2개 */
+  focusDomains?: N<string[]>
+}
+
+export interface WeeklyReset extends WeeklyResetInput {
+  userId: string
+  /** 저장 당시의 자동 요약 (나중에 계산이 바뀌어도 그때 본 숫자가 남는다) */
+  avgEnergy: number | null
+  avgSleep: number | null
+  createdAt: string
+  updatedAt: string
 }
 
 export type TabKey = 'home' | 'checkin' | 'life' | 'log' | 'me'

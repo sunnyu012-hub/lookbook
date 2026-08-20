@@ -15,11 +15,14 @@ import { compareGroups, mean, mounjaroCycle, weightSummary } from './analytics'
 import { scoreCheckin, type ScoreContext } from './scoring'
 import { ddayFrom } from './dday'
 import { withParticle } from './korean'
+import type { Insight } from './analytics/insightEntity'
 
 export interface ManualLine {
   text: string
   /** 몇 개의 기록에서 나온 이야기인지 */
   sample?: string
+  /** 공용 Insight 에서 온 줄이면 그 id — 화면에서 같은 관찰인지 알 수 있다 */
+  fromInsight?: string
 }
 
 export interface Chapter {
@@ -45,6 +48,8 @@ export interface ManualInput {
   eventLog: Record<string, string[]>
   prefs: Preferences
   scoreContext?: ScoreContext
+  /** 공용 Insight 목록 — 여기서 다시 계산하지 않고 받아서 얹는다 */
+  insights?: Insight[]
 }
 
 /** 두 그룹을 비교하려면 각각 이만큼은 필요하다 */
@@ -113,6 +118,12 @@ function nextDayLine(
 
 export function buildManual(input: ManualInput): Chapter[] {
   const { checkins, nights, prefs } = input
+  /**
+   * 발견(Insight)은 여기서 다시 계산하지 않는다.
+   * Patterns · Life Tree · Archive 와 같은 목록을 받아서 챕터에 얹기만 한다.
+   * 같은 관찰이 화면마다 조금씩 다르게 나오는 걸 막기 위해서다.
+   */
+  const insights = input.insights ?? []
   const list = scored(checkins)
   const results = checkins.map((c) => ({ c, r: scoreCheckin(c, input.scoreContext) }))
 
@@ -132,7 +143,20 @@ export function buildManual(input: ManualInput): Chapter[] {
     have: number,
     lines: ManualLine[],
   ) => {
-    chapters.push({ no, key, title, ko, icon, need, have, unlocked: have >= need, lines })
+    const attached = insights
+      .filter((i) => i.manualKey === key && i.category !== 'STILL_LEARNING')
+      .map((i) => ({ text: i.body, sample: `${i.sampleSize}일 기록`, fromInsight: i.id }))
+    chapters.push({
+      no,
+      key,
+      title,
+      ko,
+      icon,
+      need,
+      have,
+      unlocked: have >= need,
+      lines: [...lines, ...attached],
+    })
   }
 
   // ── 01 MY ENERGY

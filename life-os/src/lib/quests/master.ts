@@ -8,6 +8,9 @@
  *   · 반복 퀘스트는 하루 몇 번까지만 XP 를 준다. 그 뒤로도 기록은 되지만 XP 는 0.
  */
 import type { EnergyMode } from '@/types'
+import type { CapacityType } from '../wellness/capacity'
+import type { LifeDomain } from '../domains'
+import { mappingOfQuest } from './domains'
 import { QUEST_BY_ID, QUEST_POOL } from './pool'
 import { XP_BY_DIFFICULTY, questXp, type Difficulty, type Quest, type QuestCategory } from './types'
 
@@ -133,8 +136,34 @@ const MODE_DIFFICULTY: Record<EnergyMode, Partial<Record<Difficulty, number>>> =
   POWER: { tiny: 0.9, easy: 1.2, normal: 1.5, big: 1.3 },
 }
 
+/**
+ * 오늘의 결에 따라 비중을 옮긴다. 카테고리를 감추지는 않는다 —
+ * REST DAY 라고 HOME 을 없애 버리면 영영 안 하게 된다.
+ */
+const CAPACITY_WEIGHTS: Record<CapacityType, Partial<Record<QuestCategory, number>>> = {
+  REST: { recovery: 2.4, care: 2.2, food: 1.9, cozy: 2.0, mind: 1.5 },
+  GENTLE: { care: 1.8, home: 1.7, mind: 1.8, fun: 1.7, cozy: 1.5, style: 1.2 },
+  STEADY: {},
+  OPEN: { life: 1.3, growth: 1.3, work: 1.2, home: 1.2 },
+}
+
+/** 결에 맞는 난이도 — OPEN 이라고 고강도 운동을 밀지 않는다. 난이도만 조금 올린다 */
+const CAPACITY_DIFFICULTY: Record<CapacityType, Partial<Record<Difficulty, number>>> = {
+  REST: { tiny: 2.2, easy: 1.3, normal: 0.4, big: 0.1 },
+  GENTLE: { tiny: 1.5, easy: 1.4, normal: 0.8, big: 0.35 },
+  STEADY: {},
+  OPEN: { normal: 1.3, big: 1.25 },
+}
+
+/** 주간 돌아보기에서 "다음 주에 조금 더" 로 고른 영역은 살짝만 올린다 */
+const FOCUS_BOOST = 1.35
+
 export interface RecommendInput {
   mode: EnergyMode | null
+  /** 오늘의 결 (Today's Capacity) */
+  capacity?: CapacityType | null
+  /** 지난 주 돌아보기에서 고른 영역 — 최대 2개 */
+  focusDomains?: LifeDomain[]
   /** 오늘 적어 둔 이벤트 태그 */
   events: string[]
   /** 이미 골라 둔 / 완료한 퀘스트는 다시 추천하지 않는다 */
@@ -162,6 +191,17 @@ export function scoreQuest(quest: Quest, input: RecommendInput): number {
 
   score *= MODE_WEIGHTS[mode][quest.category] ?? 1
   score *= MODE_DIFFICULTY[mode][quest.difficulty] ?? 1
+
+  if (input.capacity) {
+    score *= CAPACITY_WEIGHTS[input.capacity][quest.category] ?? 1
+    score *= CAPACITY_DIFFICULTY[input.capacity][quest.difficulty] ?? 1
+  }
+
+  if (input.focusDomains?.length) {
+    const m = mappingOfQuest(quest)
+    if (input.focusDomains.includes(m.primary)) score *= FOCUS_BOOST
+    else if (m.secondary && input.focusDomains.includes(m.secondary)) score *= 1.15
+  }
 
   // 퀘스트가 스스로 밝힌 궁합
   if (quest.modes?.includes(mode)) score *= 1.6
