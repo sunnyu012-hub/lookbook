@@ -15,6 +15,7 @@ export function rowToCheckin(row: CheckinRow): Checkin {
     entryMode: (row.entry_mode ?? 'detailed') as EntryMode,
 
     sleepHours: n(row.sleep_hours),
+    wakeFreshness: s5(n(row.wake_freshness)),
     sleepQuality: s5(n(row.sleep_quality)),
     fatigue: s5(n(row.fatigue)),
 
@@ -87,6 +88,7 @@ export function inputToRow(
     entry_mode: input.entryMode ?? 'detailed',
 
     sleep_hours: orNull(input.sleepHours),
+    wake_freshness: orNull(input.wakeFreshness),
     sleep_quality: orNull(input.sleepQuality),
     fatigue: orNull(input.fatigue),
 

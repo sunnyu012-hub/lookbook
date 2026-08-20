@@ -11,13 +11,29 @@ import { LifePage, type LifeTab } from '@/pages/LifePage'
 import { MePage } from '@/pages/MePage'
 import { SettingsPage } from '@/pages/SettingsPage'
 import { TimelinePage } from '@/pages/TimelinePage'
+import { NightPage } from '@/pages/NightPage'
+import { QuestBoardPage } from '@/pages/QuestBoardPage'
+import { CollectionPage } from '@/pages/CollectionPage'
+import { ManualPage } from '@/pages/ManualPage'
+import { DayComplete, DayStart } from '@/components/home/DayResult'
 import { useCheckins } from '@/hooks/useCheckins'
-import { useDdays, useLifeEvents, useMounjaro, useWeights } from '@/hooks/useLifeData'
+import {
+  useDdays,
+  useEventTags,
+  useLifeEvents,
+  useMounjaro,
+  useNights,
+  useWeights,
+} from '@/hooks/useLifeData'
 import { usePreferences } from '@/hooks/usePreferences'
 import { useQuests } from '@/hooks/useQuests'
 import { useSession } from '@/hooks/useSession'
 import { levelFromXp } from '@/lib/level'
 import { xpBreakdown } from '@/lib/xp'
+import { earnedCount, evaluateBadges, markSeen, newlyEarned } from '@/lib/badges'
+import { buildManual } from '@/lib/manual'
+import { discoverPatterns } from '@/lib/analytics'
+import { dayXp } from '@/lib/quests/master'
 import { characters } from '@/lib/pixelAssets'
 import { todayKey } from '@/lib/date'
 import { storageMode } from '@/lib/repository'
@@ -31,31 +47,145 @@ export default function App() {
   const [tab, setTab] = useState<TabKey>('home')
   const [lifeSection, setLifeSection] = useState<LifeTab>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  /** 전체 화면으로 덮는 화면들 */
+  const [overlay, setOverlay] = useState<'night' | 'quests' | 'collection' | 'manual' | null>(null)
+  const [result, setResult] = useState<'start' | 'complete' | null>(null)
   const [editingDate, setEditingDate] = useState<string>(todayKey())
   const [toast, setToast] = useState<ToastState | null>(null)
 
   const auth = useSession()
   const prefStore = usePreferences(auth.state)
   const store = useCheckins(auth.state)
-  const questStore = useQuests(auth.state)
   const weightStore = useWeights(auth.state)
   const mounjaroStore = useMounjaro(auth.state)
   const eventStore = useLifeEvents(auth.state)
   const ddayStore = useDdays(auth.state)
+  const nightStore = useNights(auth.state)
+  const tagStore = useEventTags(auth.state)
+
+  const todayTags = tagStore.tagsFor(todayKey())
+  const questStore = useQuests(auth.state, {
+    mode: store.today?.mode ?? null,
+    events: todayTags,
+    prefs: prefStore.prefs,
+  })
+
+  const patterns = useMemo(
+    () =>
+      discoverPatterns({
+        checkins: store.checkins,
+        prefs: prefStore.prefs,
+        lifeEvents: eventStore.events,
+        mounjaroLogs: mounjaroStore.logs,
+        eventLog: tagStore.log,
+      }),
+    [store.checkins, prefStore.prefs, eventStore.events, mounjaroStore.logs, tagStore.log],
+  )
+
+  /** 퀘스트 완료 총 횟수 (배지용) */
+  const questsDoneTotal = useMemo(
+    () =>
+      Object.values(questStore.log).reduce(
+        (sum, d) => sum + Object.values(d.completions).reduce((s, n) => s + n, 0),
+        0,
+      ),
+    [questStore.log],
+  )
 
   // XP 는 "적은 행동" 에서만 나온다 (건강 수치가 좋아진 것에는 주지 않는다)
-  const xp = useMemo(
+  const xpNoBadges = useMemo(
     () =>
       xpBreakdown({
         checkins: store.checkins,
         weights: weightStore.logs,
         mounjaro: mounjaroStore.logs,
         lifeEvents: eventStore.events,
-        questLog: questStore.log,
+        nights: nightStore.nights,
+        eventLog: tagStore.log,
+        questXp: questStore.questXp,
+        discoveries: patterns.length,
       }),
-    [store.checkins, weightStore.logs, mounjaroStore.logs, eventStore.events, questStore.log],
+    [
+      store.checkins,
+      weightStore.logs,
+      mounjaroStore.logs,
+      eventStore.events,
+      nightStore.nights,
+      tagStore.log,
+      questStore.questXp,
+      patterns.length,
+    ],
+  )
+
+  const badges = useMemo(
+    () =>
+      evaluateBadges({
+        checkins: store.checkins,
+        nights: nightStore.nights,
+        weights: weightStore.logs,
+        mounjaro: mounjaroStore.logs,
+        lifeEvents: eventStore.events,
+        eventLog: tagStore.log,
+        questsDone: questsDoneTotal,
+        discoveries: patterns.length,
+        level: levelFromXp(xpNoBadges.total).level,
+      }),
+    [
+      store.checkins,
+      nightStore.nights,
+      weightStore.logs,
+      mounjaroStore.logs,
+      eventStore.events,
+      tagStore.log,
+      questsDoneTotal,
+      patterns.length,
+      xpNoBadges.total,
+    ],
+  )
+
+  const xp = useMemo(
+    () => ({ ...xpNoBadges, badge: earnedCount(badges) * 5, total: xpNoBadges.total + earnedCount(badges) * 5 }),
+    [xpNoBadges, badges],
   )
   const level = levelFromXp(xp.total)
+
+  const manualChapters = useMemo(
+    () =>
+      buildManual({
+        checkins: store.checkins,
+        nights: nightStore.nights,
+        weights: weightStore.logs,
+        mounjaro: mounjaroStore.logs,
+        lifeEvents: eventStore.events,
+        eventLog: tagStore.log,
+        prefs: prefStore.prefs,
+        scoreContext: prefStore.scoreContext,
+      }),
+    [
+      store.checkins,
+      nightStore.nights,
+      weightStore.logs,
+      mounjaroStore.logs,
+      eventStore.events,
+      tagStore.log,
+      prefStore.prefs,
+      prefStore.scoreContext,
+    ],
+  )
+
+  // 새로 열린 배지를 한 번만 알려 준다
+  useEffect(() => {
+    if (store.loading || questStore.loading) return
+    const fresh = newlyEarned(badges)
+    if (fresh.length > 0) {
+      const first = fresh[0]
+      setToast({
+        title: first.secret ? 'Secret discovered!' : `New badge — ${first.name}`,
+        detail: first.secret ? `${first.name} 이(가) 열렸어요.` : first.hint,
+      })
+      markSeen(badges)
+    }
+  }, [badges, store.loading, questStore.loading])
 
   // 레벨이 오르는 순간에만 알려준다 (첫 로딩은 제외)
   const lastLevel = useRef<number | null>(null)
@@ -79,7 +209,19 @@ export default function App() {
     setTab('life')
   }, [])
 
+  const toggleFavorite = useCallback(
+    (questId: string) => {
+      const current = prefStore.prefs.favoriteQuests ?? []
+      const next = current.includes(questId)
+        ? current.filter((id) => id !== questId)
+        : [...current, questId]
+      void prefStore.save({ ...prefStore.prefs, favoriteQuests: next })
+    },
+    [prefStore],
+  )
+
   const handleTab = (next: TabKey) => {
+    setOverlay(null)
     setSettingsOpen(false)
     if (next === 'checkin') setEditingDate(todayKey())
     if (next === 'life') setLifeSection(null)
@@ -113,7 +255,36 @@ export default function App() {
         </p>
       )}
 
-      {settingsOpen ? (
+      {overlay === 'night' ? (
+        <NightPage
+          morning={store.today}
+          existing={nightStore.byDate.get(todayKey()) ?? null}
+          onSave={nightStore.save}
+          onClose={() => setOverlay(null)}
+          onDone={() => {
+            setOverlay(null)
+            setResult('complete')
+          }}
+        />
+      ) : overlay === 'quests' ? (
+        <QuestBoardPage
+          questStore={questStore}
+          prefs={prefStore.prefs}
+          mode={store.today?.mode ?? null}
+          events={todayTags}
+          onFavorite={toggleFavorite}
+          onClose={() => setOverlay(null)}
+        />
+      ) : overlay === 'collection' ? (
+        <CollectionPage
+          badges={badges}
+          patterns={patterns}
+          memories={eventStore.events.map((e) => ({ date: e.date, title: e.title }))}
+          onClose={() => setOverlay(null)}
+        />
+      ) : overlay === 'manual' ? (
+        <ManualPage chapters={manualChapters} onClose={() => setOverlay(null)} />
+      ) : settingsOpen ? (
         <SettingsPage
           prefs={prefStore.prefs}
           account={auth.email}
@@ -139,6 +310,12 @@ export default function App() {
               onStartCheckin={() => openCheckin(todayKey())}
               onOpenLife={openLife}
               onOpenLog={() => setTab('log')}
+              events={todayTags}
+              onSaveEvents={(tags) => tagStore.setForDate(todayKey(), tags)}
+              nightDone={nightStore.byDate.has(todayKey())}
+              onNight={() => setOverlay('night')}
+              onOpenQuestBoard={() => setOverlay('quests')}
+              onFavoriteQuest={toggleFavorite}
             />
           )}
 
@@ -152,9 +329,10 @@ export default function App() {
               onSaveWeight={weightStore.save}
               onSaveMounjaro={mounjaroStore.save}
               onSaveEvent={eventStore.save}
-              onSaved={() => {
-                setToast({ title: 'Save Complete!', detail: '오늘의 기록이 저장됐어요.' })
+              onSaved={(saved) => {
                 setTab('home')
+                if (saved.date === todayKey()) setResult('start')
+                else setToast({ title: 'Save Complete!', detail: '기록이 저장됐어요.' })
               }}
             />
           )}
@@ -187,6 +365,8 @@ export default function App() {
               weightsByDate={weightStore.byDate}
               mounjaroByDate={mounjaroStore.byDate}
               eventsByDate={eventStore.byDate}
+              tagsByDate={tagStore.log}
+              nightsByDate={nightStore.byDate}
               onEdit={openCheckin}
               onAddEvent={eventStore.save}
               onRemoveEvent={eventStore.remove}
@@ -209,10 +389,31 @@ export default function App() {
               xp={xp}
               onStartCheckin={() => openCheckin(todayKey())}
               onOpenSettings={() => setSettingsOpen(true)}
+              onOpenCollection={() => setOverlay('collection')}
+              onOpenManual={() => setOverlay('manual')}
+              badgesEarned={earnedCount(badges)}
+              badgesTotal={badges.length}
+              manualChapters={manualChapters}
               devAction={<DevTools onChanged={() => void store.refresh()} />}
             />
           )}
         </>
+      )}
+
+      {result === 'start' && store.today && (
+        <DayStart checkin={store.today} dayNumber={dayNumber} onClose={() => setResult(null)} />
+      )}
+
+      {result === 'complete' && nightStore.byDate.get(todayKey()) && (
+        <DayComplete
+          checkin={store.today}
+          night={nightStore.byDate.get(todayKey())!}
+          dayNumber={dayNumber}
+          questsDone={questStore.doneCount}
+          questTotal={questStore.picks.length}
+          xpEarned={dayXp(questStore.today, questStore.featured, questStore.allQuests) + 10}
+          onClose={() => setResult(null)}
+        />
       )}
 
       {toast && (

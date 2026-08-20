@@ -7,6 +7,7 @@ import { PixelSparkle } from '@/components/pixel/PixelSparkle'
 import { EnergyBar } from '@/components/pixel/EnergyBar'
 import { LineChart } from '@/components/pixel/LineChart'
 import { LevelCard } from '@/components/pixel/LevelCard'
+import { ManualPreview } from './ManualPage'
 import { loggingStreak } from '@/lib/xp'
 import { todayKey } from '@/lib/date'
 import { buildInsights } from '@/lib/insights'
@@ -51,6 +52,11 @@ interface Props {
   xp: XpBreakdown
   onStartCheckin: () => void
   onOpenSettings: () => void
+  onOpenCollection: () => void
+  onOpenManual: () => void
+  badgesEarned: number
+  badgesTotal: number
+  manualChapters: import('@/lib/manual').Chapter[]
   devAction?: React.ReactNode
 }
 
@@ -65,6 +71,11 @@ export function MePage({
   xp,
   onStartCheckin,
   onOpenSettings,
+  onOpenCollection,
+  onOpenManual,
+  badgesEarned,
+  badgesTotal,
+  manualChapters,
   devAction,
 }: Props) {
   const insights = useMemo(() => buildInsights(checkins), [checkins])
@@ -121,14 +132,36 @@ export function MePage({
         <MiniStat label="Total XP" value={String(xp.total)} />
       </div>
 
+      <button
+        type="button"
+        onClick={onOpenCollection}
+        className="press flex w-full items-center gap-2.5 rounded-px4 border-[1.5px] border-border bg-ivory px-3.5 py-3 text-left shadow-hard"
+      >
+        <PixelImage asset={icons.xp} height={22} />
+        <span className="flex-1">
+          <span className="ptitle block">Collection</span>
+          <span className="mt-1 block text-[11.5px] text-inkdim">배지 · 발견 · 순간</span>
+        </span>
+        <span className="font-pixel text-[12px] text-peachdeep">
+          {badgesEarned}/{badgesTotal}
+        </span>
+        <span className="text-[11px] text-inkfaint">›</span>
+      </button>
+
+      <ManualPreview chapters={manualChapters} onOpen={onOpenManual} />
+
       <PixelPanel title="XP sources" icon={icons.xp}>
         <ul className="space-y-1.5">
           {[
-            { label: '오늘 상태 기록', value: xp.checkin },
+            { label: '아침 기록', value: xp.checkin },
+            { label: '밤 마무리', value: xp.night },
             { label: '퀘스트', value: xp.quest },
+            { label: '오늘 태그', value: xp.events },
             { label: '체중 기록', value: xp.weight },
             { label: '투약 기록', value: xp.mounjaro },
             { label: '있었던 일 기록', value: xp.lifeEvent },
+            { label: '패턴 발견', value: xp.discovery },
+            { label: '새 배지', value: xp.badge },
           ]
             .filter((row) => row.value > 0)
             .map((row) => (

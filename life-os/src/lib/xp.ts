@@ -7,27 +7,38 @@
  * 그래서 아래 표에는 "결과" 가 아니라 "행동" 만 들어 있다.
  */
 import type { Checkin, LifeEvent, MounjaroLog, WeightLog } from '@/types'
-import { xpOf } from './quests'
 
 export const XP_RULES = {
-  /** 오늘 상태를 간단히 적음 */
-  checkinQuick: 10,
-  /** 자세히 적음 */
-  checkinDetailed: 25,
+  /** 아침에 오늘 상태를 적음 */
+  morningCheckin: 5,
+  /** 밤에 하루를 닫음 */
+  nightCheckout: 5,
+  /** 자세히 적음 (아침 기록에 얹어 준다) */
+  detailedBonus: 3,
   /** 체중을 잼 */
-  weightLog: 5,
+  weightLog: 2,
   /** 투약 기록을 적음 */
-  mounjaroLog: 10,
+  mounjaroLog: 2,
   /** 오늘 있었던 일을 적음 */
-  lifeEvent: 5,
+  lifeEvent: 2,
+  /** 이벤트 태그를 적은 날 */
+  eventTags: 2,
+  /** 새로 발견한 패턴 */
+  discovery: 10,
+  /** 새 배지 */
+  badge: 5,
 } as const
 
 export const XP_RULE_LABEL: Record<keyof typeof XP_RULES, string> = {
-  checkinQuick: '오늘 상태 간단 기록',
-  checkinDetailed: '오늘 상태 자세히 기록',
+  morningCheckin: '아침 기록',
+  nightCheckout: '밤 마무리',
+  detailedBonus: '자세히 적기',
   weightLog: '체중 기록',
   mounjaroLog: '투약 기록',
-  lifeEvent: '오늘 있었던 일 기록',
+  lifeEvent: '있었던 일 기록',
+  eventTags: '오늘 태그',
+  discovery: '패턴 발견',
+  badge: '새 배지',
 }
 
 export interface XpSources {
@@ -35,16 +46,26 @@ export interface XpSources {
   weights?: WeightLog[]
   mounjaro?: MounjaroLog[]
   lifeEvents?: LifeEvent[]
-  /** date → 완료한 퀘스트 id 목록 */
-  questLog?: Record<string, string[]>
+  /** 밤에 하루를 닫은 날짜들 */
+  nights?: { date: string }[]
+  /** date → 이벤트 태그 */
+  eventLog?: Record<string, string[]>
+  /** 퀘스트로 번 XP (useQuests 가 계산해서 넘겨 준다) */
+  questXp?: number
+  discoveries?: number
+  badges?: number
 }
 
 export interface XpBreakdown {
   checkin: number
+  night: number
   weight: number
   mounjaro: number
   lifeEvent: number
+  events: number
   quest: number
+  discovery: number
+  badge: number
   total: number
 }
 
@@ -53,24 +74,37 @@ export function xpBreakdown({
   weights = [],
   mounjaro = [],
   lifeEvents = [],
-  questLog = {},
+  nights = [],
+  eventLog = {},
+  questXp = 0,
+  discoveries = 0,
+  badges = 0,
 }: XpSources): XpBreakdown {
   const checkin = checkins.reduce(
-    (sum, c) => sum + (c.entryMode === 'quick' ? XP_RULES.checkinQuick : XP_RULES.checkinDetailed),
+    (sum, c) =>
+      sum + XP_RULES.morningCheckin + (c.entryMode === 'detailed' ? XP_RULES.detailedBonus : 0),
     0,
   )
+  const night = nights.length * XP_RULES.nightCheckout
   const weight = weights.length * XP_RULES.weightLog
   const mj = mounjaro.length * XP_RULES.mounjaroLog
   const life = lifeEvents.length * XP_RULES.lifeEvent
-  const quest = Object.values(questLog).reduce((sum, ids) => sum + xpOf(ids), 0)
+  const events =
+    Object.values(eventLog).filter((tags) => tags.length > 0).length * XP_RULES.eventTags
+  const discovery = discoveries * XP_RULES.discovery
+  const badge = badges * XP_RULES.badge
 
   return {
     checkin,
+    night,
     weight,
     mounjaro: mj,
     lifeEvent: life,
-    quest,
-    total: checkin + weight + mj + life + quest,
+    events,
+    quest: questXp,
+    discovery,
+    badge,
+    total: checkin + night + weight + mj + life + events + questXp + discovery + badge,
   }
 }
 

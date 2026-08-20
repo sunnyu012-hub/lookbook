@@ -9,15 +9,27 @@ import { StatusView } from '@/components/home/StatusView'
 import { EffectsView } from '@/components/home/EffectsView'
 import { QuestView } from '@/components/home/QuestView'
 import { MyLife, buildLifeModules, type LifeSection } from '@/components/home/MyLife'
+import { EventSheet } from '@/components/home/EventSheet'
 import type { QuestStore } from '@/hooks/useQuests'
 import { pixelDate, todayKey } from '@/lib/date'
 import { loggingStreak } from '@/lib/xp'
-import { effects as fx, icons } from '@/lib/pixelAssets'
+import { effects as fx, icons, pets } from '@/lib/pixelAssets'
+import { tintOfTag } from '@/lib/events'
+import { haptic } from '@/hooks/useHaptic'
 import type { LevelState } from '@/lib/level'
 import type { ScoreContext } from '@/lib/scoring'
+import { cn } from '@/lib/cn'
 
 interface Props {
   today: Checkin | null
+  /** 오늘 적어 둔 이벤트 태그 */
+  events: string[]
+  onSaveEvents: (tags: string[]) => void
+  /** 밤 마무리를 마쳤는지 */
+  nightDone: boolean
+  onNight: () => void
+  onOpenQuestBoard: () => void
+  onFavoriteQuest: (questId: string) => void
   checkins: Checkin[]
   weights: WeightLog[]
   mounjaro: MounjaroLog[]
@@ -39,6 +51,12 @@ interface Props {
  */
 export function HomePage({
   today,
+  events,
+  onSaveEvents,
+  nightDone,
+  onNight,
+  onOpenQuestBoard,
+  onFavoriteQuest,
   checkins,
   weights,
   mounjaro,
@@ -54,6 +72,7 @@ export function HomePage({
   onOpenLog,
 }: Props) {
   const [tab, setTab] = useState<HomeTab>('status')
+  const [eventsOpen, setEventsOpen] = useState(false)
 
   const streak = useMemo(
     () => loggingStreak(checkins.map((c) => c.date), todayKey()),
@@ -110,6 +129,9 @@ export function HomePage({
           mode={today?.mode ?? null}
           prefs={prefs}
           injectedToday={injectedToday}
+          events={events}
+          nightDone={nightDone}
+          questsDone={questStore.doneCount}
         />
       </div>
 
@@ -119,6 +141,39 @@ export function HomePage({
         <>
           <TodayHUD today={today} streak={streak} onStartCheckin={onStartCheckin} />
 
+          {/* ── 오늘 있었던 일 ── */}
+          <section>
+            <button
+              type="button"
+              onClick={() => {
+                haptic()
+                setEventsOpen(true)
+              }}
+              className="press flex w-full items-center gap-2 rounded-px3 border-[1.5px] border-dashed border-borderdeep bg-cream px-3 py-2.5 text-left"
+            >
+              <PixelImage asset={icons.camera} height={16} />
+              {events.length === 0 ? (
+                <span className="flex-1 text-[12.5px] text-inkdim">+ 오늘 있었던 일</span>
+              ) : (
+                <span className="no-scrollbar flex flex-1 gap-1.5 overflow-x-auto">
+                  {events.slice(0, 6).map((tag) => (
+                    <span
+                      key={tag}
+                      className="shrink-0 rounded-full px-2 py-[3px] text-[11.5px]"
+                      style={{ backgroundColor: tintOfTag(tag) }}
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                  {events.length > 6 && (
+                    <span className="plabel shrink-0 self-center">+{events.length - 6}</span>
+                  )}
+                </span>
+              )}
+              <span className="font-pixel text-[11px] text-inkfaint">›</span>
+            </button>
+          </section>
+
           <HomeTabs active={tab} onChange={setTab} />
 
           <section className="panel p-3.5" role="tabpanel">
@@ -126,11 +181,50 @@ export function HomePage({
               <StatusView today={today} scoreContext={scoreContext} onEdit={onStartCheckin} />
             )}
             {tab === 'effects' && <EffectsView today={today} scoreContext={scoreContext} />}
-            {tab === 'quest' && <QuestView mode={today?.mode ?? null} questStore={questStore} />}
+            {tab === 'quest' && (
+              <QuestView
+                questStore={questStore}
+                prefs={prefs}
+                onOpenBoard={onOpenQuestBoard}
+                onFavorite={onFavoriteQuest}
+              />
+            )}
           </section>
 
           <MyLife modules={modules} onOpen={onOpenLife} />
+
+          {/* ── 하루 닫기 ── */}
+          {today && (
+            <button
+              type="button"
+              onClick={() => {
+                haptic()
+                onNight()
+              }}
+              className={cn(
+                'press flex w-full items-center justify-center gap-2 rounded-px4 border-[1.5px] py-3',
+                'font-pixel text-[11px] uppercase tracking-[0.04em]',
+                nightDone
+                  ? 'border-border bg-ivory text-inkdim shadow-hard'
+                  : 'border-lavenderdeep bg-lavendersoft text-lavenderdeep shadow-hard',
+              )}
+            >
+              <PixelImage asset={pets.catCurl} height={18} />
+              {nightDone ? '밤 기록 고치기' : '하루 마무리하기'}
+            </button>
+          )}
         </>
+      )}
+
+      {eventsOpen && (
+        <EventSheet
+          tags={events}
+          onClose={() => setEventsOpen(false)}
+          onSave={(tags) => {
+            onSaveEvents(tags)
+            setEventsOpen(false)
+          }}
+        />
       )}
     </div>
   )

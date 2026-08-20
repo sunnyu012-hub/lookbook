@@ -12,6 +12,7 @@ import { effects as fx, gear, icons, items } from '../pixelAssets'
 import { fromDateKey } from '../date'
 import { compareGroups, mean, type GroupComparison } from './stats'
 import { comparePhases } from './mounjaro'
+import { iconOfTag } from '../events'
 
 export interface Pattern {
   id: string
@@ -188,13 +189,19 @@ export interface DiscoverInput {
   prefs: Preferences
   lifeEvents?: LifeEvent[]
   mounjaroLogs?: MounjaroLog[]
+  /** 날짜별 "오늘 있었던 일" 태그 */
+  eventLog?: Record<string, string[]>
 }
+
+/** 태그 패턴은 아무리 많아도 이만큼만 보여 준다 — 화면이 넘치면 아무것도 안 읽힌다 */
+const MAX_TAG_PATTERNS = 3
 
 export function discoverPatterns({
   checkins,
   prefs,
   lifeEvents = [],
   mounjaroLogs = [],
+  eventLog = {},
 }: DiscoverInput): Pattern[] {
   const ctx: PatternContext = {
     prefs,
@@ -220,7 +227,46 @@ export function discoverPatterns({
     }
   }
 
+  out.push(...tagPatterns(checkins, eventLog))
+
   return out.sort((a, b) => (a.kind === 'neutral' ? 1 : 0) - (b.kind === 'neutral' ? 1 : 0))
+}
+
+/**
+ * "오늘 있었던 일" 태그가 적힌 날과 그렇지 않은 날의 점수를 비교한다.
+ * 인과가 아니라 같이 적혀 있었다는 뜻이고, 문구도 그렇게만 쓴다.
+ */
+function tagPatterns(checkins: Checkin[], eventLog: Record<string, string[]>): Pattern[] {
+  const list = scored(checkins)
+  if (list.length < MIN_GROUP * 2) return []
+
+  const counts = new Map<string, number>()
+  for (const c of list) {
+    for (const tag of eventLog[c.date] ?? []) counts.set(tag, (counts.get(tag) ?? 0) + 1)
+  }
+
+  const found: Pattern[] = []
+  for (const [tag, n] of counts) {
+    if (n < MIN_GROUP) continue
+    const on = list.filter((c) => (eventLog[c.date] ?? []).includes(tag)).map(score)
+    const off = list.filter((c) => !(eventLog[c.date] ?? []).includes(tag)).map(score)
+    const cmp = compareGroups(on, off, tag, '그 외', MIN_GROUP)
+    if (!cmp.enough || Math.abs(cmp.diff) < MIN_SCORE_DIFF) continue
+
+    const up = cmp.diff > 0
+    found.push({
+      id: `tag:${tag}`,
+      title: tag.toUpperCase(),
+      icon: iconOfTag(tag),
+      kind: 'neutral',
+      body: `"${tag}"를 적은 날에는 Overall 이 평균 ${Math.abs(cmp.diff)}점 ${up ? '높게' : '낮게'} 나타났어요. 같이 적혀 있었다는 뜻이지, 원인은 아니에요.`,
+      sample: `${cmp.nA}일 vs ${cmp.nB}일`,
+    })
+  }
+
+  return found
+    .sort((a, b) => Number(b.sample?.split('일')[0]) - Number(a.sample?.split('일')[0]))
+    .slice(0, MAX_TAG_PATTERNS)
 }
 
 // ─────────────────────────────────────────────

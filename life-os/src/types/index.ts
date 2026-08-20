@@ -23,6 +23,8 @@ export interface CheckinInput {
 
   // ── 회복
   sleepHours?: N<number>
+  /** 아침에 일어났을 때 얼마나 개운했는지 (1 나쁨 ~ 5 좋음) */
+  wakeFreshness?: N<Scale5>
   /** 1 나쁨 ~ 5 좋음 */
   sleepQuality?: N<Scale5>
   /** 1 안 피곤 ~ 5 매우 피곤 */
@@ -97,6 +99,7 @@ export interface CheckinRow {
   entry_mode: EntryMode | null
 
   sleep_hours: number | null
+  wake_freshness: number | null
   sleep_quality: number | null
   fatigue: number | null
   body_pain: number | null
@@ -246,6 +249,50 @@ export interface Preferences {
   partnerName: string | null
 
   sleepGoalHours: number
+  /** 즐겨찾는 퀘스트 id */
+  favoriteQuests: string[]
+}
+
+// ─────────────────────────────────────────────
+// 밤에 하루를 닫는 기록
+// ─────────────────────────────────────────────
+export interface NightCheckoutInput {
+  date: string
+  /** 실제로 하루가 어땠는지 (1~5) */
+  actualEnergy?: N<Scale5>
+  daySatisfaction?: N<Scale5>
+  actualMood?: N<Scale5>
+  actualBody?: N<Scale5>
+  actualStress?: N<Scale5>
+  bestThing?: N<string>
+  hardestThing?: N<string>
+  diary?: N<string>
+}
+
+export interface NightCheckout extends NightCheckoutInput {
+  userId: string
+  createdAt: string
+  updatedAt: string
+}
+
+/** 오늘 있었던 일 태그 */
+export interface DayEvents {
+  date: string
+  tags: string[]
+}
+
+/** 사용자가 직접 만든 퀘스트 */
+export interface CustomQuestInput {
+  title: string
+  category: string
+  difficulty: 'tiny' | 'easy' | 'normal' | 'big'
+  isRepeatable: boolean
+}
+
+export interface CustomQuestRow extends CustomQuestInput {
+  id: string
+  userId: string
+  createdAt: string
 }
 
 export type TabKey = 'home' | 'checkin' | 'life' | 'log' | 'me'
