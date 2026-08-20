@@ -1,0 +1,535 @@
+{
+  "characters": {
+    "back-bag": {
+      "height": 83,
+      "src": "/assets/pixel/characters/back-bag.png",
+      "width": 52
+    },
+    "back-coat": {
+      "height": 82,
+      "src": "/assets/pixel/characters/back-coat.png",
+      "width": 51
+    },
+    "easy": {
+      "height": 171,
+      "src": "/assets/pixel/characters/easy.png",
+      "width": 151
+    },
+    "idle": {
+      "height": 172,
+      "src": "/assets/pixel/characters/idle.png",
+      "width": 114
+    },
+    "normal": {
+      "height": 173,
+      "src": "/assets/pixel/characters/normal.png",
+      "width": 150
+    },
+    "power": {
+      "height": 175,
+      "src": "/assets/pixel/characters/power.png",
+      "width": 123
+    },
+    "recovery": {
+      "height": 122,
+      "src": "/assets/pixel/characters/recovery.png",
+      "width": 172
+    }
+  },
+  "effects": {
+    "cloud": {
+      "height": 39,
+      "src": "/assets/pixel/effects/cloud.png",
+      "width": 59
+    },
+    "flower": {
+      "height": 23,
+      "src": "/assets/pixel/effects/flower.png",
+      "width": 25
+    },
+    "heart": {
+      "height": 21,
+      "src": "/assets/pixel/effects/heart.png",
+      "width": 23
+    },
+    "heart-bubble": {
+      "height": 55,
+      "src": "/assets/pixel/effects/heart-bubble.png",
+      "width": 64
+    },
+    "rainbow": {
+      "height": 36,
+      "src": "/assets/pixel/effects/rainbow.png",
+      "width": 77
+    },
+    "sparkle-01": {
+      "height": 32,
+      "src": "/assets/pixel/effects/sparkle-01.png",
+      "width": 26
+    },
+    "sparkle-02": {
+      "height": 26,
+      "src": "/assets/pixel/effects/sparkle-02.png",
+      "width": 23
+    },
+    "string-lights": {
+      "height": 34,
+      "src": "/assets/pixel/effects/string-lights.png",
+      "width": 67
+    },
+    "zzz-bubble": {
+      "height": 40,
+      "src": "/assets/pixel/effects/zzz-bubble.png",
+      "width": 50
+    }
+  },
+  "fashion": {
+    "backpack": {
+      "height": 83,
+      "src": "/assets/pixel/fashion/backpack.png",
+      "width": 74
+    },
+    "bag-black": {
+      "height": 76,
+      "src": "/assets/pixel/fashion/bag-black.png",
+      "width": 73
+    },
+    "cap": {
+      "height": 57,
+      "src": "/assets/pixel/fashion/cap.png",
+      "width": 69
+    },
+    "jeans": {
+      "height": 63,
+      "src": "/assets/pixel/fashion/jeans.png",
+      "width": 54
+    },
+    "shorts-black": {
+      "height": 63,
+      "src": "/assets/pixel/fashion/shorts-black.png",
+      "width": 64
+    },
+    "shorts-denim": {
+      "height": 57,
+      "src": "/assets/pixel/fashion/shorts-denim.png",
+      "width": 60
+    },
+    "tote-climb": {
+      "height": 89,
+      "src": "/assets/pixel/fashion/tote-climb.png",
+      "width": 62
+    },
+    "tote-make": {
+      "height": 89,
+      "src": "/assets/pixel/fashion/tote-make.png",
+      "width": 62
+    },
+    "tshirt-bow": {
+      "height": 50,
+      "src": "/assets/pixel/fashion/tshirt-bow.png",
+      "width": 63
+    },
+    "tshirt-pink": {
+      "height": 48,
+      "src": "/assets/pixel/fashion/tshirt-pink.png",
+      "width": 59
+    }
+  },
+  "furniture": {
+    "beanbag": {
+      "height": 77,
+      "src": "/assets/pixel/furniture/beanbag.png",
+      "width": 82
+    },
+    "bed": {
+      "height": 120,
+      "src": "/assets/pixel/furniture/bed.png",
+      "width": 147
+    },
+    "bookshelf": {
+      "height": 92,
+      "src": "/assets/pixel/furniture/bookshelf.png",
+      "width": 54
+    },
+    "clock": {
+      "height": 50,
+      "src": "/assets/pixel/furniture/clock.png",
+      "width": 45
+    },
+    "clothing-rack": {
+      "height": 108,
+      "src": "/assets/pixel/furniture/clothing-rack.png",
+      "width": 89
+    },
+    "desk": {
+      "height": 107,
+      "src": "/assets/pixel/furniture/desk.png",
+      "width": 196
+    },
+    "hanging-plant": {
+      "height": 81,
+      "src": "/assets/pixel/furniture/hanging-plant.png",
+      "width": 43
+    },
+    "lamp": {
+      "height": 70,
+      "src": "/assets/pixel/furniture/lamp.png",
+      "width": 36
+    },
+    "laundry-basket": {
+      "height": 82,
+      "src": "/assets/pixel/furniture/laundry-basket.png",
+      "width": 69
+    },
+    "mirror": {
+      "height": 101,
+      "src": "/assets/pixel/furniture/mirror.png",
+      "width": 56
+    },
+    "nightstand": {
+      "height": 63,
+      "src": "/assets/pixel/furniture/nightstand.png",
+      "width": 46
+    },
+    "photo-frames": {
+      "height": 58,
+      "src": "/assets/pixel/furniture/photo-frames.png",
+      "width": 48
+    },
+    "pinboard": {
+      "height": 81,
+      "src": "/assets/pixel/furniture/pinboard.png",
+      "width": 122
+    },
+    "plant": {
+      "height": 78,
+      "src": "/assets/pixel/furniture/plant.png",
+      "width": 44
+    },
+    "poster-pink": {
+      "height": 72,
+      "src": "/assets/pixel/furniture/poster-pink.png",
+      "width": 54
+    },
+    "poster-sky": {
+      "height": 74,
+      "src": "/assets/pixel/furniture/poster-sky.png",
+      "width": 53
+    },
+    "rug": {
+      "height": 67,
+      "src": "/assets/pixel/furniture/rug.png",
+      "width": 96
+    },
+    "window-day": {
+      "height": 74,
+      "src": "/assets/pixel/furniture/window-day.png",
+      "width": 95
+    },
+    "window-morning": {
+      "height": 74,
+      "src": "/assets/pixel/furniture/window-morning.png",
+      "width": 93
+    },
+    "window-night": {
+      "height": 73,
+      "src": "/assets/pixel/furniture/window-night.png",
+      "width": 98
+    },
+    "window-sunset": {
+      "height": 73,
+      "src": "/assets/pixel/furniture/window-sunset.png",
+      "width": 94
+    }
+  },
+  "gear": {
+    "climbing-shoes": {
+      "height": 52,
+      "src": "/assets/pixel/gear/climbing-shoes.png",
+      "width": 52
+    },
+    "dumbbell": {
+      "height": 41,
+      "src": "/assets/pixel/gear/dumbbell.png",
+      "width": 48
+    },
+    "headphones": {
+      "height": 67,
+      "src": "/assets/pixel/gear/headphones.png",
+      "width": 50
+    },
+    "sneakers": {
+      "height": 58,
+      "src": "/assets/pixel/gear/sneakers.png",
+      "width": 64
+    },
+    "yoga-mat": {
+      "height": 64,
+      "src": "/assets/pixel/gear/yoga-mat.png",
+      "width": 76
+    }
+  },
+  "icons": {
+    "appetite": {
+      "height": 46,
+      "src": "/assets/pixel/icons/appetite.png",
+      "width": 49
+    },
+    "body": {
+      "height": 50,
+      "src": "/assets/pixel/icons/body.png",
+      "width": 47
+    },
+    "caffeine": {
+      "height": 58,
+      "src": "/assets/pixel/icons/caffeine.png",
+      "width": 37
+    },
+    "camera": {
+      "height": 44,
+      "src": "/assets/pixel/icons/camera.png",
+      "width": 53
+    },
+    "clean": {
+      "height": 55,
+      "src": "/assets/pixel/icons/clean.png",
+      "width": 36
+    },
+    "climbing": {
+      "height": 53,
+      "src": "/assets/pixel/icons/climbing.png",
+      "width": 67
+    },
+    "energy": {
+      "height": 49,
+      "src": "/assets/pixel/icons/energy.png",
+      "width": 41
+    },
+    "exercise": {
+      "height": 54,
+      "src": "/assets/pixel/icons/exercise.png",
+      "width": 61
+    },
+    "fatigue": {
+      "height": 47,
+      "src": "/assets/pixel/icons/fatigue.png",
+      "width": 58
+    },
+    "focus": {
+      "height": 55,
+      "src": "/assets/pixel/icons/focus.png",
+      "width": 67
+    },
+    "food": {
+      "height": 55,
+      "src": "/assets/pixel/icons/food.png",
+      "width": 55
+    },
+    "home": {
+      "height": 39,
+      "src": "/assets/pixel/icons/home.png",
+      "width": 42
+    },
+    "log": {
+      "height": 34,
+      "src": "/assets/pixel/icons/log.png",
+      "width": 40
+    },
+    "mood": {
+      "height": 46,
+      "src": "/assets/pixel/icons/mood.png",
+      "width": 52
+    },
+    "music": {
+      "height": 48,
+      "src": "/assets/pixel/icons/music.png",
+      "width": 52
+    },
+    "outfit": {
+      "height": 50,
+      "src": "/assets/pixel/icons/outfit.png",
+      "width": 57
+    },
+    "save": {
+      "height": 47,
+      "src": "/assets/pixel/icons/save.png",
+      "width": 45
+    },
+    "shower": {
+      "height": 51,
+      "src": "/assets/pixel/icons/shower.png",
+      "width": 56
+    },
+    "sleep": {
+      "height": 46,
+      "src": "/assets/pixel/icons/sleep.png",
+      "width": 65
+    },
+    "water": {
+      "height": 59,
+      "src": "/assets/pixel/icons/water.png",
+      "width": 29
+    },
+    "work": {
+      "height": 49,
+      "src": "/assets/pixel/icons/work.png",
+      "width": 52
+    },
+    "xp": {
+      "height": 48,
+      "src": "/assets/pixel/icons/xp.png",
+      "width": 48
+    }
+  },
+  "items": {
+    "apple": {
+      "height": 38,
+      "src": "/assets/pixel/items/apple.png",
+      "width": 39
+    },
+    "banana": {
+      "height": 48,
+      "src": "/assets/pixel/items/banana.png",
+      "width": 41
+    },
+    "chocolate": {
+      "height": 48,
+      "src": "/assets/pixel/items/chocolate.png",
+      "width": 40
+    },
+    "coffee-mug": {
+      "height": 38,
+      "src": "/assets/pixel/items/coffee-mug.png",
+      "width": 43
+    },
+    "croissant": {
+      "height": 42,
+      "src": "/assets/pixel/items/croissant.png",
+      "width": 54
+    },
+    "fruit-bowl": {
+      "height": 51,
+      "src": "/assets/pixel/items/fruit-bowl.png",
+      "width": 50
+    },
+    "iced-coffee": {
+      "height": 58,
+      "src": "/assets/pixel/items/iced-coffee.png",
+      "width": 39
+    },
+    "milk": {
+      "height": 64,
+      "src": "/assets/pixel/items/milk.png",
+      "width": 32
+    },
+    "onigiri": {
+      "height": 47,
+      "src": "/assets/pixel/items/onigiri.png",
+      "width": 46
+    },
+    "peach": {
+      "height": 39,
+      "src": "/assets/pixel/items/peach.png",
+      "width": 42
+    },
+    "sandwich": {
+      "height": 56,
+      "src": "/assets/pixel/items/sandwich.png",
+      "width": 54
+    },
+    "smoothie": {
+      "height": 58,
+      "src": "/assets/pixel/items/smoothie.png",
+      "width": 36
+    },
+    "toast": {
+      "height": 54,
+      "src": "/assets/pixel/items/toast.png",
+      "width": 45
+    },
+    "water-bottle": {
+      "height": 63,
+      "src": "/assets/pixel/items/water-bottle.png",
+      "width": 28
+    }
+  },
+  "pets": {
+    "cat-box": {
+      "height": 79,
+      "src": "/assets/pixel/pets/cat-box.png",
+      "width": 66
+    },
+    "cat-curl": {
+      "height": 51,
+      "src": "/assets/pixel/pets/cat-curl.png",
+      "width": 71
+    },
+    "cat-lying": {
+      "height": 54,
+      "src": "/assets/pixel/pets/cat-lying.png",
+      "width": 85
+    },
+    "cat-sit": {
+      "height": 60,
+      "src": "/assets/pixel/pets/cat-sit.png",
+      "width": 60
+    },
+    "cat-stand": {
+      "height": 81,
+      "src": "/assets/pixel/pets/cat-stand.png",
+      "width": 56
+    },
+    "cat-walk": {
+      "height": 56,
+      "src": "/assets/pixel/pets/cat-walk.png",
+      "width": 86
+    },
+    "cat-white": {
+      "height": 64,
+      "src": "/assets/pixel/pets/cat-white.png",
+      "width": 65
+    }
+  },
+  "ui": {
+    "logo": {
+      "height": 82,
+      "src": "/assets/pixel/ui/logo.png",
+      "width": 435
+    },
+    "mascot": {
+      "height": 70,
+      "src": "/assets/pixel/ui/mascot.png",
+      "width": 57
+    },
+    "pill-easy": {
+      "height": 26,
+      "src": "/assets/pixel/ui/pill-easy.png",
+      "width": 114
+    },
+    "pill-idle": {
+      "height": 26,
+      "src": "/assets/pixel/ui/pill-idle.png",
+      "width": 112
+    },
+    "pill-normal": {
+      "height": 26,
+      "src": "/assets/pixel/ui/pill-normal.png",
+      "width": 123
+    },
+    "pill-power": {
+      "height": 26,
+      "src": "/assets/pixel/ui/pill-power.png",
+      "width": 118
+    },
+    "pill-recovery": {
+      "height": 26,
+      "src": "/assets/pixel/ui/pill-recovery.png",
+      "width": 109
+    },
+    "save-button": {
+      "height": 76,
+      "src": "/assets/pixel/ui/save-button.png",
+      "width": 111
+    }
+  }
+}
