@@ -41,7 +41,16 @@ Supabase 대시보드에서:
 
 ## 3. 로컬에서 먼저 연결 확인
 
-**Project Settings → API** 에서 두 값을 복사한다.
+**두 값을 복사한다.** 가장 쉬운 길은 프로젝트 화면 위쪽의 **Connect** 버튼이다.
+App Frameworks 탭에서 React / Vite 를 고르면 우리가 쓰는 이름 그대로 두 줄이 나온다.
+
+Connect 버튼이 없는 버전이라면 **⚙️ Project Settings** 에서:
+
+- 메뉴에 **API** 가 있으면 → 맨 위 `Project URL`, 아래 `Project API keys` 의 **anon · public**
+- 메뉴에 **API Keys** 가 있으면 → URL 은 `Data API`, 키는 **Publishable key**(`sb_publishable_…`)
+  또는 **Legacy API keys** 탭의 **anon**(`eyJ…`). 둘 다 동작한다.
+
+`service_role` / `secret` 키는 절대 쓰지 않는다. RLS 를 통째로 무시하는 키다.
 
 ```bash
 cp .env.example .env
@@ -67,16 +76,24 @@ npm run dev
 
 1. https://vercel.com 에서 이 저장소를 **Import** 한다.
 2. **Root Directory 를 `life-os` 로 지정한다.** (저장소 루트가 아니라 이 폴더가 앱이다)
-   - Framework Preset: `Vite` — 자동으로 잡힌다
-   - Build Command / Output: `npm run build` / `dist` — `vercel.json` 에 이미 들어 있다
-3. **Environment Variables** 에 3단계의 두 값을 그대로 넣는다.
+   - Import 화면의 Edit 버튼은 **기본 브랜치의 폴더 목록**을 보여준다. 목록에 `life-os` 가 없다면
+     그 브랜치에 아직 앱이 없다는 뜻이다.
+   - 목록이 안 뜨면 그냥 Deploy 한 뒤 **Settings → Build and Deployment → Root Directory** 에
+     `life-os` 를 직접 입력해도 된다 (여기는 글자 입력칸이다).
+3. **Framework Preset 이 `Vite` 인지 반드시 확인한다.**
+   `Other` 로 남아 있으면 Vercel 이 빌드를 아예 돌리지 않고 폴더를 그대로 올려서,
+   배포 주소가 `404: NOT_FOUND` 가 된다. Build Command / Output Directory 는 건드리지 않는다
+   (`vercel.json` 에 이미 들어 있다).
+4. **Environment Variables** 에 3단계의 두 값을 그대로 넣는다. 나중에
+   **Settings → Environment Variables** 에서 추가해도 된다.
    ```
    VITE_SUPABASE_URL
    VITE_SUPABASE_ANON_KEY
    ```
-   Production / Preview 둘 다 체크.
-4. **Deploy**.
-5. 배포된 주소를 2단계의 **Site URL / Redirect URLs** 에 추가하고 저장한다.
+   Production / Preview 둘 다 체크. 환경변수는 **빌드할 때 코드에 박히므로**, 나중에 추가했다면
+   반드시 재배포해야 반영된다.
+5. **Deploy**.
+6. 배포된 주소를 2단계의 **Site URL / Redirect URLs** 에 추가하고 저장한다.
    (이걸 빼먹으면 메일 링크를 눌렀을 때 로그인 화면으로 되돌아온다)
 
 이후 `claude/...` 브랜치에 푸시하면 Preview 배포가, 기본 브랜치에 머지하면 Production 배포가 자동으로 나간다.
@@ -102,6 +119,19 @@ npm run dev
 | 기록이 하나도 안 보임 | 다른 메일 주소로 로그인했을 가능성. Stats 화면 맨 아래에 현재 계정이 표시된다 |
 | 메일이 안 온다 | 스팸함 확인. 무료 플랜의 시간당 발송 제한에 걸렸다면 잠시 뒤 재시도 |
 | 로컬에서 로그인 화면이 안 뜨고 `Local Save` 라고 표시됨 | `.env` 가 없거나 값이 비어 있다. `npm run dev` 를 다시 시작 |
+| 배포 주소가 `404: NOT_FOUND` | 빌드가 돌지 않은 것. Framework Preset 이 `Vite` 인지, Root Directory 가 `life-os` 인지 확인하고 재배포 |
+| 배포 주소에 예전 lookbook 페이지가 뜸 | Root Directory 가 `./` 인 채로 배포됐다. `life-os` 로 바꾸고 재배포 |
+| 환경변수를 넣었는데 그대로임 | 저장만으로는 반영되지 않는다. Deployments → `⋯` → Redeploy (Build Cache 체크 해제) |
+
+---
+
+## 재배포하는 법
+
+설정을 바꾼 뒤에는 반드시 다시 배포해야 반영된다. 셋 중 편한 것으로:
+
+- **Deployments** 탭 → 맨 위 배포 오른쪽 `⋯` → **Redeploy** → *Use existing Build Cache* 체크 해제
+- 배포를 클릭해 들어간 뒤 오른쪽 위 `⋯` → **Redeploy**
+- **기본 브랜치에 커밋을 하나 푸시한다** — Vercel 이 자동으로 새 배포를 시작한다
 
 ---
 
