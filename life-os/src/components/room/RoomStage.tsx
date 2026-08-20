@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import type { Checkin, EnergyMode, Preferences } from '@/types'
 import { PixelImage } from '@/components/pixel/PixelImage'
-import { ROOM_ASPECT, isOnFloor } from '@/lib/room/anchors'
+import { ROOM_ASPECT, isOnFloor, widthFromHeight } from '@/lib/room/anchors'
 import { buildScene, timeOfDay, type Motion, type Sprite } from '@/lib/room/scene'
 import { RoomBase } from './RoomBase'
 import { cn } from '@/lib/cn'
@@ -83,6 +83,8 @@ export function RoomStage({ checkin, mode, prefs, injectedToday = false, classNa
 
 function Layer({ sprite }: { sprite: Sprite }) {
   const grounded = sprite.shadow && isOnFloor(sprite.y)
+  // 키를 정해 두고 가로 폭은 그림 비율에서 뽑는다 — 세로로 긴 그림이 거인이 되지 않게
+  const width = widthFromHeight(sprite.height, sprite.asset.width, sprite.asset.height)
 
   return (
     <div
@@ -90,7 +92,7 @@ function Layer({ sprite }: { sprite: Sprite }) {
       style={{
         left: `${sprite.x}%`,
         top: `${sprite.y}%`,
-        width: `${sprite.width}%`,
+        width: `${width}%`,
         transform: 'translate(-50%, -100%)',
       }}
     >
