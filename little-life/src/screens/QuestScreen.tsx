@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
-import type { Quest } from '@/types'
+import type { Quest, Routine } from '@/types'
 import { FullQuestCard } from '@/components/quest/FullQuestCard'
+import { RoutineList } from '@/components/quest/RoutineList'
 import { CategoryFilter, type CategoryFilterValue } from '@/components/quest/CategoryFilter'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -15,16 +16,22 @@ import {
 
 interface QuestScreenProps {
   quests: Quest[]
+  routines: Routine[]
   onComplete: (id: string) => void
   onRequestDelete: (quest: Quest) => void
   onAddQuest: () => void
+  onToggleRoutinePause: (id: string) => void
+  onRequestDeleteRoutine: (routine: Routine) => void
 }
 
 export function QuestScreen({
   quests,
+  routines,
   onComplete,
   onRequestDelete,
   onAddQuest,
+  onToggleRoutinePause,
+  onRequestDeleteRoutine,
 }: QuestScreenProps) {
   const [filter, setFilter] = useState<CategoryFilterValue>('ALL')
 
@@ -122,6 +129,12 @@ export function QuestScreen({
       <Button variant="soft" size="md" className="mt-6 w-full" onClick={onAddQuest}>
         <span className="text-[17px] leading-none">+</span> Add Quest
       </Button>
+
+      <RoutineList
+        routines={routines}
+        onTogglePause={onToggleRoutinePause}
+        onDelete={onRequestDeleteRoutine}
+      />
     </div>
   )
 }

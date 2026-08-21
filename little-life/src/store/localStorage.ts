@@ -6,6 +6,8 @@ import type {
   DayStat,
   Difficulty,
   Quest,
+  RepeatRule,
+  Routine,
 } from '@/types'
 import { CATEGORIES, DIFFICULTIES } from '@/types'
 import { emptyCategoryStats } from '@/lib/stats'
@@ -51,6 +53,48 @@ function sanitizeQuest(raw: unknown): Quest | null {
     createdAt,
     // 완료 표시는 있는데 시각이 없으면 생성 시각으로 메운다.
     completedAt: completed ? (completedAt ?? createdAt) : null,
+    ...(typeof q.routineId === 'string' ? { routineId: q.routineId } : {}),
+  }
+}
+
+function sanitizeRule(raw: unknown): RepeatRule | null {
+  if (!raw || typeof raw !== 'object') return null
+  const rule = raw as Record<string, unknown>
+
+  if (rule.kind === 'daily') return { kind: 'daily' }
+  if (rule.kind === 'weekdays') return { kind: 'weekdays' }
+  if (rule.kind === 'days') {
+    const days = Array.isArray(rule.days)
+      ? [...new Set(rule.days.filter((d): d is number => typeof d === 'number' && d >= 0 && d <= 6))]
+      : []
+    return { kind: 'days', days }
+  }
+  return null
+}
+
+function sanitizeRoutine(raw: unknown): Routine | null {
+  if (!raw || typeof raw !== 'object') return null
+  const r = raw as Record<string, unknown>
+
+  const id = typeof r.id === 'string' ? r.id : null
+  const title = typeof r.title === 'string' ? r.title.trim() : ''
+  const rule = sanitizeRule(r.rule)
+  if (!id || !title || !rule) return null
+
+  return {
+    id,
+    title,
+    category: CATEGORIES.includes(r.category as Category) ? (r.category as Category) : 'LIFE',
+    difficulty: DIFFICULTIES.includes(r.difficulty as Difficulty)
+      ? (r.difficulty as Difficulty)
+      : 'NORMAL',
+    rule,
+    createdAt: typeof r.createdAt === 'string' ? r.createdAt : new Date().toISOString(),
+    lastSpawnedOn:
+      typeof r.lastSpawnedOn === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(r.lastSpawnedOn)
+        ? r.lastSpawnedOn
+        : null,
+    paused: r.paused === true,
   }
 }
 
@@ -107,6 +151,10 @@ function sanitizeState(raw: unknown): AppState | null {
     },
     quests: Array.isArray(s.quests)
       ? s.quests.map(sanitizeQuest).filter((q): q is Quest => q !== null)
+      : [],
+    // v1 에는 없던 항목이라 기본값으로 채운다
+    routines: Array.isArray(s.routines)
+      ? s.routines.map(sanitizeRoutine).filter((r): r is Routine => r !== null)
       : [],
     categoryStats: sanitizeCategoryStats(s.categoryStats),
     dailyLog: sanitizeDailyLog(s.dailyLog),

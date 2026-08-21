@@ -3,7 +3,7 @@ import { emptyCategoryStats } from '@/lib/stats'
 import { expForDifficulty } from '@/lib/difficulty'
 import { createId } from '@/lib/id'
 
-export const STATE_VERSION = 1
+export const STATE_VERSION = 2
 
 /**
  * 첫 실행 때 넣어주는 예시 퀘스트.
@@ -45,6 +45,7 @@ export function createDefaultState(): AppState {
     quests: SAMPLE_QUESTS.map((draft, i) =>
       buildQuest(draft, new Date(now - i).toISOString()),
     ),
+    routines: [],
     categoryStats: emptyCategoryStats(),
     dailyLog: {},
   }

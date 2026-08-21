@@ -9,6 +9,7 @@ import { CATEGORY_BADGE, DIFFICULTY_BADGE } from '@/lib/assets'
 import { classifyQuest, suggestQuests, type Suggestion } from '@/lib/suggest'
 import { cn } from '@/components/ui/cn'
 import { QuestSuggestions } from './QuestSuggestions'
+import { RepeatSelector, type RepeatChoice } from './RepeatSelector'
 
 interface QuestCreationSheetProps {
   open: boolean
@@ -30,6 +31,7 @@ export function QuestCreationSheet({
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState<Category | null>(null)
   const [difficulty, setDifficulty] = useState<Difficulty>(DEFAULT_DIFFICULTY)
+  const [repeat, setRepeat] = useState<RepeatChoice>(null)
 
   /**
    * 사용자가 직접 골랐는지.
@@ -51,6 +53,7 @@ export function QuestCreationSheet({
     setTitle('')
     setCategory(null)
     setDifficulty(DEFAULT_DIFFICULTY)
+    setRepeat(null)
     setCategoryTouched(false)
     setDifficultyTouched(false)
   }, [open])
@@ -81,11 +84,13 @@ export function QuestCreationSheet({
     setDifficultyTouched(true)
   }
 
-  const canSubmit = title.trim().length > 0 && category !== null
+  // 요일 반복인데 아무 요일도 안 골랐으면 만들 수 없다 — 영영 안 돌 규칙이다
+  const repeatReady = repeat === null || repeat.kind !== 'days' || repeat.days.length > 0
+  const canSubmit = title.trim().length > 0 && category !== null && repeatReady
 
   const submit = () => {
     if (!canSubmit || !category) return
-    onCreate({ title: title.trim(), category, difficulty })
+    onCreate({ title: title.trim(), category, difficulty, ...(repeat ? { repeat } : {}) })
     onClose()
   }
 
@@ -217,6 +222,8 @@ export function QuestCreationSheet({
             })}
           </div>
         </div>
+
+        <RepeatSelector value={repeat} onChange={setRepeat} />
 
         <div className="space-y-2 pt-1">
           <Button size="lg" className="w-full" disabled={!canSubmit} onClick={submit}>

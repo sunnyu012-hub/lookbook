@@ -1,19 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { AppState, CompleteResult, DayStat, Quest, QuestDraft } from '@/types'
+import type { AppState, CompleteResult, DayStat, Quest, QuestDraft, Routine } from '@/types'
 import { createDefaultState } from '@/store/defaultState'
 import { repository } from '@/store/localStorage'
 import { applyExp } from '@/lib/level'
 import { expForDifficulty } from '@/lib/difficulty'
 import { todayKey } from '@/lib/date'
+import { isUsableRule, matchesToday, spawnDueQuests } from '@/lib/routines'
 import { createId } from '@/lib/id'
 
 interface GameState {
   ready: boolean
   state: AppState
-  addQuest: (draft: QuestDraft) => Quest
+  addQuest: (draft: QuestDraft) => Quest | null
   completeQuest: (id: string) => CompleteResult | null
   deleteQuest: (id: string) => void
   renameUser: (name: string) => void
+  toggleRoutinePause: (id: string) => void
+  deleteRoutine: (id: string) => void
 }
 
 /** 오늘 칸에 완료 기록을 한 건 더한다. */
@@ -87,20 +90,89 @@ export function useGameState(): GameState {
     void repository.save(state)
   }, [state])
 
+  /** 오늘 몫의 반복 퀘스트를 만든다. */
+  const runSpawn = useCallback(() => {
+    const prev = stateRef.current
+    const result = spawnDueQuests(prev.routines, prev.quests, new Date(), createId)
+    if (!result) return
+
+    commit({
+      ...prev,
+      quests: [...result.quests, ...prev.quests],
+      routines: result.routines,
+    })
+  }, [commit])
+
+  /**
+   * 앱을 열 때 한 번, 그리고 켜둔 채로 날짜가 바뀌었다가 다시 볼 때 한 번 더.
+   * 홈 화면에 추가해두면 며칠씩 안 닫고 두는 경우가 많다.
+   */
+  useEffect(() => {
+    if (!ready) return
+    runSpawn()
+
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') runSpawn()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [ready, runSpawn])
+
+  /**
+   * 퀘스트를 만든다.
+   *
+   * 반복 규칙이 있으면 원본(Routine)도 같이 만든다.
+   * 오늘 해당하는 요일이 아니면 오늘 것은 만들지 않고 원본만 남긴다 —
+   * 토요일에 "평일 반복" 을 만들었다고 토요일에 퀘스트가 생기면 안 된다.
+   */
   const addQuest = useCallback(
-    (draft: QuestDraft): Quest => {
+    (draft: QuestDraft): Quest | null => {
       const prev = stateRef.current
-      const quest: Quest = {
-        id: createId(),
-        title: draft.title.trim(),
-        category: draft.category,
-        difficulty: draft.difficulty,
-        exp: expForDifficulty(draft.difficulty),
-        completed: false,
-        createdAt: new Date().toISOString(),
-        completedAt: null,
+      const now = new Date()
+      const title = draft.title.trim()
+      const repeat = draft.repeat && isUsableRule(draft.repeat) ? draft.repeat : null
+
+      // 원본 id 를 먼저 만들어 둬야 오늘 몫에도 같은 id 를 붙일 수 있다.
+      // 안 그러면 첫날 퀘스트만 반복과 연결되지 않는다.
+      const routineId = repeat ? createId() : null
+      const dueToday = !repeat || matchesToday(repeat, now)
+
+      const quest: Quest | null = dueToday
+        ? {
+            id: createId(),
+            title,
+            category: draft.category,
+            difficulty: draft.difficulty,
+            exp: expForDifficulty(draft.difficulty),
+            completed: false,
+            createdAt: now.toISOString(),
+            completedAt: null,
+            ...(routineId ? { routineId } : {}),
+          }
+        : null
+
+      const routines = repeat
+        ? [
+            {
+              id: routineId!,
+              title,
+              category: draft.category,
+              difficulty: draft.difficulty,
+              rule: repeat,
+              createdAt: now.toISOString(),
+              // 오늘 몫을 방금 만들었으니 오늘은 또 만들지 않게 찍어둔다
+              lastSpawnedOn: dueToday ? todayKey(now) : null,
+              paused: false,
+            } satisfies Routine,
+            ...prev.routines,
+          ]
+        : prev.routines
+
+      if (quest) {
+        commit({ ...prev, quests: [quest, ...prev.quests], routines })
+      } else {
+        commit({ ...prev, routines })
       }
-      commit({ ...prev, quests: [quest, ...prev.quests] })
       return quest
     },
     [commit],
@@ -156,6 +228,26 @@ export function useGameState(): GameState {
     [commit],
   )
 
+  const toggleRoutinePause = useCallback(
+    (id: string) => {
+      const prev = stateRef.current
+      commit({
+        ...prev,
+        routines: prev.routines.map((r) => (r.id === id ? { ...r, paused: !r.paused } : r)),
+      })
+    },
+    [commit],
+  )
+
+  /** 반복만 지운다. 오늘 이미 만들어진 퀘스트는 그대로 둔다 — 이미 내 오늘 몫이다. */
+  const deleteRoutine = useCallback(
+    (id: string) => {
+      const prev = stateRef.current
+      commit({ ...prev, routines: prev.routines.filter((r) => r.id !== id) })
+    },
+    [commit],
+  )
+
   const renameUser = useCallback(
     (name: string) => {
       const trimmed = name.trim()
@@ -167,7 +259,25 @@ export function useGameState(): GameState {
   )
 
   return useMemo(
-    () => ({ ready, state, addQuest, completeQuest, deleteQuest, renameUser }),
-    [ready, state, addQuest, completeQuest, deleteQuest, renameUser],
+    () => ({
+      ready,
+      state,
+      addQuest,
+      completeQuest,
+      deleteQuest,
+      renameUser,
+      toggleRoutinePause,
+      deleteRoutine,
+    }),
+    [
+      ready,
+      state,
+      addQuest,
+      completeQuest,
+      deleteQuest,
+      renameUser,
+      toggleRoutinePause,
+      deleteRoutine,
+    ],
   )
 }

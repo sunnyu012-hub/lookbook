@@ -12,6 +12,34 @@ export type Category = (typeof CATEGORIES)[number]
 export const DIFFICULTIES = ['EASY', 'NORMAL', 'HARD'] as const
 export type Difficulty = (typeof DIFFICULTIES)[number]
 
+/**
+ * 반복 규칙.
+ * "주 3회" 같은 건 어느 요일인지 정해지지 않아 애매해서, 요일을 직접 고르게 했다.
+ */
+export type RepeatRule =
+  | { kind: 'daily' }
+  | { kind: 'weekdays' } // 월~금
+  | { kind: 'days'; days: number[] } // 0=월 … 6=일
+
+/**
+ * 반복 퀘스트의 원본.
+ *
+ * Routine 은 조리법이고, 매일 아침 거기서 Quest 하나가 만들어진다.
+ * 둘을 한 타입에 섞으면 "이게 원본인가 오늘 것인가" 가 늘 헷갈린다.
+ */
+export interface Routine {
+  id: string
+  title: string
+  category: Category
+  difficulty: Difficulty
+  rule: RepeatRule
+  createdAt: string
+  /** 마지막으로 퀘스트를 만들어준 날 (YYYY-MM-DD). 하루에 두 번 만들지 않으려고 둔다. */
+  lastSpawnedOn: string | null
+  /** 잠시 쉬고 싶을 때. 지우지 않고 멈춰만 둔다. */
+  paused: boolean
+}
+
 export interface Quest {
   id: string
   title: string
@@ -22,6 +50,8 @@ export interface Quest {
   completed: boolean
   createdAt: string
   completedAt: string | null
+  /** 반복 퀘스트에서 생겼으면 그 원본의 id */
+  routineId?: string
 }
 
 export interface User {
@@ -59,6 +89,7 @@ export interface AppState {
   version: number
   user: User
   quests: Quest[]
+  routines: Routine[]
   categoryStats: CategoryStats
   dailyLog: DailyLog
   // 향후 확장 예정: coins, inventory, achievements, character, room, pets, randomQuest …
@@ -69,6 +100,8 @@ export interface QuestDraft {
   title: string
   category: Category
   difficulty: Difficulty
+  /** 반복으로 만들 거면 규칙. 없으면 오늘 한 번짜리. */
+  repeat?: RepeatRule
 }
 
 /** 퀘스트 완료 결과 — 화면에서 피드백 애니메이션을 띄우는 데 쓴다. */
