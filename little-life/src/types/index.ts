@@ -1,3 +1,13 @@
+export * from './rpg'
+import type {
+  AreaId,
+  Battle,
+  ClassId,
+  EquippedItems,
+  InventoryEntry,
+  Stats,
+} from './rpg'
+
 /**
  * Little Life 의 데이터 모델.
  *
@@ -57,6 +67,22 @@ export interface Quest {
    * 지우기는 아깝고 오늘은 안 할 때 쓴다. 지워지는 게 아니라 미뤄지는 것이다.
    */
   snoozedUntil?: string
+  /** 지금은 늘 DAILY. 몬스터·보스는 Battle 로 따로 다룬다. */
+  questType?: 'DAILY'
+  /**
+   * 완료할 때 실제로 받은 것.
+   *
+   * 되돌리기가 정확히 반대로 돌려면 그때 무엇을 받았는지 알아야 한다.
+   * 보너스가 붙은 EXP·코인·올린 스탯·떨어진 아이템까지 여기 적어둔다.
+   */
+  reward?: QuestReward
+}
+
+export interface QuestReward {
+  exp: number
+  coins: number
+  statKey: import('./rpg').StatKey | null
+  droppedItemId?: string
 }
 
 export interface User {
@@ -68,6 +94,11 @@ export interface User {
   totalExp: number
   /** 지금까지 완료한 퀘스트 수 */
   totalCompletedQuests: number
+  coins: number
+  classId: ClassId | null
+  stats: Stats
+  equippedItems: EquippedItems
+  currentAreaId: AreaId
 }
 
 /** 카테고리별 누적 EXP. 퀘스트에서 계산하지 않고 따로 쌓는다 — 아래 주석 참고. */
@@ -95,8 +126,12 @@ export interface AppState {
   user: User
   quests: Quest[]
   routines: Routine[]
+  inventory: InventoryEntry[]
+  battles: Battle[]
   categoryStats: CategoryStats
   dailyLog: DailyLog
+  /** Welcome Gift 를 이미 줬는지. 두 번 주지 않으려고 둔다. */
+  welcomeGiftGiven: boolean
   // 향후 확장 예정: coins, inventory, achievements, character, room, pets, randomQuest …
 }
 
@@ -112,6 +147,11 @@ export interface QuestDraft {
 /** 퀘스트 완료 결과 — 화면에서 피드백 애니메이션을 띄우는 데 쓴다. */
 export interface CompleteResult {
   gainedExp: number
+  gainedCoins: number
+  /** 보너스로 더 받은 EXP. 0 이면 보너스가 없었다는 뜻. */
+  bonusExp: number
   leveledUp: boolean
   newLevel: number
+  statKey: import('./rpg').StatKey | null
+  drop: import('./rpg').DropResult | null
 }

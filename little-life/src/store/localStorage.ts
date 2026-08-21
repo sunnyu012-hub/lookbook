@@ -12,7 +12,16 @@ import type {
 import { CATEGORIES, DIFFICULTIES } from '@/types'
 import { emptyCategoryStats } from '@/lib/stats'
 import type { StateRepository } from './repository'
-import { STATE_VERSION, createDefaultState } from './defaultState'
+import { createDefaultState } from './defaultState'
+import {
+  STATE_VERSION,
+  sanitizeAreaId,
+  sanitizeBattles,
+  sanitizeClassId,
+  sanitizeEquipped,
+  sanitizeInventory,
+  sanitizeStats,
+} from './migrate'
 
 const STORAGE_KEY = 'little-life-v1'
 
@@ -57,6 +66,9 @@ function sanitizeQuest(raw: unknown): Quest | null {
     ...(typeof q.snoozedUntil === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(q.snoozedUntil)
       ? { snoozedUntil: q.snoozedUntil }
       : {}),
+    // 예전 퀘스트에는 없던 항목. 없으면 DAILY 로 본다.
+    questType: 'DAILY',
+    ...(q.reward && typeof q.reward === 'object' ? { reward: sanitizeReward(q.reward) } : {}),
   }
 }
 
@@ -98,6 +110,16 @@ function sanitizeRoutine(raw: unknown): Routine | null {
         ? r.lastSpawnedOn
         : null,
     paused: r.paused === true,
+  }
+}
+
+function sanitizeReward(raw: unknown): Quest['reward'] {
+  const r = (raw ?? {}) as Record<string, unknown>
+  return {
+    exp: numberOr(r.exp, 0),
+    coins: numberOr(r.coins, 0),
+    statKey: typeof r.statKey === 'string' ? (r.statKey as never) : null,
+    ...(typeof r.droppedItemId === 'string' ? { droppedItemId: r.droppedItemId } : {}),
   }
 }
 
@@ -151,6 +173,12 @@ function sanitizeState(raw: unknown): AppState | null {
       currentExp: numberOr(user.currentExp, 0),
       totalExp: numberOr(user.totalExp, 0),
       totalCompletedQuests: numberOr(user.totalCompletedQuests, 0),
+      // v2 에는 없던 항목들. 없으면 기본값으로 채우고 있으면 그대로 둔다.
+      coins: numberOr(user.coins, 0),
+      classId: sanitizeClassId(user.classId),
+      stats: sanitizeStats(user.stats),
+      equippedItems: sanitizeEquipped(user.equippedItems),
+      currentAreaId: sanitizeAreaId(user.currentAreaId),
     },
     quests: Array.isArray(s.quests)
       ? s.quests.map(sanitizeQuest).filter((q): q is Quest => q !== null)
@@ -159,8 +187,11 @@ function sanitizeState(raw: unknown): AppState | null {
     routines: Array.isArray(s.routines)
       ? s.routines.map(sanitizeRoutine).filter((r): r is Routine => r !== null)
       : [],
+    inventory: sanitizeInventory(s.inventory),
+    battles: sanitizeBattles(s.battles, CATEGORIES),
     categoryStats: sanitizeCategoryStats(s.categoryStats),
     dailyLog: sanitizeDailyLog(s.dailyLog),
+    welcomeGiftGiven: s.welcomeGiftGiven === true,
   }
 }
 
