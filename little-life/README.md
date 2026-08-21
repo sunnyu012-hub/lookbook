@@ -20,7 +20,7 @@ Safari에서 열고 "홈 화면에 추가"하면 앱처럼 전체화면으로 �
 npm run build      # 타입 체크 + 프로덕션 빌드
 npm run preview    # 빌드 결과 확인
 npm run typecheck  # 타입만 확인
-npm test           # 분류기 단위 테스트
+npm test           # 단위 테스트 (분류기 · 반복 · 레벨 · 보상 · 전투 · 마이그레이션)
 ```
 
 아이폰 홈 화면에 앱처럼 올리는 순서는 [DEPLOY.md](./DEPLOY.md) 에 있다.
@@ -31,7 +31,13 @@ npm test           # 분류기 단위 테스트
 ```
 src/
 ├── types/          User, Quest, Routine, CategoryStats, DailyLog, AppState
+│   └── rpg.ts          Area, Class, Stat, Item, Battle, Bonuses
 ├── lib/            순수 로직 — 화면과 무관
+│   ├── rpg/
+│   │   ├── content.ts  지역·직업·아이템·몬스터·보스   ← 밸런스 값은 전부 여기
+│   │   ├── rewards.ts  보너스 합산 → EXP / Coin / Drop
+│   │   ├── battle.ts   몬스터·보스 진행과 되돌리기
+│   │   └── time.ts     시간대 구분과 화면 색조
 │   ├── level.ts        requiredExp / applyExp   ← 밸런스는 여기만 수정
 │   ├── difficulty.ts   난이도별 EXP (10 / 20 / 40)
 │   ├── titles.ts       레벨 구간별 칭호
@@ -44,18 +50,22 @@ src/
 ├── store/          저장소 — Supabase 교체 지점
 │   ├── repository.ts     StateRepository 인터페이스 (async)
 │   ├── localStorage.ts   현재 구현 + 손상 데이터 방어
+│   ├── migrate.ts        버전 올리기 · 빈 필드 채우기 · Welcome Gift
 │   └── defaultState.ts   첫 실행 샘플 퀘스트
 ├── hooks/          useGameState · useFeedback · useCountUp
 ├── components/
 │   ├── character/  CharacterAvatar, RoomBackground, CharacterRoomCard,
 │   │               LevelBadge, ExpProgress
 │   ├── home/       GreetingHeader, TodayQuestSection, CompactQuestCard, DailySummary
-│   ├── quest/      FullQuestCard, CategoryFilter, QuestCreationSheet, QuestMenu
-│   ├── profile/    ProfileHeader, StatCard, CategoryGrowthBar, WeeklyInsightCard
-│   ├── feedback/   ExpToastLayer, LevelUpOverlay
+│   ├── quest/      FullQuestCard, CategoryFilter, QuestCreationSheet, QuestMenu,
+│   │               QuestModeTabs
+│   ├── rpg/        RarityBadge, BattleCard, BattleSheet
+│   ├── profile/    ProfileHeader, StatCard, StatGrid, ClassCard, EquipSlotGrid,
+│   │               CategoryGrowthBar, WeeklyInsightCard
+│   ├── feedback/   ExpToastLayer, LevelUpOverlay, BattleClearOverlay, DropRevealOverlay
 │   ├── navigation/ BottomNavigation
 │   └── ui/         Card, Button, ProgressBar, BottomSheet, ConfirmDialog, Toast …
-└── screens/        HomeScreen · QuestScreen · MeScreen
+└── screens/        HomeScreen · QuestScreen · MapScreen · BagScreen · MeScreen
 ```
 
 ### 나중에 손댈 자리
@@ -123,8 +133,9 @@ public/assets/
 
 - 팔 들고 윙크하는 포즈 — 업적 같은 게 생기면 쓸 자리
 - 삐친 얼굴 — 캐릭터가 사용자를 탓하지 않기로 해서 화면에서는 쓰지 않는다
-- 시트에 있던 BOSS 배지 / 깃발 / 자물쇠 / 체력바 / 달력·설정 버튼은
-  v0.1 에 해당 기능이 없어서 내보내지 않았다 (보스 퀘스트, 잠금, 설정 등)
+- 시트에 있던 깃발 / 자물쇠 / 달력·설정 버튼은 아직 해당 기능이 없어서 내보내지 않았다.
+  BOSS 배지와 체력바는 CITY RPG 에서 필요해졌지만, 20px 아래로 뭉개지는 그림 대신
+  글자 배지(`BossBadge`)와 `ProgressBar` 로 그렸다
 
 ## 퀘스트 입력 줄이기
 
@@ -183,3 +194,48 @@ QUEST 화면 아래 **Repeat** 목록에서 잠시 멈추거나 그만둘 수 �
 되돌리다 레벨이 내려가는 경우까지 정확히 맞는다 — 그 함수가 `applyExp` 를 처음부터
 쌓은 결과와 늘 같기 때문이고, 그걸 테스트로 묶어뒀다 (`level.test.ts`).
 카테고리 통계와 그날 기록에서도 함께 빠진다. 어제 완료한 걸 오늘 되돌려도 어제 칸에서 빠진다.
+
+## CITY RPG
+
+현실을 게임으로 한 겹 더 읽는 층. 검·갑옷·성 대신 머그컵·헤드폰·운동화·카페·공원으로 만든다.
+
+| 현실 | 게임 |
+| --- | --- |
+| 오늘 할 일 | Daily Quest |
+| 미뤄둔 일 | Monster |
+| 크고 오래 걸리는 일 | Boss |
+| 있는 장소 | Area |
+| 늘 쓰는 물건 | Equipment |
+
+- **MAP** — 지역 6곳. 지금 있는 곳의 버프가 보상에 붙는다. Night Town 은 21시부터 열리고,
+  밤이 지나면 조용히 Home Base 로 돌아온다. 닫힌 곳의 버프를 계속 받게 두면 지도의 규칙이 거짓말이 된다.
+- **BAG** — 인벤토리와 6칸 장비(HEAD / TOP / BOTTOM / SHOES / ACCESSORY / CHARM).
+- **QUEST** — DAILY / MONSTER / BOSS 세 갈래. 몬스터·보스는 큰 일을 작은 행동으로 쪼갠 목록이고,
+  하나 누를 때마다 HP 가 깎인다. **시간 제한이 없고 HP 가 도로 차지 않는다.**
+  며칠 쉬어도 진행도가 사라지지 않고, 잘못 눌렀으면 UNDO 로 되돌린다.
+- **ME** — 직업 5종과 스탯 6종, 장비 슬롯. 직업은 언제든 바꿀 수 있고 바꿔도 잃는 게 없다.
+
+### 보상 한 줄기
+
+퀘스트 완료 → EXP · Coin · Stat · Drop 이 전부 `lib/rpg/rewards.ts` 한 곳을 지난다.
+직업·장비·지역이 모두 같은 모양(`Bonuses`)으로 보너스를 내놓기 때문에, 계산하는 쪽은 출처를 모른다.
+
+**퍼센트는 곱하지 않고 모두 더한 뒤 한 번에 적용한다.** 곱하면 장비를 몇 개 꼈는지에 따라
+값이 튀어서 예측이 안 된다 (`rewards.test.ts` 가 HARD 난이도에서 이 둘이 다르다는 걸 잡아둔다).
+
+받은 값은 `quest.reward` 에 그대로 적어둔다. 되돌리기가 정확히 반대로 돌려면
+그때 무엇을 받았는지 알아야 하고, 떨어졌던 아이템도 같이 회수한다 —
+안 그러면 완료·되돌리기를 반복해서 계속 주울 수 있다.
+
+`EXPLORER` 의 패시브는 명세의 "Random Quest reward +10%" 를 지금 구조에 맞춰
+**모든 퀘스트 Coin +10%** 로 옮겼다. 무작위로 어떤 퀘스트에만 붙으면 왜 값이 달라졌는지
+화면에서 설명할 방법이 없다.
+
+### 기존 데이터
+
+`STATE_VERSION = 3`. 올릴 때 **기존 기록은 하나도 지우지 않는다.**
+없는 항목만 기본값으로 채우고 있는 값은 손대지 않는다 (`store/migrate.ts`).
+없어진 아이템이 슬롯에 남아 있거나 정의가 사라진 몬스터가 저장돼 있으면 조용히 비운다.
+
+업데이트하고 처음 열면 Welcome Gift(Favorite Mug + 50 Coin)를 한 번 준다.
+`welcomeGiftGiven` 플래그로 막아서 다시 열어도 또 주지 않는다.

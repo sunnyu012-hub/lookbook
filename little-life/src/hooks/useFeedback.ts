@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { CompleteResult } from '@/types'
+import type { Battle, CompleteResult, DropResult } from '@/types'
+import type { BattleClearBanner } from '@/components/feedback/BattleClearOverlay'
 import type { CharacterMood } from '@/components/character/types'
+import type { BattleClearResult } from '@/hooks/useGameState'
 
 export interface ExpToast {
   id: string
@@ -14,8 +16,14 @@ export interface Feedback {
   mood: CharacterMood
   toast: string | null
   toastAction: { label: string; onClick: () => void } | null
+  /** 방금 주운 것들 — 눌러서 닫을 때까지 떠 있는다 */
+  drops: DropResult[]
+  battleClear: BattleClearBanner | null
   /** 퀘스트 완료 결과를 그대로 넘기면 알맞은 피드백을 띄운다. */
   celebrate: (result: CompleteResult) => void
+  /** 몬스터·보스를 잡았을 때. CLEAR → 레벨업 → 드롭 순서로 이어 보여준다. */
+  celebrateBattleClear: (battle: Battle, result: BattleClearResult) => void
+  dismissDrops: () => void
   notify: (message: string, action?: { label: string; onClick: () => void }) => void
 }
 
@@ -24,6 +32,8 @@ const QUEST_CLEAR_MS = 1000
 const LEVEL_UP_DELAY_MS = 340
 const LEVEL_UP_MS = 1600
 const TOAST_MS = 1800
+const BATTLE_CLEAR_MS = 1700
+const DROP_REVEAL_MS = 2600
 
 /** +EXP, LEVEL UP, 캐릭터 표정, 안내 토스트를 한군데서 관리한다. */
 export function useFeedback(): Feedback {
@@ -32,6 +42,8 @@ export function useFeedback(): Feedback {
   const [mood, setMood] = useState<CharacterMood>('idle')
   const [toast, setToast] = useState<string | null>(null)
   const [toastAction, setToastAction] = useState<Feedback['toastAction']>(null)
+  const [drops, setDrops] = useState<DropResult[]>([])
+  const [battleClear, setBattleClear] = useState<BattleClearBanner | null>(null)
   const timers = useRef<number[]>([])
 
   const later = useCallback((fn: () => void, ms: number) => {
@@ -45,6 +57,23 @@ export function useFeedback(): Feedback {
     [],
   )
 
+  const dismissDrops = useCallback(() => setDrops([]), [])
+
+  /**
+   * 드롭은 다른 연출이 끝난 뒤에 띄운다.
+   * +EXP · LEVEL UP · CLEAR 와 겹쳐 뜨면 뭘 받았는지 읽을 틈이 없다.
+   */
+  const revealDrops = useCallback(
+    (found: DropResult[], delay: number) => {
+      if (found.length === 0) return
+      later(() => {
+        setDrops(found)
+        later(() => setDrops((current) => (current === found ? [] : current)), DROP_REVEAL_MS)
+      }, delay)
+    },
+    [later],
+  )
+
   const celebrate = useCallback(
     (result: CompleteResult) => {
       const id = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
@@ -52,6 +81,13 @@ export function useFeedback(): Feedback {
       later(() => setExpToasts((prev) => prev.filter((t) => t.id !== id)), EXP_TOAST_MS)
 
       setMood('questClear')
+
+      if (result.drop) {
+        revealDrops(
+          [result.drop],
+          result.leveledUp ? LEVEL_UP_DELAY_MS + LEVEL_UP_MS + 120 : EXP_TOAST_MS,
+        )
+      }
 
       if (result.leveledUp) {
         // EXP 숫자가 먼저 뜨고 나서 레벨업이 겹치도록 살짝 미룬다.
@@ -70,7 +106,43 @@ export function useFeedback(): Feedback {
         }, QUEST_CLEAR_MS)
       }
     },
-    [later],
+    [later, revealDrops],
+  )
+
+  /**
+   * 몬스터·보스 클리어.
+   * CLEAR 카드 → (레벨업) → 드롭 순서로 하나씩 지나간다.
+   */
+  const celebrateBattleClear = useCallback(
+    (battle: Battle, result: BattleClearResult) => {
+      setMood('levelUp')
+      setBattleClear({
+        kind: battle.kind,
+        name: battle.name,
+        icon: battle.icon,
+        exp: result.exp,
+        coins: result.coins,
+      })
+      later(() => setBattleClear(null), BATTLE_CLEAR_MS)
+
+      if (result.leveledUp) {
+        later(() => {
+          setLevelUp(result.newLevel)
+          later(() => setLevelUp(null), LEVEL_UP_MS)
+        }, BATTLE_CLEAR_MS + 120)
+      }
+
+      const dropDelay = result.leveledUp
+        ? BATTLE_CLEAR_MS + 120 + LEVEL_UP_MS + 120
+        : BATTLE_CLEAR_MS + 120
+      revealDrops(result.drops, dropDelay)
+
+      later(
+        () => setMood((current) => (current === 'levelUp' ? 'idle' : current)),
+        dropDelay + (result.drops.length > 0 ? DROP_REVEAL_MS : 0),
+      )
+    },
+    [later, revealDrops],
   )
 
   const notify = useCallback(
@@ -86,7 +158,31 @@ export function useFeedback(): Feedback {
   )
 
   return useMemo(
-    () => ({ expToasts, levelUp, mood, toast, toastAction, celebrate, notify }),
-    [expToasts, levelUp, mood, toast, toastAction, celebrate, notify],
+    () => ({
+      expToasts,
+      levelUp,
+      mood,
+      toast,
+      toastAction,
+      drops,
+      battleClear,
+      celebrate,
+      celebrateBattleClear,
+      dismissDrops,
+      notify,
+    }),
+    [
+      expToasts,
+      levelUp,
+      mood,
+      toast,
+      toastAction,
+      drops,
+      battleClear,
+      celebrate,
+      celebrateBattleClear,
+      dismissDrops,
+      notify,
+    ],
   )
 }

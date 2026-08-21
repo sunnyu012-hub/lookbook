@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/components/ui/cn'
 
-export type TabKey = 'home' | 'quest' | 'me'
+export type TabKey = 'home' | 'quest' | 'map' | 'bag' | 'me'
 
 interface BottomNavigationProps {
   active: TabKey
@@ -17,6 +17,18 @@ const ICONS: Record<TabKey, ReactNode> = {
       <path d="M9 15.5 H15" />
     </>
   ),
+  map: (
+    <>
+      <path d="M12 21 C12 21 19 14.6 19 9.8 A7 7 0 0 0 5 9.8 C5 14.6 12 21 12 21 Z" />
+      <circle cx="12" cy="9.8" r="2.4" />
+    </>
+  ),
+  bag: (
+    <>
+      <path d="M4.5 8.5 H19.5 L18.4 20 H5.6 Z" />
+      <path d="M9 8.5 V6.5 A3 3 0 0 1 15 6.5 V8.5" />
+    </>
+  ),
   me: (
     <>
       <circle cx="12" cy="8.5" r="3.6" />
@@ -28,6 +40,8 @@ const ICONS: Record<TabKey, ReactNode> = {
 const TABS: Array<{ key: TabKey; label: string }> = [
   { key: 'home', label: 'HOME' },
   { key: 'quest', label: 'QUEST' },
+  { key: 'map', label: 'MAP' },
+  { key: 'bag', label: 'BAG' },
   { key: 'me', label: 'ME' },
 ]
 
@@ -38,7 +52,7 @@ const TABS: Array<{ key: TabKey; label: string }> = [
 export function BottomNavigation({ active, onChange }: BottomNavigationProps) {
   return (
     <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center pb-[calc(env(safe-area-inset-bottom)+12px)]">
-      <div className="pointer-events-auto flex w-[min(calc(100vw-40px),330px)] gap-1 rounded-pill border border-line bg-surface/95 p-1.5 shadow-nav backdrop-blur-md">
+      <div className="pointer-events-auto flex w-[min(calc(100vw-24px),392px)] gap-0.5 rounded-pill border border-line bg-surface/95 p-1.5 shadow-nav backdrop-blur-md">
         {TABS.map((tab) => {
           const isActive = tab.key === active
           return (
@@ -48,7 +62,7 @@ export function BottomNavigation({ active, onChange }: BottomNavigationProps) {
               onClick={() => onChange(tab.key)}
               aria-current={isActive ? 'page' : undefined}
               className={cn(
-                'flex min-h-[50px] flex-1 flex-col items-center justify-center gap-0.5 rounded-pill',
+                'flex min-h-[50px] flex-1 flex-col items-center justify-center gap-0.5 rounded-pill px-0.5',
                 'transition-[background-color,color] duration-200 ease-out active:scale-[0.97]',
                 isActive ? 'bg-coral text-surface' : 'bg-transparent text-inkdim',
               )}
@@ -65,7 +79,7 @@ export function BottomNavigation({ active, onChange }: BottomNavigationProps) {
               >
                 {ICONS[tab.key]}
               </svg>
-              <span className="font-game text-[10px] tracking-[0.08em]">{tab.label}</span>
+              <span className="font-game text-[9px] tracking-[0.04em]">{tab.label}</span>
             </button>
           )
         })}

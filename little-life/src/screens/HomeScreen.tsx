@@ -3,6 +3,7 @@ import type { AppState } from '@/types'
 import { CharacterRoomCard } from '@/components/character/CharacterRoomCard'
 import { ExpToastLayer } from '@/components/feedback/ExpToastLayer'
 import { GreetingHeader } from '@/components/home/GreetingHeader'
+import { AdventureStatusCard } from '@/components/home/AdventureStatusCard'
 import { TodayQuestSection } from '@/components/home/TodayQuestSection'
 import { DailySummary } from '@/components/home/DailySummary'
 import { ScreenHeader } from '@/components/layout/ScreenHeader'
@@ -19,6 +20,9 @@ interface HomeScreenProps {
   onComplete: (id: string) => void
   onAddQuest: () => void
   onSeeAll: () => void
+  onOpenMap: () => void
+  onOpenBag: () => void
+  onOpenMe: () => void
 }
 
 export function HomeScreen({
@@ -28,6 +32,9 @@ export function HomeScreen({
   onComplete,
   onAddQuest,
   onSeeAll,
+  onOpenMap,
+  onOpenBag,
+  onOpenMe,
 }: HomeScreenProps) {
   const openQuests = useMemo(
     () => sortByNewest(state.quests.filter((q) => !q.completed && isTodayQuest(q))),
@@ -55,6 +62,13 @@ export function HomeScreen({
       />
 
       <GreetingHeader name={state.user.name} />
+
+      <AdventureStatusCard
+        user={state.user}
+        onOpenMap={onOpenMap}
+        onOpenBag={onOpenBag}
+        onOpenMe={onOpenMe}
+      />
 
       <CharacterRoomCard
         user={state.user}

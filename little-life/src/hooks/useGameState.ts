@@ -1,5 +1,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { AppState, CompleteResult, DayStat, Quest, QuestDraft, Routine } from '@/types'
+import type {
+  AppState,
+  AreaId,
+  Battle,
+  BattleDef,
+  ClassId,
+  CompleteResult,
+  DayStat,
+  DropResult,
+  EquipSlot,
+  Quest,
+  QuestDraft,
+  Rarity,
+  Routine,
+} from '@/types'
+import { ITEMS } from '@/lib/rpg/content'
+import { calculateQuestReward, rollDrop, STAT_BY_CATEGORY } from '@/lib/rpg/rewards'
+import { applyBattleAction, clearRarities, createBattle, undoBattleAction } from '@/lib/rpg/battle'
+import { grantWelcomeGift } from '@/store/migrate'
 import { createDefaultState } from '@/store/defaultState'
 import { repository } from '@/store/localStorage'
 import { applyExp, levelFromTotalExp } from '@/lib/level'
@@ -11,6 +29,8 @@ import { createId } from '@/lib/id'
 interface GameState {
   ready: boolean
   state: AppState
+  /** 이번에 Welcome Gift 를 받았는지 */
+  justGifted: boolean
   addQuest: (draft: QuestDraft) => Quest | null
   completeQuest: (id: string) => CompleteResult | null
   /** 완료를 되돌린다. EXP·레벨·통계·기록까지 전부 원래대로. */
@@ -25,6 +45,53 @@ interface GameState {
   renameUser: (name: string) => void
   toggleRoutinePause: (id: string) => void
   deleteRoutine: (id: string) => void
+  // ── RPG ──
+  setClass: (classId: ClassId) => void
+  setArea: (areaId: AreaId) => void
+  equipItem: (itemId: string) => void
+  unequipSlot: (slot: EquipSlot) => void
+  startBattle: (def: BattleDef) => Battle
+  doBattleAction: (battleId: string, actionId: string) => BattleClearResult | null
+  undoBattleActionById: (battleId: string, actionId: string) => void
+  removeBattle: (battleId: string) => void
+}
+
+export interface BattleClearResult {
+  cleared: boolean
+  exp: number
+  coins: number
+  leveledUp: boolean
+  newLevel: number
+  drops: DropResult[]
+}
+
+/** 등급별로 얻을 수 있는 아이템 목록. 재료·수집품도 드롭 대상에 포함한다. */
+function itemsByRarity(rarity: Rarity): string[] {
+  return ITEMS.filter((i) => i.rarity === rarity).map((i) => i.id)
+}
+
+/** 인벤토리에 한 칸 넣는다. 이미 있으면 수량만 늘린다. */
+function addToInventory(
+  inventory: AppState['inventory'],
+  itemId: string,
+  source: string,
+  now: Date,
+): AppState['inventory'] {
+  const found = inventory.find((e) => e.itemId === itemId)
+  if (found) {
+    return inventory.map((e) => (e.itemId === itemId ? { ...e, quantity: e.quantity + 1 } : e))
+  }
+  return [...inventory, { itemId, quantity: 1, obtainedAt: now.toISOString(), source }]
+}
+
+/** 인벤토리에서 한 개 뺀다. 되돌리기에 쓴다. */
+function removeFromInventory(
+  inventory: AppState['inventory'],
+  itemId: string,
+): AppState['inventory'] {
+  return inventory
+    .map((e) => (e.itemId === itemId ? { ...e, quantity: e.quantity - 1 } : e))
+    .filter((e) => e.quantity > 0)
 }
 
 /** 오늘 칸에 완료 기록을 한 건 더한다. */
@@ -66,6 +133,8 @@ export function useGameState(): GameState {
   const [ready, setReady] = useState(false)
   // 첫 로드가 끝나기 전에 기본값을 저장해버리면 기존 기록을 덮어쓴다.
   const loaded = useRef(false)
+  /** Welcome Gift 를 방금 줬는지 — 화면에서 안내하려고 들고 있는다 */
+  const giftedRef = useRef(false)
 
   /** 모든 상태 변경은 여기를 지난다. ref 를 먼저 갱신해 연속 클릭에도 최신값을 본다. */
   const commit = useCallback((next: AppState) => {
@@ -78,12 +147,20 @@ export function useGameState(): GameState {
     repository.load().then((saved) => {
       if (!alive) return
       if (saved) {
-        commit(saved)
+        // 업데이트하고 처음 열었으면 선물을 한 번 준다
+        const gift = grantWelcomeGift(saved)
+        commit(gift.state)
+        if (gift.given) giftedRef.current = true
       } else if (defaults.current) {
-        // 첫 실행이면 샘플 데이터를 그 자리에서 저장해 둔다.
+        // 첫 실행이면 샘플 데이터와 선물을 그 자리에서 저장해 둔다.
         // 안 그러면 사용자가 뭔가 하기 전까지 저장이 안 돼서,
         // 앱을 다시 열 때마다 샘플 퀘스트가 새로 만들어진다.
-        void repository.save(defaults.current)
+        const gift = grantWelcomeGift(defaults.current)
+        defaults.current = gift.state
+        stateRef.current = gift.state
+        setState(gift.state)
+        if (gift.given) giftedRef.current = true
+        void repository.save(gift.state)
       }
       loaded.current = true
       setReady(true)
@@ -186,13 +263,39 @@ export function useGameState(): GameState {
     [commit],
   )
 
+  /**
+   * 퀘스트 완료 — 이 앱의 보상 루프가 전부 여기서 돈다.
+   *
+   * 현실 행동 → EXP · Coin · Stat · Drop · Character Growth
+   *
+   * 실제로 받은 값을 quest.reward 에 적어둔다.
+   * 되돌리기가 정확히 반대로 돌려면 그때 무엇을 받았는지 알아야 한다.
+   */
   const completeQuest = useCallback(
     (id: string): CompleteResult | null => {
       const prev = stateRef.current
       const target = prev.quests.find((q) => q.id === id)
       if (!target || target.completed) return null
 
-      const outcome = applyExp(prev.user.level, prev.user.currentExp, target.exp)
+      const now = new Date()
+      const sources = {
+        classId: prev.user.classId,
+        equipped: prev.user.equippedItems,
+        areaId: prev.user.currentAreaId,
+      }
+
+      const reward = calculateQuestReward({
+        ...sources,
+        category: target.category,
+        difficulty: target.difficulty,
+        baseExp: target.exp,
+      })
+
+      const outcome = applyExp(prev.user.level, prev.user.currentExp, reward.exp)
+      const statKey = STAT_BY_CATEGORY[target.category]
+      const drop = rollDrop(sources, itemsByRarity)
+
+      const earned = { ...target, exp: reward.exp }
 
       commit({
         ...prev,
@@ -200,23 +303,44 @@ export function useGameState(): GameState {
           ...prev.user,
           level: outcome.level,
           currentExp: outcome.currentExp,
-          totalExp: prev.user.totalExp + target.exp,
+          totalExp: prev.user.totalExp + reward.exp,
           totalCompletedQuests: prev.user.totalCompletedQuests + 1,
+          coins: prev.user.coins + reward.coins,
+          stats: { ...prev.user.stats, [statKey]: prev.user.stats[statKey] + 1 },
         },
         quests: prev.quests.map((q) =>
-          q.id === id ? { ...q, completed: true, completedAt: new Date().toISOString() } : q,
+          q.id === id
+            ? {
+                ...q,
+                completed: true,
+                completedAt: now.toISOString(),
+                reward: {
+                  exp: reward.exp,
+                  coins: reward.coins,
+                  statKey,
+                  ...(drop ? { droppedItemId: drop.itemId } : {}),
+                },
+              }
+            : q,
         ),
+        inventory: drop
+          ? addToInventory(prev.inventory, drop.itemId, `${target.title} 완료`, now)
+          : prev.inventory,
         categoryStats: {
           ...prev.categoryStats,
-          [target.category]: prev.categoryStats[target.category] + target.exp,
+          [target.category]: prev.categoryStats[target.category] + reward.exp,
         },
-        dailyLog: bumpDailyLog(prev, target),
+        dailyLog: bumpDailyLog(prev, earned),
       })
 
       return {
-        gainedExp: target.exp,
+        gainedExp: reward.exp,
+        gainedCoins: reward.coins,
+        bonusExp: reward.bonusExp,
         leveledUp: outcome.leveledUp,
         newLevel: outcome.level,
+        statKey,
+        drop,
       }
     },
     [commit],
@@ -234,7 +358,9 @@ export function useGameState(): GameState {
       const target = prev.quests.find((q) => q.id === id)
       if (!target || !target.completed) return
 
-      const totalExp = Math.max(0, prev.user.totalExp - target.exp)
+      // 완료할 때 적어둔 값이 있으면 그걸 쓴다. 없는 옛 기록은 exp 만 되돌린다.
+      const gained = target.reward ?? { exp: target.exp, coins: 0, statKey: null }
+      const totalExp = Math.max(0, prev.user.totalExp - gained.exp)
       const { level, currentExp } = levelFromTotalExp(totalExp)
 
       // 그날 기록에서도 뺀다. 어제 완료한 걸 오늘 되돌려도 어제 칸에서 빠져야 한다.
@@ -244,12 +370,12 @@ export function useGameState(): GameState {
 
       if (day) {
         const byCategory = { ...day.byCategory }
-        const left = (byCategory[target.category] ?? 0) - target.exp
+        const left = (byCategory[target.category] ?? 0) - gained.exp
         if (left > 0) byCategory[target.category] = left
         else delete byCategory[target.category]
 
         const completed = Math.max(0, day.completed - 1)
-        const exp = Math.max(0, day.exp - target.exp)
+        const exp = Math.max(0, day.exp - gained.exp)
         if (completed === 0 && exp === 0) delete dailyLog[dayKey]
         else dailyLog[dayKey] = { completed, exp, byCategory }
       }
@@ -262,13 +388,26 @@ export function useGameState(): GameState {
           currentExp,
           totalExp,
           totalCompletedQuests: Math.max(0, prev.user.totalCompletedQuests - 1),
+          coins: Math.max(0, prev.user.coins - gained.coins),
+          stats: gained.statKey
+            ? {
+                ...prev.user.stats,
+                [gained.statKey]: Math.max(0, prev.user.stats[gained.statKey] - 1),
+              }
+            : prev.user.stats,
         },
-        quests: prev.quests.map((q) =>
-          q.id === id ? { ...q, completed: false, completedAt: null } : q,
-        ),
+        quests: prev.quests.map((q) => {
+          if (q.id !== id) return q
+          const { reward: _dropped, ...rest } = q
+          return { ...rest, completed: false, completedAt: null }
+        }),
+        // 떨어졌던 아이템도 도로 가져간다. 안 그러면 완료·되돌리기로 계속 주울 수 있다.
+        inventory: gained.droppedItemId
+          ? removeFromInventory(prev.inventory, gained.droppedItemId)
+          : prev.inventory,
         categoryStats: {
           ...prev.categoryStats,
-          [target.category]: Math.max(0, prev.categoryStats[target.category] - target.exp),
+          [target.category]: Math.max(0, prev.categoryStats[target.category] - gained.exp),
         },
         dailyLog,
       })
@@ -374,6 +513,148 @@ export function useGameState(): GameState {
     [commit],
   )
 
+  // ── RPG ────────────────────────────────────────────────
+  const setClass = useCallback(
+    (classId: ClassId) => {
+      const prev = stateRef.current
+      commit({ ...prev, user: { ...prev.user, classId } })
+    },
+    [commit],
+  )
+
+  const setArea = useCallback(
+    (areaId: AreaId) => {
+      const prev = stateRef.current
+      commit({ ...prev, user: { ...prev.user, currentAreaId: areaId } })
+    },
+    [commit],
+  )
+
+  /** 같은 슬롯에 이미 뭔가 있으면 바꿔 낀다. */
+  const equipItem = useCallback(
+    (itemId: string) => {
+      const prev = stateRef.current
+      const def = ITEMS.find((i) => i.id === itemId)
+      if (!def?.equipSlot) return
+      if (!prev.inventory.some((e) => e.itemId === itemId)) return
+
+      commit({
+        ...prev,
+        user: {
+          ...prev.user,
+          equippedItems: { ...prev.user.equippedItems, [def.equipSlot]: itemId },
+        },
+      })
+    },
+    [commit],
+  )
+
+  const unequipSlot = useCallback(
+    (slot: EquipSlot) => {
+      const prev = stateRef.current
+      commit({
+        ...prev,
+        user: { ...prev.user, equippedItems: { ...prev.user.equippedItems, [slot]: null } },
+      })
+    },
+    [commit],
+  )
+
+  const startBattle = useCallback(
+    (def: BattleDef): Battle => {
+      const prev = stateRef.current
+      const battle = createBattle(def, createId)
+      commit({ ...prev, battles: [battle, ...prev.battles] })
+      return battle
+    },
+    [commit],
+  )
+
+  /**
+   * 몬스터·보스에게 행동 하나를 쓴다.
+   * HP 가 0 이 되면 그 자리에서 보상을 준다.
+   */
+  const doBattleAction = useCallback(
+    (battleId: string, actionId: string): BattleClearResult | null => {
+      const prev = stateRef.current
+      const battle = prev.battles.find((b) => b.id === battleId)
+      if (!battle) return null
+
+      const now = new Date()
+      const result = applyBattleAction(battle, actionId, now)
+      if (!result) return null
+
+      const battles = prev.battles.map((b) => (b.id === battleId ? result.battle : b))
+
+      if (!result.cleared) {
+        commit({ ...prev, battles })
+        return { cleared: false, exp: 0, coins: 0, leveledUp: false, newLevel: prev.user.level, drops: [] }
+      }
+
+      // 클리어 — 보장 등급을 먼저 주고, 보너스 등급이 있으면 하나 더 굴린다
+      const drops: DropResult[] = []
+      let inventory = prev.inventory
+
+      for (const rarity of clearRarities(battle)) {
+        const pool = itemsByRarity(rarity)
+        if (pool.length === 0) continue
+        const itemId = pool[Math.floor(Math.random() * pool.length)]
+        drops.push({ itemId, rarity })
+        inventory = addToInventory(inventory, itemId, `${battle.name} 클리어`, now)
+      }
+
+      const outcome = applyExp(prev.user.level, prev.user.currentExp, battle.rewardExp)
+
+      commit({
+        ...prev,
+        battles,
+        inventory,
+        user: {
+          ...prev.user,
+          level: outcome.level,
+          currentExp: outcome.currentExp,
+          totalExp: prev.user.totalExp + battle.rewardExp,
+          coins: prev.user.coins + battle.rewardCoins,
+        },
+        categoryStats: {
+          ...prev.categoryStats,
+          [battle.category]: prev.categoryStats[battle.category] + battle.rewardExp,
+        },
+      })
+
+      return {
+        cleared: true,
+        exp: battle.rewardExp,
+        coins: battle.rewardCoins,
+        leveledUp: outcome.leveledUp,
+        newLevel: outcome.level,
+        drops,
+      }
+    },
+    [commit],
+  )
+
+  const undoBattleActionById = useCallback(
+    (battleId: string, actionId: string) => {
+      const prev = stateRef.current
+      const battle = prev.battles.find((b) => b.id === battleId)
+      if (!battle || battle.status === 'CLEARED') return
+
+      const next = undoBattleAction(battle, actionId)
+      if (!next) return
+      commit({ ...prev, battles: prev.battles.map((b) => (b.id === battleId ? next : b)) })
+    },
+    [commit],
+  )
+
+  const removeBattle = useCallback(
+    (battleId: string) => {
+      const prev = stateRef.current
+      commit({ ...prev, battles: prev.battles.filter((b) => b.id !== battleId) })
+    },
+    [commit],
+  )
+
   const renameUser = useCallback(
     (name: string) => {
       const trimmed = name.trim()
@@ -388,6 +669,7 @@ export function useGameState(): GameState {
     () => ({
       ready,
       state,
+      justGifted: giftedRef.current,
       addQuest,
       completeQuest,
       uncompleteQuest,
@@ -398,6 +680,14 @@ export function useGameState(): GameState {
       renameUser,
       toggleRoutinePause,
       deleteRoutine,
+      setClass,
+      setArea,
+      equipItem,
+      unequipSlot,
+      startBattle,
+      doBattleAction,
+      undoBattleActionById,
+      removeBattle,
     }),
     [
       ready,
@@ -412,6 +702,14 @@ export function useGameState(): GameState {
       renameUser,
       toggleRoutinePause,
       deleteRoutine,
+      setClass,
+      setArea,
+      equipItem,
+      unequipSlot,
+      startBattle,
+      doBattleAction,
+      undoBattleActionById,
+      removeBattle,
     ],
   )
 }

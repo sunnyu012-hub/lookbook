@@ -2,8 +2,9 @@ import type { AppState, Quest, QuestDraft } from '@/types'
 import { emptyCategoryStats } from '@/lib/stats'
 import { expForDifficulty } from '@/lib/difficulty'
 import { createId } from '@/lib/id'
+import { STATE_VERSION, defaultStats, emptyEquipped } from './migrate'
 
-export const STATE_VERSION = 2
+export { STATE_VERSION } from './migrate'
 
 /**
  * 첫 실행 때 넣어주는 예시 퀘스트.
@@ -40,13 +41,21 @@ export function createDefaultState(): AppState {
       currentExp: 0,
       totalExp: 0,
       totalCompletedQuests: 0,
+      coins: 0,
+      classId: null,
+      stats: defaultStats(),
+      equippedItems: emptyEquipped(),
+      currentAreaId: 'HOME_BASE',
     },
     // 목록에 적어둔 순서대로 보이도록 생성 시각을 1ms 씩 어긋나게 준다.
     quests: SAMPLE_QUESTS.map((draft, i) =>
       buildQuest(draft, new Date(now - i).toISOString()),
     ),
     routines: [],
+    inventory: [],
+    battles: [],
     categoryStats: emptyCategoryStats(),
     dailyLog: {},
+    welcomeGiftGiven: false,
   }
 }
