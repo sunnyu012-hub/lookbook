@@ -88,7 +88,7 @@ const BRANCHES: TreeNodeDef[] = (
   title: DOMAIN_META[domain].label,
   ko: DOMAIN_META[domain].ko,
   icon,
-  need: 3,
+  need: 1,
   count: 'quest-domain' as CountKind,
   target: domain,
 }))
@@ -96,57 +96,57 @@ const BRANCHES: TreeNodeDef[] = (
 /** 가지에 달리는 잎들 */
 const LEAVES: TreeNodeDef[] = [
   // ── RECOVERY
-  { key: 'sleep', parent: 'recovery', domain: 'recovery', title: 'SLEEP', ko: '잠', icon: icons.sleep, need: 8, count: 'checkin-field', target: 'sleepHours', manualKey: 'sleep' },
-  { key: 'rest', parent: 'recovery', domain: 'recovery', title: 'REST', ko: '쉬는 시간', icon: pets.catCurl, need: 6, count: 'quest-domain', target: 'recovery' },
-  { key: 'evening', parent: 'recovery', domain: 'recovery', title: 'EVENING', ko: '저녁', icon: fx.zzzBubble, need: 8, count: 'night' },
-  { key: 'recovery-pattern', parent: 'recovery', domain: 'recovery', title: 'MY RECOVERY PATTERN', ko: '내 회복 패턴', icon: fx.sparkle01, need: 14, count: 'checkin-field', target: 'sleepHours', manualKey: 'sleep' },
+  { key: 'sleep', parent: 'recovery', domain: 'recovery', title: 'SLEEP', ko: '잠', icon: icons.sleep, need: 3, count: 'checkin-field', target: 'sleepHours', manualKey: 'sleep' },
+  { key: 'rest', parent: 'recovery', domain: 'recovery', title: 'REST', ko: '쉬는 시간', icon: pets.catCurl, need: 2, count: 'quest-domain', target: 'recovery' },
+  { key: 'evening', parent: 'recovery', domain: 'recovery', title: 'EVENING', ko: '저녁', icon: fx.zzzBubble, need: 2, count: 'night' },
+  { key: 'recovery-pattern', parent: 'recovery', domain: 'recovery', title: 'MY RECOVERY PATTERN', ko: '내 회복 패턴', icon: fx.sparkle01, need: 10, count: 'checkin-field', target: 'sleepHours', manualKey: 'sleep' },
 
   // ── BODY
-  { key: 'movement', parent: 'body', domain: 'body', title: 'MOVEMENT', ko: '움직임', icon: gear.sneakers, need: 5, count: 'checkin-flag', target: 'exercise', manualKey: 'activity' },
-  { key: 'climbing', parent: 'body', domain: 'body', title: 'CLIMBING', ko: '클라이밍', icon: icons.climbing, need: 3, count: 'event-tag', target: '클라이밍' },
-  { key: 'walking', parent: 'body', domain: 'body', title: 'WALKING', ko: '걷기', icon: gear.sneakers, need: 3, count: 'event-tag', target: '걷기' },
-  { key: 'stretch', parent: 'body', domain: 'body', title: 'STRETCH', ko: '스트레칭', icon: icons.exercise, need: 3, count: 'event-tag', target: '스트레칭' },
-  { key: 'body-awareness', parent: 'body', domain: 'body', title: 'BODY AWARENESS', ko: '몸 감각', icon: icons.body, need: 12, count: 'checkin-field', target: 'bodyPain', manualKey: 'body' },
+  { key: 'movement', parent: 'body', domain: 'body', title: 'MOVEMENT', ko: '움직임', icon: gear.sneakers, need: 2, count: 'checkin-flag', target: 'exercise', manualKey: 'activity' },
+  { key: 'climbing', parent: 'body', domain: 'body', title: 'CLIMBING', ko: '클라이밍', icon: icons.climbing, need: 2, count: 'event-tag', target: '클라이밍' },
+  { key: 'walking', parent: 'body', domain: 'body', title: 'WALKING', ko: '걷기', icon: gear.sneakers, need: 2, count: 'event-tag', target: '걷기' },
+  { key: 'stretch', parent: 'body', domain: 'body', title: 'STRETCH', ko: '스트레칭', icon: icons.exercise, need: 2, count: 'event-tag', target: '스트레칭' },
+  { key: 'body-awareness', parent: 'body', domain: 'body', title: 'BODY AWARENESS', ko: '몸 감각', icon: icons.body, need: 6, count: 'checkin-field', target: 'bodyPain', manualKey: 'body' },
 
   // ── NOURISH
-  { key: 'meals', parent: 'nourish', domain: 'nourish', title: 'MEALS', ko: '끼니', icon: items.onigiri, need: 8, count: 'checkin-field', target: 'mealsCount', manualKey: 'food' },
-  { key: 'water', parent: 'nourish', domain: 'nourish', title: 'WATER', ko: '물', icon: icons.water, need: 6, count: 'quest-domain', target: 'nourish' },
-  { key: 'appetite', parent: 'nourish', domain: 'nourish', title: 'APPETITE', ko: '식욕', icon: icons.appetite, need: 10, count: 'checkin-field', target: 'appetite', manualKey: 'food' },
-  { key: 'fuel-pattern', parent: 'nourish', domain: 'nourish', title: 'MY FUEL PATTERN', ko: '내 연료 패턴', icon: fx.sparkle02, need: 16, count: 'checkin-field', target: 'appetite', manualKey: 'food' },
+  { key: 'meals', parent: 'nourish', domain: 'nourish', title: 'MEALS', ko: '끼니', icon: items.onigiri, need: 3, count: 'checkin-field', target: 'mealsCount', manualKey: 'food' },
+  { key: 'water', parent: 'nourish', domain: 'nourish', title: 'WATER', ko: '물', icon: icons.water, need: 2, count: 'quest-domain', target: 'nourish' },
+  { key: 'appetite', parent: 'nourish', domain: 'nourish', title: 'APPETITE', ko: '식욕', icon: icons.appetite, need: 4, count: 'checkin-field', target: 'appetite', manualKey: 'food' },
+  { key: 'fuel-pattern', parent: 'nourish', domain: 'nourish', title: 'MY FUEL PATTERN', ko: '내 연료 패턴', icon: fx.sparkle02, need: 10, count: 'checkin-field', target: 'appetite', manualKey: 'food' },
 
   // ── MIND
-  { key: 'mood', parent: 'mind', domain: 'mind', title: 'MOOD', ko: '기분', icon: icons.mood, need: 8, count: 'checkin-field', target: 'mood', manualKey: 'mind' },
-  { key: 'focus', parent: 'mind', domain: 'mind', title: 'FOCUS', ko: '집중', icon: icons.focus, need: 8, count: 'checkin-field', target: 'focus' },
-  { key: 'stress', parent: 'mind', domain: 'mind', title: 'STRESS', ko: '스트레스', icon: fx.cloud, need: 8, count: 'checkin-field', target: 'stress', manualKey: 'mind' },
-  { key: 'journal', parent: 'mind', domain: 'mind', title: 'JOURNAL', ko: '한 줄 일기', icon: icons.log, need: 5, count: 'night' },
-  { key: 'self-reflection', parent: 'mind', domain: 'mind', title: 'SELF REFLECTION', ko: '돌아보기', icon: fx.sparkle01, need: 3, count: 'weekly-reset' },
-  { key: 'mind-pattern', parent: 'mind', domain: 'mind', title: 'MY MIND PATTERN', ko: '내 마음 패턴', icon: fx.flower, need: 14, count: 'checkin-field', target: 'mood', manualKey: 'mind' },
+  { key: 'mood', parent: 'mind', domain: 'mind', title: 'MOOD', ko: '기분', icon: icons.mood, need: 3, count: 'checkin-field', target: 'mood', manualKey: 'mind' },
+  { key: 'focus', parent: 'mind', domain: 'mind', title: 'FOCUS', ko: '집중', icon: icons.focus, need: 3, count: 'checkin-field', target: 'focus' },
+  { key: 'stress', parent: 'mind', domain: 'mind', title: 'STRESS', ko: '스트레스', icon: fx.cloud, need: 3, count: 'checkin-field', target: 'stress', manualKey: 'mind' },
+  { key: 'journal', parent: 'mind', domain: 'mind', title: 'JOURNAL', ko: '한 줄 일기', icon: icons.log, need: 2, count: 'night' },
+  { key: 'self-reflection', parent: 'mind', domain: 'mind', title: 'SELF REFLECTION', ko: '돌아보기', icon: fx.sparkle01, need: 1, count: 'weekly-reset' },
+  { key: 'mind-pattern', parent: 'mind', domain: 'mind', title: 'MY MIND PATTERN', ko: '내 마음 패턴', icon: fx.flower, need: 10, count: 'checkin-field', target: 'mood', manualKey: 'mind' },
 
   // ── HOME
-  { key: 'cleaning', parent: 'home', domain: 'home', title: 'CLEANING', ko: '청소', icon: icons.clean, need: 5, count: 'quest-domain', target: 'home' },
-  { key: 'organizing', parent: 'home', domain: 'home', title: 'ORGANIZING', ko: '정리', icon: icons.save, need: 10, count: 'quest-domain', target: 'home' },
-  { key: 'cozy-home', parent: 'home', domain: 'home', title: 'COZY HOME', ko: '포근한 집', icon: fx.stringLights, need: 18, count: 'quest-domain', target: 'home' },
+  { key: 'cleaning', parent: 'home', domain: 'home', title: 'CLEANING', ko: '청소', icon: icons.clean, need: 2, count: 'quest-domain', target: 'home' },
+  { key: 'organizing', parent: 'home', domain: 'home', title: 'ORGANIZING', ko: '정리', icon: icons.save, need: 6, count: 'quest-domain', target: 'home' },
+  { key: 'cozy-home', parent: 'home', domain: 'home', title: 'COZY HOME', ko: '포근한 집', icon: fx.stringLights, need: 14, count: 'quest-domain', target: 'home' },
 
   // ── CREATE
-  { key: 'ideas', parent: 'create', domain: 'create', title: 'IDEAS', ko: '아이디어', icon: fx.sparkle02, need: 5, count: 'quest-domain', target: 'create' },
-  { key: 'work', parent: 'create', domain: 'create', title: 'WORK', ko: '일', icon: icons.work, need: 5, count: 'checkin-field', target: 'workHours' },
-  { key: 'projects', parent: 'create', domain: 'create', title: 'PROJECTS', ko: '프로젝트', icon: icons.log, need: 4, count: 'life-category', target: 'work' },
-  { key: 'style', parent: 'create', domain: 'create', title: 'STYLE', ko: '스타일', icon: icons.outfit, need: 5, count: 'event-tag', target: '옷 꾸밈' },
-  { key: 'content', parent: 'create', domain: 'create', title: 'CONTENT', ko: '만든 것', icon: icons.camera, need: 3, count: 'event-tag', target: '콘텐츠 제작' },
+  { key: 'ideas', parent: 'create', domain: 'create', title: 'IDEAS', ko: '아이디어', icon: fx.sparkle02, need: 2, count: 'quest-domain', target: 'create' },
+  { key: 'work', parent: 'create', domain: 'create', title: 'WORK', ko: '일', icon: icons.work, need: 2, count: 'checkin-field', target: 'workHours' },
+  { key: 'projects', parent: 'create', domain: 'create', title: 'PROJECTS', ko: '프로젝트', icon: icons.log, need: 1, count: 'life-category', target: 'work' },
+  { key: 'style', parent: 'create', domain: 'create', title: 'STYLE', ko: '스타일', icon: icons.outfit, need: 2, count: 'event-tag', target: '옷 꾸밈' },
+  { key: 'content', parent: 'create', domain: 'create', title: 'CONTENT', ko: '만든 것', icon: icons.camera, need: 1, count: 'event-tag', target: '콘텐츠 제작' },
 
   // ── CONNECT
-  { key: 'love', parent: 'connect', domain: 'connect', title: 'LOVE', ko: '사랑', icon: fx.heart, need: 4, count: 'life-category', target: 'love' },
-  { key: 'date', parent: 'connect', domain: 'connect', title: 'DATE', ko: '데이트', icon: fx.heartBubble, need: 3, count: 'event-tag', target: '데이트' },
-  { key: 'friends', parent: 'connect', domain: 'connect', title: 'FRIENDS', ko: '친구', icon: icons.camera, need: 3, count: 'event-tag', target: '친구 만남' },
-  { key: 'family', parent: 'connect', domain: 'connect', title: 'FAMILY', ko: '가족', icon: icons.home, need: 3, count: 'event-tag', target: '가족' },
-  { key: 'memories', parent: 'connect', domain: 'connect', title: 'MEMORIES', ko: '기억', icon: fx.sparkle01, need: 8, count: 'life-category', target: 'love' },
+  { key: 'love', parent: 'connect', domain: 'connect', title: 'LOVE', ko: '사랑', icon: fx.heart, need: 1, count: 'life-category', target: 'love' },
+  { key: 'date', parent: 'connect', domain: 'connect', title: 'DATE', ko: '데이트', icon: fx.heartBubble, need: 1, count: 'event-tag', target: '데이트' },
+  { key: 'friends', parent: 'connect', domain: 'connect', title: 'FRIENDS', ko: '친구', icon: icons.camera, need: 1, count: 'event-tag', target: '친구 만남' },
+  { key: 'family', parent: 'connect', domain: 'connect', title: 'FAMILY', ko: '가족', icon: icons.home, need: 1, count: 'event-tag', target: '가족' },
+  { key: 'memories', parent: 'connect', domain: 'connect', title: 'MEMORIES', ko: '기억', icon: fx.sparkle01, need: 4, count: 'life-category', target: 'love' },
 
   // ── JOY
-  { key: 'hobby', parent: 'joy', domain: 'joy', title: 'HOBBY', ko: '취미', icon: icons.music, need: 3, count: 'event-tag', target: '취미' },
-  { key: 'game', parent: 'joy', domain: 'joy', title: 'GAME', ko: '게임', icon: icons.energy, need: 3, count: 'event-tag', target: '게임' },
-  { key: 'photo', parent: 'joy', domain: 'joy', title: 'PHOTO', ko: '사진', icon: icons.camera, need: 3, count: 'event-tag', target: '사진 찍음' },
-  { key: 'new-place', parent: 'joy', domain: 'joy', title: 'NEW PLACE', ko: '새로운 곳', icon: fx.rainbow, need: 2, count: 'event-tag', target: '새로운 장소' },
-  { key: 'small-joy', parent: 'joy', domain: 'joy', title: 'SMALL JOY', ko: '작은 즐거움', icon: fx.flower, need: 10, count: 'quest-domain', target: 'joy' },
+  { key: 'hobby', parent: 'joy', domain: 'joy', title: 'HOBBY', ko: '취미', icon: icons.music, need: 1, count: 'event-tag', target: '취미' },
+  { key: 'game', parent: 'joy', domain: 'joy', title: 'GAME', ko: '게임', icon: icons.energy, need: 1, count: 'event-tag', target: '게임' },
+  { key: 'photo', parent: 'joy', domain: 'joy', title: 'PHOTO', ko: '사진', icon: icons.camera, need: 1, count: 'event-tag', target: '사진 찍음' },
+  { key: 'new-place', parent: 'joy', domain: 'joy', title: 'NEW PLACE', ko: '새로운 곳', icon: fx.rainbow, need: 1, count: 'event-tag', target: '새로운 장소' },
+  { key: 'small-joy', parent: 'joy', domain: 'joy', title: 'SMALL JOY', ko: '작은 즐거움', icon: fx.flower, need: 5, count: 'quest-domain', target: 'joy' },
 ]
 
 export const TREE_NODES: TreeNodeDef[] = [...BRANCHES, ...LEAVES]

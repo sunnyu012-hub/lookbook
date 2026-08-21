@@ -20,6 +20,7 @@ export function QuestRow({
   onToggle,
   onFavorite,
   action,
+  focused,
 }: {
   quest: Quest
   /** 오늘 몇 번 했는지 */
@@ -32,6 +33,8 @@ export function QuestRow({
   onFavorite?: () => void
   /** 체크 대신 다른 동작을 붙이고 싶을 때 (Quest Board 의 + ADD) */
   action?: { label: string; onClick: () => void; done?: boolean }
+  /** 오늘의 목표에 도움이 되는 퀘스트 */
+  focused?: boolean
 }) {
   const meta = CATEGORY_META[quest.category]
   const domainMeta = DOMAIN_META[mappingOfQuest(quest).primary]
@@ -40,6 +43,12 @@ export function QuestRow({
 
   return (
     <li className="relative flex items-center gap-2.5 py-2">
+      {focused && !done && (
+        <span
+          aria-hidden
+          className="absolute -left-2 top-1/2 h-[18px] w-[3px] -translate-y-1/2 rounded-full bg-peachdeep"
+        />
+      )}
       {action ? (
         <button
           type="button"

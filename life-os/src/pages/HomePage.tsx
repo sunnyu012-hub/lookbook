@@ -11,6 +11,8 @@ import { QuestView } from '@/components/home/QuestView'
 import { MyLife, buildLifeModules, type LifeSection } from '@/components/home/MyLife'
 import { EventSheet } from '@/components/home/EventSheet'
 import { CapacityCard } from '@/components/home/CapacityCard'
+import { FocusCard } from '@/components/home/FocusCard'
+import type { DailyFocus } from '@/lib/quests/dailyFocus'
 import type { Capacity } from '@/lib/wellness/capacity'
 import type { RecoveryCurve } from '@/lib/analytics/recoveryCurve'
 import type { QuestStore } from '@/hooks/useQuests'
@@ -54,6 +56,8 @@ interface Props {
   /** 일요일 저녁에만 슬쩍 뜬다 */
   weeklyDue: boolean
   onOpenWeekly: () => void
+  /** 오늘의 작은 목표 — 매일 바뀐다 */
+  focus: DailyFocus | null
 }
 
 /**
@@ -86,8 +90,14 @@ export function HomePage({
   onOpenRhythm,
   weeklyDue,
   onOpenWeekly,
+  focus,
 }: Props) {
-  const [tab, setTab] = useState<HomeTab>('status')
+  /**
+   * 기본 탭은 QUEST 다.
+   * 앱을 켰을 때 "오늘 뭘 하면 되는지" 가 먼저 보여야 한다.
+   * 컨디션 숫자는 이미 위 HUD 와 CAPACITY 가 말해 주고 있다.
+   */
+  const [tab, setTab] = useState<HomeTab>('quest')
   const [eventsOpen, setEventsOpen] = useState(false)
 
   const streak = useMemo(
@@ -160,6 +170,8 @@ export function HomePage({
 
           <CapacityCard capacity={capacity} curve={curve} onOpenCurve={onOpenRhythm} />
 
+          {focus && <FocusCard focus={focus} />}
+
           {/* ── 오늘 있었던 일 ── */}
           <section>
             <button
@@ -206,6 +218,7 @@ export function HomePage({
                 prefs={prefs}
                 onOpenBoard={onOpenQuestBoard}
                 onFavorite={onFavoriteQuest}
+                focus={focus}
               />
             )}
           </section>

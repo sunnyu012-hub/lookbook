@@ -139,7 +139,7 @@ const LIFE_CATEGORY_DOMAINS: Record<string, DomainWeights> = {
 }
 
 /** 이 정도 기록은 있어야 분포를 말한다 */
-export const MIN_BALANCE_TOTAL = 6
+export const MIN_BALANCE_TOTAL = 3
 
 export function computeLifeBalance(input: LifeBalanceInput): LifeBalance {
   const days = input.days ?? 7

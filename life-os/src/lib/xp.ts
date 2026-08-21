@@ -29,6 +29,8 @@ export const XP_RULES = {
   badge: 5,
   /** 주간 돌아보기 — 한 주에 한 번만 (여러 번 만들어 긁을 수 없다) */
   weeklyReset: 10,
+  /** 오늘의 작은 목표를 해낸 날 — 하루에 한 번만 */
+  dailyFocus: 6,
 } as const
 
 export const XP_RULE_LABEL: Record<keyof typeof XP_RULES, string> = {
@@ -42,6 +44,7 @@ export const XP_RULE_LABEL: Record<keyof typeof XP_RULES, string> = {
   discovery: '패턴 발견',
   badge: '새 배지',
   weeklyReset: '주간 돌아보기',
+  dailyFocus: '오늘의 목표',
 }
 
 export interface XpSources {
@@ -59,6 +62,8 @@ export interface XpSources {
   badges?: number
   /** 저장된 주간 돌아보기 수 — 한 주 한 건이라 그대로 곱하면 된다 */
   weeklyResets?: number
+  /** 오늘의 목표를 해낸 날 수 — 하루 한 번이라 그대로 곱하면 된다 */
+  focusDays?: number
 }
 
 export interface XpBreakdown {
@@ -72,6 +77,7 @@ export interface XpBreakdown {
   discovery: number
   badge: number
   weekly: number
+  focus: number
   total: number
 }
 
@@ -86,6 +92,7 @@ export function xpBreakdown({
   discoveries = 0,
   badges = 0,
   weeklyResets = 0,
+  focusDays = 0,
 }: XpSources): XpBreakdown {
   const checkin = checkins.reduce(
     (sum, c) =>
@@ -101,6 +108,7 @@ export function xpBreakdown({
   const discovery = discoveries * XP_RULES.discovery
   const badge = badges * XP_RULES.badge
   const weekly = weeklyResets * XP_RULES.weeklyReset
+  const focus = focusDays * XP_RULES.dailyFocus
 
   return {
     checkin,
@@ -113,7 +121,9 @@ export function xpBreakdown({
     discovery,
     badge,
     weekly,
-    total: checkin + night + weight + mj + life + events + questXp + discovery + badge + weekly,
+    focus,
+    total:
+      checkin + night + weight + mj + life + events + questXp + discovery + badge + weekly + focus,
   }
 }
 

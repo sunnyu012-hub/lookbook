@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { TabKey } from '@/types'
+import type { EnergyMode, TabKey } from '@/types'
 import { AppShell } from '@/components/layout/AppShell'
 import { AuthGate } from '@/components/AuthGate'
 import { DevTools } from '@/components/DevTools'
@@ -43,6 +43,8 @@ import { computeLifeBalance } from '@/lib/analytics/lifeBalance'
 import { buildLifeTree, markTreeSeen, newlyOpened } from '@/lib/analytics/lifeTree'
 import { recoveryCurve } from '@/lib/analytics/recoveryCurve'
 import { todayCapacity } from '@/lib/wellness/capacity'
+import { todayFocus } from '@/lib/quests/dailyFocus'
+import { nextUnlocks } from '@/lib/analytics/nextUnlock'
 import {
   WEEKLY_RESET_XP,
   activeFocusDomains,
@@ -54,6 +56,17 @@ import { dayXp } from '@/lib/quests/master'
 import { characters } from '@/lib/pixelAssets'
 import { todayKey } from '@/lib/date'
 import { storageMode } from '@/lib/repository'
+
+/**
+ * 지난 날의 결은 되살릴 수 없어서 그때 저장된 mode 로 근사한다.
+ * 오늘의 목표를 몇 번 해냈는지 세는 데만 쓴다.
+ */
+const capacityOfMode = (mode: EnergyMode | null) => {
+  if (mode === 'RECOVERY') return 'REST' as const
+  if (mode === 'EASY') return 'GENTLE' as const
+  if (mode === 'POWER') return 'OPEN' as const
+  return 'STEADY' as const
+}
 
 interface ToastState {
   title: string
@@ -199,6 +212,7 @@ export default function App() {
   )
   const thisWeekReset = weeklyStore.byWeekStart.get(weekStartOf()) ?? null
 
+
   /**
    * 주간 돌아보기를 권할 때 — 금·토·일에만, 아직 안 썼을 때만.
    * 매일 띄우면 숙제가 된다.
@@ -208,6 +222,62 @@ export default function App() {
     const day = new Date(`${todayKey()}T00:00:00`).getDay()
     return day === 0 || day === 6 || day === 5
   }, [thisWeekReset])
+
+  /** 지금까지 한 번이라도 해본 퀘스트 — "안 해본 것" 목표에 쓴다 */
+  const everDone = useMemo(() => {
+    const set = new Set<string>()
+    for (const [date, day] of Object.entries(questStore.log)) {
+      if (date === todayKey()) continue
+      for (const [id, n] of Object.entries(day.completions)) if (n > 0) set.add(id)
+    }
+    return set
+  }, [questStore.log])
+
+  /** 오늘의 작은 목표 — 날짜마다 바뀐다 */
+  const focus = useMemo(
+    () =>
+      todayFocus({
+        date: todayKey(),
+        capacity: capacity?.type ?? null,
+        completions: questStore.today.completions,
+        customQuests: questStore.customQuests,
+        everDone,
+        morningDone: Boolean(store.today),
+        nightDone: nightStore.byDate.has(todayKey()),
+        taggedToday: todayTags.length > 0,
+      }),
+    [
+      capacity,
+      questStore.today.completions,
+      questStore.customQuests,
+      everDone,
+      store.today,
+      nightStore.byDate,
+      todayTags.length,
+    ],
+  )
+
+  /**
+   * 오늘의 목표를 해낸 날 수 — 지난 날들도 되짚어 센다.
+   * 그날의 결(Capacity)까지 되살릴 수는 없어서 저장된 mode 로 근사한다.
+   */
+  const focusDays = useMemo(() => {
+    let n = 0
+    for (const [date, day] of Object.entries(questStore.log)) {
+      const checkin = store.byDate.get(date)
+      const past = todayFocus({
+        date,
+        capacity: capacityOfMode(checkin?.mode ?? null),
+        completions: day.completions,
+        customQuests: questStore.customQuests,
+        morningDone: Boolean(checkin),
+        nightDone: nightStore.byDate.has(date),
+        taggedToday: (tagStore.log[date] ?? []).length > 0,
+      })
+      if (past.done) n += 1
+    }
+    return n
+  }, [questStore.log, questStore.customQuests, store.byDate, nightStore.byDate, tagStore.log])
 
   /** 퀘스트 완료 총 횟수 (배지용) */
   const questsDoneTotal = useMemo(
@@ -232,6 +302,7 @@ export default function App() {
         questXp: questStore.questXp,
         discoveries: patterns.length,
         weeklyResets: weeklyStore.resets.length,
+        focusDays,
       }),
     [
       store.checkins,
@@ -243,6 +314,7 @@ export default function App() {
       questStore.questXp,
       patterns.length,
       weeklyStore.resets.length,
+      focusDays,
     ],
   )
 
@@ -258,6 +330,9 @@ export default function App() {
         questsDone: questsDoneTotal,
         discoveries: patterns.length,
         level: levelFromXp(xpNoBadges.total).level,
+        focusDays,
+        weeklyResets: weeklyStore.resets.length,
+        treeNodes: lifeTree.discovered,
       }),
     [
       store.checkins,
@@ -269,6 +344,9 @@ export default function App() {
       questsDoneTotal,
       patterns.length,
       xpNoBadges.total,
+      focusDays,
+      weeklyStore.resets.length,
+      lifeTree.discovered,
     ],
   )
 
@@ -317,6 +395,12 @@ export default function App() {
       markSeen(badges)
     }
   }, [badges, store.loading, questStore.loading])
+
+/** 곧 열릴 것 세 개 — 잠긴 화면만 보면 답답하다 */
+  const unlocks = useMemo(
+    () => nextUnlocks({ tree: lifeTree, badges, chapters: manualChapters }),
+    [lifeTree, badges, manualChapters],
+  )
 
   // 새로 열린 Life Tree Node 를 한 번만 알려 준다
   useEffect(() => {
@@ -433,6 +517,7 @@ export default function App() {
         <LifeTreePage
           tree={lifeTree}
           insights={insights}
+          unlocks={unlocks}
           onClose={() => setOverlay(null)}
           onOpenManual={() => setOverlay('manual')}
         />
@@ -495,6 +580,7 @@ export default function App() {
               onOpenRhythm={() => setOverlay('rhythm')}
               weeklyDue={weeklyDue}
               onOpenWeekly={() => setOverlay('weekly')}
+              focus={focus}
             />
           )}
 
@@ -586,6 +672,7 @@ export default function App() {
               curve={curve}
               onOpenRhythm={() => setOverlay('rhythm')}
               insightList={insights}
+              unlocks={unlocks}
               weeklyResets={weeklyStore.resets.length}
               onOpenWeekly={() => setOverlay('weekly')}
               badgesEarned={earnedCount(badges)}

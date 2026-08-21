@@ -43,6 +43,12 @@ export interface BadgeInput {
   /** 발견한 패턴 수 */
   discoveries: number
   level: number
+  /** 오늘의 목표를 해낸 날 수 */
+  focusDays?: number
+  /** 저장된 주간 돌아보기 수 */
+  weeklyResets?: number
+  /** 열린 Life Tree Node 수 */
+  treeNodes?: number
 }
 
 interface Rule extends Badge {
@@ -53,6 +59,14 @@ const RULES: Rule[] = [
   // ── 시작
   { id: 'first-day', name: 'FIRST DAY', hint: '첫 기록을 남기면', group: 'start', icon: fx.sparkle01,
     goal: 1, progressOf: (i) => i.checkins.length },
+  { id: 'first-quest', name: 'FIRST STEP', hint: '퀘스트 하나 완료', group: 'start', icon: icons.xp,
+    goal: 1, progressOf: (i) => i.questsDone },
+  { id: 'first-tag', name: 'WHAT HAPPENED', hint: '오늘 있었던 일 한 번 적기', group: 'start', icon: icons.camera,
+    goal: 1, progressOf: (i) => Object.values(i.eventLog).filter((t) => t.length > 0).length },
+  { id: 'first-night', name: 'FIRST NIGHT', hint: '밤 마무리 한 번', group: 'start', icon: pets.catCurl,
+    goal: 1, progressOf: (i) => i.nights.length },
+  { id: 'first-tree', name: 'FIRST BRANCH', hint: 'Life Tree 한 칸 열기', group: 'start', icon: fx.rainbow,
+    goal: 1, progressOf: (i) => i.treeNodes ?? 0 },
   { id: 'early-bird', name: 'EARLY BIRD', hint: '아침 기록 10번', group: 'start', icon: icons.sleep,
     goal: 10, progressOf: (i) => i.checkins.length },
   { id: 'good-night', name: 'GOOD NIGHT', hint: '밤 마무리 10번', group: 'start', icon: pets.catCurl,
@@ -62,6 +76,16 @@ const RULES: Rule[] = [
       const nights = new Set(i.nights.map((n) => n.date))
       return i.checkins.filter((c) => nights.has(c.date)).length
     } },
+
+  // ── 오늘의 목표
+  { id: 'focus-1', name: 'ON TARGET', hint: '오늘의 목표 한 번 해내기', group: 'quest', icon: fx.sparkle02,
+    goal: 1, progressOf: (i) => i.focusDays ?? 0 },
+  { id: 'focus-7', name: 'SEVEN FOCUS', hint: '오늘의 목표 7번', group: 'quest', icon: fx.flower,
+    goal: 7, progressOf: (i) => i.focusDays ?? 0 },
+  { id: 'weekly-1', name: 'LOOKING BACK', hint: '주간 돌아보기 한 번', group: 'log', icon: pets.catSit,
+    goal: 1, progressOf: (i) => i.weeklyResets ?? 0 },
+  { id: 'weekly-4', name: 'A MONTH BACK', hint: '주간 돌아보기 4번', group: 'log', icon: icons.log,
+    goal: 4, progressOf: (i) => i.weeklyResets ?? 0 },
 
   // ── 퀘스트
   { id: 'quest-beginner', name: 'QUEST BEGINNER', hint: '퀘스트 10개 완료', group: 'quest', icon: icons.xp,

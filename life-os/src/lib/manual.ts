@@ -190,7 +190,7 @@ export function buildManual(input: ManualInput): Chapter[] {
       })
     }
   }
-  add(1, 'energy', 'MY ENERGY', '내 에너지', icons.energy, 7, list.length, energyLines)
+  add(1, 'energy', 'MY ENERGY', '내 에너지', icons.energy, 4, list.length, energyLines)
 
   // ── 02 MY SLEEP
   const sleepLines: ManualLine[] = []
@@ -219,7 +219,7 @@ export function buildManual(input: ManualInput): Chapter[] {
     const late = tagLine(input, '늦은 카페인', (c) => c.sleepQuality, '수면의 질', '')
     if (late) sleepLines.push(late)
   }
-  add(2, 'sleep', 'MY SLEEP', '내 잠', icons.sleep, 8, withSleep.length, sleepLines)
+  add(2, 'sleep', 'MY SLEEP', '내 잠', icons.sleep, 4, withSleep.length, sleepLines)
 
   // ── 03 MY BODY
   const bodyLines: ManualLine[] = []
@@ -229,7 +229,7 @@ export function buildManual(input: ManualInput): Chapter[] {
   if (climbNext) bodyLines.push(climbNext)
   const soreLine = tagLine(input, '근육통', (c) => c.energyScore, 'Overall')
   if (soreLine) bodyLines.push(soreLine)
-  add(3, 'body', 'MY BODY', '내 몸', icons.body, 10, checkins.filter((c) => c.bodyPain != null).length, bodyLines)
+  add(3, 'body', 'MY BODY', '내 몸', icons.body, 5, checkins.filter((c) => c.bodyPain != null).length, bodyLines)
 
   // ── 04 MY MIND
   const mindLines: ManualLine[] = []
@@ -241,7 +241,7 @@ export function buildManual(input: ManualInput): Chapter[] {
   if (aloneLine) mindLines.push(aloneLine)
   const busyLine = tagLine(input, '바쁜 날', (c) => c.energyScore, 'Overall')
   if (busyLine) mindLines.push(busyLine)
-  add(4, 'mind', 'MY MIND', '내 마음', icons.mood, 10, checkins.filter((c) => c.mood != null).length, mindLines)
+  add(4, 'mind', 'MY MIND', '내 마음', icons.mood, 5, checkins.filter((c) => c.mood != null).length, mindLines)
 
   // ── 05 MY FOOD
   const foodLines: ManualLine[] = []
@@ -251,7 +251,7 @@ export function buildManual(input: ManualInput): Chapter[] {
   if (properMeal) foodLines.push(properMeal)
   const skipMeal = tagLine(input, '끼니 부족', (c) => c.energyScore, 'Overall')
   if (skipMeal) foodLines.push(skipMeal)
-  add(5, 'food', 'MY FOOD', '내 끼니', icons.food, 10, checkins.filter((c) => c.appetite != null).length, foodLines)
+  add(5, 'food', 'MY FOOD', '내 끼니', icons.food, 5, checkins.filter((c) => c.appetite != null).length, foodLines)
 
   // ── 06 MY ACTIVITY
   const actLines: ManualLine[] = []
@@ -275,7 +275,7 @@ export function buildManual(input: ManualInput): Chapter[] {
   if (outLine) actLines.push(outLine)
   const homeLine = tagLine(input, '집콕', (c) => c.energyScore, 'Overall')
   if (homeLine) actLines.push(homeLine)
-  add(6, 'activity', 'MY ACTIVITY', '내 움직임', gear.sneakers, 10, checkins.filter((c) => c.exercise != null).length, actLines)
+  add(6, 'activity', 'MY ACTIVITY', '내 움직임', gear.sneakers, 5, checkins.filter((c) => c.exercise != null).length, actLines)
 
   // ── 07 MY MOUNJARO CYCLE
   const mjLines: ManualLine[] = []
@@ -286,7 +286,7 @@ export function buildManual(input: ManualInput): Chapter[] {
       text: '이 앱은 의료 앱이 아니에요. 여기 숫자는 내가 적어 둔 기록일 뿐이고, 용량이나 투약 여부는 담당 의료진과 정할 일이에요.',
     })
   }
-  add(7, 'mounjaro', 'MY CYCLE', '내 사이클', icons.log, 4, input.mounjaro.length, mjLines)
+  add(7, 'mounjaro', 'MY CYCLE', '내 사이클', icons.log, 3, input.mounjaro.length, mjLines)
 
   // ── 08 MY GOOD DAYS
   const goodLines: ManualLine[] = []
@@ -320,7 +320,7 @@ export function buildManual(input: ManualInput): Chapter[] {
       goodLines.push({ text: `그런 날에 자주 적혀 있던 태그: ${goodTags.map(([t]) => t).join(' · ')}` })
     }
   }
-  add(8, 'good', 'MY GOOD DAYS', '좋았던 날', fx.sparkle01, 12, list.length, goodLines)
+  add(8, 'good', 'MY GOOD DAYS', '좋았던 날', fx.sparkle01, 8, list.length, goodLines)
 
   // ── 09 MY HARD DAYS
   const hardLines: ManualLine[] = []
@@ -342,7 +342,7 @@ export function buildManual(input: ManualInput): Chapter[] {
     }
     hardLines.push({ text: '이건 원인을 알려 주는 값이 아니에요. 같이 적혀 있었다는 뜻이에요.' })
   }
-  add(9, 'hard', 'MY HARD DAYS', '힘들었던 날', fx.cloud, 12, list.length, hardLines)
+  add(9, 'hard', 'MY HARD DAYS', '힘들었던 날', fx.cloud, 8, list.length, hardLines)
 
   // ── 10 MY LIFE
   const lifeLines: ManualLine[] = []
@@ -371,7 +371,7 @@ export function buildManual(input: ManualInput): Chapter[] {
   if (input.lifeEvents.length > 0) {
     lifeLines.push({ text: `직접 적어 둔 순간이 ${input.lifeEvents.length}개 쌓였어요.` })
   }
-  add(10, 'life', 'MY LIFE', '내 생활', pets.catSit, 5, checkins.length, lifeLines)
+  add(10, 'life', 'MY LIFE', '내 생활', pets.catSit, 2, checkins.length, lifeLines)
 
   return chapters
 }

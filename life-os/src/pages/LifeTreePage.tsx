@@ -15,15 +15,18 @@ import { PixelImage } from '@/components/pixel/PixelImage'
 import { PixelSparkle } from '@/components/pixel/PixelSparkle'
 import { haptic } from '@/hooks/useHaptic'
 import { cn } from '@/lib/cn'
+import { NextUnlockCard } from '@/components/life/NextUnlockCard'
+import type { NextUnlock } from '@/lib/analytics/nextUnlock'
 
 interface Props {
   tree: LifeTree
   insights: Insight[]
+  unlocks: NextUnlock[]
   onClose: () => void
   onOpenManual?: (manualKey: string) => void
 }
 
-export function LifeTreePage({ tree, insights, onClose, onOpenManual }: Props) {
+export function LifeTreePage({ tree, insights, unlocks, onClose, onOpenManual }: Props) {
   const [open, setOpen] = useState<string | null>(null)
 
   return (
@@ -51,6 +54,8 @@ export function LifeTreePage({ tree, insights, onClose, onOpenManual }: Props) {
       <p className="ko px-1">
         공략하는 지도가 아니에요. 기록이 쌓이면 그 영역이 저절로 열려요.
       </p>
+
+      <NextUnlockCard unlocks={unlocks.filter((u) => u.source === 'tree')} />
 
       {/* 뿌리 */}
       <div className="flex flex-col items-center py-1">

@@ -7,6 +7,7 @@ import { COMBO_STEPS, questById } from '@/lib/quests/master'
 import { icons } from '@/lib/pixelAssets'
 import { haptic } from '@/hooks/useHaptic'
 import { cn } from '@/lib/cn'
+import { helpsFocus, type DailyFocus } from '@/lib/quests/dailyFocus'
 
 /** 오늘의 퀘스트 — 추천 5개 + 더 보러 가기 */
 export function QuestView({
@@ -14,11 +15,14 @@ export function QuestView({
   prefs,
   onOpenBoard,
   onFavorite,
+  focus,
 }: {
   questStore: QuestStore
   prefs: Preferences
   onOpenBoard: () => void
   onFavorite: (questId: string) => void
+  /** 오늘의 목표 — 도움이 되는 퀘스트에 작은 표시를 붙인다 */
+  focus?: DailyFocus | null
 }) {
   const [justDone, setJustDone] = useState<string | null>(null)
   const { picks, doneCount, previewXp, countOf, complete, undo, customQuests } = questStore
@@ -75,6 +79,7 @@ export function QuestView({
             favorite={prefs.favoriteQuests?.includes(quest.id)}
             onToggle={() => toggle(quest.id)}
             onFavorite={() => onFavorite(quest.id)}
+            focused={helpsFocus(quest, focus ?? null)}
           />
         ))}
       </ul>
