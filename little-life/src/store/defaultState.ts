@@ -1,0 +1,51 @@
+import type { AppState, Quest, QuestDraft } from '@/types'
+import { emptyCategoryStats } from '@/lib/stats'
+import { expForDifficulty } from '@/lib/difficulty'
+import { createId } from '@/lib/id'
+
+export const STATE_VERSION = 1
+
+/**
+ * 첫 실행 때 넣어주는 예시 퀘스트.
+ * 빈 화면부터 시작하면 뭘 적어야 할지 막막하니까 결을 보여주는 용도다.
+ * 사용자가 지울 수 있다.
+ */
+const SAMPLE_QUESTS: QuestDraft[] = [
+  { title: '책상 위 물건 하나 정리하기', category: 'LIFE', difficulty: 'EASY' },
+  { title: '오늘 가장 중요한 일 20분 하기', category: 'WORK', difficulty: 'NORMAL' },
+  { title: '가볍게 몸 풀기', category: 'BODY', difficulty: 'EASY' },
+]
+
+function buildQuest(draft: QuestDraft, createdAt: string): Quest {
+  return {
+    id: createId(),
+    title: draft.title,
+    category: draft.category,
+    difficulty: draft.difficulty,
+    exp: expForDifficulty(draft.difficulty),
+    completed: false,
+    createdAt,
+    completedAt: null,
+  }
+}
+
+export function createDefaultState(): AppState {
+  const now = Date.now()
+
+  return {
+    version: STATE_VERSION,
+    user: {
+      name: 'Yuli',
+      level: 1,
+      currentExp: 0,
+      totalExp: 0,
+      totalCompletedQuests: 0,
+    },
+    // 목록에 적어둔 순서대로 보이도록 생성 시각을 1ms 씩 어긋나게 준다.
+    quests: SAMPLE_QUESTS.map((draft, i) =>
+      buildQuest(draft, new Date(now - i).toISOString()),
+    ),
+    categoryStats: emptyCategoryStats(),
+    dailyLog: {},
+  }
+}
