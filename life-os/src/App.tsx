@@ -547,6 +547,19 @@ export default function App() {
         <SettingsPage
           prefs={prefStore.prefs}
           account={auth.email}
+          exportData={{
+            checkins: store.checkins,
+            nights: nightStore.nights,
+            weights: weightStore.logs,
+            mounjaro: mounjaroStore.logs,
+            lifeEvents: eventStore.events,
+            ddays: ddayStore.ddays,
+            eventLog: tagStore.log,
+            questLog: questStore.log,
+            customQuests: questStore.customQuests,
+            weeklyResets: weeklyStore.resets,
+            prefs: prefStore.prefs,
+          }}
           onSave={prefStore.save}
           onSignOut={() => void auth.signOut()}
           onClose={() => setSettingsOpen(false)}
