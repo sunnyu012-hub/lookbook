@@ -202,6 +202,46 @@
   .cell.sel{border-color:var(--pink); border-width:2px; background:var(--pink-soft)}
   .cell .cwx{position:absolute; bottom:3px; left:0; right:0; text-align:center; font-size:9px; color:var(--muted); line-height:1.1}
   .cell .cwx em{display:block; font-style:normal; font-size:9px}
+  /* Style DNA */
+  .dna-hi{background:var(--pink-soft); border:1px solid #F0DCE1; border-radius:var(--r); padding:13px 15px; margin-bottom:10px}
+  .dna-hit{font-size:12px; font-weight:600; color:var(--pink-ink)}
+  .dna-hib{font-size:16px; font-weight:600; color:var(--ink); margin-top:4px}
+  .dna-his{font-size:12px; color:var(--muted); margin-top:4px; line-height:1.6}
+  .dna-sec{margin:18px 0}
+  .dna-t{font-size:14px; font-weight:600; color:var(--ink)}
+  .dna-s{font-size:12px; color:var(--muted); margin:3px 0 9px}
+  .dna-gap{background:var(--card); border:1px solid var(--line); border-radius:var(--r-sm); padding:12px 14px; margin-bottom:8px}
+  .dna-gap b{font-size:15px; font-weight:600}
+  .dna-gb{display:flex; gap:7px; margin-top:9px; flex-wrap:wrap}
+  .dna-br{display:flex; align-items:center; gap:9px; flex-wrap:wrap; font-size:13px; color:var(--ink-2);
+    background:var(--card); border:1px solid var(--line); border-radius:var(--r-sm); padding:12px 14px}
+  .dna-br i{font-style:normal; color:var(--pink)}
+  /* INSPO ↔ LOOK 연결 */
+  .linkrow{display:flex; align-items:center; gap:10px; margin-bottom:14px}
+  .linkrow figure{margin:0; flex:1; min-width:0}
+  .linkrow img{width:100%; aspect-ratio:3/4; object-fit:cover; border-radius:var(--r-sm); background:var(--thumb); border:1px solid var(--line)}
+  .linkrow figcaption{font-size:11px; color:var(--muted); text-align:center; margin-top:5px}
+  .linkarrow{color:var(--pink); font-size:15px; flex:none}
+  .linkrow.sm{gap:8px; margin-bottom:10px}
+  .linkrow.sm img{aspect-ratio:1/1}
+  .linkrow.sm figure{max-width:74px}
+  /* 룩 만족도 */
+  .satrow{display:flex; gap:7px; margin-bottom:10px}
+  .satb{flex:1; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:9px 4px;
+    font-size:11px; font-weight:500; color:var(--ink-2); cursor:pointer; font-family:inherit; min-height:56px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; line-height:1.2}
+  .satb span{font-size:19px; line-height:1}
+  .satb.on{background:var(--pink-soft); border-color:#F0DCE1; color:var(--pink-ink); font-weight:600}
+  /* INSPO 무드보드 — 사진만 보이게, 정보는 상세에서 */
+  .inspogrid{column-count:2; column-gap:10px}
+  .inspo{display:block; width:100%; break-inside:avoid; margin:0 0 10px; padding:0; border:none;
+    background:none; cursor:pointer; position:relative; border-radius:var(--r); overflow:hidden}
+  .inspo img{width:100%; height:auto; display:block; background:var(--thumb); border-radius:var(--r); border:1px solid var(--line)}
+  .inspo-fav{position:absolute; right:8px; bottom:8px; width:26px; height:26px; border-radius:50%;
+    background:rgba(255,255,255,.94); color:var(--pink); font-size:13px; display:flex; align-items:center; justify-content:center}
+  .inspo-wait{position:absolute; left:8px; top:8px; background:rgba(255,255,255,.92); border:1px solid var(--line);
+    color:var(--muted); font-size:10px; font-weight:600; padding:3px 7px; border-radius:9px}
+  @media (min-width:520px){.inspogrid{column-count:3}}
   /* 캘린더 선택 날짜 상세 */
   .mdet{margin-top:18px; background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:14px}
   .mdate{font-size:14px; font-weight:600; color:var(--ink)}
@@ -724,7 +764,7 @@ const WD=['월','화','수','목','금','토','일'];
 const TPO_TAGS=['데일리룩','출근룩','데이트룩','하객룩','여행룩','캠퍼스룩','운동룩','파티룩','면접룩','소개팅룩','나들이룩','집콕룩','휴양지룩','페스티벌룩','졸업/입학룩'];
 const STYLE_TAGS=['미니멀','캐주얼','포멀','클래식','러블리','걸리시','시크','페미닌','보이시','스트릿','락시크','빈티지','스포티','아메카지','프레피','Y2K','고프코어','청순','모던','에스닉'];
 const TAG_PRESETS=[...TPO_TAGS,...STYLE_TAGS];
-const state={tab:'closet', items:[], looks:[], days:[], wish:[], fCat:null, fColor:null, fSeason:null, aiOpen:false, weekSel:null, monthSel:null, wishSearch:'', selectMode:false, selectKind:'item', selected:new Set(), wishStatus:null, weekWeather:null, lookView:'card', catFilter:null, ownerFilter:null, favOnly:false, tagFilter:null, search:'', lookSearch:'', sortWear:false, backupDismissed:false,
+const state={tab:'closet', items:[], looks:[], days:[], wish:[], fCat:null, fColor:null, fSeason:null, aiOpen:false, weekSel:null, monthSel:null, wishSearch:'', wishTab:'wish', inspoMore:false, selectMode:false, selectKind:'item', selected:new Set(), wishStatus:null, weekWeather:null, lookView:'card', catFilter:null, ownerFilter:null, favOnly:false, tagFilter:null, search:'', lookSearch:'', sortWear:false, backupDismissed:false,
   closetOwner:'me', lookOwner:'me', myItems:[], myLooks:[], partnerItems:[], partnerLooks:[],
   week:mondayOf(new Date()), month:startOfMonth(new Date())};
 let MYNAME='나', PARTNERNAME='', MYCODE='';
@@ -1361,8 +1401,10 @@ function itemForm(existing,opts){
 
 /* ----- look form ----- */
 function lookForm(existing){
-  const lo=existing||{id:uid(),name:'',itemIds:[],photoId:'',rating:0,memo:'',favorite:true,tags:[]};
-  const draft={...lo,itemIds:[...(lo.itemIds||[])],tags:[...(lo.tags||[])]};
+  const lo=existing||{id:uid(),name:'',itemIds:[],photoId:'',rating:0,memo:'',favorite:true,tags:[],
+    satisfaction:0,likedAspects:[],dislikedAspects:[],aiTags:[]};
+  const draft={...lo,itemIds:[...(lo.itemIds||[])],tags:[...(lo.tags||[])],
+    likedAspects:[...(lo.likedAspects||[])],dislikedAspects:[...(lo.dislikedAspects||[])],aiTags:[...(lo.aiTags||[])]};
   let lookAnalyzing=false;
   function paint(){
     const selImgs=draft.itemIds.map(id=>{const it=itemById(id);return `<img data-photo="${it?it.photoId:''}" alt="">`;}).join('');
@@ -1379,17 +1421,19 @@ function lookForm(existing){
         <input type="text" id="l-tagnew" placeholder="다른 태그 입력 후 Enter"></div>
       <div class="field"><label>포함한 옷</label><button class="btn ghost" id="l-pick" style="padding:10px">옷장에서 고르기 (${draft.itemIds.length})</button>
         <div class="selgrid">${selImgs}</div></div>
+      ${satisRow(draft)}
       <div class="field"><label>별점</label><div class="stars" id="l-stars">${[1,2,3,4,5].map(i=>`<span data-n="${i}" class="${i<=draft.rating?'on':''}">★</span>`).join('')}</div></div>
       <div class="field"><label>메모</label><textarea id="l-memo" placeholder="어울리는 상황, 코디 팁 등">${esc(draft.memo)}</textarea></div>
       <div class="field"><label><input type="checkbox" id="l-fav" ${draft.favorite?'checked':''}> ♥ 즐겨찾기에 추가</label></div>
       ${existing&&PARTNER?'<div id="look-react" class="rx-wrap"></div>':''}
-      ${existing?'<div class="btnrow" style="margin-bottom:10px"><button class="btn ghost" id="l-share">🖼 이미지</button><button class="btn ghost" id="l-receipt">🧾 영수증</button></div>':''}
+      ${existing?'<div class="btnrow" style="margin-bottom:10px"><button class="btn ghost" id="l-link">✦ 영감 연결</button><button class="btn ghost" id="l-share">🖼 이미지</button><button class="btn ghost" id="l-receipt">🧾 영수증</button></div>':''}
       <div class="btnrow">${existing?'<button class="btn danger" id="l-del">삭제</button>':''}
         <button class="btn ghost" data-close="1">취소</button>
         <button class="btn primary" id="l-save">저장</button></div>`;
     openSheet(html);
     document.getElementById('pp').onclick=async()=>{sync();const id=await pickImage();if(!id)return;draft.photoId=id;
-      if(hasAI()){lookAnalyzing=true;paint();classifyLook(id).then(r=>{if(draft.photoId!==id)return;if(r&&typeof r==='object'){let did=false;if(r.name&&!draft.name){draft.name=r.name;did=true;}if(r.memo&&!draft.memo){draft.memo=r.memo;did=true;}if(Array.isArray(r.tags)){for(const t of r.tags){if(TAG_PRESETS.includes(t)&&!draft.tags.includes(t)){draft.tags.push(t);did=true;}}}showToast(did?'AI가 이름·설명·태그를 채웠어요 ✨':'AI가 채울 게 없었어요');}}).catch(e=>showToast('AI 실패: '+(e.message||e))).finally(()=>{lookAnalyzing=false;paint();});}
+      if(hasAI()){lookAnalyzing=true;paint();classifyLook(id).then(r=>{if(draft.photoId!==id)return;if(r&&typeof r==='object'){let did=false;if(r.name&&!draft.name){draft.name=r.name;did=true;}if(r.memo&&!draft.memo){draft.memo=r.memo;did=true;}if(Array.isArray(r.tags)){for(const t of r.tags){if(TAG_PRESETS.includes(t)&&!draft.tags.includes(t)){draft.tags.push(t);did=true;}}}
+          const at=normalizeTags(r);if(at.length){draft.aiTags=at;draft.analyzed=true;draft.analyzedAt=new Date().toISOString();draft.analysisVersion=ANALYSIS_VERSION;did=true;}showToast(did?'AI가 이름·설명·태그를 채웠어요 ✨':'AI가 채울 게 없었어요');}}).catch(e=>showToast('AI 실패: '+(e.message||e))).finally(()=>{lookAnalyzing=false;paint();});}
       else paint();};
     document.getElementById('l-pick').onclick=()=>{sync();itemPicker(draft.itemIds,ids=>{draft.itemIds=ids;paint();});};
     const tagToggle=e=>{const c=e.target.closest('[data-tag]');if(!c)return;sync();const t=c.dataset.tag;const i=draft.tags.indexOf(t);if(i>=0)draft.tags.splice(i,1);else draft.tags.push(t);paint();};
@@ -1398,11 +1442,21 @@ function lookForm(existing){
     {const lc=document.getElementById('l-custom');if(lc)lc.onclick=tagToggle;}
     const tn=document.getElementById('l-tagnew');tn.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();const v=tn.value.trim();if(v){sync();if(!draft.tags.includes(v))draft.tags.push(v);paint();}}};
     document.getElementById('l-stars').onclick=e=>{const s=e.target.closest('[data-n]');if(s){sync();draft.rating=+s.dataset.n;paint();}};
+    document.querySelector('.satrow').onclick=e=>{const b=e.target.closest('[data-sat]');if(!b)return;sync();
+      const v=+b.dataset.sat;draft.satisfaction=(draft.satisfaction===v)?0:v;   // 같은 걸 또 누르면 해제
+      draft.likedAspects=[];draft.dislikedAspects=[];paint();};
+    document.querySelector('.sheet').addEventListener('click',e=>{
+      const b=e.target.closest('[data-satasp]');if(!b)return;sync();
+      const key=(draft.satisfaction>=3)?'likedAspects':'dislikedAspects';
+      const v=b.dataset.satasp, cur=draft[key]||[];
+      draft[key]=cur.includes(v)?cur.filter(x=>x!==v):[...cur,v];paint();});
     document.getElementById('l-save').onclick=async()=>{sync();
       if(!draft.name&&!draft.photoId&&!draft.itemIds.length){alert('이름이나 사진, 옷 중 하나는 넣어주세요.');return;}
-      await put('looks',draft);closeSheet();refresh();};
+      await put('looks',draft);closeSheet();await refresh();
+      askLinkInspo(draft);};                       // 닮은 영감이 있으면 조용히 물어본다(없으면 아무 일 없음)
     if(existing)document.getElementById('l-del').onclick=async()=>{await del('looks',existing.id);closeSheet();await refresh();showToast('룩 삭제됨',async()=>{await put('looks',existing);await refresh();});};
-    if(existing){const sb=document.getElementById('l-share');if(sb)sb.onclick=async()=>{sync();sb.textContent='만드는 중…';sb.disabled=true;try{await shareLook(draft);}catch(e){alert('이미지 생성 실패: '+(e.message||e));}sb.textContent='🖼 이미지';sb.disabled=false;};
+    if(existing){const lb=document.getElementById('l-link');if(lb)lb.onclick=()=>{sync();pickInspoForLook(draft);};
+      const sb=document.getElementById('l-share');if(sb)sb.onclick=async()=>{sync();sb.textContent='만드는 중…';sb.disabled=true;try{await shareLook(draft);}catch(e){alert('이미지 생성 실패: '+(e.message||e));}sb.textContent='🖼 이미지';sb.disabled=false;};
       const rb=document.getElementById('l-receipt');if(rb)rb.onclick=async()=>{sync();rb.textContent='만드는 중…';rb.disabled=true;try{await shareReceipt(draft);}catch(e){alert('영수증 생성 실패: '+(e.message||e));}rb.textContent='🧾 영수증';rb.disabled=false;};}
     if(existing&&PARTNER)renderReactions(existing.id,'look-react');
   }
@@ -1479,17 +1533,570 @@ function lookPicker(onPick){
 }
 
 /* ----- 위시리스트 ----- */
+/* ===== 스타일 태그 시스템 =====
+   태그는 사용자가 만들지 않는다. AI가 한글 라벨로 생성하고, 여기서 동의어를 하나로 합친다.
+   내부 키는 영문(canonical), 화면에는 항상 한글 라벨만 보여준다. */
+const TAG_CATS={mood:'분위기',fit:'실루엣',color:'색감',fabric:'소재',styling:'스타일링',detail:'디테일',ratio:'비율',item:'아이템'};
+// 같은 개념으로 합칠 동의어들. 왼쪽이 대표 라벨, 오른쪽이 함께 묶일 표현.
+const TAG_SYNONYMS=[
+  ['실버 포인트','은색 포인트','실버 디테일','실버','은색','메탈 실버'],
+  ['골드 포인트','금색 포인트','골드','금색'],
+  ['짧은 상의','크롭','크롭탑','크롭 기장','상의 짧음'],
+  ['와이드 하의','와이드','통바지','와이드 팬츠','넓은 하의'],
+  ['몸에 붙는','슬림','타이트','피트','밀착'],
+  ['여유로운','루즈','헐렁한','편안한 핏'],
+  ['오버핏','오버사이즈','박시한','박시'],
+  ['저채도','낮은 채도','채도 낮은','뮤트','뮤트톤'],
+  ['고채도','높은 채도','채도 높은','비비드'],
+  ['무채색','모노톤','흑백','블랙앤화이트'],
+  ['시스루','비치는','투명한','시스루 소재'],
+  ['레이어드','겹쳐 입기','레이어링'],
+  ['톤온톤','같은 색 계열','동일 색조'],
+  ['하체 볼륨','하체 강조','아래 볼륨'],
+  ['상체 컴팩트','상체 슬림','위는 좁게'],
+  ['허리 강조','하이웨이스트','높은 허리선'],
+  ['광택감 있는','새틴','윤기','반짝이는'],
+  ['운동화','스니커즈','스니커'],
+  ['발레 플랫','발레리나 슈즈','플랫 슈즈','발레 디테일'],
+  ['꾸안꾸','꾸민 듯 안 꾸민','자연스러운 멋'],
+];
+const _synMap=(()=>{const m={};for(const g of TAG_SYNONYMS)for(const w of g)m[w.replace(/\s+/g,'')]=g[0];return m;})();
+// 한글 라벨 → 대표 라벨. 사전에 없으면 공백만 정리해서 그대로 쓴다(새 태그 생성 허용).
+function canonTag(label){
+  const raw=String(label||'').trim();if(!raw)return null;
+  const k=raw.replace(/\s+/g,'');
+  return _synMap[k]||raw;
+}
+// AI 응답을 {label,cat} 배열로 정규화. 중복 제거, 최대 개수 제한.
+function normalizeTags(obj,max=24){
+  const out=[],seen=new Set();
+  for(const cat of Object.keys(TAG_CATS)){
+    for(const t of (obj&&obj[cat])||[]){
+      const label=canonTag(t);if(!label)continue;
+      const key=cat+'|'+label;if(seen.has(key))continue;seen.add(key);
+      out.push({label,cat});
+      if(out.length>=max)return out;
+    }
+  }
+  return out;
+}
+const tagLabels=rec=>((rec&&rec.tags)||[]).filter(t=>!(rec.hiddenTags||[]).includes(t.label)).map(t=>t.label);
+
+/* ===== Style DNA =====
+   전부 로컬 계산이다. 저장된 태그와 행동 데이터만 쓰고 AI를 부르지 않는다.
+   사용자가 관리하는 프로필이 아니라 앱이 계속 다시 계산하는 결과물. */
+const DNA_RECENT_DAYS=60;          // 최근 취향에 가중치를 더 준다
+const DNA_RECENT_BOOST=1.4;
+
+function _daysAgo(iso){
+  if(!iso)return 999;
+  const t=Date.parse(iso);if(isNaN(t))return 999;
+  return Math.floor((Date.now()-t)/86400000);
+}
+// 룩이 실제로 며칠 착용됐는지 (캘린더·주간 기록 기준)
+function _wearCount(lookId){return state.days.filter(d=>d.lookId===lookId).length;}
+
+// 태그별 신호를 모은다. { label, cat, inspoN, inspoFav, lookN, wearN, satSum, satN, recent }
+function dnaAggregate(){
+  const map=new Map();
+  const touch=(t)=>{
+    const k=t.label;
+    if(!map.has(k))map.set(k,{label:t.label,cat:t.cat||'',inspoN:0,inspoFav:0,lookN:0,wearN:0,satSum:0,satN:0,recent:0,linked:0});
+    return map.get(k);
+  };
+  // 1) INSPO — 약한 신호. 즐겨찾기·관심 포인트가 있으면 조금 더.
+  for(const w of inspoOnly()){
+    const fresh=_daysAgo(w.createdAt)<=DNA_RECENT_DAYS?DNA_RECENT_BOOST:1;
+    for(const t of (w.tags||[])){
+      if((w.hiddenTags||[]).includes(t.label))continue;    // 사용자가 제외한 태그는 분석에서 뺀다
+      const a=touch(t);
+      a.inspoN+=fresh;
+      if(w.favorite)a.inspoFav+=1.5*fresh;
+      if((w.likedAspects||[]).length)a.inspoFav+=0.3*fresh;
+      if((w.linkedLookIds||[]).length)a.linked+=1;
+      if(fresh>1)a.recent++;
+    }
+  }
+  // 2) 실제 LOOK — 강한 신호. 착용 횟수와 만족도가 더 강하다.
+  for(const l of (state.myLooks||[])){
+    const wear=_wearCount(l.id);
+    const sat=l.satisfaction||0;
+    for(const t of (l.aiTags||[])){
+      const a=touch(t);
+      a.lookN+=1;
+      a.wearN+=wear;
+      if(sat){a.satSum+=sat;a.satN+=1;}
+      if((l.linkedInspoIds||[]).length)a.linked+=1;
+    }
+  }
+  return [...map.values()];
+}
+
+// 신호 강도 → 점수. 절대 기준이 아니라 가중치 조합이다.
+function dnaScore(a){
+  const inspo=a.inspoN+a.inspoFav;
+  const satAvg=a.satN?a.satSum/a.satN:0;
+  let satBonus=0;
+  if(a.satN){
+    if(satAvg>=3.5)satBonus=a.satN*3;
+    else if(satAvg>=2.5)satBonus=a.satN*2;
+    else if(satAvg<=2)satBonus=-a.satN*1.5;            // 만족도가 낮으면 깎는다
+  }
+  const look=a.lookN*3+a.wearN*1.5+satBonus+a.linked*2;
+  return {inspo,look,satAvg,total:inspo+look,evidence:a.inspoN+a.lookN};
+}
+
+function styleDNA(){
+  const rows=dnaAggregate().map(a=>({a,s:dnaScore(a)}));
+  const core=[],desire=[],realMe=[],exploring=[];
+  for(const r of rows){
+    const {inspo,look,satAvg,evidence}=r.s;
+    if(evidence<2){exploring.push(r);continue;}          // 근거가 적으면 단정하지 않는다
+    if(inspo>=2&&look>=3&&satAvg>=2.5)core.push(r);
+    else if(inspo>=3&&look<3)desire.push(r);
+    else if(look>=4&&satAvg>=2.5)realMe.push(r);
+    else exploring.push(r);
+  }
+  const top=(arr,key,n=6)=>arr.sort((x,y)=>y.s[key]-x.s[key]).slice(0,n).map(r=>r.a);
+  return {
+    core:top(core,'total'),
+    desire:top(desire,'inspo'),
+    realMe:top(realMe,'look'),
+    exploring:top(exploring,'total',5),
+    rows
+  };
+}
+
+/* ---- 옷장 빈칸 ---- "셔츠가 없습니다" 식으로 단정하지 않고 근거를 함께 계산한다 ---- */
+function _closetHas(label){
+  const q=String(label).replace(/\s+/g,'');
+  return (state.myItems||[]).filter(i=>
+    [i.name,i.category,i.subcategory,...(i.materials||[]),...(i.colors||[])]
+      .filter(Boolean).join('').replace(/\s+/g,'').includes(q)).length;
+}
+function closetGaps(dna){
+  const cand=dna.desire.filter(a=>['item','fabric','detail','color'].includes(a.cat));
+  const out=[];
+  for(const a of cand){
+    const have=_closetHas(a.label);
+    if(have)continue;                                   // 비슷한 걸 이미 갖고 있으면 빈칸이 아니다
+    const tops=(state.myItems||[]).filter(i=>i.category==='상의').length;
+    const bottoms=(state.myItems||[]).filter(i=>['하의','원피스'].includes(i.category)).length;
+    out.push({label:a.label,cat:a.cat,inspoN:Math.round(a.inspoN),lookN:a.lookN,
+      satAvg:a.satN?(a.satSum/a.satN):0,have,tops,bottoms});
+    if(out.length>=3)break;
+  }
+  return out;
+}
+
+/* ---- 재미 요소 — 앱이 먼저 발견해서 보여준다 ---- */
+function dnaHighlights(dna){
+  const out=[];
+  const recent=dna.rows.filter(r=>r.a.recent>=2).sort((x,y)=>y.a.recent-x.a.recent).slice(0,4);
+  if(recent.length>=2)
+    out.push({t:'요즘 이런 거 좋아하더라 ✦',b:recent.map(r=>r.a.label).join(' · '),s:'최근 담은 이미지에서 자주 보여요.'});
+  const strong=dna.core.filter(a=>a.wearN>=3&&a.satN>=2)[0];
+  if(strong)
+    out.push({t:'이건 진짜 취향인가 봐 ♡',b:strong.label,
+      s:`${strong.wearN}번 입었고 ${strong.satN}번 만족도를 남겼어요.`});
+  const onlyEye=dna.desire[0];
+  if(onlyEye)
+    out.push({t:'보기만 좋아하는 스타일?',b:onlyEye.label,
+      s:'담아둔 이미지엔 자주 나오는데 실제로는 아직 잘 안 입었어요.'});
+  const fresh=dna.exploring.filter(a=>a.recent>=1)[0];
+  if(fresh)
+    out.push({t:'새로운 취향 발견',b:fresh.label,s:'최근에 눈에 띄기 시작했어요. 조금 더 지켜볼게요.'});
+  return out.slice(0,3);
+}
+
+/* ---- 취향의 차이 + 연결 제안 ---- */
+function dnaBridge(dna){
+  if(!dna.desire.length||!dna.realMe.length)return null;
+  const want=dna.desire.slice(0,3).map(a=>a.label);
+  const real=dna.realMe.slice(0,3).map(a=>a.label);
+  // 옷장에서 실제로 이어붙일 수 있는 옷을 먼저 찾는다 (구매 유도 아님)
+  const base=(state.myItems||[]).filter(i=>real.some(r=>_matchItem(i,r))).slice(0,2);
+  return {want,real,base};
+}
+function _matchItem(i,label){
+  const q=String(label).replace(/\s+/g,'');
+  return [i.name,i.category,i.subcategory,...(i.materials||[]),...(i.colors||[])]
+    .filter(Boolean).join('').replace(/\s+/g,'').includes(q);
+}
+
+/* ---- Style DNA 화면 — 대시보드가 아니라 발견하는 화면 ---- */
+function dnaChips(list,empty){
+  if(!list.length)return `<div class="hint">${empty}</div>`;
+  return `<div class="tagwrap">${list.map(a=>`<span class="chip">${esc(a.label)}</span>`).join('')}</div>`;
+}
+function styleDnaSheet(){
+  const dna=styleDNA();
+  const hi=dnaHighlights(dna);
+  const gaps=closetGaps(dna);
+  const bridge=dnaBridge(dna);
+  const inspoCount=inspoOnly().length, tagged=(state.myLooks||[]).filter(l=>(l.aiTags||[]).length).length;
+  if(inspoCount+tagged<3){
+    openSheet(`<h2>내 스타일</h2>
+      <div class="empty-state">아직 취향을 말하기엔 일러요.<br><br>
+        위시 탭의 <b>INSPO</b>에 마음에 드는 이미지를 담고,<br>룩에 만족도를 눌러주시면<br>여기서 취향을 정리해 드릴게요.</div>
+      <div class="btnrow"><button class="btn primary" data-close="1">닫기</button></div>`);
+    return;
+  }
+  const sec=(t,s,list,empty)=>`<div class="dna-sec"><div class="dna-t">${t}</div>
+    <div class="dna-s">${s}</div>${dnaChips(list,empty)}</div>`;
+  const hiHtml=hi.map(h=>`<div class="dna-hi"><div class="dna-hit">${esc(h.t)}</div>
+    <div class="dna-hib">${esc(h.b)}</div><div class="dna-his">${esc(h.s)}</div></div>`).join('');
+  const gapHtml=gaps.length?`<div class="dna-sec"><div class="dna-t">좋아하는데, 옷장에는 없어요</div>
+    ${gaps.map(g=>`<div class="dna-gap"><b>${esc(g.label)}</b>
+      <div class="dna-his">담아둔 이미지에 ${g.inspoN}번 등장했는데 비슷한 옷이 없어요.</div>
+      <div class="dna-gb">
+        <button class="chip" data-action="gapwhy" data-l="${esc(g.label)}" data-i="${g.inspoN}" data-t="${g.tops}" data-b="${g.bottoms}">왜 추천했어?</button>
+        <button class="chip" data-action="gapwish" data-l="${esc(g.label)}">위시에 담기</button>
+      </div></div>`).join('')}</div>`:'';
+  const brHtml=bridge?`<div class="dna-sec"><div class="dna-t">취향 연결하기</div>
+    <div class="dna-s">좋아하는 분위기를 평소 스타일에 자연스럽게 섞어볼 수 있어요.</div>
+    <div class="dna-br"><span>${bridge.want.map(esc).join(' · ')}</span><i>＋</i><span>${bridge.real.map(esc).join(' · ')}</span></div>
+    ${bridge.base.length?`<div class="selgrid">${bridge.base.map(i=>`<img data-photo="${i.photoId||''}" alt="">`).join('')}</div>
+      <div class="hint">가지고 있는 옷부터 먼저 써볼 수 있어요.</div>`:''}</div>`:'';
+  openSheet(`<h2>내 스타일</h2>
+    ${hiHtml}
+    ${sec('나다운 스타일','좋아하고, 실제로도 잘 입는 스타일',dna.core,'아직 겹치는 게 없어요.')}
+    ${sec('끌리는 스타일','자꾸 눈이 가지만 아직 많이 입어보지는 않은 스타일',dna.desire,'담아둔 이미지가 더 쌓이면 보여요.')}
+    ${sec('실제로 잘 입는 스타일','손이 자주 가고 만족도도 높은 스타일',dna.realMe,'룩에 만족도를 눌러주시면 보여요.')}
+    ${sec('아직 탐색 중','좋아하는 것 같지만 조금 더 지켜보는 중',dna.exploring,'아직 없어요.')}
+    ${brHtml}${gapHtml}
+    <div class="btnrow"><button class="btn ghost" id="dna-stats">기록 통계 보기</button>
+      <button class="btn primary" data-close="1">닫기</button></div>`);
+  document.getElementById('dna-stats').onclick=()=>statsSheet();
+}
+
+/* ===== INSPO ↔ LOOK 연결 =====
+   후보 찾기는 저장된 태그만 비교한다(AI 호출 없음). 비교 분석만 사용자가 누를 때 1회 호출하고 캐싱한다. */
+// 룩은 aiTags, INSPO는 tags에 AI 태그가 들어있다.
+// (룩의 tags는 사용자가 고른 TPO/스타일 문자열이라 섞으면 안 되고, 빈 배열도 truthy라 ||로 고를 수 없다)
+function _tagSet(o){
+  const list=(o&&o.aiTags&&o.aiTags.length)?o.aiTags:((o&&o.tags)||[]);
+  return new Set(list.map(t=>t&&t.label).filter(Boolean));
+}
+function linkCandidates(look,limit=3){
+  const a=_tagSet(look);if(!a.size)return [];
+  const linked=new Set(look.linkedInspoIds||[]);
+  const rejected=new Set(look.rejectedInspoIds||[]);
+  return inspoOnly()
+    .filter(w=>!linked.has(w.id)&&!rejected.has(w.id)&&(w.tags||[]).length)
+    .map(w=>{const b=_tagSet(w);
+      let inter=0;for(const t of a)if(b.has(t))inter++;
+      // 자카드는 태그가 많아질수록 급격히 낮아져 아무것도 안 잡힌다 → 작은 쪽 기준 겹침 비율을 쓴다
+      const score=inter/Math.max(1,Math.min(a.size,b.size));
+      return {w,score,inter};})
+    .filter(x=>x.inter>=2&&x.score>=.25)          // 근거가 얕으면 묻지 않는다
+    .sort((x,y)=>y.score-x.score).slice(0,limit);
+}
+async function linkInspoLook(inspoId,lookId){
+  const w=state.wish.find(x=>x.id===inspoId), l=(state.myLooks||[]).find(x=>x.id===lookId);
+  if(!w||!l)return;
+  w.linkedLookIds=[...new Set([...(w.linkedLookIds||[]),lookId])];
+  l.linkedInspoIds=[...new Set([...(l.linkedInspoIds||[]),inspoId])];
+  await put('wishlist',w);await put('looks',l);
+  state.wish=await all('wishlist');state.myLooks=await all('looks');
+  if(state.lookOwner!=='partner')state.looks=state.myLooks;
+}
+// 룩 저장 직후 "어라, 이거 닮았는데?"
+function askLinkInspo(look){
+  const cands=linkCandidates(look);
+  if(!cands.length)return;
+  let i=0;
+  function paint(){
+    if(i>=cands.length){closeSheet();return;}
+    const c=cands[i];
+    openSheet(`<h2>어라, 이거 닮았는데?</h2>
+      <div class="linkrow">
+        <figure><img data-photo="${c.w.photoId||''}" alt="영감 이미지"><figcaption>영감</figcaption></figure>
+        <span class="linkarrow">→</span>
+        <figure><img data-photo="${lookThumb(look)||''}" alt="오늘 룩"><figcaption>오늘 룩</figcaption></figure>
+      </div>
+      <div class="hint" style="text-align:center">겹치는 특징 ${c.inter}개</div>
+      <div class="btnrow">
+        <button class="btn ghost" id="lk-no">아닌데</button>
+        <button class="btn ghost" id="lk-later">나중에</button>
+        <button class="btn primary" id="lk-yes">맞아 ♡</button></div>`);
+    document.getElementById('lk-yes').onclick=async()=>{await linkInspoLook(c.w.id,look.id);closeSheet();showToast('영감과 연결했어요 ✦');render();};
+    document.getElementById('lk-no').onclick=async()=>{
+      look.rejectedInspoIds=[...new Set([...(look.rejectedInspoIds||[]),c.w.id])];
+      await put('looks',look);state.myLooks=await all('looks');i++;paint();};
+    document.getElementById('lk-later').onclick=()=>{i++;paint();};
+  }
+  paint();
+}
+// 수동 연결 — 룩에서 영감 고르기
+function pickInspoForLook(look){
+  const list=inspoOnly().filter(w=>!(look.linkedInspoIds||[]).includes(w.id));
+  if(!list.length){showToast('연결할 영감이 없어요');return;}
+  openSheet(`<h2>영감 연결하기</h2>
+    <div class="inspogrid">${list.map(w=>`<button class="inspo" data-pick="${w.id}"><img data-photo="${w.photoId||''}" alt=""></button>`).join('')}</div>
+    <div class="btnrow"><button class="btn ghost" data-close="1">취소</button></div>`);
+  document.querySelector('.sheet').addEventListener('click',async e=>{
+    const b=e.target.closest('[data-pick]');if(!b)return;
+    await linkInspoLook(b.dataset.pick,look.id);closeSheet();showToast('연결했어요 ✦');render();});
+}
+// 수동 연결 — 영감에서 룩 고르기
+function pickLookForInspo(w){
+  const list=(state.myLooks||[]).filter(l=>!(w.linkedLookIds||[]).includes(l.id));
+  if(!list.length){showToast('연결할 룩이 없어요');return;}
+  openSheet(`<h2>이 느낌으로 입은 룩</h2>
+    <div class="grid">${list.map(l=>`<div class="card" data-pick="${l.id}"><img class="ph" data-photo="${lookThumb(l)||''}" alt="">
+      <div class="body"><div class="name">${esc(l.name||'룩')}</div></div></div>`).join('')}</div>
+    <div class="btnrow"><button class="btn ghost" data-close="1">취소</button></div>`);
+  document.querySelector('.sheet').addEventListener('click',async e=>{
+    const b=e.target.closest('[data-pick]');if(!b)return;
+    await linkInspoLook(w.id,b.dataset.pick);closeSheet();showToast('연결했어요 ✦');});
+}
+// 영감에서 나에게 — 연결된 쌍 보기
+function inspoArchive(w){
+  const looks=(w.linkedLookIds||[]).map(id=>(state.myLooks||[]).find(l=>l.id===id)).filter(Boolean);
+  if(!looks.length)return '';
+  return `<div class="field"><label>영감에서 나에게</label>
+    ${looks.map(l=>`<div class="linkrow sm">
+      <figure><img data-photo="${w.photoId||''}" alt=""></figure><span class="linkarrow">→</span>
+      <figure><img data-photo="${lookThumb(l)||''}" alt=""><figcaption>${esc(l.name||'룩')}</figcaption></figure>
+      <button class="chip" data-cmp="${l.id}">비교해보기</button></div>`).join('')}</div>`;
+}
+// 두 룩 비교 — 사용자가 누를 때만 AI 1회, 결과는 저장해 다시 부르지 않는다
+async function compareInspoLook(w,look){
+  const cached=(w.compares||{})[look.id];
+  const paint=c=>openSheet(`<h2>영감과 내 룩</h2>
+    <div class="linkrow"><figure><img data-photo="${w.photoId||''}" alt=""><figcaption>영감</figcaption></figure>
+      <span class="linkarrow">→</span>
+      <figure><img data-photo="${lookThumb(look)||''}" alt=""><figcaption>${esc(look.name||'내 룩')}</figcaption></figure></div>
+    <div class="eval-sec"><div class="eval-h">가져온 요소</div><ul>${(c.taken||[]).map(x=>`<li>${esc(x)}</li>`).join('')||'<li>-</li>'}</ul></div>
+    <div class="eval-sec"><div class="eval-h">내 방식으로 바뀐 부분</div><ul>${(c.changed||[]).map(x=>`<li>${esc(x)}</li>`).join('')||'<li>-</li>'}</ul></div>
+    <div class="eval-sec"><div class="eval-h">반복되는 내 취향</div><ul>${(c.mine||[]).map(x=>`<li>${esc(x)}</li>`).join('')||'<li>-</li>'}</ul></div>
+    <div class="btnrow"><button class="btn primary" data-close="1">닫기</button></div>`);
+  if(cached){paint(cached);return;}
+  if(!hasAI()){showToast('지금은 비교를 쓸 수 없어요');return;}
+  openSheet(`<h2>비교하는 중…</h2><div class="empty-state">두 이미지를 나란히 보고 있어요 ✦</div>`);
+  try{
+    const wt=tagLabels(w).join(', ');
+    const lt=((look.aiTags||[]).map(t=>t.label)).join(', ');
+    const prompt=`영감 이미지의 특징: ${wt||'정보 없음'}
+내가 실제로 입은 룩의 특징: ${lt||'정보 없음'}
+두 스타일을 비교해 JSON으로만 답해. 모든 문장은 자연스러운 한글 한 줄로 짧게 쓴다.
+형식: {"taken":["영감에서 가져온 요소 2~3개"],"changed":["내 방식으로 바뀐 부분 2~3개"],"mine":["반복되는 내 취향 2~3개"]}`;
+    const models=(typeof GEMINI_MODELS_SMART!=='undefined')?GEMINI_MODELS_SMART:undefined;
+    const r=await geminiRecommendText(prompt,models);
+    const c={taken:r.taken||[],changed:r.changed||[],mine:r.mine||[]};
+    w.compares={...(w.compares||{}),[look.id]:c};
+    await put('wishlist',w);state.wish=await all('wishlist');
+    paint(c);
+  }catch(e){openSheet(`<h2>비교 실패</h2><div class="hint">${esc(e.message||e)}</div>
+    <div class="btnrow"><button class="btn primary" data-close="1">닫기</button></div>`);}
+}
+// 텍스트 전용 Gemini 호출 (이미지 재전송 없이 태그만 보낸다 → 비용 최소)
+async function geminiRecommendText(prompt,models){
+  const list=models||GEMINI_MODELS;
+  let lastErr='';
+  for(const m of list){
+    for(let attempt=0;attempt<2;attempt++){
+      const res=await geminiFetch(m,{contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:.7,responseMimeType:'application/json'}});
+      if(res.status===404){lastErr='404 '+m;break;}
+      if(res.status===429){lastErr='429 '+m;break;}
+      if([500,502,503].includes(res.status)){lastErr=res.status+' '+m;await new Promise(r=>setTimeout(r,700*(attempt+1)));continue;}
+      if(!res.ok)throw new Error('API '+res.status);
+      const data=await res.json();
+      const txt=(((data.candidates||[])[0]||{}).content||{}).parts?.[0]?.text||'';
+      try{return JSON.parse(txt);}catch(e){return JSON.parse(txt.replace(/```json|```/g,'').trim());}
+    }
+  }
+  throw new Error(lastErr.startsWith('429')?'AI 사용 한도에 걸렸어요. 잠시 후 다시':'AI가 잠시 바빠요 ('+lastErr+')');
+}
+
+/* ---- 옷장 빈칸: 근거 보기 / 위시에 담기 ---- */
+function gapWhy(el){
+  const l=el.dataset.l;
+  openSheet(`<h2>왜 추천했어?</h2>
+    <div class="ro-line"><span>담아둔 이미지에 등장</span><b>${el.dataset.i}회</b></div>
+    <div class="ro-line"><span>비슷한 아이템 보유</span><b>0개</b></div>
+    <div class="ro-line"><span>연결 가능한 상의</span><b>${el.dataset.t}벌</b></div>
+    <div class="ro-line"><span>연결 가능한 하의</span><b>${el.dataset.b}벌</b></div>
+    <div class="hint">담아둔 이미지에서 자주 보이는데 옷장엔 비슷한 게 없어서 알려드렸어요.</div>
+    <div class="btnrow"><button class="btn primary" data-close="1">닫기</button></div>`);
+}
+async function gapToWish(label){
+  const rec={id:uid(),name:label,memo:'취향 분석에서 추천',photoId:'',link:'',status:'want'};
+  await put('wishlist',rec);state.wish=await all('wishlist');
+  showToast(`위시에 "${label}" 담았어요 ♡`);
+}
+
+/* ===== 룩 만족도 =====
+   별점(rating)과 별개 필드다. 관리가 아니라 그날 감정을 남기는 느낌으로, 전부 선택사항. */
+const SATIS=[{v:1,e:'😕',l:'별로'},{v:2,e:'🙂',l:'괜찮아'},{v:3,e:'😍',l:'마음에 들어'},{v:4,e:'💘',l:'완전 좋아'}];
+const LIKED_ASPECTS=['전체 느낌','핏','비율','색감','조합','편안함','사진발','디테일','그냥 다 좋아'];
+const DISLIKED_ASPECTS=['핏','비율','색 조합','아이템 조합','너무 평범함','너무 과함','불편함','날씨와 안 맞음','그냥 오늘은 별로'];
+function satisRow(draft){
+  const cur=draft.satisfaction||0;
+  const btn=s=>`<button type="button" class="satb ${cur===s.v?'on':''}" data-sat="${s.v}" aria-pressed="${cur===s.v}" aria-label="${s.l}"><span>${s.e}</span>${s.l}</button>`;
+  const asp=cur>=3?LIKED_ASPECTS:(cur&&cur<=2?DISLIKED_ASPECTS:null);
+  const key=cur>=3?'likedAspects':'dislikedAspects';
+  const chosen=draft[key]||[];
+  return `<div class="field"><label>오늘 이 룩, 어땠어? (선택)</label>
+    <div class="satrow">${SATIS.map(btn).join('')}</div>
+    ${asp?`<div class="hint" style="margin-bottom:7px">${cur>=3?'특히 뭐가 좋았어?':'뭐가 아쉬웠어?'}</div>
+      <div class="tagwrap">${asp.map(a=>`<button type="button" class="chip ${chosen.includes(a)?'on':''}" data-satasp="${esc(a)}">${esc(a)}</button>`).join('')}</div>`:''}</div>`;
+}
+
+/* ===== INSPO =====
+   별도 테이블을 만들지 않고 wishlist 테이블에 kind:'inspo'로 공존시킨다.
+   위시와 공개 범위(본인 전용)가 같아 RLS를 그대로 쓸 수 있고 마이그레이션이 필요 없다. */
+const isInspo=w=>w&&w.kind==='inspo';
+const ANALYSIS_VERSION=1;
+const wishOnly=()=>state.wish.filter(w=>!isInspo(w));
+const inspoOnly=()=>state.wish.filter(isInspo);
+
+// INSPO 보관용 이미지 — 무드보드에 계속 떠 있으므로 더 작게, 가능하면 WebP로 저장한다.
+async function shrinkInspo(file){
+  const blob=await shrink(file,1000,.82);
+  try{
+    const bmp=await createImageBitmap(blob);
+    const c=document.createElement('canvas');c.width=bmp.width;c.height=bmp.height;
+    c.getContext('2d').drawImage(bmp,0,0);
+    const webp=await new Promise(r=>c.toBlob(r,'image/webp',.8));
+    if(webp&&webp.size&&webp.size<blob.size)return webp;   // 더 작을 때만 교체
+  }catch(e){}
+  return blob;                                              // WebP 미지원이면 JPEG 그대로
+}
+
+const INSPO_ASPECTS=['전체 분위기','실루엣','색감','레이어링','특정 아이템','디테일','소재감','그냥 전체적으로 좋아'];
+
+// 이미지 1장당 딱 한 번만 부른다. 결과는 레코드에 그대로 저장하고 다시는 보내지 않는다.
+async function analyzeInspo(rec){
+  if(!rec||!rec.photoId)return rec;
+  if(rec.analyzed&&rec.analysisVersion===ANALYSIS_VERSION)return rec;   // 캐시 히트 → 호출 안 함
+  if(!hasAI())return rec;
+  const prompt=`이 이미지에서 스타일 참고가 될 특징을 뽑아 JSON으로만 답해.
+패션 사진이 아니어도 된다(인테리어·풍경·화보·그래픽 등도 색감·질감·분위기를 뽑아라).
+모든 값은 자연스러운 한글 단어나 짧은 구로 쓴다. 영어·설명문·문장은 쓰지 마라.
+형식: {"imageType":"코디|아이템|화보|인테리어|풍경|그래픽|기타",
+"mood":["분위기 2~4개"],"fit":["실루엣·핏 0~4개"],"color":["색감 2~4개"],
+"fabric":["소재·질감 0~3개"],"styling":["스타일링 방식 0~3개"],"detail":["디테일 0~3개"],
+"ratio":["비율 0~2개"],"item":["보이는 아이템 0~4개"],"dominantColors":["대표 색 한글 2~3개"]}
+패션 요소가 없으면 해당 항목은 빈 배열로 둬라.`;
+  const r=await geminiVision(rec.photoId,prompt);
+  if(!r||typeof r!=='object')return rec;
+  rec.tags=normalizeTags(r);
+  rec.imageType=String(r.imageType||'기타').slice(0,10);
+  rec.dominantColors=(r.dominantColors||[]).map(c=>canonTag(c)).filter(Boolean).slice(0,3);
+  rec.analyzed=true;rec.analyzedAt=new Date().toISOString();rec.analysisVersion=ANALYSIS_VERSION;
+  return rec;
+}
+
+// 사진 고르기 → 저장 → 백그라운드 분석. 사용자는 사진만 넣으면 끝.
+async function addInspo(){
+  const i=document.createElement('input');i.type='file';i.accept='image/*';i.multiple=true;
+  i.style.cssText='position:fixed;left:-9999px;top:0;opacity:0;width:1px;height:1px';
+  i.onchange=async()=>{
+    const files=[...i.files];i.remove();if(!files.length)return;
+    showToast(`${files.length}장 담는 중…`);
+    const added=[];
+    for(const f of files){
+      try{
+        const blob=await shrinkInspo(f);const pid=uid();await storePhoto(pid,blob);
+        const rec={id:uid(),kind:'inspo',photoId:pid,createdAt:new Date().toISOString(),
+          favorite:false,analyzed:false,analyzedAt:null,analysisVersion:0,
+          tags:[],imageType:'',dominantColors:[],hiddenTags:[],likedAspects:[],linkedLookIds:[]};
+        await put('wishlist',rec);added.push(rec);
+      }catch(e){}
+    }
+    state.wish=await all('wishlist');render();
+    showToast(added.length?`${added.length}장 담았어요 ✦`:'담지 못했어요');
+    // 분석은 뒤에서 조용히. 실패해도 사진은 그대로 남는다.
+    for(const rec of added){
+      try{const r=await analyzeInspo(rec);if(r.analyzed){await put('wishlist',r);state.wish=await all('wishlist');
+        if(state.tab==='wish'&&state.wishTab==='inspo')render();}}catch(e){}
+    }
+  };
+  document.body.appendChild(i);i.click();
+}
+
+function viewInspo(){
+  const list=[...inspoOnly()].sort((a,b)=>a.id<b.id?1:-1);
+  const head=pageHead('위시',list.length?`${list.length}장`:'','영감 담기');
+  const note=`<div class="softnote">좋아 보이면 그냥 담아두세요 <span class="hh">✦</span></div>`;
+  const top=head+privateLabel()+note+wishTabs();
+  if(!list.length)return top+`<div class="empty-state">마음에 드는 이미지를 담아보세요.<br>코디가 아니어도 좋아요 — 색감·소재·분위기 전부.</div>`;
+  const cards=list.map(w=>`<button class="inspo" data-action="inspoitem" data-id="${w.id}" aria-label="영감 이미지">
+    <img data-photo="${w.photoId||''}" alt="">
+    ${w.favorite?'<span class="inspo-fav">♥</span>':''}
+    ${w.analyzed?'':'<span class="inspo-wait">분석 중</span>'}</button>`).join('');
+  return top+`<div class="inspogrid">${cards}</div>`;
+}
+function wishTabs(){
+  const t=state.wishTab==='inspo'?'inspo':'wish';
+  const b=(k,l)=>`<button class="ptab ${t===k?'on':''}" data-action="wishtab" data-k="${k}" aria-pressed="${t===k}">${l}</button>`;
+  return `<div class="ptabs">${b('wish','위시')}${b('inspo','INSPO')}</div>`;
+}
+
+function inspoDetail(id){
+  const w=state.wish.find(x=>x.id===id);if(!w)return;
+  function paint(){
+    const shown=(w.tags||[]).filter(t=>!(w.hiddenTags||[]).includes(t.label));
+    const more=state.inspoMore;
+    const view=more?shown:shown.slice(0,6);
+    const d=w.createdAt?new Date(w.createdAt):null;
+    const dateStr=d?`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`:'';
+    const chips=view.map(t=>`<button type="button" class="chip" data-hide="${esc(t.label)}" title="누르면 이 태그를 숨겨요">${esc(t.label)}</button>`).join('');
+    const asp=INSPO_ASPECTS.map(a=>`<button type="button" class="chip ${(w.likedAspects||[]).includes(a)?'on':''}" data-asp="${esc(a)}">${esc(a)}</button>`).join('');
+    openSheet(`<h2>영감</h2>
+      <img class="eval-photo" data-photo="${w.photoId||''}" alt="">
+      <div class="ro-line"><span>담은 날</span><b>${dateStr||'-'}</b></div>
+      ${w.imageType?`<div class="ro-line"><span>종류</span><b>${esc(w.imageType)}</b></div>`:''}
+      <div class="field" style="margin-top:16px"><label>AI가 본 특징</label>
+        ${shown.length?`<div class="tagwrap">${chips}</div>`
+          :`<div class="hint">${w.analyzed?'뽑아낸 특징이 없어요.':'아직 분석 중이에요. 잠시 후 다시 열어보세요.'}</div>`}
+        ${shown.length>6?`<button class="textcta" id="i-more" style="margin-top:8px">${more?'접기':`더보기 (${shown.length-6}개)`}</button>`:''}
+        ${shown.length?'<div class="hint">태그를 누르면 분석에서 제외돼요.</div>':''}</div>
+      <div class="field"><label>이 이미지에서 특히 뭐가 좋아? (선택)</label><div class="tagwrap">${asp}</div></div>
+      ${inspoArchive(w)}
+      <div class="btnrow" style="margin-bottom:10px"><button class="btn ghost" id="i-link">✦ 이 느낌으로 입은 룩 연결하기</button></div>
+      <div class="btnrow">
+        <button class="btn danger" id="i-del">삭제</button>
+        <button class="btn ghost" id="i-fav">${w.favorite?'♥ 즐겨찾기 해제':'♡ 즐겨찾기'}</button>
+        <button class="btn primary" data-close="1">닫기</button></div>`);
+    const sheet=document.querySelector('.sheet');
+    sheet.addEventListener('click',async e=>{
+      const h=e.target.closest('[data-hide]');
+      if(h){w.hiddenTags=[...(w.hiddenTags||[]),h.dataset.hide];await put('wishlist',w);state.wish=await all('wishlist');paint();return;}
+      const c=e.target.closest('[data-cmp]');
+      if(c){const l=(state.myLooks||[]).find(x=>x.id===c.dataset.cmp);if(l)compareInspoLook(w,l);return;}
+      const a=e.target.closest('[data-asp]');
+      if(a){const v=a.dataset.asp;const cur=w.likedAspects||[];
+        w.likedAspects=cur.includes(v)?cur.filter(x=>x!==v):[...cur,v];
+        await put('wishlist',w);state.wish=await all('wishlist');paint();return;}
+    });
+    const mb=document.getElementById('i-more');
+    if(mb)mb.onclick=()=>{state.inspoMore=!state.inspoMore;paint();};
+    document.getElementById('i-link').onclick=()=>pickLookForInspo(w);
+    document.getElementById('i-fav').onclick=async()=>{w.favorite=!w.favorite;await put('wishlist',w);
+      state.wish=await all('wishlist');paint();render();};
+    document.getElementById('i-del').onclick=async()=>{
+      await del('wishlist',w.id);state.wish=await all('wishlist');closeSheet();render();
+      showToast('영감을 지웠어요',async()=>{await put('wishlist',w);state.wish=await all('wishlist');render();});};
+  }
+  state.inspoMore=false;paint();
+}
+
 // 위시 — 로그인한 본인만 보는 개인 목록. 공유·상대방 요소를 넣지 않는다.
 // 화면 전체가 이미 비공개라 카드마다 비공개 라벨을 반복하지 않는다.
 function viewWishlist(){
-  const head=pageHead('위시',state.wish.length?`${state.wish.length}개`:'','위시 추가');
+  if(state.wishTab==='inspo')return viewInspo();
+  const wl=wishOnly();
+  const head=pageHead('위시',wl.length?`${wl.length}개`:'','위시 추가');
   const note=`<div class="softnote">갖고 싶은 것들을 차곡차곡 <span class="hh">♡</span></div>`;
-  const top=head+privateLabel()+note;
-  if(!state.wish.length)return top+`<div class="empty-state">위시리스트가 비었어요.<br>갖고 싶은 옷을 차곡차곡 모아보세요.</div>`;
+  const top=head+privateLabel()+note+wishTabs();
+  if(!wl.length)return top+`<div class="empty-state">위시리스트가 비었어요.<br>갖고 싶은 옷을 차곡차곡 모아보세요.</div>`;
   const search=`<input type="text" class="search" id="wish-search" placeholder="브랜드·아이템 검색" aria-label="위시 검색" value="${esc(state.wishSearch||'')}">`;
   const chips=`<div class="chips"><button class="chip ${!state.wishStatus?'on':''}" data-action="wishstatus" data-s="">전체</button>`+
     WISH_STATUS.map(s=>`<button class="chip ${state.wishStatus===s.k?'on':''}" data-action="wishstatus" data-s="${s.k}">${s.l}</button>`).join('')+`</div>`;
-  let list=state.wish;
+  let list=wl;
   if(state.wishStatus)list=list.filter(w=>(w.status||'want')===state.wishStatus);
   if(state.wishSearch){const q=state.wishSearch.toLowerCase();
     list=list.filter(w=>[w.name||'',w.memo||'',w.link||''].join(' ').toLowerCase().includes(q));}
@@ -1711,23 +2318,151 @@ function classifyLook(photoId){return geminiVision(photoId,`이 착장(코디) �
 name: 이 코디를 자세히 묘사하는 한글 이름 (핵심 아이템·색·핏·무드 조합, 예: "베이지 오버핏 니트 & 스트레이트 데님 데일리룩", "블랙 미니원피스 오피스룩").
 memo: 이 코디를 2~3문장으로 자세히 설명 (어떤 아이템 조합인지, 색감·분위기, 어울리는 상황·계절, 스타일링 포인트).
 tags: 다음 중 어울리는 것 1~4개만 배열로 — ${[...TPO_TAGS,...STYLE_TAGS].join(', ')}.
-형식: {"name":"","memo":"","tags":[]}`);}
-function evaluateLook(photoId){return geminiVision(photoId,`너는 발랄하고 사랑스러운 AI 패션 스타일리스트야. 이 착장 사진을 보고 귀엽고 통통 튀는 말투로 평가해줘. 이모지는 과하지 않게 적당히(항목당 최대 1개, 문장이 이모지로 도배되지 않게) 넣어줘. 보완할 점도 절대 상처주지 말고 응원하듯 다정하게 말해줘. JSON으로만 답해.
-형식: {"score": 1~10 사이 정수, "vibe": "이 룩의 무드를 한마디로(예: 청순 캠퍼스룩)", "good": ["좋은 점 2~3개"], "improve": ["이렇게 하면 더 예쁠 점 2~3개, 다정하게"], "tip": "한 줄 스타일링 꿀팁", "tags": ["이 룩에 어울리는 상황·스타일 태그 2~4개, 반드시 다음 목록에서만 골라: ${[...TPO_TAGS,...STYLE_TAGS].join(', ')}"]}`, GEMINI_MODELS_SMART);}
+아래 항목들은 이 착장의 스타일 특징을 자연스러운 한글 단어로 뽑아라(영어·문장 금지, 없으면 빈 배열).
+형식: {"name":"","memo":"","tags":[],
+"mood":["분위기 2~3개"],"fit":["실루엣·핏 1~3개"],"color":["색감 1~3개"],
+"fabric":["소재감 0~2개"],"styling":["스타일링 방식 0~2개"],"detail":["디테일 0~2개"],"ratio":["상하 비율 0~2개"]}`);}
+/* ===== '이 룩 어때?' 개인화 + A/B 비교 =====
+   점수를 매기는 기능이 아니라 "뭐가 애매한지"를 풀어주는 기능으로 쓴다. */
+const LOOK_CONCERNS=[
+  {k:'all',   l:'전체적으로 봐줘'},
+  {k:'ratio', l:'비율이 애매해'},
+  {k:'shoes', l:'신발이 고민돼'},
+  {k:'bag',   l:'가방이 고민돼'},
+  {k:'plain', l:'뭔가 심심해'},
+  {k:'color', l:'색 조합이 고민돼'},
+  {k:'outer', l:'아우터가 고민돼'},
+];
+// 이미지 여러 장을 한 번에 보낸다(A/B 비교용). 쿨다운·분당 제한은 geminiFetch가 그대로 적용.
+async function geminiVisionMulti(photoIds,prompt,models=GEMINI_MODELS){
+  const parts=[];
+  for(const id of photoIds){
+    const pb=await getPhotoBlob(id);if(!pb)throw new Error('사진 없음');
+    parts.push({inlineData:{mimeType:pb.type||'image/jpeg',data:(await blobToB64(pb)).split(',')[1]}});
+  }
+  parts.push({text:prompt});
+  let lastErr='';
+  for(const m of models){
+    for(let attempt=0;attempt<2;attempt++){
+      const res=await geminiFetch(m,{contents:[{parts}],generationConfig:{temperature:.5,responseMimeType:'application/json'}},30000);
+      if(res.status===404){lastErr='404 '+m;break;}
+      if(res.status===429){lastErr='429 '+m;break;}
+      if([500,502,503].includes(res.status)){lastErr=res.status+' '+m;await new Promise(r=>setTimeout(r,800*(attempt+1)));continue;}
+      if(!res.ok)throw new Error('API '+res.status);
+      const data=await res.json();
+      const txt=(((data.candidates||[])[0]||{}).content||{}).parts?.[0]?.text||'';
+      try{return JSON.parse(txt);}catch(e){return JSON.parse(txt.replace(/```json|```/g,'').trim());}
+    }
+  }
+  throw new Error(lastErr.startsWith('429')?'AI 사용 한도에 걸렸어요. 잠시 후 다시':'AI가 잠시 바빠요 ('+lastErr+')');
+}
+// 프롬프트에 넣을 내 맥락 — 이미지가 아니라 텍스트라 비용이 거의 없다
+function myContext(){
+  const dna=styleDNA();
+  const line=(t,arr)=>arr.length?`${t}: ${arr.slice(0,5).map(a=>a.label).join(', ')}\n`:'';
+  const items=(state.myItems||[]).slice(0,40)
+    .map(i=>`${i.name||i.category}${i.subcategory?'('+i.subcategory+')':''}`).join(', ');
+  const good=(state.myLooks||[]).filter(l=>(l.satisfaction||0)>=3).slice(0,5)
+    .map(l=>l.name||'룩').join(', ');
+  return line('내가 좋아하고 실제로 잘 입는 스타일',dna.core)
+    +line('실제 착용이 많고 만족도 높은 스타일',dna.realMe)
+    +line('끌리지만 아직 잘 안 입는 스타일',dna.desire)
+    +(good?`만족도가 높았던 룩: ${good}\n`:'')
+    +(items?`옷장에 있는 옷: ${items}\n`:'');
+}
+function evaluateLook(photoId,concern){
+  const c=LOOK_CONCERNS.find(x=>x.k===concern)||LOOK_CONCERNS[0];
+  return geminiVision(photoId,`너는 다정한 개인 스타일리스트야. 이 착장 사진을 보고 도와줘.
+사용자의 고민: "${c.l}"
+
+${myContext()}
+규칙:
+- 점수를 매기는 게 목적이 아니다. 지금 룩이 충분히 괜찮으면 먼저 그렇게 말해라.
+- 바꿀 걸 제안한다면 최대 2개까지만. 무조건 바꾸라고 하지 마라.
+- 교체 후보는 반드시 위 "옷장에 있는 옷" 목록에 있는 이름만 그대로 써라. 없으면 빈 배열.
+- 이모지는 항목당 최대 1개. 상처주지 말고 응원하듯.
+- 모든 문장은 자연스러운 한글로 짧게.
+JSON으로만 답해.
+형식: {"verdict":"good" 또는 "tweak",
+"headline":"한 줄 총평(예: 지금도 충분히 완성된 룩이에요)",
+"reason":"왜 그런지 한두 문장",
+"swaps":[{"what":"바꿀 부분(예: 신발)","why":"이유 한 줄","picks":["옷장에 있는 옷 이름 최대 3개"]}],
+"score": 1~10 사이 정수, "vibe":"이 룩의 무드 한마디",
+"good":["좋은 점 2~3개"],"improve":["더 예뻐질 점 1~2개, 다정하게"],
+"tip":"한 줄 스타일링 꿀팁",
+"tags":["어울리는 태그 2~4개, 반드시 다음에서만: ${[...TPO_TAGS,...STYLE_TAGS].join(', ')}"]}`,
+    GEMINI_MODELS_SMART);
+}
+// 진입 — 뭐가 고민인지 먼저 고른다
 function lookRate(){
   if(!hasAI()){alert('지금 AI를 쓸 수 없어요. 잠시 후 다시 시도해 주세요.');return;}
+  openSheet(`<h2>뭐가 고민돼?</h2>
+    <div class="tagwrap" style="margin-bottom:6px">
+      ${LOOK_CONCERNS.map(c=>`<button type="button" class="chip" data-concern="${c.k}">${c.l}</button>`).join('')}
+      <button type="button" class="chip" data-concern="ab">A/B 비교</button></div>
+    <div class="hint">고민을 골라주면 그 부분을 중심으로 봐드려요.</div>
+    <div class="btnrow"><button class="btn ghost" data-close="1">취소</button></div>`);
+  document.querySelector('.sheet').addEventListener('click',e=>{
+    const b=e.target.closest('[data-concern]');if(!b)return;
+    const k=b.dataset.concern;closeSheet();
+    if(k==='ab')abCompare();else runLookRate(k);
+  });
+}
+function runLookRate(concern){
   (async()=>{
     const id=await pickImage(); if(!id)return;
-    openSheet(`<h2>✨ 룩 평가 중…</h2><div class="empty-state"><div class="big">👀</div>AI 스타일리스트가 요리조리 뜯어보는 중이에요… 💭</div>`);
-    try{const r=await evaluateLook(id); showEval(id,r);}
-    catch(e){openSheet(`<h2>평가 실패 😢</h2><div class="hint">${esc(e.message||e)}</div><div class="hint">인터넷 연결을 확인하고 다시 시도해 주세요.</div><div class="btnrow" style="margin-top:14px"><button class="btn ghost" data-close="1">닫기</button><button class="btn primary" id="eval-retry">다시</button></div>`);document.getElementById('eval-retry').onclick=lookRate;}
+    openSheet(`<h2>보는 중…</h2><div class="empty-state">요리조리 뜯어보는 중이에요 ✦</div>`);
+    try{const r=await evaluateLook(id,concern); showEval(id,r);}
+    catch(e){openSheet(`<h2>실패 😢</h2><div class="hint">${esc(e.message||e)}</div>
+      <div class="btnrow"><button class="btn ghost" data-close="1">닫기</button>
+        <button class="btn primary" id="eval-retry">다시</button></div>`);
+      document.getElementById('eval-retry').onclick=()=>runLookRate(concern);}
+  })();
+}
+/* ---- A/B 비교 — 점수화하지 않고 하나를 고르거나 둘 다 괜찮다고 답한다 ---- */
+function abCompare(){
+  (async()=>{
+    showToast('A 사진을 골라주세요');
+    const a=await pickImage(); if(!a)return;
+    showToast('B 사진을 골라주세요');
+    const b=await pickImage(); if(!b)return;
+    openSheet(`<h2>비교하는 중…</h2><div class="empty-state">A와 B를 나란히 보고 있어요 ✦</div>`);
+    try{
+      const r=await geminiVisionMulti([a,b],`첫 번째 이미지가 A, 두 번째가 B다. 같은 사람의 두 가지 선택지를 비교해줘.
+
+${myContext()}
+규칙:
+- 점수를 매기지 마라. A 추천 / B 추천 / 둘 다 가능 중 하나만 고른다.
+- 이유는 짧고 구체적으로. 무엇이 전체 균형에 어떻게 작용하는지 말해라.
+- 모든 문장은 자연스러운 한글로.
+JSON으로만 답해.
+형식: {"pick":"A" 또는 "B" 또는 "both","reason":"고른 이유 한두 문장","a":"A의 느낌 한 줄","b":"B의 느낌 한 줄"}`,
+        GEMINI_MODELS_SMART);
+      const label=r.pick==='A'?'A 추천':r.pick==='B'?'B 추천':'둘 다 가능';
+      openSheet(`<h2>${esc(label)}</h2>
+        <div class="linkrow">
+          <figure><img data-photo="${a}" alt="A"><figcaption>A</figcaption></figure>
+          <figure><img data-photo="${b}" alt="B"><figcaption>B</figcaption></figure></div>
+        <div class="eval-tip">${esc(r.reason||'')}</div>
+        <div class="eval-sec"><div class="eval-h">A</div><ul><li>${esc(r.a||'-')}</li></ul></div>
+        <div class="eval-sec"><div class="eval-h">B</div><ul><li>${esc(r.b||'-')}</li></ul></div>
+        <div class="btnrow"><button class="btn primary" data-close="1">닫기</button></div>`);
+    }catch(e){openSheet(`<h2>비교 실패</h2><div class="hint">${esc(e.message||e)}</div>
+      <div class="btnrow"><button class="btn primary" data-close="1">닫기</button></div>`);}
   })();
 }
 function showEval(photoId,r){
   const good=(r.good||[]).map(g=>`<li>${esc(g)}</li>`).join('');
   const improve=(r.improve||[]).map(g=>`<li>${esc(g)}</li>`).join('');
-  openSheet(`<h2>💖 AI 룩 평가</h2>
+  // 총평을 먼저 보여주고, 필요할 때만 바꿀 걸 제안한다
+  const swaps=(r.swaps||[]).slice(0,2).map(sw=>`<div class="eval-sec"><div class="eval-h">${esc(sw.what||'제안')}</div>
+    <ul><li>${esc(sw.why||'')}</li></ul>
+    ${(sw.picks&&sw.picks.length)?`<div class="tagwrap" style="margin-top:8px">${sw.picks.slice(0,3).map(pn=>`<span class="chip">${esc(pn)}</span>`).join('')}</div>`:''}</div>`).join('');
+  openSheet(`<h2>이 룩 어때?</h2>
     <img class="eval-photo" data-photo="${photoId}" alt="">
+    ${r.headline?`<div class="eval-vibe" style="font-size:17px">${esc(r.headline)}</div>`:''}
+    ${r.reason?`<div class="hint" style="text-align:center;margin:-4px 0 14px">${esc(r.reason)}</div>`:''}
+    ${swaps}
     <div class="eval-score">${r.score||'?'}<span>/10</span></div>
     ${r.vibe?`<div class="eval-vibe">${esc(r.vibe)}</div>`:''}
     ${(r.tags&&r.tags.length)?`<div class="eval-tags">${r.tags.filter(t=>TAG_PRESETS.includes(t)).map(t=>`<span class="tagchip">${esc(t)}</span>`).join('')}</div>`:''}
@@ -2013,9 +2748,11 @@ document.body.addEventListener('input',e=>{
 document.body.addEventListener('click',e=>{
   if(_lpFired){_lpFired=false;return;}          // 꾸욱 누른 뒤 따라오는 click 무시
   const el=e.target.closest('[data-action]');if(!el)return;const a=el.dataset.action;
-  if(a==='add'){state.tab==='closet'?itemForm():state.tab==='wish'?wishForm():lookForm();}
+  if(a==='add'){state.tab==='closet'?itemForm()
+    :state.tab==='wish'?(state.wishTab==='inspo'?addInspo():wishForm())
+    :lookForm();}
   else if(a==='settings')settings();
-  else if(a==='stats')statsSheet();
+  else if(a==='stats')styleDnaSheet();
   else if(a==='airec')aiRecommend();
   else if(a==='mascottap')tapMascot();
   else if(a==='todayoutfit')showToday();
@@ -2024,6 +2761,10 @@ document.body.addEventListener('click',e=>{
   else if(a==='sortwear'){state.sortWear=!state.sortWear;render();}
   else if(a==='owner'){state.ownerFilter=el.dataset.owner||null;render();}
   else if(a==='aitoggle'){state.aiOpen=!state.aiOpen;render();}
+  else if(a==='wishtab'){state.wishTab=el.dataset.k;render();}
+  else if(a==='gapwhy')gapWhy(el);
+  else if(a==='gapwish')gapToWish(el.dataset.l);
+  else if(a==='inspoitem')inspoDetail(el.dataset.id);
   else if(a==='weekday'){state.weekSel=el.dataset.date;render();}
   else if(a==='monthday'){state.monthSel=el.dataset.date;render();}
   else if(a==='daydel')deleteDay(el.dataset.date);
