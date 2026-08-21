@@ -26,7 +26,11 @@ export function QuestSuggestions({ suggestions, onPick }: QuestSuggestionsProps)
         {fromHistory ? '자주 하던 것' : '이런 건 어때?'}
       </p>
 
-      <div className="-mx-5 overflow-x-auto px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div
+        className="-mx-5 overflow-x-auto px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        role="group"
+        aria-label="추천 퀘스트"
+      >
         <div className="flex w-max gap-1.5 pb-0.5">
           {suggestions.map((suggestion) => {
             const style = categoryStyle(suggestion.category)
