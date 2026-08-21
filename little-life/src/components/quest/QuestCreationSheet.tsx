@@ -1,27 +1,49 @@
-import { useEffect, useState } from 'react'
-import type { Category, Difficulty, QuestDraft } from '@/types'
+import { useEffect, useMemo, useState } from 'react'
+import type { Category, Difficulty, Quest, QuestDraft } from '@/types'
 import { CATEGORIES, DIFFICULTIES } from '@/types'
 import { BottomSheet } from '@/components/ui/BottomSheet'
 import { Button } from '@/components/ui/Button'
 import { DIFFICULTY_EXP, DIFFICULTY_LABEL } from '@/lib/difficulty'
 import { categoryStyle } from '@/lib/categories'
 import { CATEGORY_BADGE, DIFFICULTY_BADGE } from '@/lib/assets'
+import { classifyQuest, suggestQuests, type Suggestion } from '@/lib/suggest'
 import { cn } from '@/components/ui/cn'
+import { QuestSuggestions } from './QuestSuggestions'
 
 interface QuestCreationSheetProps {
   open: boolean
   onClose: () => void
   onCreate: (draft: QuestDraft) => void
+  /** 추천과 자동 분류에 쓰는 지난 기록 */
+  history: Quest[]
 }
 
 const TITLE_MAX = 60
 const DEFAULT_DIFFICULTY: Difficulty = 'NORMAL'
 
-export function QuestCreationSheet({ open, onClose, onCreate }: QuestCreationSheetProps) {
+export function QuestCreationSheet({
+  open,
+  onClose,
+  onCreate,
+  history,
+}: QuestCreationSheetProps) {
   const [title, setTitle] = useState('')
-  // 카테고리는 기본값 없이 직접 고르게 한다. 아무거나 눌러 넘기지 않도록.
   const [category, setCategory] = useState<Category | null>(null)
   const [difficulty, setDifficulty] = useState<Difficulty>(DEFAULT_DIFFICULTY)
+
+  /**
+   * 사용자가 직접 골랐는지.
+   *
+   * 한 번이라도 손대면 자동 채우기를 멈춘다.
+   * 골라놓은 걸 타이핑할 때마다 앱이 되돌려버리면 그것만큼 짜증나는 게 없다.
+   */
+  const [categoryTouched, setCategoryTouched] = useState(false)
+  const [difficultyTouched, setDifficultyTouched] = useState(false)
+
+  const suggestions = useMemo(
+    () => (open ? suggestQuests(history) : []),
+    [open, history],
+  )
 
   // 시트를 닫았다 다시 열면 늘 깨끗한 상태에서 시작한다.
   useEffect(() => {
@@ -29,7 +51,35 @@ export function QuestCreationSheet({ open, onClose, onCreate }: QuestCreationShe
     setTitle('')
     setCategory(null)
     setDifficulty(DEFAULT_DIFFICULTY)
+    setCategoryTouched(false)
+    setDifficultyTouched(false)
   }, [open])
+
+  // 제목을 치는 동안 카테고리·난이도를 대신 골라준다.
+  useEffect(() => {
+    if (!open) return
+    if (categoryTouched && difficultyTouched) return
+
+    const guess = classifyQuest(title, history)
+    if (!categoryTouched) setCategory(guess.category)
+    if (!difficultyTouched) setDifficulty(guess.difficulty)
+  }, [open, title, history, categoryTouched, difficultyTouched])
+
+  const guessSource = useMemo(
+    () => classifyQuest(title, history).from,
+    [title, history],
+  )
+  const autoCategory = !categoryTouched && category !== null
+  const autoDifficulty = !difficultyTouched && title.trim().length > 0
+
+  const pickSuggestion = (suggestion: Suggestion) => {
+    setTitle(suggestion.title)
+    setCategory(suggestion.category)
+    setDifficulty(suggestion.difficulty)
+    // 눌러서 고른 값이니 그대로 둔다
+    setCategoryTouched(true)
+    setDifficultyTouched(true)
+  }
 
   const canSubmit = title.trim().length > 0 && category !== null
 
@@ -41,7 +91,7 @@ export function QuestCreationSheet({ open, onClose, onCreate }: QuestCreationShe
 
   return (
     <BottomSheet open={open} onClose={onClose} title="새 퀘스트 만들기">
-      <div className="mb-6 flex items-start justify-between gap-3">
+      <div className="mb-5 flex items-start justify-between gap-3">
         <div>
           <h2 className="text-[20px] font-semibold tracking-[-0.01em] text-ink">새 퀘스트 만들기</h2>
           <p className="mt-1 text-[13px] leading-relaxed text-inkdim">
@@ -59,6 +109,8 @@ export function QuestCreationSheet({ open, onClose, onCreate }: QuestCreationShe
           </svg>
         </button>
       </div>
+
+      <QuestSuggestions suggestions={suggestions} onPick={pickSuggestion} />
 
       <div className="space-y-6">
         <div>
@@ -80,7 +132,10 @@ export function QuestCreationSheet({ open, onClose, onCreate }: QuestCreationShe
         </div>
 
         <div>
-          <p className="mb-2 text-[13px] font-medium text-inkdim">Category</p>
+          <div className="mb-2 flex items-center gap-1.5">
+            <p className="text-[13px] font-medium text-inkdim">Category</p>
+            {autoCategory && <AutoTag remembered={guessSource === 'history'} />}
+          </div>
           <div className="flex flex-wrap gap-2">
             {CATEGORIES.map((c) => {
               const style = categoryStyle(c)
@@ -90,7 +145,10 @@ export function QuestCreationSheet({ open, onClose, onCreate }: QuestCreationShe
                   key={c}
                   type="button"
                   aria-pressed={active}
-                  onClick={() => setCategory(c)}
+                  onClick={() => {
+                    setCategory(c)
+                    setCategoryTouched(true)
+                  }}
                   className={cn(
                     'inline-flex h-11 items-center gap-1 rounded-pill py-1 pl-1.5 pr-3.5 font-game text-[12px] tracking-[0.08em]',
                     'transition-transform duration-150 ease-out active:scale-[0.96]',
@@ -116,7 +174,10 @@ export function QuestCreationSheet({ open, onClose, onCreate }: QuestCreationShe
         </div>
 
         <div>
-          <p className="mb-2 text-[13px] font-medium text-inkdim">Difficulty</p>
+          <div className="mb-2 flex items-center gap-1.5">
+            <p className="text-[13px] font-medium text-inkdim">Difficulty</p>
+            {autoDifficulty && <AutoTag remembered={guessSource === 'history'} />}
+          </div>
           <div className="grid grid-cols-3 gap-2">
             {DIFFICULTIES.map((d) => {
               const active = d === difficulty
@@ -125,7 +186,10 @@ export function QuestCreationSheet({ open, onClose, onCreate }: QuestCreationShe
                   key={d}
                   type="button"
                   aria-pressed={active}
-                  onClick={() => setDifficulty(d)}
+                  onClick={() => {
+                    setDifficulty(d)
+                    setDifficultyTouched(true)
+                  }}
                   className={cn(
                     'min-h-[104px] rounded-btn border py-3 text-center transition-transform duration-150 ease-out active:scale-[0.97]',
                     active
@@ -164,5 +228,14 @@ export function QuestCreationSheet({ open, onClose, onCreate }: QuestCreationShe
         </div>
       </div>
     </BottomSheet>
+  )
+}
+
+/** 이 값은 앱이 대신 골라준 것이고, 눌러서 바꿀 수 있다는 표시. */
+function AutoTag({ remembered }: { remembered: boolean }) {
+  return (
+    <span className="inline-flex h-5 items-center rounded-pill bg-coral-soft px-2 text-[10px] text-coral-deep">
+      {remembered ? '기억해둔 것' : '자동'}
+    </span>
   )
 }
