@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { AppState, CompleteResult, DayStat, Quest, QuestDraft, Routine } from '@/types'
 import { createDefaultState } from '@/store/defaultState'
 import { repository } from '@/store/localStorage'
-import { applyExp } from '@/lib/level'
+import { applyExp, levelFromTotalExp } from '@/lib/level'
 import { expForDifficulty } from '@/lib/difficulty'
-import { todayKey } from '@/lib/date'
+import { todayKey, toDayKey } from '@/lib/date'
 import { isUsableRule, matchesToday, spawnDueQuests } from '@/lib/routines'
 import { createId } from '@/lib/id'
 
@@ -13,6 +13,14 @@ interface GameState {
   state: AppState
   addQuest: (draft: QuestDraft) => Quest | null
   completeQuest: (id: string) => CompleteResult | null
+  /** 완료를 되돌린다. EXP·레벨·통계·기록까지 전부 원래대로. */
+  uncompleteQuest: (id: string) => void
+  /** 아직 안 끝낸 퀘스트의 제목·카테고리·난이도를 고친다. */
+  updateQuest: (id: string, draft: QuestDraft) => void
+  /** 오늘은 넘기고 내일 다시 보이게 한다. */
+  snoozeQuest: (id: string) => void
+  /** 미뤄둔 걸 도로 오늘 목록에 올린다. */
+  unsnoozeQuest: (id: string) => void
   deleteQuest: (id: string) => void
   renameUser: (name: string) => void
   toggleRoutinePause: (id: string) => void
@@ -215,6 +223,124 @@ export function useGameState(): GameState {
   )
 
   /**
+   * 완료를 되돌린다.
+   *
+   * totalExp 에서 빼고 레벨을 다시 계산한다. 되돌리다 레벨이 내려가는 경우까지
+   * 정확히 맞는다 — levelFromTotalExp 가 applyExp 를 쌓은 결과와 늘 같기 때문이다.
+   */
+  const uncompleteQuest = useCallback(
+    (id: string) => {
+      const prev = stateRef.current
+      const target = prev.quests.find((q) => q.id === id)
+      if (!target || !target.completed) return
+
+      const totalExp = Math.max(0, prev.user.totalExp - target.exp)
+      const { level, currentExp } = levelFromTotalExp(totalExp)
+
+      // 그날 기록에서도 뺀다. 어제 완료한 걸 오늘 되돌려도 어제 칸에서 빠져야 한다.
+      const dayKey = target.completedAt ? toDayKey(target.completedAt) : todayKey()
+      const day = prev.dailyLog[dayKey]
+      const dailyLog = { ...prev.dailyLog }
+
+      if (day) {
+        const byCategory = { ...day.byCategory }
+        const left = (byCategory[target.category] ?? 0) - target.exp
+        if (left > 0) byCategory[target.category] = left
+        else delete byCategory[target.category]
+
+        const completed = Math.max(0, day.completed - 1)
+        const exp = Math.max(0, day.exp - target.exp)
+        if (completed === 0 && exp === 0) delete dailyLog[dayKey]
+        else dailyLog[dayKey] = { completed, exp, byCategory }
+      }
+
+      commit({
+        ...prev,
+        user: {
+          ...prev.user,
+          level,
+          currentExp,
+          totalExp,
+          totalCompletedQuests: Math.max(0, prev.user.totalCompletedQuests - 1),
+        },
+        quests: prev.quests.map((q) =>
+          q.id === id ? { ...q, completed: false, completedAt: null } : q,
+        ),
+        categoryStats: {
+          ...prev.categoryStats,
+          [target.category]: Math.max(0, prev.categoryStats[target.category] - target.exp),
+        },
+        dailyLog,
+      })
+    },
+    [commit],
+  )
+
+  /**
+   * 아직 안 끝낸 퀘스트만 고칠 수 있다.
+   * 이미 완료한 걸 고치면 지난 통계와 어긋나서, 그건 되돌린 뒤에 고치게 한다.
+   */
+  const updateQuest = useCallback(
+    (id: string, draft: QuestDraft) => {
+      const prev = stateRef.current
+      const target = prev.quests.find((q) => q.id === id)
+      if (!target || target.completed) return
+
+      const title = draft.title.trim()
+      if (!title) return
+
+      commit({
+        ...prev,
+        quests: prev.quests.map((q) =>
+          q.id === id
+            ? {
+                ...q,
+                title,
+                category: draft.category,
+                difficulty: draft.difficulty,
+                // 아직 안 받은 EXP 라 난이도에 맞춰 다시 잡아도 된다
+                exp: expForDifficulty(draft.difficulty),
+              }
+            : q,
+        ),
+      })
+    },
+    [commit],
+  )
+
+  /** 오늘은 넘긴다. 내일 다시 보인다. */
+  const snoozeQuest = useCallback(
+    (id: string) => {
+      const prev = stateRef.current
+      const tomorrow = new Date()
+      tomorrow.setDate(tomorrow.getDate() + 1)
+
+      commit({
+        ...prev,
+        quests: prev.quests.map((q) =>
+          q.id === id && !q.completed ? { ...q, snoozedUntil: todayKey(tomorrow) } : q,
+        ),
+      })
+    },
+    [commit],
+  )
+
+  const unsnoozeQuest = useCallback(
+    (id: string) => {
+      const prev = stateRef.current
+      commit({
+        ...prev,
+        quests: prev.quests.map((q) => {
+          if (q.id !== id) return q
+          const { snoozedUntil: _dropped, ...rest } = q
+          return rest
+        }),
+      })
+    },
+    [commit],
+  )
+
+  /**
    * 퀘스트만 목록에서 지운다.
    *
    * 이미 받은 EXP·통계·기록은 손대지 않는다. 한 번 한 일을 나중에 빼앗지 않으려는 것이고,
@@ -264,6 +390,10 @@ export function useGameState(): GameState {
       state,
       addQuest,
       completeQuest,
+      uncompleteQuest,
+      updateQuest,
+      snoozeQuest,
+      unsnoozeQuest,
       deleteQuest,
       renameUser,
       toggleRoutinePause,
@@ -274,6 +404,10 @@ export function useGameState(): GameState {
       state,
       addQuest,
       completeQuest,
+      uncompleteQuest,
+      updateQuest,
+      snoozeQuest,
+      unsnoozeQuest,
       deleteQuest,
       renameUser,
       toggleRoutinePause,

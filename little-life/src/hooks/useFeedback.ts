@@ -13,9 +13,10 @@ export interface Feedback {
   /** 캐릭터가 지금 지어야 할 표정 */
   mood: CharacterMood
   toast: string | null
+  toastAction: { label: string; onClick: () => void } | null
   /** 퀘스트 완료 결과를 그대로 넘기면 알맞은 피드백을 띄운다. */
   celebrate: (result: CompleteResult) => void
-  notify: (message: string) => void
+  notify: (message: string, action?: { label: string; onClick: () => void }) => void
 }
 
 const EXP_TOAST_MS = 1200
@@ -30,6 +31,7 @@ export function useFeedback(): Feedback {
   const [levelUp, setLevelUp] = useState<number | null>(null)
   const [mood, setMood] = useState<CharacterMood>('idle')
   const [toast, setToast] = useState<string | null>(null)
+  const [toastAction, setToastAction] = useState<Feedback['toastAction']>(null)
   const timers = useRef<number[]>([])
 
   const later = useCallback((fn: () => void, ms: number) => {
@@ -72,15 +74,19 @@ export function useFeedback(): Feedback {
   )
 
   const notify = useCallback(
-    (message: string) => {
+    (message: string, action?: { label: string; onClick: () => void }) => {
       setToast(message)
-      later(() => setToast((current) => (current === message ? null : current)), TOAST_MS)
+      setToastAction(action ?? null)
+      later(() => {
+        setToast((current) => (current === message ? null : current))
+        setToastAction(null)
+      }, TOAST_MS)
     },
     [later],
   )
 
   return useMemo(
-    () => ({ expToasts, levelUp, mood, toast, celebrate, notify }),
-    [expToasts, levelUp, mood, toast, celebrate, notify],
+    () => ({ expToasts, levelUp, mood, toast, toastAction, celebrate, notify }),
+    [expToasts, levelUp, mood, toast, toastAction, celebrate, notify],
   )
 }

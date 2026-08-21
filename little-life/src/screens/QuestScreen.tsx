@@ -19,6 +19,9 @@ interface QuestScreenProps {
   routines: Routine[]
   onComplete: (id: string) => void
   onRequestDelete: (quest: Quest) => void
+  onEdit: (quest: Quest) => void
+  onSnooze: (id: string) => void
+  onUncomplete: (id: string) => void
   onAddQuest: () => void
   onToggleRoutinePause: (id: string) => void
   onRequestDeleteRoutine: (routine: Routine) => void
@@ -29,6 +32,9 @@ export function QuestScreen({
   routines,
   onComplete,
   onRequestDelete,
+  onEdit,
+  onSnooze,
+  onUncomplete,
   onAddQuest,
   onToggleRoutinePause,
   onRequestDeleteRoutine,
@@ -97,6 +103,9 @@ export function QuestScreen({
                       quest={quest}
                       onComplete={onComplete}
                       onRequestDelete={onRequestDelete}
+                      onEdit={onEdit}
+                      onSnooze={onSnooze}
+                      onUncomplete={onUncomplete}
                     />
                   </li>
                 ))}
@@ -117,6 +126,9 @@ export function QuestScreen({
                       quest={quest}
                       onComplete={onComplete}
                       onRequestDelete={onRequestDelete}
+                      onEdit={onEdit}
+                      onSnooze={onSnooze}
+                      onUncomplete={onUncomplete}
                     />
                   </li>
                 ))}

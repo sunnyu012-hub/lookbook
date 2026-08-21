@@ -1,12 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
 
+export interface QuestMenuItem {
+  label: string
+  onSelect: () => void
+  /** 삭제처럼 되돌리기 어려운 것 */
+  danger?: boolean
+}
+
 interface QuestMenuProps {
-  onDelete: () => void
+  items: QuestMenuItem[]
   label: string
 }
 
 /** 퀘스트 카드 우측의 ⋯ 메뉴. 지금은 삭제 하나뿐이지만 나중에 항목이 늘어날 자리다. */
-export function QuestMenu({ onDelete, label }: QuestMenuProps) {
+export function QuestMenu({ items, label }: QuestMenuProps) {
   const [open, setOpen] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
 
@@ -45,17 +52,23 @@ export function QuestMenu({ onDelete, label }: QuestMenuProps) {
       </button>
 
       {open && (
-        <div className="absolute right-1 top-10 z-20 min-w-[152px] animate-pop overflow-hidden rounded-2xl border border-line bg-surface py-1 shadow-lift">
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false)
-              onDelete()
-            }}
-            className="flex w-full items-center px-4 py-3 text-left text-[14px] text-rose-deep"
-          >
-            Delete Quest
-          </button>
+        <div className="absolute right-1 top-10 z-20 min-w-[168px] animate-pop overflow-hidden rounded-2xl border border-line bg-surface py-1 shadow-lift">
+          {items.map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              onClick={() => {
+                setOpen(false)
+                item.onSelect()
+              }}
+              className={
+                'flex w-full items-center px-4 py-3 text-left text-[14px] ' +
+                (item.danger ? 'text-coral-deep' : 'text-ink')
+              }
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
       )}
     </div>
