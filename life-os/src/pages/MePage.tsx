@@ -31,6 +31,8 @@ import { MODE_META, modeOf } from '@/lib/energy'
 import { MODE_CHARACTER, icons, pets } from '@/lib/pixelAssets'
 import { LifeBalanceCard } from '@/components/life/LifeBalanceCard'
 import { LifeTreePreview } from './LifeTreePage'
+import { NextUnlockCard } from '@/components/life/NextUnlockCard'
+import type { NextUnlock } from '@/lib/analytics/nextUnlock'
 import type { LifeBalance } from '@/lib/analytics/lifeBalance'
 import type { LifeTree } from '@/lib/analytics/lifeTree'
 import type { RecoveryCurve } from '@/lib/analytics/recoveryCurve'
@@ -78,6 +80,8 @@ interface Props {
   onOpenRhythm: () => void
   /** 한 번만 만든 관찰 목록 — Patterns 섹션이 이걸 쓴다 */
   insightList: Insight[]
+  /** 곧 열릴 것들 */
+  unlocks: NextUnlock[]
   weeklyResets: number
   onOpenWeekly: () => void
 }
@@ -106,6 +110,7 @@ export function MePage({
   curve,
   onOpenRhythm,
   insightList,
+  unlocks,
   weeklyResets,
   onOpenWeekly,
 }: Props) {
@@ -186,6 +191,9 @@ export function MePage({
 
       {/* ── 삶의 지도 ── */}
       <LifeTreePreview tree={tree} onOpen={onOpenTree} />
+
+      {/* ── 곧 열릴 것 ── */}
+      <NextUnlockCard unlocks={unlocks} />
 
       {/* ── 발견한 것 ── */}
       {insightList.length > 0 && (
@@ -275,6 +283,7 @@ export function MePage({
             { label: '있었던 일 기록', value: xp.lifeEvent },
             { label: '패턴 발견', value: xp.discovery },
             { label: '주간 돌아보기', value: xp.weekly },
+            { label: '오늘의 목표', value: xp.focus },
             { label: '새 배지', value: xp.badge },
           ]
             .filter((row) => row.value > 0)

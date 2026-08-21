@@ -12,6 +12,8 @@ import { buildArchive, searchArchive, timelineEntries } from '../analytics/archi
 import { weekStartOf, weekEndOf, weekSummary, activeFocusDomains } from '../analytics/weeklyReset'
 import { buildInsightList, INSIGHT_MIN_GROUP, INSIGHT_MIN_TOTAL } from '../analytics/insightEntity'
 import { DEFAULT_PREFERENCES } from '../repositories/preferences'
+import { todayFocus } from '../quests/dailyFocus'
+import { nextUnlocks } from '../analytics/nextUnlock'
 
 const prefs: Preferences = DEFAULT_PREFERENCES
 
@@ -649,5 +651,167 @@ describe('없는 값과 0 을 구분한다', () => {
     const curve = recoveryCurve({ checkins, days: 7, today: '2026-08-05' })
     expect(curve.count).toBe(5)
     expect(curve.average).toBe(0)
+  })
+})
+
+// ─────────────────────────────────────────────
+// Today's Focus
+// ─────────────────────────────────────────────
+describe("Today's Focus", () => {
+  const base = { completions: {}, customQuests: [] as never[] }
+
+  it('같은 날에는 같은 목표가 나온다', () => {
+    const a = todayFocus({ date: '2026-08-20', capacity: 'STEADY', ...base })
+    const b = todayFocus({ date: '2026-08-20', capacity: 'STEADY', ...base })
+    expect(a.id).toBe(b.id)
+    expect(a.title).toBe(b.title)
+  })
+
+  it('날이 바뀌면 목표도 바뀐다', () => {
+    const ids = new Set(
+      days(14).map((d) => todayFocus({ date: d, capacity: 'STEADY', ...base }).id),
+    )
+    expect(ids.size).toBeGreaterThan(1)
+  })
+
+  it('쉬는 날에는 목표가 더 작다', () => {
+    const rest = todayFocus({ date: '2026-08-20', capacity: 'REST', ...base })
+    const open = todayFocus({ date: '2026-08-20', capacity: 'OPEN', ...base })
+    expect(rest.target).toBeLessThanOrEqual(open.target)
+  })
+
+  it('쉬는 날에는 "안 해본 것" 을 시키지 않는다', () => {
+    for (const d of days(30)) {
+      expect(todayFocus({ date: d, capacity: 'REST', ...base }).kind).not.toBe('fresh')
+    }
+  })
+
+  it('목표는 항상 작다 — 4개를 넘지 않는다', () => {
+    for (const cap of ['REST', 'GENTLE', 'STEADY', 'OPEN'] as const) {
+      for (const d of days(30)) {
+        expect(todayFocus({ date: d, capacity: cap, ...base }).target).toBeLessThanOrEqual(4)
+      }
+    }
+  })
+
+  it('영역 목표는 그 영역 퀘스트를 센다', () => {
+    // home 영역 목표가 나오는 날을 찾는다
+    const day = days(60, 1, '09').find((d) => {
+      const f = todayFocus({ date: d, capacity: 'STEADY', ...base })
+      return f.kind === 'domain' && f.domain === 'home'
+    })
+    if (!day) return
+    const f = todayFocus({
+      date: day,
+      capacity: 'STEADY',
+      completions: { 'tidy-5': 2, water: 5 },
+      customQuests: [],
+    })
+    expect(f.progress).toBe(2)
+  })
+
+  it('여러 영역 목표는 서로 다른 영역 수를 센다', () => {
+    const day = days(60, 1, '09').find(
+      (d) => todayFocus({ date: d, capacity: 'STEADY', ...base }).kind === 'variety',
+    )
+    if (!day) return
+    const f = todayFocus({
+      date: day,
+      capacity: 'STEADY',
+      completions: { water: 3, 'tidy-5': 1, 'idea-note': 1 },
+      customQuests: [],
+    })
+    expect(f.progress).toBe(3)
+  })
+
+  it('실패나 재촉하는 표현을 쓰지 않는다', () => {
+    for (const cap of ['REST', 'GENTLE', 'STEADY', 'OPEN'] as const) {
+      for (const d of days(20)) {
+        const f = todayFocus({ date: d, capacity: cap, ...base })
+        const text = [f.title, f.detail, f.cheer].join(' ')
+        for (const banned of ['실패', '못했', '놓쳤', '남은 시간', '서둘', '벌점', '아쉽']) {
+          expect(text).not.toContain(banned)
+        }
+      }
+    }
+  })
+
+  it('건강 결과가 아니라 행동만 목표로 삼는다', () => {
+    for (const cap of ['REST', 'GENTLE', 'STEADY', 'OPEN'] as const) {
+      for (const d of days(20)) {
+        const f = todayFocus({ date: d, capacity: cap, ...base })
+        const text = [f.title, f.detail].join(' ')
+        for (const banned of ['감량', '체중', '칼로리', '덜 먹', '적게 먹', '참기']) {
+          expect(text).not.toContain(banned)
+        }
+      }
+    }
+  })
+
+  it('목표를 채우면 done 이 된다', () => {
+    const day = days(60, 1, '09').find(
+      (d) => todayFocus({ date: d, capacity: 'STEADY', ...base }).kind === 'tiny',
+    )
+    if (!day) return
+    const f = todayFocus({
+      date: day,
+      capacity: 'STEADY',
+      completions: { water: 10 },
+      customQuests: [],
+    })
+    expect(f.done).toBe(true)
+    expect(f.progress).toBe(f.target)
+  })
+})
+
+// ─────────────────────────────────────────────
+// Next Unlock
+// ─────────────────────────────────────────────
+describe('Next Unlock', () => {
+  const tree = buildLifeTree({
+    checkins: [],
+    nights: [],
+    lifeEvents: [],
+    weights: [],
+    mounjaro: [],
+    eventLog: {},
+    questLog: {},
+  })
+
+  it('비밀 배지는 미리 알려 주지 않는다', () => {
+    const badges = [
+      { id: 's', name: '???', hint: '???', group: 'secret', icon: TREE_NODES[0].icon, goal: 1, secret: true, earned: false, progress: 0 },
+    ]
+    const out = nextUnlocks({ tree, badges: badges as never, chapters: [] }, 5)
+    expect(out.some((u) => u.id === 'badge:s')).toBe(false)
+  })
+
+  it('이미 열린 것은 넣지 않는다', () => {
+    const badges = [
+      { id: 'e', name: 'DONE', hint: '', group: 'start', icon: TREE_NODES[0].icon, goal: 1, earned: true, progress: 1 },
+    ]
+    const out = nextUnlocks({ tree, badges: badges as never, chapters: [] }, 5)
+    expect(out.some((u) => u.id === 'badge:e')).toBe(false)
+  })
+
+  it('가까운 것부터 보여 준다', () => {
+    const chapters = [
+      { no: 1, key: 'a', title: 'A', ko: 'a', icon: TREE_NODES[0].icon, need: 10, have: 9, unlocked: false, lines: [] },
+      { no: 2, key: 'b', title: 'B', ko: 'b', icon: TREE_NODES[0].icon, need: 10, have: 1, unlocked: false, lines: [] },
+    ]
+    const out = nextUnlocks({ tree, badges: [], chapters }, 2)
+    expect(out[0].id).toBe('manual:a')
+  })
+
+  it('개수를 넘겨서 보여 주지 않는다', () => {
+    expect(nextUnlocks({ tree, badges: [], chapters: [] }, 3).length).toBeLessThanOrEqual(3)
+  })
+
+  it('서두르게 하는 표현을 쓰지 않는다', () => {
+    for (const u of nextUnlocks({ tree, badges: [], chapters: [] }, 3)) {
+      for (const banned of ['서둘', '빨리', '지금 당장', '남은 시간']) {
+        expect(u.hint).not.toContain(banned)
+      }
+    }
   })
 })
