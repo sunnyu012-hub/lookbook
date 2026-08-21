@@ -44,6 +44,8 @@ export function weekCategoryExp(log: DailyLog, now: Date = new Date()): Category
  * "안 한 날" 을 굳이 세지 않기 위해서다.
  */
 export function isTodayQuest(quest: Quest, now: Date = new Date()): boolean {
+  // 내일로 미뤄둔 건 그날이 올 때까지 보이지 않는다
+  if (quest.snoozedUntil && quest.snoozedUntil > todayKey(now)) return false
   if (!quest.completed) return true
   return quest.completedAt ? isToday(quest.completedAt, now) : false
 }

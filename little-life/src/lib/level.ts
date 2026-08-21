@@ -44,3 +44,25 @@ export function applyExp(level: number, currentExp: number, gained: number): Lev
 
   return { level: nextLevel, currentExp: exp, leveledUp }
 }
+
+/**
+ * 지금까지 받은 EXP 총합만 보고 레벨과 현재 EXP 를 되짚는다.
+ *
+ * 완료를 되돌릴 때 쓴다. totalExp 에서 빼고 여기로 다시 계산하면
+ * 레벨이 내려가는 경우까지 정확히 맞는다.
+ *
+ * applyExp 를 LV.1 / 0 EXP 부터 쭉 돌린 결과와 항상 같아야 한다 (테스트로 묶어뒀다).
+ */
+export function levelFromTotalExp(totalExp: number): { level: number; currentExp: number } {
+  let level = 1
+  let remaining = Math.max(0, Math.floor(totalExp))
+  let need = requiredExp(level)
+
+  while (remaining >= need) {
+    remaining -= need
+    level += 1
+    need = requiredExp(level)
+  }
+
+  return { level, currentExp: remaining }
+}

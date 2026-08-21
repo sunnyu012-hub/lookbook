@@ -18,6 +18,10 @@ export default function App() {
     state,
     addQuest,
     completeQuest,
+    uncompleteQuest,
+    updateQuest,
+    snoozeQuest,
+    unsnoozeQuest,
     deleteQuest,
     renameUser,
     toggleRoutinePause,
@@ -29,13 +33,42 @@ export default function App() {
   const [sheetOpen, setSheetOpen] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<Quest | null>(null)
   const [pendingRoutineDelete, setPendingRoutineDelete] = useState<Routine | null>(null)
+  const [editingQuest, setEditingQuest] = useState<Quest | null>(null)
 
   const handleComplete = useCallback(
     (id: string) => {
       const result = completeQuest(id)
-      if (result) feedback.celebrate(result)
+      if (!result) return
+
+      feedback.celebrate(result)
+      // 잘못 눌렀을 때 바로 되돌릴 수 있게. 레벨업까지 정확히 되감긴다.
+      feedback.notify(`+${result.gainedExp} EXP`, {
+        label: '되돌리기',
+        onClick: () => uncompleteQuest(id),
+      })
     },
-    [completeQuest, feedback],
+    [completeQuest, uncompleteQuest, feedback],
+  )
+
+  const openEditor = useCallback((quest: Quest) => {
+    setEditingQuest(quest)
+    setSheetOpen(true)
+  }, [])
+
+  const closeSheet = useCallback(() => {
+    setSheetOpen(false)
+    setEditingQuest(null)
+  }, [])
+
+  const handleSnooze = useCallback(
+    (id: string) => {
+      snoozeQuest(id)
+      feedback.notify('내일 다시 보여줄게', {
+        label: '되돌리기',
+        onClick: () => unsnoozeQuest(id),
+      })
+    },
+    [snoozeQuest, unsnoozeQuest, feedback],
   )
 
   const handleCreate = useCallback(
@@ -81,6 +114,9 @@ export default function App() {
             routines={state.routines}
             onComplete={handleComplete}
             onRequestDelete={setPendingDelete}
+            onEdit={openEditor}
+            onSnooze={handleSnooze}
+            onUncomplete={uncompleteQuest}
             onAddQuest={() => setSheetOpen(true)}
             onToggleRoutinePause={toggleRoutinePause}
             onRequestDeleteRoutine={setPendingRoutineDelete}
@@ -91,8 +127,10 @@ export default function App() {
 
       <QuestCreationSheet
         open={sheetOpen}
-        onClose={() => setSheetOpen(false)}
+        onClose={closeSheet}
         onCreate={handleCreate}
+        onUpdate={updateQuest}
+        editing={editingQuest}
         history={state.quests}
       />
 
@@ -115,7 +153,7 @@ export default function App() {
       />
 
       <LevelUpOverlay level={feedback.levelUp} />
-      <Toast message={feedback.toast} />
+      <Toast message={feedback.toast} action={feedback.toastAction} />
     </>
   )
 }

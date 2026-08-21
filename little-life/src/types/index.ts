@@ -52,6 +52,11 @@ export interface Quest {
   completedAt: string | null
   /** 반복 퀘스트에서 생겼으면 그 원본의 id */
   routineId?: string
+  /**
+   * 이 날짜(YYYY-MM-DD)가 오기 전까지는 오늘 목록에서 숨긴다.
+   * 지우기는 아깝고 오늘은 안 할 때 쓴다. 지워지는 게 아니라 미뤄지는 것이다.
+   */
+  snoozedUntil?: string
 }
 
 export interface User {

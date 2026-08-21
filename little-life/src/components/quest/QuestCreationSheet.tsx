@@ -17,6 +17,12 @@ interface QuestCreationSheetProps {
   onCreate: (draft: QuestDraft) => void
   /** 추천과 자동 분류에 쓰는 지난 기록 */
   history: Quest[]
+  /**
+   * 고칠 퀘스트. 주면 편집 모드가 된다.
+   * 편집일 때는 추천과 반복을 감춘다 — 이미 있는 걸 고치는 자리라 새로 고를 게 아니다.
+   */
+  editing?: Quest | null
+  onUpdate?: (id: string, draft: QuestDraft) => void
 }
 
 const TITLE_MAX = 60
@@ -27,7 +33,10 @@ export function QuestCreationSheet({
   onClose,
   onCreate,
   history,
+  editing = null,
+  onUpdate,
 }: QuestCreationSheetProps) {
+  const isEditing = editing !== null
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState<Category | null>(null)
   const [difficulty, setDifficulty] = useState<Difficulty>(DEFAULT_DIFFICULTY)
@@ -43,20 +52,21 @@ export function QuestCreationSheet({
   const [difficultyTouched, setDifficultyTouched] = useState(false)
 
   const suggestions = useMemo(
-    () => (open ? suggestQuests(history) : []),
-    [open, history],
+    () => (open && !isEditing ? suggestQuests(history) : []),
+    [open, history, isEditing],
   )
 
   // 시트를 닫았다 다시 열면 늘 깨끗한 상태에서 시작한다.
+  // 편집이면 원래 값으로 채우고, 자동 채우기가 덮어쓰지 않게 손댄 것으로 표시한다.
   useEffect(() => {
     if (!open) return
-    setTitle('')
-    setCategory(null)
-    setDifficulty(DEFAULT_DIFFICULTY)
+    setTitle(editing?.title ?? '')
+    setCategory(editing?.category ?? null)
+    setDifficulty(editing?.difficulty ?? DEFAULT_DIFFICULTY)
     setRepeat(null)
-    setCategoryTouched(false)
-    setDifficultyTouched(false)
-  }, [open])
+    setCategoryTouched(editing !== null)
+    setDifficultyTouched(editing !== null)
+  }, [open, editing])
 
   // 제목을 치는 동안 카테고리·난이도를 대신 골라준다.
   useEffect(() => {
@@ -90,17 +100,24 @@ export function QuestCreationSheet({
 
   const submit = () => {
     if (!canSubmit || !category) return
-    onCreate({ title: title.trim(), category, difficulty, ...(repeat ? { repeat } : {}) })
+
+    if (isEditing && editing && onUpdate) {
+      onUpdate(editing.id, { title: title.trim(), category, difficulty })
+    } else {
+      onCreate({ title: title.trim(), category, difficulty, ...(repeat ? { repeat } : {}) })
+    }
     onClose()
   }
 
   return (
-    <BottomSheet open={open} onClose={onClose} title="새 퀘스트 만들기">
+    <BottomSheet open={open} onClose={onClose} title={isEditing ? '퀘스트 고치기' : '새 퀘스트 만들기'}>
       <div className="mb-5 flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-[20px] font-semibold tracking-[-0.01em] text-ink">새 퀘스트 만들기</h2>
+          <h2 className="text-[20px] font-semibold tracking-[-0.01em] text-ink">
+            {isEditing ? '퀘스트 고치기' : '새 퀘스트 만들기'}
+          </h2>
           <p className="mt-1 text-[13px] leading-relaxed text-inkdim">
-            오늘 할 일을 작은 모험으로 만들어봐.
+            {isEditing ? '적어둔 걸 바꿔도 괜찮아.' : '오늘 할 일을 작은 모험으로 만들어봐.'}
           </p>
         </div>
         <button
@@ -223,11 +240,11 @@ export function QuestCreationSheet({
           </div>
         </div>
 
-        <RepeatSelector value={repeat} onChange={setRepeat} />
+        {!isEditing && <RepeatSelector value={repeat} onChange={setRepeat} />}
 
         <div className="space-y-2 pt-1">
           <Button size="lg" className="w-full" disabled={!canSubmit} onClick={submit}>
-            Create Quest
+            {isEditing ? 'Save' : 'Create Quest'}
           </Button>
           <Button variant="quiet" size="sm" className="w-full" onClick={onClose}>
             Cancel

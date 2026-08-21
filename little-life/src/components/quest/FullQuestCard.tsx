@@ -5,17 +5,38 @@ import { Button } from '@/components/ui/Button'
 import { formatTime } from '@/lib/date'
 import { categoryStyle } from '@/lib/categories'
 import { EFFECT, UI } from '@/lib/assets'
-import { QuestMenu } from './QuestMenu'
+import { QuestMenu, type QuestMenuItem } from './QuestMenu'
 
 interface FullQuestCardProps {
   quest: Quest
   onComplete: (id: string) => void
   onRequestDelete: (quest: Quest) => void
+  onEdit: (quest: Quest) => void
+  onSnooze: (id: string) => void
+  onUncomplete: (id: string) => void
 }
 
 /** QUEST 화면용 카드. 난이도와 완료 시각까지 다 보여준다. */
-export function FullQuestCard({ quest, onComplete, onRequestDelete }: FullQuestCardProps) {
+export function FullQuestCard({
+  quest,
+  onComplete,
+  onRequestDelete,
+  onEdit,
+  onSnooze,
+  onUncomplete,
+}: FullQuestCardProps) {
   const style = categoryStyle(quest.category)
+
+  const menuItems: QuestMenuItem[] = quest.completed
+    ? [
+        { label: '완료 되돌리기', onSelect: () => onUncomplete(quest.id) },
+        { label: 'Delete Quest', onSelect: () => onRequestDelete(quest), danger: true },
+      ]
+    : [
+        { label: '고치기', onSelect: () => onEdit(quest) },
+        { label: '내일로 미루기', onSelect: () => onSnooze(quest.id) },
+        { label: 'Delete Quest', onSelect: () => onRequestDelete(quest), danger: true },
+      ]
 
   if (quest.completed) {
     return (
@@ -31,7 +52,7 @@ export function FullQuestCard({ quest, onComplete, onRequestDelete }: FullQuestC
             {quest.completedAt && <span>Done at {formatTime(quest.completedAt)}</span>}
           </div>
         </div>
-        <QuestMenu onDelete={() => onRequestDelete(quest)} label={`${quest.title} 메뉴`} />
+        <QuestMenu items={menuItems} label={`${quest.title} 메뉴`} />
       </div>
     )
   }
@@ -45,7 +66,7 @@ export function FullQuestCard({ quest, onComplete, onRequestDelete }: FullQuestC
           <p className="min-w-0 flex-1 break-words pt-1.5 text-[14.5px] font-medium leading-snug text-ink">
             {quest.title}
           </p>
-          <QuestMenu onDelete={() => onRequestDelete(quest)} label={`${quest.title} 메뉴`} />
+          <QuestMenu items={menuItems} label={`${quest.title} 메뉴`} />
         </div>
 
         <div className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-1">

@@ -54,6 +54,9 @@ function sanitizeQuest(raw: unknown): Quest | null {
     // 완료 표시는 있는데 시각이 없으면 생성 시각으로 메운다.
     completedAt: completed ? (completedAt ?? createdAt) : null,
     ...(typeof q.routineId === 'string' ? { routineId: q.routineId } : {}),
+    ...(typeof q.snoozedUntil === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(q.snoozedUntil)
+      ? { snoozedUntil: q.snoozedUntil }
+      : {}),
   }
 }
 
