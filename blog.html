@@ -235,6 +235,11 @@
   .trend .up{color:var(--ok);font-weight:700;font-size:12.5px}
   .trend .down{color:var(--bad);font-weight:700;font-size:12.5px}
   .trend .d0,.trend .none{color:var(--muted);font-size:12.5px}
+  .rankin{width:62px;padding:5px 7px;font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;
+    font-size:14px;font-weight:600;text-align:right;background:var(--surface);border:1px solid var(--line)}
+  .rankin:hover{border-color:var(--accent)}
+  .src{font-size:10.5px;margin-left:6px;padding:1px 6px;border-radius:999px;background:var(--sunk);color:var(--muted)}
+  .src.hand{background:var(--accent-soft);color:var(--accent);font-weight:700}
   .spark{display:block}
   .trendwrap{overflow-x:auto}
 
@@ -372,7 +377,8 @@
       <span class="state" id="trendMsg" style="font-size:12.5px;color:var(--muted)"></span>
     </div>
     <div class="card"><div class="trendwrap"><table class="trend" id="trendTbl"></table></div></div>
-    <p class="foot">보관함에 저장한 글의 <b>메인키워드</b>만 추적합니다. 채널 기준 설정에 <b>블로그 주소</b>를 넣은 채널이 대상이며, 네이버 <b>블로그탭</b> 기준 100위까지입니다(통합검색·스마트블록 순위와 다릅니다). 하루 한 번 기록되고 같은 날 다시 조회하면 덮어씁니다.</p>
+    <p class="foot"><b>순위 칸에 직접 숫자를 적을 수 있습니다</b>(0을 넣으면 100위 밖). 직접 적은 값은 <b>수동</b>으로 표시되고, 그날은 조회가 덮어쓰지 않습니다. 네이버에서 실제로 확인한 순위를 적어 두는 용도입니다.<br>
+    보관함에 저장한 글의 <b>메인키워드</b>만 추적합니다. 채널 기준 설정에 <b>블로그 주소</b>를 넣은 채널이 대상이며, 네이버 <b>블로그탭</b> 기준 100위까지입니다(통합검색·스마트블록 순위와 다릅니다). 하루 한 번 기록되고 같은 날 다시 조회하면 덮어씁니다.</p>
   </section>
 
   <!-- ══ 키워드 보드 (아이디어) ══ -->
@@ -901,7 +907,7 @@ function sparkline(hist,color){
       hist.map(h=>h.d+' '+(h.r?h.r+'위':'100위 밖')).join(', ')+'">'+
     '<path d="'+d+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'+
     '<circle cx="'+x(li).toFixed(1)+'" cy="'+y(vals[li]).toFixed(1)+'" r="3" fill="'+color+'"/>'+
-    '<title>'+esc(hist.slice(-8).map(h=>h.d.slice(5)+' '+(h.r?h.r+'위':'밖')).join(' · '))+'</title></svg>';
+    '<title>'+esc(hist.slice(-8).map(h=>h.d.slice(5)+' '+(h.r?h.r+'위':'밖')+(h.m?'(수동)':'')).join(' · '))+'</title></svg>';
 }
 function delta(hist){
   if(hist.length<2) return '<span class="d0">—</span>';
@@ -933,8 +939,9 @@ function renderTrend(){
         '<td><div class="kwc">'+esc(r.kw)+'</div><div class="sub">'+chBadge(r.ch)+
           ' <span>글 '+r.n+'건'+(r.last?' · 최근 '+esc(r.last):'')+'</span>'+
           (noBlog?' <span class="warn">블로그 주소 없음</span>':'')+'</div></td>'+
-        '<td>'+(last?(last.r?'<span class="rank">'+last.r+'위</span>':'<span class="rank out">100위 밖</span>')
-                    :'<span class="none">—</span>')+'</td>'+
+        '<td><input type="number" class="rankin" data-mr="'+idx+'" min="0" max="1000" placeholder="—" '+
+          'value="'+(last?last.r:'')+'" title="직접 입력 · 0을 넣으면 100위 밖">'+
+          (last?'<span class="src'+(last.m?' hand':'')+'">'+(last.m?'수동':'자동')+'</span>':'')+'</td>'+
         '<td>'+(last?delta(h):'')+'</td>'+
         '<td>'+(h.length?sparkline(h,chColor(r.ch)):'<span class="none">—</span>')+'</td>'+
         '<td><span class="sub">'+(last?esc(last.d)+' · '+h.length+'회':'없음')+'</span></td>'+
@@ -947,10 +954,13 @@ async function lookupTrend(list){
   const msg=t=>$('#trendMsg').textContent=t;
   const targets=list.filter(t=>blogOf(t.ch));
   if(!targets.length){msg('채널 기준 설정에 블로그 주소를 먼저 넣어 주세요.');return}
-  let err=null, done=0;
+  let err=null, done=0, kept=0;
   for(let n=0;n<targets.length;n++){
     msg('순위 조회 중… ('+(n+1)+'/'+targets.length+')');
     const t=targets[n];
+    const k0=rkey(t.ch,t.kw), h0=ranks[k0]||[], last0=h0[h0.length-1];
+    // 오늘 직접 적어둔 값이 있으면 그대로 둔다
+    if(last0&&last0.d===TODAY&&last0.m){ kept++; continue }
     try{
       const res=await api('/rank',{query:t.kw,blog:blogOf(t.ch),limit:100});
       const k=rkey(t.ch,t.kw), h=(ranks[k]||[]).slice();
@@ -962,8 +972,23 @@ async function lookupTrend(list){
   }
   DB.set('bc.ranks',ranks); renderTrend();
   // 실패를 '완료'로 덮어쓰지 않는다
-  msg(err?('실패: '+err+(done?' ('+done+'개는 저장됨)':'')):('완료 · '+done+'개 · '+nowHM()));
+  msg(err?('실패: '+err+(done?' ('+done+'개는 저장됨)':''))
+        :('완료 · '+done+'개'+(kept?' · 직접 적은 '+kept+'개는 유지':'')+' · '+nowHM()));
 }
+// 직접 적은 순위는 그 날짜 기록으로 남고, 조회가 덮어쓰지 않는다
+$('#trendTbl').addEventListener('change',e=>{
+  const inp=e.target.closest('input[data-mr]'); if(!inp) return;
+  const row=writtenList()[+inp.dataset.mr]; if(!row) return;
+  const raw=inp.value.trim();
+  if(raw===''){ renderTrend(); return }
+  const v=Math.max(0,Math.min(1000,parseInt(raw,10)||0));
+  const k=rkey(row.ch,row.kw), h=(ranks[k]||[]).slice();
+  const rec={d:TODAY,r:v,m:1};
+  if(h.length&&h[h.length-1].d===TODAY) h[h.length-1]=rec; else h.push(rec);
+  ranks[k]=h.slice(-30);
+  DB.set('bc.ranks',ranks); renderTrend();
+  $('#trendMsg').textContent='"'+row.kw+'" → '+(v?v+'위':'100위 밖')+' 로 적어 두었습니다.';
+});
 $('#trendAll').onclick=()=>lookupTrend(writtenList());
 $('#trendTbl').onclick=e=>{
   const b=e.target.closest('button[data-tr]'); if(!b) return;
