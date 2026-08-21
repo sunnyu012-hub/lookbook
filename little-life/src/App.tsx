@@ -74,6 +74,7 @@ export default function App() {
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}
         onCreate={handleCreate}
+        history={state.quests}
       />
 
       <ConfirmDialog
