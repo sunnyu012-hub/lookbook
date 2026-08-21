@@ -6,16 +6,20 @@ import { ddayFrom } from '@/lib/dday'
 import { effects as fx, icons } from '@/lib/pixelAssets'
 import { haptic } from '@/hooks/useHaptic'
 import { cn } from '@/lib/cn'
+import { ExportPanel } from '@/components/settings/ExportPanel'
+import type { ExportInput } from '@/lib/export'
 
 interface Props {
   prefs: Preferences
   account: string | null
+  /** 내보내기에 쓸 전체 기록 */
+  exportData: ExportInput
   onSave: (next: Preferences) => Promise<unknown>
   onSignOut: () => void
   onClose: () => void
 }
 
-export function SettingsPage({ prefs, account, onSave, onSignOut, onClose }: Props) {
+export function SettingsPage({ prefs, account, exportData, onSave, onSignOut, onClose }: Props) {
   const [draft, setDraft] = useState<Preferences>(prefs)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -225,6 +229,8 @@ export function SettingsPage({ prefs, account, onSave, onSignOut, onClose }: Pro
       >
         {saving ? 'Saving…' : saved ? 'Saved!' : 'Save settings'}
       </button>
+
+      <ExportPanel data={exportData} />
 
       <PixelPanel title="Account" icon={icons.save}>
         <p className="text-[12.5px] text-inkdim">{account ?? '로컬 저장 모드'}</p>
