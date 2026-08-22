@@ -11,6 +11,7 @@ import {
   hasHiddenLeft,
 } from '@/lib/collection/catalog'
 import { COLLECTION_SETS, HOME_EFFECTS, setsForItem } from '@/lib/collection/sets'
+import { COLLECTION_ART } from '@/lib/collection/assets'
 import { RECIPES } from '@/lib/collection/recipes'
 import { TROPHIES, TROPHY_ITEMS } from '@/lib/collection/trophies'
 import {
@@ -139,10 +140,26 @@ describe('아이템 표', () => {
     }
   })
 
-  it('그림이 없는 물건은 방에 놓을 수 없다고 표시된다', () => {
-    const noIcon = CATALOG.filter((i) => !i.icon)
-    expect(noIcon.length).toBeGreaterThan(0)
-    for (const item of noIcon) expect(item.hasPlaceableAsset).toBe(false)
+  it('그림도 이모지도 없는 물건만 방에 못 놓는다', () => {
+    for (const item of CATALOG) {
+      const drawable = item.assetKey !== undefined || item.icon !== undefined
+      expect(item.hasPlaceableAsset, item.id).toBe(drawable)
+    }
+    // 아직 아무 그림도 없는 칸이 남아 있다 — 도감에는 실루엣으로 나온다
+    expect(CATALOG.filter((i) => !i.hasPlaceableAsset).length).toBeGreaterThan(0)
+  })
+
+  it('그려둔 그림이 실제 물건에만 붙어 있다', () => {
+    for (const id of Object.keys(COLLECTION_ART)) {
+      expect(findCollectionItem(id), id).not.toBeNull()
+    }
+    expect(Object.keys(COLLECTION_ART).length).toBeGreaterThan(100)
+  })
+
+  it('그림 경로는 파일 이름이 곧 id 다', () => {
+    for (const [id, url] of Object.entries(COLLECTION_ART)) {
+      expect(url).toBe(`/assets/collection/${id}.webp`)
+    }
   })
 })
 

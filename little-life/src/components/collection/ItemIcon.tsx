@@ -61,6 +61,23 @@ export function ItemIcon({ item, hidden = false, size = 'md', className }: ItemI
     )
   }
 
+  // 그려둔 그림이 있으면 그걸 쓴다
+  if (item.assetKey) {
+    return (
+      <span
+        className={cn('flex shrink-0 items-center justify-center', SIZE[size], className)}
+      >
+        <img
+          src={item.assetKey}
+          alt=""
+          aria-hidden
+          draggable={false}
+          className="h-full w-full select-none object-contain"
+        />
+      </span>
+    )
+  }
+
   if (!item.icon) {
     return (
       <span

@@ -1,5 +1,6 @@
 import type { CollectionCategory, CollectionItemDef, CollectionRarity } from '@/types'
 import { CATALOG_ROWS, MATERIALS } from './items'
+import { artFor } from './assets'
 import { TROPHY_ITEMS } from './trophies'
 import { CRAFTABLE_ITEM_IDS } from './recipes'
 import { setsForItem } from './sets'
@@ -17,10 +18,17 @@ function finish(item: CollectionItemDef): CollectionItemDef {
     sources.push({ kind: 'CRAFT' })
   }
 
+  // 그림이 들어왔는지도 여기서 붙인다. 아이템 표에는 파일 경로를 적지 않는다 —
+  // 그림은 나중에 하나씩 채워지는 것이라, 표와 폴더가 어긋나기 십상이다.
+  const art = artFor(item.id)
+
   return {
     ...item,
     acquisitionSources: sources,
     collectionSetIds: setsForItem(item.id),
+    ...(art ? { assetKey: art } : {}),
+    // 그림이 있으면 이모지가 없어도 방에 놓을 수 있다
+    hasPlaceableAsset: item.placeable && (art !== undefined || item.icon !== undefined),
   }
 }
 

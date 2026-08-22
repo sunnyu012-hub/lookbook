@@ -109,6 +109,9 @@ export function RoomCanvas({
         const live = drag?.uid === item.uid ? drag : item
         const boxWidth = ((def.footprint?.width ?? 12) / 100) * width * item.scale
         const selected = selectedUid === item.uid
+        // 그림은 가로 폭만 맞추고 높이는 그림 비율대로 둔다.
+        // 정사각형에 맞추면 침대처럼 옆으로 넓은 것이 실제보다 작아 보인다.
+        const art = def.assetKey
 
         return (
           <button
@@ -133,12 +136,22 @@ export function RoomCanvas({
               left: `${live.x}%`,
               top: `${live.y}%`,
               width: `${boxWidth}px`,
-              height: `${boxWidth}px`,
+              ...(art ? {} : { height: `${boxWidth}px` }),
               fontSize: `${Math.max(10, boxWidth * 0.82)}px`,
               transform: `translate(-50%, -50%) scaleX(${item.flipped ? -1 : 1})`,
             }}
           >
-            <span aria-hidden>{def.icon}</span>
+            {art ? (
+              <img
+                src={art}
+                alt=""
+                aria-hidden
+                draggable={false}
+                className="pointer-events-none w-full select-none"
+              />
+            ) : (
+              <span aria-hidden>{def.icon}</span>
+            )}
           </button>
         )
       })}
