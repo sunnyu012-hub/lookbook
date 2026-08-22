@@ -1,6 +1,7 @@
 import type { CollectionCategory, CollectionItemDef, CollectionRarity } from '@/types'
 import { CATALOG_ROWS, MATERIALS } from './items'
-import { artFor } from './assets'
+import { artPath, thumbPath } from './assets'
+import { placementFor } from './placement'
 import { TROPHY_ITEMS } from './trophies'
 import { CRAFTABLE_ITEM_IDS } from './recipes'
 import { setsForItem } from './sets'
@@ -20,15 +21,28 @@ function finish(item: CollectionItemDef): CollectionItemDef {
 
   // 그림이 들어왔는지도 여기서 붙인다. 아이템 표에는 파일 경로를 적지 않는다 —
   // 그림은 나중에 하나씩 채워지는 것이라, 표와 폴더가 어긋나기 십상이다.
-  const art = artFor(item.id)
+  const art = artPath(item.id, item.category)
+  const thumb = thumbPath(item.id, item.category)
+  const place = placementFor(item.id, item.category, item.subcategory)
+  const placeable = place.placement === 'PLACEABLE'
 
   return {
     ...item,
     acquisitionSources: sources,
     collectionSetIds: setsForItem(item.id),
     ...(art ? { assetKey: art } : {}),
+    ...(thumb ? { thumbKey: thumb } : {}),
+    placementType: place.placementType,
+    layer: place.layer,
+    anchor: place.anchor,
+    defaultScale: place.defaultScale,
+    placement: place.placement,
+    canRotate: place.canRotate,
+    canFlip: place.canFlip,
+    // 방에 놓을 수 있는 종류인지 (재료·먹을 것 대부분은 아니다)
+    placeable,
     // 그림이 있으면 이모지가 없어도 방에 놓을 수 있다
-    hasPlaceableAsset: item.placeable && (art !== undefined || item.icon !== undefined),
+    hasPlaceableAsset: placeable && (art !== undefined || item.icon !== undefined),
   }
 }
 

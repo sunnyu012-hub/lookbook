@@ -53,7 +53,17 @@ export function RoomCanvas({
     return () => observer.disconnect()
   }, [])
 
-  const sorted = [...placed].sort((a, b) => a.y - b.y)
+  /**
+   * 앞뒤 순서.
+   *
+   * 먼저 층(러그 → 벽 → 바닥 가구 → 위에 올린 것 → 매단 것),
+   * 같은 층 안에서는 아래에 있는 것이 앞에 온다. 실제 방도 그렇게 보인다.
+   */
+  const sorted = [...placed].sort((a, b) => {
+    const la = findCollectionItem(a.itemId)?.layer ?? 10
+    const lb = findCollectionItem(b.itemId)?.layer ?? 10
+    return la !== lb ? la - lb : a.y - b.y
+  })
 
   const pointerPercent = (event: React.PointerEvent) => {
     const rect = ref.current?.getBoundingClientRect()
@@ -107,7 +117,9 @@ export function RoomCanvas({
         if (!def) return null
 
         const live = drag?.uid === item.uid ? drag : item
-        const boxWidth = ((def.footprint?.width ?? 12) / 100) * width * item.scale
+        // 물건마다 방에서 차지하는 크기가 다르다 (lib/collection/placement.ts)
+        const share = def.defaultScale ?? (def.footprint?.width ?? 12) / 100
+        const boxWidth = share * width * item.scale
         const selected = selectedUid === item.uid
         // 그림은 가로 폭만 맞추고 높이는 그림 비율대로 둔다.
         // 정사각형에 맞추면 침대처럼 옆으로 넓은 것이 실제보다 작아 보인다.
@@ -138,6 +150,9 @@ export function RoomCanvas({
               width: `${boxWidth}px`,
               ...(art ? {} : { height: `${boxWidth}px` }),
               fontSize: `${Math.max(10, boxWidth * 0.82)}px`,
+              // 좌표는 물건 가운데를 가리킨다.
+              // anchor 메타데이터가 있지만 렌더링에는 아직 쓰지 않는다 —
+              // 지금 바꾸면 이미 꾸며둔 방의 물건이 전부 위로 올라간다.
               transform: `translate(-50%, -50%) scaleX(${item.flipped ? -1 : 1})`,
             }}
           >

@@ -70,8 +70,10 @@ export function DecorateMode({
       usedByItem[p.itemId] = (usedByItem[p.itemId] ?? 0) + 1
     }
 
+    // 방에 놓을 수 있는 종류만 보여준다. 재료나 먹을 것까지 나오면
+    // 고를 게 아닌 것들 사이에서 고르게 된다. (도감에는 전부 그대로 있다)
     return [...CATALOG, ...TROPHY_CATALOG]
-      .filter((item) => ownedCount(collection, item.id) > 0 && item.placeable)
+      .filter((item) => ownedCount(collection, item.id) > 0 && item.placement === 'PLACEABLE')
       .map((item) => ({
         item,
         left: ownedCount(collection, item.id) - (usedByItem[item.id] ?? 0),

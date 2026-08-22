@@ -1,13 +1,38 @@
 /**
  * 그림이 있는 물건.
  *
- * 파일 이름이 곧 아이템 id 다. 새 그림이 들어오면
- * public/assets/collection/ 에 <id>.webp 를 넣고 여기에 한 줄만 더하면
- * 도감·상점·방·가방이 전부 알아서 쓴다.
+ * 파일 이름이 곧 아이템 id 이고, 분류가 곧 폴더다.
+ * 새 그림이 들어오면 public/assets/items/<분류>/<id>.webp 에 넣고
+ * 아래 목록에 한 줄만 더하면 도감·상점·방·가방이 전부 알아서 쓴다.
+ *
+ * 경로를 여기서 만들지 않는 이유: 분류는 아이템 표가 알고 있다.
+ * 두 곳에 적어두면 언젠가 어긋난다. (조립은 catalog.ts 에서 한다)
  *
  * 아직 그림이 없는 물건은 이모지로, 이모지도 없으면 분류 실루엣으로 그린다.
+ * 지금은 240개 전부 그림이 있어서 그 길로 내려갈 일이 없다.
  */
-const BASE = '/assets/collection'
+const BASE = '/assets/items'
+/** 도감 격자에서 쓰는 작은 그림 (npm run assets:thumbs) */
+const THUMB_BASE = '/assets/thumbs'
+
+/** 파일이 들어 있는 분류별 폴더 */
+const FOLDER: Record<string, string> = {
+  FURNITURE: 'furniture',
+  LIGHTING: 'lighting',
+  PLANT: 'plants',
+  RUG: 'rugs',
+  WALL: 'wall',
+  LITTLE_THING: 'little_things',
+  KITCHEN: 'kitchen',
+  FOOD: 'food',
+  BOOK: 'books',
+  HOBBY: 'hobby',
+  TECH: 'tech',
+  OUTDOOR: 'outdoor',
+  MAGIC: 'magic',
+  TROPHY: 'trophies',
+  MATERIAL: 'materials',
+}
 
 const WITH_ART = [
   'abstract_poster',
@@ -16,6 +41,7 @@ const WITH_ART = [
   'art_box',
   'baby_breath',
   'basil_pot',
+  'beanbag',
   'big_monstera',
   'board_game',
   'bud_lamp',
@@ -43,6 +69,7 @@ const WITH_ART = [
   'clover_bottle',
   'coat_rack',
   'coffee_cup',
+  'constellation_rug',
   'controller',
   'cook_book',
   'cookie_plate',
@@ -116,6 +143,7 @@ const WITH_ART = [
   'mini_cactus',
   'mini_piano',
   'mini_shelf',
+  'mini_table',
   'monitor',
   'moon_globe',
   'moon_keyring_c',
@@ -175,6 +203,7 @@ const WITH_ART = [
   'sage_chair',
   'sage_rug',
   'secret_diary',
+  'secret_drawer',
   'shiny_pebble',
   'shoe_cabinet',
   'sketchbook',
@@ -182,6 +211,7 @@ const WITH_ART = [
   'sleepy_bear_cushion',
   'small_bin',
   'small_blanket',
+  'small_cabinet',
   'small_candle',
   'small_comb',
   'small_frame',
@@ -204,6 +234,7 @@ const WITH_ART = [
   'star_mobile',
   'star_music_box',
   'star_piece',
+  'star_pot',
   'star_projector',
   'star_side_table',
   'stardust_jar',
@@ -215,12 +246,17 @@ const WITH_ART = [
   'sunlight_rug',
   'sunset_crystal',
   'sunset_lamp',
+  't_adventure_book',
   't_dragon',
   't_golden_broom',
   't_golden_pen',
+  't_heart_bottle',
   't_hundred_stars',
+  't_moon_shard',
   't_shiny_palette',
   't_shoe_trophy',
+  't_thousand_stars',
+  't_wood_star',
   'tablet',
   'tangerine_basket',
   'tea_table',
@@ -260,10 +296,22 @@ const WITH_ART = [
   'yoga_mat',
 ] as const
 
-export const COLLECTION_ART: Record<string, string> = Object.fromEntries(
-  WITH_ART.map((id) => [id, `${BASE}/${id}.webp`]),
-)
+/** 그림이 있는지 */
+export const HAS_ART = new Set<string>(WITH_ART)
 
-export function artFor(itemId: string): string | undefined {
-  return COLLECTION_ART[itemId]
+/** 분류를 알아야 경로가 나온다 */
+export function artPath(itemId: string, category: string): string | undefined {
+  if (!HAS_ART.has(itemId)) return undefined
+  return `${BASE}/${FOLDER[category] ?? 'misc'}/${itemId}.webp`
+}
+
+/**
+ * 작게 보여줄 때 쓰는 그림.
+ *
+ * 도감 한 칸은 폰에서 32~56px 다. 240칸을 훑는데 320px 짜리를 다 받으면
+ * 필요 없는 데이터를 몇 배로 받는다. 크게 보는 자리(방·상세)는 원본을 쓴다.
+ */
+export function thumbPath(itemId: string, category: string): string | undefined {
+  if (!HAS_ART.has(itemId)) return undefined
+  return `${THUMB_BASE}/${FOLDER[category] ?? 'misc'}/${itemId}.webp`
 }

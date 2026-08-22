@@ -113,6 +113,22 @@ export interface Footprint {
   height: number
 }
 
+// ── 배치 ────────────────────────────────────────────────
+export const PLACEMENT_TYPES = [
+  'FLOOR',
+  'WALL',
+  'TABLETOP',
+  'HANGING',
+  'RUG',
+  'WINDOW',
+  'SHELF',
+  'DECOR',
+] as const
+export type PlacementType = (typeof PLACEMENT_TYPES)[number]
+
+/** 좌표를 어디에 맞출지 */
+export type PlacementAnchor = 'BOTTOM_CENTER' | 'CENTER'
+
 export interface CollectionItemDef {
   id: string
   nameKo: string
@@ -125,15 +141,28 @@ export interface CollectionItemDef {
   /** 상점에 나올 때의 기준 가격. 없으면 살 수 없는 물건이다. */
   price?: number
   sellPrice?: number
-  /** 그림 파일을 붙일 자리. 지금은 이모지로 그린다. */
+  /** 그림 파일. 방과 도감 상세처럼 크게 보는 자리에서 쓴다. */
   assetKey?: string
-  /** 이모지 한 글자. 없으면 아직 그림이 없는 물건이다. */
+  /** 같은 그림의 작은 판. 도감 격자처럼 작게 보는 자리에서 쓴다. */
+  thumbKey?: string
+  /** 이모지 한 글자. 그림이 없을 때만 쓴다 — 지금은 전부 그림이 있다. */
   icon?: string
   /** 방에 놓을 그림이 준비돼 있는지 */
   hasPlaceableAsset: boolean
   /** 애초에 방에 놓는 종류의 물건인지 (재료는 아니다) */
   placeable: boolean
   footprint?: Footprint
+  /** 바닥인지 벽인지 위에 올리는 것인지 (lib/collection/placement.ts 에서 붙인다) */
+  placementType?: PlacementType
+  /** 앞뒤 순서. 러그는 늘 밑에 깔린다. */
+  layer?: number
+  anchor?: PlacementAnchor
+  /** 방 너비 대비 비율 (0~1) */
+  defaultScale?: number
+  /** 방에 놓을 수 있는지 · 도감에만 있는지 · 재료인지 */
+  placement?: 'PLACEABLE' | 'DISPLAY_ONLY' | 'MATERIAL_ONLY'
+  canRotate?: boolean
+  canFlip?: boolean
   acquisitionSources: AcquisitionSource[]
   collectionSetIds: string[]
   tags: string[]

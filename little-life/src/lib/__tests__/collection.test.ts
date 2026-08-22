@@ -11,7 +11,7 @@ import {
   hasHiddenLeft,
 } from '@/lib/collection/catalog'
 import { COLLECTION_SETS, HOME_EFFECTS, setsForItem } from '@/lib/collection/sets'
-import { COLLECTION_ART } from '@/lib/collection/assets'
+import { HAS_ART } from '@/lib/collection/assets'
 import { RECIPES } from '@/lib/collection/recipes'
 import { TROPHIES, TROPHY_ITEMS } from '@/lib/collection/trophies'
 import {
@@ -140,25 +140,29 @@ describe('아이템 표', () => {
     }
   })
 
-  it('그림도 이모지도 없는 물건만 방에 못 놓는다', () => {
+  it('방에 놓으려면 놓는 물건이면서 그릴 것이 있어야 한다', () => {
     for (const item of CATALOG) {
       const drawable = item.assetKey !== undefined || item.icon !== undefined
-      expect(item.hasPlaceableAsset, item.id).toBe(drawable)
+      const placeable = item.placement === 'PLACEABLE'
+      expect(item.hasPlaceableAsset, item.id).toBe(placeable && drawable)
     }
-    // 아직 아무 그림도 없는 칸이 남아 있다 — 도감에는 실루엣으로 나온다
-    expect(CATALOG.filter((i) => !i.hasPlaceableAsset).length).toBeGreaterThan(0)
+    // 그림이 없어 이모지나 실루엣으로 때우는 칸은 이제 없다.
+    // 이모지는 폰마다 모양이 달라서 한 칸만 결이 다르게 보인다.
+    const noArt = CATALOG.filter((i) => i.assetKey === undefined)
+    expect(noArt.map((i) => i.id)).toEqual([])
   })
 
   it('그려둔 그림이 실제 물건에만 붙어 있다', () => {
-    for (const id of Object.keys(COLLECTION_ART)) {
+    for (const id of HAS_ART) {
       expect(findCollectionItem(id), id).not.toBeNull()
     }
-    expect(Object.keys(COLLECTION_ART).length).toBeGreaterThan(100)
+    expect(HAS_ART.size).toBeGreaterThan(200)
   })
 
-  it('그림 경로는 파일 이름이 곧 id 다', () => {
-    for (const [id, url] of Object.entries(COLLECTION_ART)) {
-      expect(url).toBe(`/assets/collection/${id}.webp`)
+  it('그림 경로는 분류 폴더 + 아이템 id 다', () => {
+    for (const item of ALL_COLLECTION_ITEMS) {
+      if (!item.assetKey) continue
+      expect(item.assetKey).toMatch(new RegExp(`^/assets/items/[a-z_]+/${item.id}\\.webp$`))
     }
   })
 })

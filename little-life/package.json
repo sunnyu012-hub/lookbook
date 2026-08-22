@@ -11,7 +11,12 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b --force",
-    "test": "vitest run"
+    "test": "vitest run",
+    "assets:extract": "python3 scripts/extract-assets.py",
+    "assets:manifest": "vite-node scripts/build-asset-manifest.ts",
+    "assets:thumbs": "python3 scripts/build-thumbs.py",
+    "assets:audit": "vite-node scripts/audit-assets.ts",
+    "assets:index": "vite-node scripts/build-asset-index.ts"
   },
   "dependencies": {
     "react": "^18.3.1",
