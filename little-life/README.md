@@ -106,7 +106,8 @@ src/
 
 ### 나중에 손댈 자리
 
-- **밸런스** — `lib/level.ts`의 `BASE_EXP` / `STEP`, `lib/difficulty.ts`의 EXP 표
+- **밸런스** — `lib/level.ts`의 `BASE_EXP` / `STEP`, `lib/difficulty.ts`의 EXP 표,
+  `lib/rpg/rewards.ts`의 `DIFFICULTY_COINS`
 - **Supabase 연결** — `StateRepository`를 구현한 클래스를 하나 더 만들고
   `store/localStorage.ts` 마지막의 `repository` export만 교체한다.
   인터페이스가 이미 async라서 화면 코드는 건드릴 필요 없다.
