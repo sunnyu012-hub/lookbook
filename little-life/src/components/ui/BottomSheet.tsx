@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react'
+import { Portal } from './Portal'
 
 interface BottomSheetProps {
   open: boolean
@@ -29,22 +30,28 @@ export function BottomSheet({ open, onClose, title, children }: BottomSheetProps
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
-      <div className="absolute inset-0 animate-fadein bg-ink/25 backdrop-blur-[2px]" onClick={onClose} aria-hidden />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        // 키보드가 올라와도 내용이 잘리지 않게 최대 높이를 두고 안에서 스크롤한다.
-        className="relative flex max-h-[92dvh] w-full max-w-[430px] animate-sheetup flex-col rounded-t-[28px] bg-surface shadow-sheet"
-      >
-        <div className="shrink-0 px-5 pt-3">
-          <div className="mx-auto h-1 w-9 rounded-pill bg-line" />
-        </div>
-        <div className="overflow-y-auto px-5 pb-[calc(20px+env(safe-area-inset-bottom))] pt-4">
-          {children}
+    <Portal>
+      <div className="fixed inset-0 z-50 flex items-end justify-center">
+        <div
+          className="absolute inset-0 animate-fadein bg-ink/25 backdrop-blur-[2px]"
+          onClick={onClose}
+          aria-hidden
+        />
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={title}
+          // 키보드가 올라와도 내용이 잘리지 않게 최대 높이를 두고 안에서 스크롤한다.
+          className="relative flex max-h-[92dvh] w-full max-w-[430px] animate-sheetup flex-col rounded-t-[28px] bg-surface shadow-sheet"
+        >
+          <div className="shrink-0 px-5 pt-3">
+            <div className="mx-auto h-1 w-9 rounded-pill bg-line" />
+          </div>
+          <div className="overflow-y-auto px-5 pb-[calc(20px+env(safe-area-inset-bottom))] pt-4">
+            {children}
+          </div>
         </div>
       </div>
-    </div>
+    </Portal>
   )
 }
