@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { AppState, CollectionItemDef, HomeEffectId, RoomId } from '@/types'
 import { Portal } from '@/components/ui/Portal'
+import { useOverlay } from '@/hooks/useOverlay'
 import { ItemIcon } from '@/components/collection/ItemIcon'
 import { RoomCanvas } from './RoomCanvas'
 import { CATALOG_CATEGORIES, TROPHY_CATALOG, findCollectionItem } from '@/lib/collection/catalog'
@@ -46,6 +47,7 @@ export function DecorateMode({
 }: DecorateModeProps) {
   const [selected, setSelected] = useState<string | null>(null)
   const [tab, setTab] = useState<'ITEMS' | 'ROOMS' | 'AIR'>('ITEMS')
+  useOverlay(open, onClose)
 
   const collection = state.collection
   const roomId = collection.currentRoomId

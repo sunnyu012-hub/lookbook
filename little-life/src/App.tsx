@@ -571,7 +571,15 @@ export default function App() {
       <PackDetailSheet
         pack={openPack}
         quests={state.quests}
-        onClose={() => setOpenPack(null)}
+        onClose={() => {
+          setOpenPack(null)
+          setHubOpen(false)
+        }}
+        // 세트를 잘못 골랐으면 허브로 돌아간다. 처음부터 다시 열지 않아도 된다.
+        onBack={() => {
+          setOpenPack(null)
+          setHubOpen(true)
+        }}
         onAdd={handlePackAdd}
       />
 

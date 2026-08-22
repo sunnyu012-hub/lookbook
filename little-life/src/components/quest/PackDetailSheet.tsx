@@ -38,10 +38,12 @@ interface PackDetailSheetProps {
   pack: QuestPackDef | null
   quests: Quest[]
   onClose: () => void
+  /** 잘못 골라 들어왔을 때 세트 목록으로 돌아간다 */
+  onBack?: () => void
   onAdd: (drafts: QuestDraft[]) => void
 }
 
-export function PackDetailSheet({ pack, quests, onClose, onAdd }: PackDetailSheetProps) {
+export function PackDetailSheet({ pack, quests, onClose, onBack, onAdd }: PackDetailSheetProps) {
   const [picked, setPicked] = useState<Set<string>>(new Set())
   const [mode, setMode] = useState<Mode>('TODAY')
   const [ruleIndex, setRuleIndex] = useState(0)
@@ -102,7 +104,7 @@ export function PackDetailSheet({ pack, quests, onClose, onAdd }: PackDetailShee
   }
 
   return (
-    <BottomSheet open onClose={onClose} title={pack.name}>
+    <BottomSheet open onClose={onClose} onBack={onBack} backLabel="세트 목록" title={pack.name}>
       <div className="flex items-start gap-3">
         <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-card bg-canvas text-[28px]">
           {pack.icon}

@@ -1,6 +1,6 @@
-import { useEffect } from 'react'
 import { Button } from './Button'
 import { Portal } from './Portal'
+import { useOverlay } from '@/hooks/useOverlay'
 
 interface ConfirmDialogProps {
   open: boolean
@@ -22,14 +22,7 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCancel()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open, onCancel])
+  useOverlay(open, onCancel)
 
   if (!open) return null
 
