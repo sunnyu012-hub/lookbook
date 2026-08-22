@@ -107,12 +107,12 @@ export function ShopSheet({ shop, coins, inventory, onClose, onBuy }: ShopSheetP
                   )}
                 >
                   {owned ? (
-                    <span className="font-game text-[9px] tracking-[0.08em]">OWNED</span>
+                    <span className="text-[11px] font-medium">가지고 있음</span>
                   ) : (
                     <>
                       <span className="font-game text-[12px] leading-none">🪙 {entry.price}</span>
-                      <span className="mt-0.5 font-game text-[8px] tracking-[0.08em]">
-                        {affordable ? 'BUY' : 'NOT ENOUGH'}
+                      <span className="mt-0.5 text-[10px] font-medium">
+                        {affordable ? '사기' : '모자라'}
                       </span>
                     </>
                   )}

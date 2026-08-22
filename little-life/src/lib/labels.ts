@@ -1,0 +1,82 @@
+import type {
+  Category,
+  Difficulty,
+  EquipSlot,
+  FriendshipLevel,
+  ItemType,
+  Rarity,
+  ReputationLevel,
+  StatKey,
+} from '@/types'
+
+/**
+ * 화면에 보이는 한국어 이름을 한곳에 모아둔다.
+ *
+ * 카테고리·난이도 배지 그림에는 영문이 그려져 있지만(그림은 못 고친다),
+ * 글자는 전부 한국어로 읽히게 한다. 그림 속 영문은 장식으로 남는다.
+ */
+
+export const CATEGORY_LABEL: Record<Category, string> = {
+  LIFE: '생활',
+  WORK: '일',
+  BODY: '몸',
+  PLAY: '놀이',
+  MIND: '마음',
+  HEART: '관계',
+}
+
+export const DIFFICULTY_KO: Record<Difficulty, string> = {
+  EASY: '쉬움',
+  NORMAL: '보통',
+  HARD: '어려움',
+}
+
+export const RARITY_LABEL: Record<Rarity, string> = {
+  COMMON: '흔함',
+  RARE: '귀함',
+  EPIC: '특별',
+  LEGENDARY: '전설',
+}
+
+export const ITEM_TYPE_LABEL: Record<ItemType, string> = {
+  EQUIPMENT: '장비',
+  CONSUMABLE: '마실 것',
+  MATERIAL: '재료',
+  COLLECTIBLE: '수집품',
+}
+
+export const EQUIP_SLOT_LABEL: Record<EquipSlot, string> = {
+  HEAD: '머리',
+  TOP: '상의',
+  BOTTOM: '하의',
+  SHOES: '신발',
+  ACCESSORY: '소품',
+  CHARM: '부적',
+}
+
+export const STAT_LABEL: Record<StatKey, string> = {
+  ENERGY: '기운',
+  FOCUS: '집중',
+  VITALITY: '체력',
+  CREATIVITY: '재미',
+  CONNECTION: '마음',
+  LUCK: '행운',
+}
+
+/** 친밀도 단계의 짧은 이름 */
+export const FRIENDSHIP_SHORT: Record<FriendshipLevel, string> = {
+  STRANGER: '아직 서먹',
+  FAMILIAR: '얼굴 아는 사이',
+  FRIEND: '친구',
+  CLOSE_FRIEND: '가까운 친구',
+  SPECIAL_BOND: '특별한 사이',
+}
+
+/** 지역 평판 단계의 짧은 이름 */
+export const REPUTATION_SHORT: Record<ReputationLevel, string> = {
+  VISITOR: '손님',
+  REGULAR: '단골',
+  LOCAL: '동네 사람',
+  FAVORITE: '반가운 얼굴',
+  CITY_LEGEND: '이 동네의 전설',
+}

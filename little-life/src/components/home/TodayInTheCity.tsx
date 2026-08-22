@@ -31,15 +31,15 @@ export function TodayInTheCity({ state, events, onOpenMap }: TodayInTheCityProps
   return (
     <section>
       <SectionHeader
-        title="Today in the City"
+        title="오늘의 도시"
         trailing={
           <button
             type="button"
             onClick={onOpenMap}
-            className="rounded-pill bg-sunken px-2.5 py-1 font-game text-[9px] tracking-[0.08em] text-inkdim"
+            className="rounded-pill bg-sunken px-2.5 py-1 text-[11px] font-medium text-inkdim"
           >
             {/* 아래 내비게이션에도 MAP 이 있다. 이름이 같으면 소리로 읽을 때 구별이 안 된다. */}
-            OPEN MAP
+            지도 열기
           </button>
         }
       />

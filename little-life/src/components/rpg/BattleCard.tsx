@@ -7,8 +7,8 @@ import { cn } from '@/components/ui/cn'
 /** BOSS 만 따로 표시한다. MONSTER 는 배지 없이 둔다 — 대부분이 몬스터라 붙이면 시끄럽다. */
 export function BossBadge() {
   return (
-    <span className="shrink-0 rounded-pill bg-coral-deep px-2 py-0.5 font-game text-[9px] tracking-[0.08em] text-surface">
-      BOSS
+    <span className="shrink-0 rounded-pill bg-coral-deep px-2 py-0.5 text-[10px] font-medium text-surface">
+      보스
     </span>
   )
 }
@@ -73,8 +73,8 @@ export function BattleCard({ battle, onOpen }: BattleCardProps) {
         </span>
 
         {cleared ? (
-          <span className="mt-1 block font-game text-[10px] tracking-[0.08em] text-leaf-deep">
-            CLEARED
+          <span className="mt-1 block text-[11px] font-medium text-leaf-deep">
+            끝냈어
           </span>
         ) : (
           <span className="mt-1.5 block">
@@ -123,8 +123,8 @@ export function BattleDefCard({ def, onStart }: BattleDefCardProps) {
         </span>
       </span>
 
-      <span className="shrink-0 rounded-pill bg-sunken px-2.5 py-1 font-game text-[9px] tracking-[0.08em] text-inkdim">
-        START
+      <span className="shrink-0 rounded-pill bg-sunken px-2.5 py-1 text-[11px] font-medium text-inkdim">
+        시작
       </span>
     </button>
   )

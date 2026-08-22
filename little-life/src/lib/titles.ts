@@ -10,14 +10,14 @@ interface TitleRange {
 
 /** 높은 레벨부터 확인한다. */
 const TITLES: TitleRange[] = [
-  { minLevel: 21, title: 'Life Master' },
-  { minLevel: 11, title: 'Tiny Hero' },
-  { minLevel: 6, title: 'Adventurer' },
-  { minLevel: 3, title: 'Explorer' },
-  { minLevel: 1, title: 'Newcomer' },
+  { minLevel: 21, title: '생활의 달인' },
+  { minLevel: 11, title: '작은 영웅' },
+  { minLevel: 6, title: '모험가' },
+  { minLevel: 3, title: '탐험가' },
+  { minLevel: 1, title: '새내기' },
 ]
 
 export function titleForLevel(level: number): string {
   const found = TITLES.find((t) => level >= t.minLevel)
-  return found ? found.title : 'Newcomer'
+  return found ? found.title : '새내기'
 }

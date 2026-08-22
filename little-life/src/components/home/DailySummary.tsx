@@ -9,8 +9,8 @@ interface DailySummaryProps {
 export function DailySummary({ completed, earnedExp }: DailySummaryProps) {
   return (
     <div className="grid grid-cols-2 gap-2.5">
-      <SummaryTile icon={UI.check} label="Completed" value={`${completed}`} unit="quests" />
-      <SummaryTile icon={EFFECT.star} label="Earned" value={`+${earnedExp}`} unit="EXP" />
+      <SummaryTile icon={UI.check} label="끝낸 퀘스트" value={`${completed}`} unit="개" />
+      <SummaryTile icon={EFFECT.star} label="받은 EXP" value={`+${earnedExp}`} unit="EXP" />
     </div>
   )
 }

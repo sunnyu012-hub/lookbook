@@ -419,7 +419,7 @@ export default function App() {
         open={pendingDelete !== null}
         title="이 퀘스트를 지울까?"
         description="이미 받은 EXP 는 그대로 남아 있어."
-        confirmLabel="Delete"
+        confirmLabel="지우기"
         onConfirm={confirmDelete}
         onCancel={() => setPendingDelete(null)}
       />
@@ -428,7 +428,7 @@ export default function App() {
         open={pendingRoutineDelete !== null}
         title="이 반복을 그만둘까?"
         description="오늘 이미 만들어진 퀘스트는 그대로 남아 있어."
-        confirmLabel="Delete"
+        confirmLabel="지우기"
         onConfirm={confirmRoutineDelete}
         onCancel={() => setPendingRoutineDelete(null)}
       />

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { MONSTERS } from '@/lib/rpg/content'
 import { applyBattleAction, createBattle, remainingDamage, undoBattleAction } from '../rpg/battle'
 import { findBattleDef } from '../rpg/content'
 
@@ -9,7 +10,7 @@ const dishSlime = () => createBattle(findBattleDef('dish_slime')!, makeId)
 describe('createBattle', () => {
   it('원본 정의대로 만든다', () => {
     const b = dishSlime()
-    expect(b).toMatchObject({ name: 'Dish Slime', hp: 40, maxHp: 40, status: 'ACTIVE' })
+    expect(b).toMatchObject({ name: MONSTERS[0].name, hp: 40, maxHp: 40, status: 'ACTIVE' })
     expect(b.actions).toHaveLength(3)
     expect(b.actions.every((a) => a.doneAt === null)).toBe(true)
   })

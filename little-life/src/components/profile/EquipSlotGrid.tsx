@@ -1,6 +1,7 @@
 import type { EquipSlot, EquippedItems } from '@/types'
 import { EQUIP_SLOTS } from '@/types'
 import { findItem } from '@/lib/rpg/content'
+import { EQUIP_SLOT_LABEL } from '@/lib/labels'
 import { cn } from '@/components/ui/cn'
 
 const SLOT_HINT: Record<EquipSlot, string> = {
@@ -38,9 +39,7 @@ export function EquipSlotGrid({ equipped, onOpenBag }: EquipSlotGridProps) {
               <span className={cn('text-[22px] leading-none', !def && 'opacity-25')}>
                 {def ? def.icon : SLOT_HINT[slot]}
               </span>
-              <span className="mt-1.5 font-game text-[9px] tracking-[0.06em] text-inkfaint">
-                {slot}
-              </span>
+              <span className="mt-1.5 text-[11px] text-inkfaint">{EQUIP_SLOT_LABEL[slot]}</span>
               <span
                 className={cn(
                   'mt-0.5 w-full truncate text-center text-[10.5px]',

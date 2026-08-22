@@ -16,7 +16,7 @@ export function RoutineList({ routines, onTogglePause, onDelete }: RoutineListPr
 
   return (
     <section className="mt-8">
-      <SectionHeader title="Repeat" />
+      <SectionHeader title="반복" />
       <ul className="space-y-2">
         {routines.map((routine) => (
           <li key={routine.id}>

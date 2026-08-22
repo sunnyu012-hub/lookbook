@@ -12,7 +12,7 @@ import { pickSome } from './seed'
 export const SHOPS: ShopDef[] = [
   {
     id: 'MINA_CAFE',
-    name: "Mina's Cafe",
+    name: '미나의 카페',
     areaId: 'CAFE_STREET',
     npcId: 'MINA',
     icon: '☕',
@@ -45,7 +45,7 @@ export const SHOPS: ShopDef[] = [
   },
   {
     id: 'MOVE_STORE',
-    name: 'Move Store',
+    name: '움직임 가게',
     areaId: 'TRAINING_ZONE',
     npcId: 'RIO',
     icon: '👟',
@@ -63,7 +63,7 @@ export const SHOPS: ShopDef[] = [
   },
   {
     id: 'NIGHT_MARKET',
-    name: 'Night Market',
+    name: '밤 시장',
     areaId: 'NIGHT_TOWN',
     npcId: 'NOA',
     icon: '🏮',

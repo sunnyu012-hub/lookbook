@@ -28,7 +28,7 @@ export function TodayQuestSection({
   return (
     <section>
       <SectionHeader
-        title="Today's Quest"
+        title="오늘의 퀘스트"
         trailing={
           quests.length > 0 ? (
             <button
@@ -39,7 +39,7 @@ export function TodayQuestSection({
               <span className="font-game text-[11px]">
                 {doneToday}/{total}
               </span>
-              <span>See all</span>
+              <span>전체 보기</span>
             </button>
           ) : null
         }
@@ -58,7 +58,7 @@ export function TodayQuestSection({
           }
           action={
             <Button size="sm" onClick={onCreate}>
-              Create Quest
+              퀘스트 만들기
             </Button>
           }
         />

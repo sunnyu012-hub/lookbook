@@ -8,9 +8,9 @@ export const DIFFICULTY_EXP: Record<Difficulty, number> = {
 }
 
 export const DIFFICULTY_LABEL: Record<Difficulty, string> = {
-  EASY: 'Easy',
-  NORMAL: 'Normal',
-  HARD: 'Hard',
+  EASY: '쉬움',
+  NORMAL: '보통',
+  HARD: '어려움',
 }
 
 export function expForDifficulty(difficulty: Difficulty): number {

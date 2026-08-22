@@ -9,6 +9,7 @@ import { CATEGORY_BADGE, DIFFICULTY_BADGE } from '@/lib/assets'
 import { classifyQuest, suggestQuests, type Suggestion } from '@/lib/suggest'
 import { cn } from '@/components/ui/cn'
 import { QuestSuggestions } from './QuestSuggestions'
+import { CATEGORY_LABEL } from '@/lib/labels'
 import { RepeatSelector, type RepeatChoice } from './RepeatSelector'
 
 interface QuestCreationSheetProps {
@@ -137,7 +138,7 @@ export function QuestCreationSheet({
       <div className="space-y-6">
         <div>
           <label htmlFor="quest-name" className="mb-2 block text-[13px] font-medium text-inkdim">
-            Quest name
+            퀘스트 이름
           </label>
           <input
             id="quest-name"
@@ -155,7 +156,7 @@ export function QuestCreationSheet({
 
         <div>
           <div className="mb-2 flex items-center gap-1.5">
-            <p className="text-[13px] font-medium text-inkdim">Category</p>
+            <p className="text-[13px] font-medium text-inkdim">분야</p>
             {autoCategory && <AutoTag remembered={guessSource === 'history'} />}
           </div>
           <div className="flex flex-wrap gap-2">
@@ -185,7 +186,7 @@ export function QuestCreationSheet({
                     aria-hidden
                     className={cn('h-7 w-7 object-contain', !active && 'opacity-60')}
                   />
-                  {c}
+                  {CATEGORY_LABEL[c]}
                 </button>
               )
             })}
@@ -197,7 +198,7 @@ export function QuestCreationSheet({
 
         <div>
           <div className="mb-2 flex items-center gap-1.5">
-            <p className="text-[13px] font-medium text-inkdim">Difficulty</p>
+            <p className="text-[13px] font-medium text-inkdim">난이도</p>
             {autoDifficulty && <AutoTag remembered={guessSource === 'history'} />}
           </div>
           <div className="grid grid-cols-3 gap-2">
@@ -244,10 +245,10 @@ export function QuestCreationSheet({
 
         <div className="space-y-2 pt-1">
           <Button size="lg" className="w-full" disabled={!canSubmit} onClick={submit}>
-            {isEditing ? 'Save' : 'Create Quest'}
+            {isEditing ? '저장' : '퀘스트 만들기'}
           </Button>
           <Button variant="quiet" size="sm" className="w-full" onClick={onClose}>
-            Cancel
+            취소
           </Button>
         </div>
       </div>

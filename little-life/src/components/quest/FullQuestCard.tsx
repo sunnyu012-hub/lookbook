@@ -6,6 +6,7 @@ import { DifficultyBadge } from '@/components/ui/DifficultyBadge'
 import { Button } from '@/components/ui/Button'
 import { formatTime } from '@/lib/date'
 import { categoryStyle } from '@/lib/categories'
+import { CATEGORY_LABEL } from '@/lib/labels'
 import { EFFECT, UI } from '@/lib/assets'
 import { QuestMenu, type QuestMenuItem } from './QuestMenu'
 
@@ -32,12 +33,12 @@ export function FullQuestCard({
   const menuItems: QuestMenuItem[] = quest.completed
     ? [
         { label: '완료 되돌리기', onSelect: () => onUncomplete(quest.id) },
-        { label: 'Delete Quest', onSelect: () => onRequestDelete(quest), danger: true },
+        { label: '퀘스트 지우기', onSelect: () => onRequestDelete(quest), danger: true },
       ]
     : [
         { label: '고치기', onSelect: () => onEdit(quest) },
         { label: '내일로 미루기', onSelect: () => onSnooze(quest.id) },
-        { label: 'Delete Quest', onSelect: () => onRequestDelete(quest), danger: true },
+        { label: '퀘스트 지우기', onSelect: () => onRequestDelete(quest), danger: true },
       ]
 
   if (quest.completed) {
@@ -48,10 +49,10 @@ export function FullQuestCard({
           <p className="truncate text-[14.5px] text-inkdim line-through">{quest.title}</p>
           <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11.5px] text-inkfaint">
             <span className={`font-game text-[10px] tracking-[0.08em] ${style.text}`}>
-              {quest.category}
+              {CATEGORY_LABEL[quest.category]}
             </span>
             <span className="font-game text-[10px]">+{quest.exp} EXP</span>
-            {quest.completedAt && <span>Done at {formatTime(quest.completedAt)}</span>}
+            {quest.completedAt && <span>{formatTime(quest.completedAt)} 완료</span>}
           </div>
         </div>
         <QuestMenu items={menuItems} label={`${quest.title} 메뉴`} />
@@ -91,7 +92,7 @@ export function FullQuestCard({
 
         <div className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-1">
           <span className={`font-game text-[10px] tracking-[0.08em] ${style.text}`}>
-            {quest.category}
+            {CATEGORY_LABEL[quest.category]}
           </span>
           <DifficultyBadge difficulty={quest.difficulty} />
           <span className="inline-flex items-center gap-0.5">
@@ -104,7 +105,7 @@ export function FullQuestCard({
             className="ml-auto min-h-[38px] px-5 text-[13px]"
             onClick={() => onComplete(quest.id)}
           >
-            Complete
+            완료
           </Button>
         </div>
       </div>

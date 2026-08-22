@@ -2,17 +2,16 @@ import type { FriendshipLevel } from '@/types'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import {
   FRIENDSHIP_KO,
-  FRIENDSHIP_LABEL,
   friendshipLevel,
   friendshipLevelIndex,
   friendshipProgress,
 } from '@/lib/city/npcs'
 import {
-  REPUTATION_LABEL,
   reputationLevel,
   reputationLevelNumber,
   reputationProgress,
 } from '@/lib/city/reputation'
+import { FRIENDSHIP_SHORT, REPUTATION_SHORT } from '@/lib/labels'
 import { cn } from '@/components/ui/cn'
 
 /** 친밀도 단계를 하트 개수로도 보여준다 — 색만으로 구분하지 않으려는 것이다. */
@@ -34,9 +33,7 @@ export function FriendshipBadge({ friendship }: { friendship: number }) {
   return (
     <span className="inline-flex items-center gap-1.5 rounded-pill bg-rose-soft px-2 py-0.5">
       <FriendshipHearts friendship={friendship} />
-      <span className="font-game text-[9px] tracking-[0.06em] text-rose-deep">
-        {FRIENDSHIP_LABEL[level]}
-      </span>
+      <span className="text-[11px] font-medium text-rose-deep">{FRIENDSHIP_SHORT[level]}</span>
     </span>
   )
 }
@@ -51,9 +48,7 @@ export function FriendshipMeter({ friendship }: { friendship: number }) {
       <div className="flex items-center justify-between">
         <span className="flex items-center gap-1.5">
           <FriendshipHearts friendship={friendship} />
-          <span className="font-game text-[10px] tracking-[0.1em] text-rose-deep">
-            {FRIENDSHIP_LABEL[level]}
-          </span>
+          <span className="text-[12px] font-medium text-rose-deep">{FRIENDSHIP_SHORT[level]}</span>
         </span>
         <span className="font-game text-[11px] text-rose-deep">{friendship}</span>
       </div>
@@ -76,8 +71,8 @@ export function FriendshipMeter({ friendship }: { friendship: number }) {
 export function ReputationBadge({ value }: { value: number }) {
   return (
     <span className="inline-flex items-center gap-1 rounded-pill bg-sage-soft px-2 py-0.5">
-      <span className="font-game text-[9px] tracking-[0.06em] text-sage-deep">
-        Lv.{reputationLevelNumber(value)} {REPUTATION_LABEL[reputationLevel(value)]}
+      <span className="text-[11px] font-medium text-sage-deep">
+        Lv.{reputationLevelNumber(value)} {REPUTATION_SHORT[reputationLevel(value)]}
       </span>
     </span>
   )
@@ -88,7 +83,7 @@ export function ReputationMeter({ value }: { value: number }) {
     <div className="rounded-card bg-sage-soft/60 px-4 py-3.5">
       <div className="flex items-center justify-between">
         <span className="font-game text-[10px] tracking-[0.1em] text-sage-deep">
-          REPUTATION Lv.{reputationLevelNumber(value)}
+          평판 Lv.{reputationLevelNumber(value)}
         </span>
         <span className="font-game text-[11px] text-sage-deep">{value}</span>
       </div>
@@ -101,7 +96,7 @@ export function ReputationMeter({ value }: { value: number }) {
         />
       </div>
       <p className="mt-1.5 text-[12px] text-inkdim">
-        {REPUTATION_LABEL[reputationLevel(value)]} · 여기서 뭔가 할수록 쌓여.
+        {REPUTATION_SHORT[reputationLevel(value)]} · 여기서 뭔가 할수록 쌓여.
       </p>
     </div>
   )

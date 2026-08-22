@@ -82,7 +82,7 @@ export function NpcSheet({
         </span>
         <div className="min-w-0 flex-1 pt-0.5">
           <h2 className="text-[20px] font-semibold text-ink">{npc.name}</h2>
-          <p className="font-game text-[10px] tracking-[0.08em] text-inkfaint">{npc.role}</p>
+          <p className="text-[12px] text-inkfaint">{npc.role}</p>
           <p className="mt-1.5 text-[13px] leading-relaxed text-inkdim">{npc.description}</p>
         </div>
       </div>
@@ -94,9 +94,9 @@ export function NpcSheet({
       <div className="mt-4 flex gap-1 rounded-pill bg-sunken p-1" role="tablist" aria-label="NPC 메뉴">
         {(
           [
-            { key: 'TALK', label: 'TALK' },
-            { key: 'QUEST', label: 'QUEST', count: running.length },
-            { key: 'GIFT', label: 'GIFT' },
+            { key: 'TALK', label: '대화' },
+            { key: 'QUEST', label: '의뢰', count: running.length },
+            { key: 'GIFT', label: '선물' },
           ] as Array<{ key: Tab; label: string; count?: number }>
         ).map((t) => (
           <button
@@ -107,7 +107,7 @@ export function NpcSheet({
             onClick={() => setTab(t.key)}
             className={cn(
               'inline-flex min-h-[38px] flex-1 items-center justify-center gap-1 rounded-pill',
-              'font-game text-[10px] tracking-[0.08em] transition-colors duration-200',
+              'text-[13px] font-medium transition-colors duration-200',
               tab === t.key ? 'bg-surface text-ink shadow-soft' : 'text-inkdim',
             )}
           >
@@ -189,7 +189,7 @@ function TalkTab({
       {npc.shopId && (
         <div className="mt-5">
           <Button variant="soft" size="lg" className="w-full" disabled={shopOpen === false} onClick={onOpenShop}>
-            🛍️ {shopOpen === false ? '지금은 닫혀 있어' : 'SHOP 보기'}
+            🛍️ {shopOpen === false ? '지금은 닫혀 있어' : '가게 보기'}
           </Button>
         </div>
       )}
@@ -212,7 +212,7 @@ function QuestTab({
     <div className="space-y-2.5">
       {running.length > 0 && (
         <div className="rounded-card border border-coral/40 bg-coral-soft/30 px-4 py-3.5">
-          <p className="font-game text-[9px] tracking-[0.12em] text-coral-deep">IN PROGRESS</p>
+          <p className="text-[12px] font-medium text-coral-deep">진행 중</p>
           {running.map((q) => (
             <div key={q.id} className="mt-2 flex items-center gap-2">
               <CategoryBadge category={q.category} />
@@ -252,8 +252,8 @@ function QuestTab({
                 {chain.name}
               </p>
               {cleared && (
-                <span className="shrink-0 rounded-pill bg-leaf px-2 py-0.5 font-game text-[9px] tracking-[0.06em] text-surface">
-                  DONE
+                <span className="shrink-0 rounded-pill bg-leaf px-2 py-0.5 text-[10px] font-medium text-surface">
+                  끝냈어
                 </span>
               )}
               <span className="shrink-0 font-game text-[10px] text-inkfaint">
@@ -379,8 +379,8 @@ function GiftTab({
                       {liked ? '좋아할 것 같아 · 💗 +10' : '💗 +5'}
                     </span>
                   </span>
-                  <span className="shrink-0 rounded-pill bg-sunken px-2.5 py-1 font-game text-[9px] tracking-[0.08em] text-inkdim">
-                    GIVE
+                  <span className="shrink-0 rounded-pill bg-sunken px-2.5 py-1 text-[11px] font-medium text-inkdim">
+                    주기
                   </span>
                 </button>
               </li>

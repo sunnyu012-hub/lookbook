@@ -11,9 +11,9 @@ import { FRIENDSHIP_LEVELS } from '@/types'
 export const NPCS: NpcDef[] = [
   {
     id: 'MINA',
-    name: 'Mina',
+    name: '미나',
     areaId: 'CAFE_STREET',
-    role: 'Cafe Keeper',
+    role: '카페 주인',
     description: '작은 카페를 혼자 꾸려가는 사람. 말수는 적지만 잘 본다.',
     avatar: '☕',
     likes: ['coffee', 'book'],
@@ -66,9 +66,9 @@ export const NPCS: NpcDef[] = [
   },
   {
     id: 'HARU',
-    name: 'Haru',
+    name: '하루',
     areaId: 'GREEN_PARK',
-    role: 'Morning Runner',
+    role: '아침에 뛰는 사람',
     description: '아침마다 공원을 도는 사람. 늘 조금 숨이 차 있다.',
     avatar: '🏃',
     likes: ['healthy', 'nature', 'sport'],
@@ -119,9 +119,9 @@ export const NPCS: NpcDef[] = [
   },
   {
     id: 'LULU',
-    name: 'Lulu',
+    name: '루루',
     areaId: 'CREATIVE_DISTRICT',
-    role: 'Independent Designer',
+    role: '작업실 주인',
     description: '작업실 겸 가게를 쓰는 사람. 늘 뭔가 만들고 있다.',
     avatar: '🎨',
     likes: ['art', 'collectible'],
@@ -157,9 +157,9 @@ export const NPCS: NpcDef[] = [
   },
   {
     id: 'JUNE',
-    name: 'June',
+    name: '준',
     areaId: 'CREATIVE_DISTRICT',
-    role: 'Vintage Shop Keeper',
+    role: '빈티지 가게 주인',
     description: '오래된 물건만 파는 가게 주인. 물건마다 이야기를 붙인다.',
     avatar: '🧥',
     likes: ['collectible', 'cozy'],
@@ -193,9 +193,9 @@ export const NPCS: NpcDef[] = [
   },
   {
     id: 'RIO',
-    name: 'Rio',
+    name: '리오',
     areaId: 'TRAINING_ZONE',
-    role: 'Coach',
+    role: '코치',
     description: '기초만 반복해서 가르치는 코치. 절대 몰아붙이지 않는다.',
     avatar: '👟',
     likes: ['sport', 'healthy'],
@@ -219,7 +219,7 @@ export const NPCS: NpcDef[] = [
         outro: '좋아. 이거 신고 다녀.',
         steps: [
           { title: '스쿼트 10번', category: 'BODY', difficulty: 'EASY' },
-          { title: 'plank 30초', category: 'BODY', difficulty: 'EASY' },
+          { title: '플랭크 30초', category: 'BODY', difficulty: 'EASY' },
           { title: '물 마시고 5분 쉬기', category: 'LIFE', difficulty: 'EASY' },
         ],
         rewardCoins: 45,
@@ -230,9 +230,9 @@ export const NPCS: NpcDef[] = [
   },
   {
     id: 'NOA',
-    name: 'Noa',
+    name: '노아',
     areaId: 'NIGHT_TOWN',
-    role: 'Night Walker',
+    role: '밤을 걷는 사람',
     description: '밤에만 보이는 사람. 어디 사는지는 아무도 모른다.',
     avatar: '🌙',
     likes: ['moon', 'book'],
@@ -298,11 +298,11 @@ export const NPC_ID_LIST: NpcId[] = NPCS.map((n) => n.id)
 export const FRIENDSHIP_THRESHOLDS = [0, 20, 45, 75, 100] as const
 
 export const FRIENDSHIP_LABEL: Record<FriendshipLevel, string> = {
-  STRANGER: 'Stranger',
-  FAMILIAR: 'Familiar',
-  FRIEND: 'Friend',
-  CLOSE_FRIEND: 'Close Friend',
-  SPECIAL_BOND: 'Special Bond',
+  STRANGER: '아직 서먹',
+  FAMILIAR: '얼굴 아는 사이',
+  FRIEND: '친구',
+  CLOSE_FRIEND: '가까운 친구',
+  SPECIAL_BOND: '특별한 사이',
 }
 
 export const FRIENDSHIP_KO: Record<FriendshipLevel, string> = {

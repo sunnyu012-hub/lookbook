@@ -39,8 +39,8 @@ export function ClassCard({ classId, onSelect }: ClassCardProps) {
               {current ? `${current.passiveName} · ${current.passiveLabel}` : '눌러서 하나 골라봐'}
             </span>
           </span>
-          <span className="shrink-0 rounded-pill bg-sunken px-2.5 py-1 font-game text-[9px] tracking-[0.08em] text-inkdim">
-            {current ? 'CHANGE' : 'PICK'}
+          <span className="shrink-0 rounded-pill bg-sunken px-2.5 py-1 text-[11px] font-medium text-inkdim">
+            {current ? '바꾸기' : '고르기'}
           </span>
         </button>
       </Card>
@@ -78,15 +78,15 @@ export function ClassCard({ classId, onSelect }: ClassCardProps) {
                     <span className="flex items-center gap-1.5">
                       <span className="truncate text-[15px] font-semibold text-ink">{def.name}</span>
                       {active && (
-                        <span className="shrink-0 rounded-pill bg-coral px-2 py-0.5 font-game text-[9px] tracking-[0.06em] text-surface">
-                          NOW
+                        <span className="shrink-0 rounded-pill bg-coral px-2 py-0.5 text-[10px] font-medium text-surface">
+                          지금
                         </span>
                       )}
                     </span>
                     <span className="mt-0.5 block truncate text-[12px] text-inkdim">
                       {def.description}
                     </span>
-                    <span className="mt-1 block truncate font-game text-[10px] tracking-[0.06em] text-coral-deep">
+                    <span className="mt-1 block truncate text-[11.5px] text-coral-deep">
                       {def.passiveLabel}
                     </span>
                   </span>

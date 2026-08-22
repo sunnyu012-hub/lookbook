@@ -11,11 +11,11 @@ import { AREA_IDS, REPUTATION_LEVELS } from '@/types'
 export const REPUTATION_THRESHOLDS = [0, 15, 40, 80, 150] as const
 
 export const REPUTATION_LABEL: Record<ReputationLevel, string> = {
-  VISITOR: 'Visitor',
-  REGULAR: 'Regular',
-  LOCAL: 'Local',
-  FAVORITE: 'Favorite',
-  CITY_LEGEND: 'City Legend',
+  VISITOR: '손님',
+  REGULAR: '단골',
+  LOCAL: '동네 사람',
+  FAVORITE: '반가운 얼굴',
+  CITY_LEGEND: '이 동네의 전설',
 }
 
 export const REPUTATION_KO: Record<ReputationLevel, string> = {
