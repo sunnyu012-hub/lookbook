@@ -1,0 +1,763 @@
+import { describe, expect, it } from 'vitest'
+import type { AppState, CollectionState } from '@/types'
+import { ITEMS } from '@/lib/rpg/content'
+import {
+  ALL_COLLECTION_ITEMS,
+  CATALOG,
+  MATERIAL_CATALOG,
+  TROPHY_CATALOG,
+  catalogTotal,
+  findCollectionItem,
+  hasHiddenLeft,
+} from '@/lib/collection/catalog'
+import { COLLECTION_SETS, HOME_EFFECTS, setsForItem } from '@/lib/collection/sets'
+import { RECIPES } from '@/lib/collection/recipes'
+import { TROPHIES, TROPHY_ITEMS } from '@/lib/collection/trophies'
+import {
+  COLLECTION_SHOPS,
+  hagglePrice,
+  isCollectionShopOpen,
+  isWeekend,
+  todayListings,
+} from '@/lib/collection/shops'
+import { ROOMS, isRoomUnlocked, unlockedRooms } from '@/lib/collection/rooms'
+import {
+  MILESTONES,
+  addItem,
+  canCraft,
+  collectionProgress,
+  completedSetIds,
+  discoveredCount,
+  emptyCollection,
+  isDiscovered,
+  isRecipeKnown,
+  newMilestones,
+  newTrophies,
+  ownedCount,
+  removeItem,
+  setProgress,
+  spendItems,
+  unclaimedSets,
+  unlockedEffectIds,
+} from '@/lib/collection/progress'
+import { pendingGrants } from '@/lib/collection/grants'
+import { applyCollectionDerived } from '@/lib/collection/derive'
+import { rollBossDrop, rollCollectDrops } from '@/lib/collection/drops'
+import { createDefaultState } from '@/store/defaultState'
+import { sanitizeCollection, backfillCategoryCompleted, STATE_VERSION } from '@/store/migrate'
+import { emptyCategoryStats } from '@/lib/stats'
+
+// ── 표 자체 ──────────────────────────────────────────────
+
+describe('아이템 표', () => {
+  it('도감은 240개다', () => {
+    expect(CATALOG).toHaveLength(240)
+  })
+
+  it('id 가 겹치지 않는다', () => {
+    const ids = ALL_COLLECTION_ITEMS.map((i) => i.id)
+    expect(new Set(ids).size).toBe(ids.length)
+  })
+
+  it('기존 장비·소모품 id 와 부딪히지 않는다', () => {
+    const legacy = new Set(ITEMS.map((i) => i.id))
+    const clash = ALL_COLLECTION_ITEMS.filter((i) => legacy.has(i.id))
+    expect(clash.map((i) => i.id)).toEqual([])
+  })
+
+  it('모든 물건에 이름과 한 줄 설명이 있다', () => {
+    const bad = ALL_COLLECTION_ITEMS.filter((i) => !i.nameKo.trim() || !i.description.trim())
+    expect(bad).toEqual([])
+  })
+
+  it('설명이 "…입니다" 로 끝나지 않는다', () => {
+    const dull = CATALOG.filter((i) => i.description.endsWith('입니다.'))
+    expect(dull).toEqual([])
+  })
+
+  it('등급 분포가 대략 정해둔 대로다', () => {
+    const count = (r: string) => CATALOG.filter((i) => i.rarity === r).length
+    expect(count('COMMON') / 240).toBeGreaterThan(0.45)
+    expect(count('COMMON') / 240).toBeLessThan(0.55)
+    expect(count('RARE') / 240).toBeGreaterThan(0.25)
+    expect(count('RARE') / 240).toBeLessThan(0.35)
+    expect(count('EPIC') / 240).toBeGreaterThan(0.1)
+    expect(count('EPIC') / 240).toBeLessThan(0.18)
+    expect(count('LEGENDARY') / 240).toBeGreaterThan(0.03)
+    expect(count('SECRET')).toBeGreaterThanOrEqual(1)
+  })
+
+  it('등급이 목록 뒤로 갈수록 높아지는 식이 아니다', () => {
+    // 앞쪽 절반에도 EPIC 이상이 충분히 섞여 있어야 한다
+    const front = CATALOG.slice(0, 120).filter(
+      (i) => i.rarity === 'EPIC' || i.rarity === 'LEGENDARY',
+    ).length
+    expect(front).toBeGreaterThan(8)
+  })
+
+  it('절반 넘게는 상점 밖에서 만난다', () => {
+    const shopOnly = CATALOG.filter((i) =>
+      i.acquisitionSources.every((s) => s.kind === 'SHOP'),
+    ).length
+    expect(shopOnly / 240).toBeLessThan(0.55)
+  })
+
+  it('획득처가 없는 물건은 없다', () => {
+    const orphan = CATALOG.filter((i) => i.acquisitionSources.length === 0)
+    expect(orphan.map((i) => i.id)).toEqual([])
+  })
+
+  it('가격이 있으면 등급에 맞는 범위 안이다', () => {
+    const RANGE: Record<string, [number, number]> = {
+      COMMON: [30, 150],
+      RARE: [150, 450],
+      EPIC: [450, 1200],
+      LEGENDARY: [1200, 3000],
+    }
+    const bad = CATALOG.filter((i) => {
+      if (!i.price) return false
+      const range = RANGE[i.rarity]
+      if (!range) return true
+      return i.price < range[0] || i.price > range[1]
+    })
+    expect(bad.map((i) => `${i.id}:${i.rarity}:${i.price}`)).toEqual([])
+  })
+
+  it('비밀 물건은 발견 전까지 감춘다', () => {
+    const secrets = CATALOG.filter((i) => i.rarity === 'SECRET')
+    expect(secrets.length).toBeGreaterThan(0)
+    for (const item of secrets) {
+      expect(item.hiddenUntilDiscovered).toBe(true)
+      expect(item.price).toBeUndefined()
+    }
+  })
+
+  it('재료는 도감에 세지 않는다', () => {
+    for (const material of MATERIAL_CATALOG) {
+      expect(CATALOG.some((i) => i.id === material.id)).toBe(false)
+      expect(material.placeable).toBe(false)
+    }
+  })
+
+  it('그림이 없는 물건은 방에 놓을 수 없다고 표시된다', () => {
+    const noIcon = CATALOG.filter((i) => !i.icon)
+    expect(noIcon.length).toBeGreaterThan(0)
+    for (const item of noIcon) expect(item.hasPlaceableAsset).toBe(false)
+  })
+})
+
+// ── 세트 ────────────────────────────────────────────────
+
+describe('세트', () => {
+  it('스무 개 이상이다', () => {
+    expect(COLLECTION_SETS.length).toBeGreaterThanOrEqual(20)
+  })
+
+  it('세트에 적힌 물건이 전부 실제로 있다', () => {
+    for (const set of COLLECTION_SETS) {
+      for (const id of set.itemIds) {
+        expect(findCollectionItem(id), `${set.id} → ${id}`).not.toBeNull()
+      }
+    }
+  })
+
+  it('세트 보상이 가리키는 것도 전부 실제로 있다', () => {
+    const effectIds = new Set(HOME_EFFECTS.map((e) => e.id))
+    for (const set of COLLECTION_SETS) {
+      for (const reward of set.rewards) {
+        if (reward.kind === 'ROOM_EFFECT') expect(effectIds.has(reward.effectId)).toBe(true)
+        if (reward.kind === 'ITEM') expect(findCollectionItem(reward.itemId)).not.toBeNull()
+        if (reward.kind === 'RECIPE') {
+          expect(RECIPES.some((r) => r.id === reward.recipeId)).toBe(true)
+        }
+      }
+    }
+  })
+
+  it('세트가 자기 보상 아이템을 다시 요구하지 않는다', () => {
+    for (const set of COLLECTION_SETS) {
+      for (const reward of set.rewards) {
+        if (reward.kind !== 'ITEM') continue
+        expect(set.itemIds).not.toContain(reward.itemId)
+      }
+    }
+  })
+
+  it('물건에서 세트를 거꾸로 찾을 수 있다', () => {
+    expect(setsForItem('cream_bed')).toContain('sunday_morning')
+  })
+})
+
+// ── 레시피 · 트로피 ─────────────────────────────────────
+
+describe('만들기와 트로피', () => {
+  it('레시피의 재료와 결과가 전부 실제로 있다', () => {
+    for (const recipe of RECIPES) {
+      expect(findCollectionItem(recipe.resultItemId), recipe.id).not.toBeNull()
+      for (const ing of recipe.ingredients) {
+        expect(findCollectionItem(ing.itemId), `${recipe.id} → ${ing.itemId}`).not.toBeNull()
+      }
+    }
+  })
+
+  it('한 물건에 레시피가 둘 이상 붙지 않는다', () => {
+    const results = RECIPES.map((r) => r.resultItemId)
+    expect(new Set(results).size).toBe(results.length)
+  })
+
+  it('처음부터 아는 레시피가 몇 개는 있다', () => {
+    const ctx = {
+      level: 1,
+      discoveredCount: 0,
+      completedSetIds: [],
+      friendship: {},
+      discoveredRecipeIds: [],
+    }
+    const known = RECIPES.filter((r) => isRecipeKnown(r, ctx))
+    expect(known.length).toBeGreaterThan(2)
+    expect(known.length).toBeLessThan(RECIPES.length)
+  })
+
+  it('트로피 물건이 전부 실제로 있다', () => {
+    for (const trophy of TROPHIES) {
+      expect(findCollectionItem(trophy.itemId), trophy.id).not.toBeNull()
+    }
+    expect(TROPHY_ITEMS.every((i) => i.category === 'TROPHY')).toBe(true)
+  })
+
+  it('트로피는 팔 수 없고 하나뿐이다', () => {
+    for (const item of TROPHY_CATALOG) {
+      expect(item.price).toBeUndefined()
+      expect(item.unique).toBe(true)
+    }
+  })
+})
+
+// ── 상점 ────────────────────────────────────────────────
+
+describe('상점', () => {
+  it('여덟 곳이고 전부 팔 물건이 있다', () => {
+    expect(COLLECTION_SHOPS).toHaveLength(8)
+    for (const shop of COLLECTION_SHOPS) {
+      expect(shop.catalog.length, shop.id).toBeGreaterThanOrEqual(shop.maxCount)
+    }
+  })
+
+  it('같은 날이면 몇 번을 봐도 같은 진열이다', () => {
+    const shop = COLLECTION_SHOPS[0]
+    const a = todayListings(shop, '2026-03-04')
+    const b = todayListings(shop, '2026-03-04')
+    expect(a.map((l) => l.itemId)).toEqual(b.map((l) => l.itemId))
+  })
+
+  it('날이 바뀌면 진열도 바뀐다', () => {
+    const shop = COLLECTION_SHOPS[0]
+    const a = todayListings(shop, '2026-03-04').map((l) => l.itemId)
+    const b = todayListings(shop, '2026-03-05').map((l) => l.itemId)
+    expect(a).not.toEqual(b)
+  })
+
+  it('오늘 처음 들어온 것에 NEW 가 붙는다', () => {
+    const shop = COLLECTION_SHOPS[0]
+    const listings = todayListings(shop, '2026-03-04')
+    expect(listings.some((l) => l.isNew)).toBe(true)
+  })
+
+  it('벼룩시장 값은 ±20% 안에서만 흔들린다', () => {
+    for (const dayKey of ['2026-03-07', '2026-03-14', '2026-03-21']) {
+      const price = hagglePrice(100, 'round_stool', dayKey)
+      expect(price).toBeGreaterThanOrEqual(80)
+      expect(price).toBeLessThanOrEqual(120)
+    }
+  })
+
+  it('같은 주에는 벼룩시장 값이 그대로다', () => {
+    // 2026-03-09 은 월요일, 03-15 는 그 주 일요일
+    expect(hagglePrice(200, 'small_umbrella', '2026-03-09')).toBe(
+      hagglePrice(200, 'small_umbrella', '2026-03-15'),
+    )
+  })
+
+  it('밤 가게는 낮에 닫혀 있다', () => {
+    const night = COLLECTION_SHOPS.find((s) => s.nightOnly)!
+    expect(isCollectionShopOpen(night, new Date('2026-03-04T14:00:00'))).toBe(false)
+    expect(isCollectionShopOpen(night, new Date('2026-03-04T22:00:00'))).toBe(true)
+  })
+
+  it('벼룩시장은 주말에만 선다', () => {
+    const flea = COLLECTION_SHOPS.find((s) => s.weekendOnly)!
+    expect(isWeekend(new Date('2026-03-04T12:00:00'))).toBe(false)
+    expect(isCollectionShopOpen(flea, new Date('2026-03-04T12:00:00'))).toBe(false)
+    expect(isCollectionShopOpen(flea, new Date('2026-03-07T12:00:00'))).toBe(true)
+  })
+
+  it('단골이 아니면 안쪽 물건은 잠겨 있다', () => {
+    const vintage = COLLECTION_SHOPS.find((s) => s.reputationForRare)!
+    const stranger = todayListings(vintage, '2026-03-04', { reputation: 0 })
+    const regular = todayListings(vintage, '2026-03-04', { reputation: 999 })
+    expect(regular.filter((l) => l.locked)).toHaveLength(0)
+    expect(stranger.length).toBe(regular.length)
+  })
+
+  it('파는 물건에는 값이 있다', () => {
+    for (const shop of COLLECTION_SHOPS) {
+      for (const id of shop.catalog) {
+        expect(findCollectionItem(id)?.price, `${shop.id}:${id}`).toBeTruthy()
+      }
+    }
+  })
+})
+
+// ── 가진 것 ─────────────────────────────────────────────
+
+describe('발견과 되돌리기', () => {
+  it('처음 얻으면 발견으로 기록된다', () => {
+    const { collection, isNew } = addItem(emptyCollection(), 'cream_bed')
+    expect(isNew).toBe(true)
+    expect(isDiscovered(collection, 'cream_bed')).toBe(true)
+    expect(ownedCount(collection, 'cream_bed')).toBe(1)
+  })
+
+  it('두 번째부터는 발견이 아니다', () => {
+    const first = addItem(emptyCollection(), 'cream_bed')
+    const second = addItem(first.collection, 'cream_bed')
+    expect(second.isNew).toBe(false)
+    expect(ownedCount(second.collection, 'cream_bed')).toBe(2)
+  })
+
+  it('하나뿐인 물건은 두 개가 되지 않는다', () => {
+    let c = emptyCollection()
+    c = addItem(c, 'moon_ticket_c').collection
+    c = addItem(c, 'moon_ticket_c').collection
+    expect(ownedCount(c, 'moon_ticket_c')).toBe(1)
+  })
+
+  it('되돌리면 처음 발견도 같이 지워진다', () => {
+    const added = addItem(emptyCollection(), 'cream_bed')
+    const back = removeItem(added.collection, 'cream_bed', added.isNew)
+    expect(isDiscovered(back, 'cream_bed')).toBe(false)
+    expect(ownedCount(back, 'cream_bed')).toBe(0)
+  })
+
+  it('이미 알던 것을 되돌려도 도감에서 지우지 않는다', () => {
+    let c = addItem(emptyCollection(), 'cream_bed').collection
+    const second = addItem(c, 'cream_bed')
+    c = removeItem(second.collection, 'cream_bed', second.isNew)
+    expect(isDiscovered(c, 'cream_bed')).toBe(true)
+    expect(ownedCount(c, 'cream_bed')).toBe(1)
+  })
+
+  it('되돌리면 방에 놓아둔 것도 같이 거둔다', () => {
+    const added = addItem(emptyCollection(), 'cream_bed')
+    const withPlaced: CollectionState = {
+      ...added.collection,
+      rooms: {
+        MY_ROOM: [{ uid: 'a', itemId: 'cream_bed', x: 50, y: 50, scale: 1, flipped: false }],
+      },
+    }
+    const back = removeItem(withPlaced, 'cream_bed', true)
+    expect(back.rooms.MY_ROOM).toHaveLength(0)
+  })
+
+  it('재료를 쓰면 개수만 줄고 발견 기록은 남는다', () => {
+    let c = emptyCollection()
+    for (let i = 0; i < 3; i += 1) c = addItem(c, 'm_wood').collection
+
+    const spent = spendItems(c, [{ itemId: 'm_wood', count: 2 }])!
+    expect(ownedCount(spent, 'm_wood')).toBe(1)
+    expect(isDiscovered(spent, 'm_wood')).toBe(true)
+  })
+
+  it('재료가 모자라면 아무것도 쓰지 않는다', () => {
+    const c = addItem(emptyCollection(), 'm_wood').collection
+    expect(spendItems(c, [{ itemId: 'm_wood', count: 5 }])).toBeNull()
+  })
+
+  it('도감 진행은 240개 기준으로 센다', () => {
+    const c = addItem(emptyCollection(), 'cream_bed').collection
+    expect(collectionProgress(c)).toEqual({ found: 1, total: 240 })
+    expect(catalogTotal(c.discovered)).toBe(240)
+    expect(hasHiddenLeft(c.discovered)).toBe(false)
+  })
+
+  it('트로피는 도감 240개에 세지 않는다', () => {
+    const c = addItem(emptyCollection(), 't_wood_star').collection
+    expect(discoveredCount(c)).toBe(0)
+    expect(isDiscovered(c, 't_wood_star')).toBe(true)
+  })
+})
+
+// ── 세트 완성 ───────────────────────────────────────────
+
+describe('세트 완성', () => {
+  const own = (ids: string[]): CollectionState => {
+    let c = emptyCollection()
+    for (const id of ids) c = addItem(c, id).collection
+    return c
+  }
+
+  it('가진 것으로 진행도를 센다', () => {
+    const set = COLLECTION_SETS.find((s) => s.id === 'sunday_morning')!
+    const c = own(set.itemIds.slice(0, 3))
+    expect(setProgress(set, c)).toEqual({ have: 3, need: set.itemIds.length, complete: false })
+  })
+
+  it('다 모으면 완성이다', () => {
+    const set = COLLECTION_SETS.find((s) => s.id === 'sunday_morning')!
+    const c = own(set.itemIds)
+    expect(setProgress(set, c).complete).toBe(true)
+    expect(completedSetIds(c)).toContain('sunday_morning')
+  })
+
+  it('분류로 세는 세트도 있다', () => {
+    const set = COLLECTION_SETS.find((s) => s.id === 'plant_parent')!
+    const plants = CATALOG.filter((i) => i.category === 'PLANT').slice(0, 10).map((i) => i.id)
+    expect(setProgress(set, own(plants.slice(0, 5))).complete).toBe(false)
+    expect(setProgress(set, own(plants)).complete).toBe(true)
+  })
+
+  it('완성하면 방 공기가 열린다', () => {
+    const set = COLLECTION_SETS.find((s) => s.id === 'sunday_morning')!
+    expect(unlockedEffectIds(own(set.itemIds))).toContain('SOFT_MORNING')
+  })
+
+  it('보상은 한 번만 받는다', () => {
+    const set = COLLECTION_SETS.find((s) => s.id === 'soft_pink')!
+    const c = own(set.itemIds)
+    expect(unclaimedSets(c).map((s) => s.id)).toContain('soft_pink')
+
+    const claimed: CollectionState = { ...c, claimedSetIds: ['soft_pink'] }
+    expect(unclaimedSets(claimed).map((s) => s.id)).not.toContain('soft_pink')
+  })
+})
+
+// ── 트로피 · 도감 보상 ──────────────────────────────────
+
+describe('트로피와 도감 보상', () => {
+  it('첫 퀘스트를 끝내면 트로피가 하나 생긴다', () => {
+    const trophies = newTrophies(emptyCollection(), {
+      totalCompletedQuests: 1,
+      categoryCompleted: emptyCategoryStats(),
+      bossClears: 0,
+      completedSetIds: [],
+      discoveredCount: 0,
+    })
+    expect(trophies.map((t) => t.id)).toContain('first_step')
+  })
+
+  it('이미 받은 트로피는 다시 안 준다', () => {
+    const c: CollectionState = { ...emptyCollection(), earnedTrophyIds: ['first_step'] }
+    const trophies = newTrophies(c, {
+      totalCompletedQuests: 5,
+      categoryCompleted: emptyCategoryStats(),
+      bossClears: 0,
+      completedSetIds: [],
+      discoveredCount: 0,
+    })
+    expect(trophies.map((t) => t.id)).not.toContain('first_step')
+  })
+
+  it('분야별 트로피는 그 분야 개수만 본다', () => {
+    const counts = { ...emptyCategoryStats(), WORK: 100 }
+    const trophies = newTrophies(emptyCollection(), {
+      totalCompletedQuests: 100,
+      categoryCompleted: counts,
+      bossClears: 0,
+      completedSetIds: [],
+      discoveredCount: 0,
+    })
+    const ids = trophies.map((t) => t.id)
+    expect(ids).toContain('work_master')
+    expect(ids).not.toContain('life_master')
+  })
+
+  it('도감을 채우면 자리마다 보상이 있다', () => {
+    let c = emptyCollection()
+    for (const item of CATALOG.slice(0, 10)) c = addItem(c, item.id).collection
+
+    const reached = newMilestones(c)
+    expect(reached.map((m) => m.count)).toEqual([10])
+    expect(reached[0].coins).toBe(MILESTONES[0].coins)
+  })
+})
+
+// ── 받게 되는 것 ────────────────────────────────────────
+
+describe('평판 · 사람 · 비밀', () => {
+  const base = {
+    collection: emptyCollection(),
+    reputation: {
+      HOME_BASE: 0,
+      CAFE_STREET: 0,
+      GREEN_PARK: 0,
+      CREATIVE_DISTRICT: 0,
+      TRAINING_ZONE: 0,
+      NIGHT_TOWN: 0,
+    },
+    friendship: {},
+    night: false,
+  }
+
+  it('아무것도 안 했으면 아무것도 안 온다', () => {
+    expect(pendingGrants(base)).toEqual([])
+  })
+
+  it('동네에서 얼굴이 알려지면 하나 온다', () => {
+    const grants = pendingGrants({
+      ...base,
+      reputation: { ...base.reputation, CAFE_STREET: 100 },
+    })
+    expect(grants.map((g) => g.itemId)).toContain('home_cafe_cart')
+  })
+
+  it('가까워지면 사람이 물건을 준다', () => {
+    const grants = pendingGrants({ ...base, friendship: { MINA: 20 } })
+    expect(grants.map((g) => g.itemId)).toContain('my_mug')
+    // 더 가까워져야 주는 것은 아직 안 온다
+    expect(grants.map((g) => g.itemId)).not.toContain('cook_book')
+  })
+
+  it('비밀 물건은 조건을 맞춰야 온다', () => {
+    let c = emptyCollection()
+    const plants = CATALOG.filter((i) => i.category === 'PLANT').slice(0, 8)
+    for (const plant of plants) c = addItem(c, plant.id).collection
+
+    expect(pendingGrants({ ...base, collection: c, night: false }).map((g) => g.itemId)).not.toContain(
+      'night_flower',
+    )
+    expect(pendingGrants({ ...base, collection: c, night: true }).map((g) => g.itemId)).toContain(
+      'night_flower',
+    )
+  })
+
+  it('이미 발견한 것은 다시 오지 않는다', () => {
+    const c = addItem(emptyCollection(), 'my_mug').collection
+    const grants = pendingGrants({ ...base, collection: c, friendship: { MINA: 100 } })
+    expect(grants.map((g) => g.itemId)).not.toContain('my_mug')
+  })
+})
+
+// ── 따라오는 것들 ───────────────────────────────────────
+
+describe('세트 완성이 부르는 것들', () => {
+  function stateWith(itemIds: string[]): AppState {
+    let collection = emptyCollection()
+    for (const id of itemIds) collection = addItem(collection, id).collection
+    return { ...createDefaultState(), collection }
+  }
+
+  it('세트를 완성하면 보상이 붙는다', () => {
+    const set = COLLECTION_SETS.find((s) => s.id === 'soft_pink')!
+    const before = stateWith(set.itemIds)
+    const after = applyCollectionDerived(before, new Date('2026-03-04T12:00:00'), false)
+
+    expect(after.state.user.coins).toBe(before.user.coins + 250)
+    expect(after.state.collection.claimedSetIds).toContain('soft_pink')
+    expect(after.notes.join(' ')).toContain('Soft Pink')
+  })
+
+  it('두 번 지나가도 보상은 한 번이다', () => {
+    const set = COLLECTION_SETS.find((s) => s.id === 'soft_pink')!
+    const first = applyCollectionDerived(stateWith(set.itemIds), new Date(), false)
+    const second = applyCollectionDerived(first.state, new Date(), false)
+    expect(second.state.user.coins).toBe(first.state.user.coins)
+  })
+
+  it('세트 → 트로피 → 도감까지 한 번에 이어진다', () => {
+    const moon = COLLECTION_SETS.find((s) => s.id === 'moon_collector')!
+    const result = applyCollectionDerived(stateWith(moon.itemIds), new Date(), false)
+
+    // 세트가 완성되면 Moon Globe 가 트로피로 오고, 그것도 도감에 등록된다
+    expect(result.state.collection.earnedTrophyIds).toContain('moon_collector')
+    expect(isDiscovered(result.state.collection, 'moon_globe')).toBe(true)
+    expect(result.discoveries.map((d) => d.itemId)).toContain('moon_globe')
+  })
+
+  it('세트가 주는 물건도 발견으로 잡힌다', () => {
+    const set = COLLECTION_SETS.find((s) => s.id === 'star_collector')!
+    const result = applyCollectionDerived(stateWith(set.itemIds), new Date(), false)
+    expect(isDiscovered(result.state.collection, 'star_music_box')).toBe(true)
+  })
+})
+
+// ── 드롭 ────────────────────────────────────────────────
+
+describe('퀘스트에서 나오는 것', () => {
+  it('운이 아주 좋으면 재료와 물건이 같이 나온다', () => {
+    const drops = rollCollectDrops({ category: 'LIFE', rng: () => 0 })
+    expect(drops.length).toBeGreaterThanOrEqual(1)
+    for (const id of drops) expect(findCollectionItem(id)).not.toBeNull()
+  })
+
+  it('운이 없으면 아무것도 안 나온다', () => {
+    expect(rollCollectDrops({ category: 'LIFE', rng: () => 0.99 })).toEqual([])
+  })
+
+  it('분야에 맞는 재료가 나온다', () => {
+    const drops = rollCollectDrops({ category: 'WORK', rng: () => 0 })
+    const materials = drops.filter((id) => findCollectionItem(id)?.category === 'MATERIAL')
+    expect(materials.length).toBeGreaterThan(0)
+    for (const id of materials) {
+      expect(['m_glass', 'm_metal', 'm_paper']).toContain(id)
+    }
+  })
+
+  it('이벤트가 열린 날에는 하나 더 굴린다', () => {
+    const plain = rollCollectDrops({ category: 'MIND', rng: () => 0, eventActive: false })
+    const feast = rollCollectDrops({ category: 'MIND', rng: () => 0, eventActive: true })
+    expect(feast.length).toBeGreaterThan(plain.length)
+  })
+
+  it('보스에서는 늘 하나 나온다', () => {
+    const id = rollBossDrop(() => 0.5)
+    expect(id).not.toBeNull()
+    expect(findCollectionItem(id!)?.acquisitionSources.some((s) => s.kind === 'BOSS')).toBe(true)
+  })
+})
+
+// ── 방 ──────────────────────────────────────────────────
+
+describe('방', () => {
+  const ctx = { level: 1, categoryCompleted: emptyCategoryStats(), discoveredCount: 0 }
+
+  it('처음엔 내 방 하나뿐이다', () => {
+    expect(unlockedRooms(ctx).map((r) => r.id)).toEqual(['MY_ROOM'])
+  })
+
+  it('레벨이 오르면 거실이 열린다', () => {
+    expect(isRoomUnlocked(ROOMS[1], { ...ctx, level: 10 })).toBe(true)
+    expect(isRoomUnlocked(ROOMS[1], { ...ctx, level: 9 })).toBe(false)
+  })
+
+  it('생활 퀘스트를 쌓으면 부엌이 열린다', () => {
+    const kitchen = ROOMS.find((r) => r.id === 'KITCHEN_ROOM')!
+    const counts = { ...emptyCategoryStats(), LIFE: 30 }
+    expect(isRoomUnlocked(kitchen, { ...ctx, categoryCompleted: counts })).toBe(true)
+  })
+
+  it('도감을 채우면 발코니가 열린다', () => {
+    const balcony = ROOMS.find((r) => r.id === 'BALCONY')!
+    expect(isRoomUnlocked(balcony, { ...ctx, discoveredCount: 60 })).toBe(true)
+  })
+
+  it('방마다 벽과 바닥 색이 있다', () => {
+    for (const room of ROOMS) {
+      expect(room.wall).toMatch(/^#/)
+      expect(room.floor).toMatch(/^#/)
+    }
+  })
+})
+
+// ── 만들기 ──────────────────────────────────────────────
+
+describe('만들기', () => {
+  it('재료가 다 있으면 만들 수 있다', () => {
+    const recipe = RECIPES.find((r) => r.id === 'sprout_jar')!
+    let c = emptyCollection()
+    expect(canCraft(recipe, c)).toBe(false)
+
+    for (const ing of recipe.ingredients) {
+      for (let i = 0; i < ing.count; i += 1) c = addItem(c, ing.itemId).collection
+    }
+    expect(canCraft(recipe, c)).toBe(true)
+  })
+
+  it('아직 모르는 레시피가 있다', () => {
+    const secret = RECIPES.find((r) => r.unlock.kind === 'NPC')!
+    const ctx = {
+      level: 99,
+      discoveredCount: 999,
+      completedSetIds: [],
+      friendship: {},
+      discoveredRecipeIds: [],
+    }
+    expect(isRecipeKnown(secret, ctx)).toBe(false)
+    expect(isRecipeKnown(secret, { ...ctx, friendship: { LULU: 99, NOA: 99, JUNE: 99 } })).toBe(true)
+  })
+
+  it('세트를 완성하면 레시피를 알게 된다', () => {
+    const recipe = RECIPES.find((r) => r.id === 'clover_bottle')!
+    const ctx = {
+      level: 1,
+      discoveredCount: 0,
+      completedSetIds: [] as string[],
+      friendship: {},
+      discoveredRecipeIds: [],
+    }
+    expect(isRecipeKnown(recipe, ctx)).toBe(false)
+    expect(isRecipeKnown(recipe, { ...ctx, completedSetIds: ['green_corner'] })).toBe(true)
+  })
+})
+
+// ── 저장된 것 읽기 ──────────────────────────────────────
+
+describe('저장된 수집 기록', () => {
+  it('없으면 빈 상태로 시작한다', () => {
+    expect(sanitizeCollection(undefined)).toEqual(emptyCollection())
+    expect(sanitizeCollection('망가진 값')).toEqual(emptyCollection())
+  })
+
+  it('없어진 물건은 조용히 버린다', () => {
+    const c = sanitizeCollection({
+      discovered: { cream_bed: '2026-01-01T00:00:00.000Z', ghost_item: '2026-01-01T00:00:00.000Z' },
+      owned: { cream_bed: 2, ghost_item: 5 },
+    })
+    expect(c.owned).toEqual({ cream_bed: 2 })
+    expect(c.discovered.ghost_item).toBeUndefined()
+  })
+
+  it('가진 적이 있으면 발견한 것으로 본다', () => {
+    const c = sanitizeCollection({ owned: { cream_bed: 1 } })
+    expect(isDiscovered(c, 'cream_bed')).toBe(true)
+  })
+
+  it('놓인 자리가 이상하면 방 안으로 되돌린다', () => {
+    const c = sanitizeCollection({
+      owned: { cream_bed: 1 },
+      rooms: {
+        MY_ROOM: [
+          { uid: 'a', itemId: 'cream_bed', x: 500, y: -80, scale: 99, flipped: 'yes' },
+          { uid: 'b', itemId: 'ghost_item', x: 10, y: 10 },
+        ],
+      },
+    })
+    expect(c.rooms.MY_ROOM).toHaveLength(1)
+    expect(c.rooms.MY_ROOM[0]).toMatchObject({ x: 100, y: 0, scale: 1, flipped: false })
+  })
+
+  it('없어진 방은 버린다', () => {
+    const c = sanitizeCollection({ rooms: { GHOST_ROOM: [] }, currentRoomId: 'GHOST_ROOM' })
+    expect(c.rooms.GHOST_ROOM).toBeUndefined()
+    expect(c.currentRoomId).toBe('MY_ROOM')
+  })
+
+  it('아직 안 열린 방 공기는 비운다', () => {
+    const c = sanitizeCollection({ roomEffects: { MY_ROOM: 'NOT_A_REAL_EFFECT' } })
+    expect(c.roomEffects.MY_ROOM).toBeNull()
+  })
+
+  it('분야별 완료 수가 없으면 남아 있는 퀘스트에서 센다', () => {
+    const state: AppState = {
+      ...createDefaultState(),
+      quests: [
+        { ...createDefaultState().quests[0], category: 'LIFE', completed: true },
+        { ...createDefaultState().quests[1], category: 'LIFE', completed: true },
+        { ...createDefaultState().quests[2], category: 'WORK', completed: false },
+      ],
+    }
+    const counts = backfillCategoryCompleted(state, undefined)
+    expect(counts.LIFE).toBe(2)
+    expect(counts.WORK).toBe(0)
+  })
+
+  it('저장돼 있으면 그 값을 그대로 쓴다', () => {
+    const state = createDefaultState()
+    const counts = backfillCategoryCompleted(state, { ...emptyCategoryStats(), WORK: 42 })
+    expect(counts.WORK).toBe(42)
+  })
+
+  it('스키마 버전이 6 이다', () => {
+    expect(STATE_VERSION).toBe(6)
+    expect(createDefaultState().version).toBe(6)
+  })
+})

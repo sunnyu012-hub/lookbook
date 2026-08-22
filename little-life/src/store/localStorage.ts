@@ -29,6 +29,8 @@ import {
   sanitizeSkills,
   sanitizeStats,
   sanitizeUsageProfiles,
+  sanitizeCollection,
+  backfillCategoryCompleted,
   backfillUsage,
   withSkillPoints,
 } from './migrate'
@@ -205,7 +207,7 @@ function sanitizeState(raw: unknown): AppState | null {
 
   // 스킬 포인트는 저장된 값을 믿지 않고 레벨에서 다시 계산한다 (migrate.withSkillPoints)
   // 사용 기록이 비어 있으면 지난 퀘스트에서 만들어 채운다 (migrate.backfillUsage)
-  return backfillUsage(withSkillPoints({
+  const base: AppState = {
     version: STATE_VERSION,
     user: {
       name: typeof user.name === 'string' && user.name.trim() ? user.name.trim() : 'Yuli',
@@ -240,7 +242,19 @@ function sanitizeState(raw: unknown): AppState | null {
     reputation: sanitizeReputation(s.reputation),
     usageProfiles: sanitizeUsageProfiles(s.usageProfiles),
     recommendSettings: sanitizeRecommendSettings(s.recommendSettings),
-  }))
+    // v5 에는 없던 항목들
+    categoryCompleted: emptyCategoryStats(),
+    bossClears: numberOr(s.bossClears, 0),
+    collection: sanitizeCollection(s.collection),
+  }
+
+  // 분야별 완료 수는 저장돼 있으면 그대로 쓰고, 없으면 남아 있는 퀘스트에서 센다
+  return backfillUsage(
+    withSkillPoints({
+      ...base,
+      categoryCompleted: backfillCategoryCompleted(base, s.categoryCompleted),
+    }),
+  )
 }
 
 export class LocalStorageRepository implements StateRepository {

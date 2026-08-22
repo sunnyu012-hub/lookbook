@@ -4,6 +4,13 @@ import { SectionHeader } from '@/components/layout/ScreenHeader'
 import { findArea } from '@/lib/rpg/content'
 import { NPCS, findNpc, meetsLevel } from '@/lib/city/npcs'
 import { SHOPS } from '@/lib/city/shops'
+import {
+  COLLECTION_SHOPS,
+  isCollectionShopOpen,
+  isWeekend,
+  shopsSellingToday,
+} from '@/lib/collection/shops'
+import { findCollectionItem } from '@/lib/collection/catalog'
 import { isNightOpen } from '@/lib/rpg/time'
 import { cn } from '@/components/ui/cn'
 
@@ -71,6 +78,17 @@ export function TodayInTheCity({ state, events, onOpenMap }: TodayInTheCityProps
 function buildLines(state: AppState, events: CityEvent[]): Line[] {
   const lines: Line[] = []
 
+  // 찾던 물건이 오늘 어느 가게에 들어왔는지.
+  // 이 카드에서 제일 반가운 줄이라 맨 위에 둔다.
+  for (const itemId of state.collection.wishlist) {
+    const found = shopsSellingToday(itemId)
+    if (found.length === 0) continue
+    const item = findCollectionItem(itemId)
+    if (!item) continue
+    lines.push({ icon: '💫', text: `${found[0].name}에 ${item.nameKo} 들어왔어.` })
+    break
+  }
+
   for (const event of events) {
     const where = event.areaId ? findArea(event.areaId).name : '도시 전체'
     lines.push({ icon: event.icon, text: `${where} · ${event.name} — ${event.effectLabel}` })
@@ -101,6 +119,12 @@ function buildLines(state: AppState, events: CityEvent[]): Line[] {
     })
   }
 
+  // 주말에만 서는 장
+  const flea = COLLECTION_SHOPS.find((s) => s.weekendOnly)
+  if (flea && isWeekend()) {
+    lines.push({ icon: '🧺', text: `오늘은 ${flea.name} 서는 날.` })
+  }
+
   // 밤에만 여는 곳
   const market = SHOPS.find((s) => s.nightOnly)
   if (market) {
@@ -110,6 +134,14 @@ function buildLines(state: AppState, events: CityEvent[]): Line[] {
         ? { icon: '🏮', text: `${market.name} 열렸어. ${noa?.name ?? ''} 도 나와 있을 거야.` }
         : { icon: '🌙', text: `${market.name} 은 밤 9시가 지나면 열려.` },
     )
+  }
+
+  // 오늘 새로 들어온 가구가 있는 가게 하나
+  const restocked = COLLECTION_SHOPS.find(
+    (shop) => !shop.weekendOnly && !shop.nightOnly && isCollectionShopOpen(shop),
+  )
+  if (restocked) {
+    lines.push({ icon: restocked.icon, text: `${restocked.name}에 오늘 물건이 새로 깔렸어.` })
   }
 
   return lines.slice(0, 4)

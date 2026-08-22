@@ -1,0 +1,371 @@
+import type {
+  Category,
+  CollectionItemDef,
+  CollectionSetDef,
+  CollectionState,
+  HomeEffectId,
+  NpcId,
+  RecipeDef,
+  TrophyDef,
+} from '@/types'
+import { CATALOG, catalogTotal, findCollectionItem } from './catalog'
+import { COLLECTION_SETS } from './sets'
+import { RECIPES } from './recipes'
+import { TROPHIES } from './trophies'
+import { DEFAULT_ROOM_ID } from './rooms'
+
+/**
+ * 지금 무엇을 가졌고 무엇이 열렸는지.
+ *
+ * 여기 있는 건 거의 다 "계산" 이다. 완성한 세트도, 열린 방 효과도,
+ * 아는 레시피도 저장하지 않는다. 가진 것에서 매번 다시 구한다 —
+ * 그래야 나중에 세트 내용을 바꿔도 저장된 값과 어긋나지 않는다.
+ *
+ * 저장하는 건 딱 두 가지다: 무엇을 발견했는지, 몇 개 가졌는지.
+ */
+
+export function emptyCollection(): CollectionState {
+  return {
+    discovered: {},
+    owned: {},
+    wishlist: [],
+    rooms: {},
+    roomEffects: {},
+    currentRoomId: DEFAULT_ROOM_ID,
+    purchases: {},
+    discoveredRecipeIds: [],
+    claimedMilestones: [],
+    claimedSetIds: [],
+    earnedTrophyIds: [],
+  }
+}
+
+export function ownedCount(c: CollectionState, itemId: string): number {
+  return c.owned[itemId] ?? 0
+}
+
+export function isDiscovered(c: CollectionState, itemId: string): boolean {
+  return c.discovered[itemId] !== undefined
+}
+
+/**
+ * 하나 얻는다.
+ *
+ * 처음이면 발견으로 기록하고 알려준다. 두 번째부터는 조용히 개수만 는다 —
+ * 같은 연출을 두 번 보여주면 세 번째부터는 아무 느낌이 없다.
+ */
+export function addItem(
+  c: CollectionState,
+  itemId: string,
+  now: Date = new Date(),
+): { collection: CollectionState; isNew: boolean } {
+  const def = findCollectionItem(itemId)
+  if (!def) return { collection: c, isNew: false }
+
+  const isNew = !isDiscovered(c, itemId)
+  const already = ownedCount(c, itemId)
+  // 하나만 가질 수 있는 물건은 두 개가 되지 않는다
+  const next = def.unique ? Math.min(1, already + 1) : already + 1
+
+  return {
+    collection: {
+      ...c,
+      discovered: isNew ? { ...c.discovered, [itemId]: now.toISOString() } : c.discovered,
+      owned: { ...c.owned, [itemId]: next },
+    },
+    isNew,
+  }
+}
+
+/**
+ * 하나 되돌린다.
+ *
+ * 그때 처음 발견한 것이었으면 발견 기록까지 지운다.
+ * 안 그러면 완료·되돌리기를 반복해서 도감만 채울 수 있다.
+ */
+export function removeItem(c: CollectionState, itemId: string, wasNew: boolean): CollectionState {
+  const left = Math.max(0, ownedCount(c, itemId) - 1)
+  const owned = { ...c.owned }
+  if (left === 0) delete owned[itemId]
+  else owned[itemId] = left
+
+  const discovered = { ...c.discovered }
+  if (wasNew) delete discovered[itemId]
+
+  // 방에 놓아둔 것도 같이 거둔다 (가진 것보다 많이 놓여 있을 수 없다)
+  const rooms = trimPlacements({ ...c, owned }, c.rooms)
+
+  return { ...c, owned, discovered, rooms }
+}
+
+/** 재료를 쓴다. 없으면 그대로 돌려준다. */
+export function spendItems(
+  c: CollectionState,
+  cost: Array<{ itemId: string; count: number }>,
+): CollectionState | null {
+  for (const need of cost) {
+    if (ownedCount(c, need.itemId) < need.count) return null
+  }
+
+  const owned = { ...c.owned }
+  for (const need of cost) {
+    const left = owned[need.itemId] - need.count
+    if (left <= 0) delete owned[need.itemId]
+    else owned[need.itemId] = left
+  }
+  // 발견 기록은 지우지 않는다. 재료로 썼다고 만난 적이 없어지는 건 아니다.
+  return trimPlaced({ ...c, owned })
+}
+
+/** 가진 것보다 많이 놓여 있으면 뒤에서부터 거둔다 */
+function trimPlaced(c: CollectionState): CollectionState {
+  return { ...c, rooms: trimPlacements(c, c.rooms) }
+}
+
+function trimPlacements(c: CollectionState, rooms: CollectionState['rooms']): CollectionState['rooms'] {
+  const used: Record<string, number> = {}
+  const out: CollectionState['rooms'] = {}
+  let changed = false
+
+  for (const [roomId, placed] of Object.entries(rooms)) {
+    const kept = placed.filter((p) => {
+      const next = (used[p.itemId] ?? 0) + 1
+      if (next > ownedCount(c, p.itemId)) {
+        changed = true
+        return false
+      }
+      used[p.itemId] = next
+      return true
+    })
+    out[roomId] = kept
+  }
+  return changed ? out : rooms
+}
+
+// ── 도감 진행 ───────────────────────────────────────────
+
+/** 240개 중 몇 개를 만났는지 */
+export function discoveredCount(c: CollectionState): number {
+  let n = 0
+  for (const item of CATALOG) {
+    if (isDiscovered(c, item.id)) n += 1
+  }
+  return n
+}
+
+export function collectionProgress(c: CollectionState): { found: number; total: number } {
+  return { found: discoveredCount(c), total: catalogTotal(c.discovered) }
+}
+
+// ── 세트 ────────────────────────────────────────────────
+
+export interface SetProgress {
+  have: number
+  need: number
+  complete: boolean
+}
+
+/**
+ * 세트는 "가지고 있는지" 로 센다. 발견만 하고 안 가진 건 아직 아니다.
+ * 다만 트로피처럼 다시 얻을 수 없는 것은 발견만으로도 인정한다.
+ */
+export function setProgress(set: CollectionSetDef, c: CollectionState): SetProgress {
+  if (set.anyOf) {
+    const have = CATALOG.filter(
+      (i) => i.category === set.anyOf!.category && ownedCount(c, i.id) > 0,
+    ).length
+    return { have, need: set.anyOf.count, complete: have >= set.anyOf.count }
+  }
+
+  const have = set.itemIds.filter((id) => ownedCount(c, id) > 0).length
+  return { have, need: set.itemIds.length, complete: have === set.itemIds.length }
+}
+
+export function completedSetIds(c: CollectionState): string[] {
+  return COLLECTION_SETS.filter((s) => setProgress(s, c).complete).map((s) => s.id)
+}
+
+/** 완성했는데 아직 보상을 안 받은 세트 */
+export function unclaimedSets(c: CollectionState): CollectionSetDef[] {
+  return COLLECTION_SETS.filter(
+    (s) => setProgress(s, c).complete && !c.claimedSetIds.includes(s.id),
+  )
+}
+
+/** 지금 방에 걸 수 있는 공기 */
+export function unlockedEffectIds(c: CollectionState): HomeEffectId[] {
+  const done = new Set(completedSetIds(c))
+  const out: HomeEffectId[] = []
+
+  for (const set of COLLECTION_SETS) {
+    if (!done.has(set.id)) continue
+    for (const reward of set.rewards) {
+      if (reward.kind === 'ROOM_EFFECT') out.push(reward.effectId)
+    }
+  }
+  return out
+}
+
+/** 완성한 세트에서 받은 칭호 */
+export function unlockedTitles(c: CollectionState): string[] {
+  const done = new Set(completedSetIds(c))
+  const out: string[] = []
+  for (const set of COLLECTION_SETS) {
+    if (!done.has(set.id)) continue
+    for (const reward of set.rewards) {
+      if (reward.kind === 'TITLE') out.push(reward.title)
+    }
+  }
+  return out
+}
+
+// ── 레시피 ──────────────────────────────────────────────
+
+export interface RecipeContext {
+  level: number
+  discoveredCount: number
+  completedSetIds: string[]
+  friendship: Record<string, number>
+  /** 사람이나 비밀로 따로 알게 된 것 */
+  discoveredRecipeIds: string[]
+}
+
+export function isRecipeKnown(recipe: RecipeDef, ctx: RecipeContext): boolean {
+  if (ctx.discoveredRecipeIds.includes(recipe.id)) return true
+
+  switch (recipe.unlock.kind) {
+    case 'DEFAULT':
+      return true
+    case 'LEVEL':
+      return ctx.level >= recipe.unlock.level
+    case 'COLLECTION':
+      return ctx.discoveredCount >= recipe.unlock.count
+    case 'SET':
+      return ctx.completedSetIds.includes(recipe.unlock.setId)
+    case 'NPC':
+      return (ctx.friendship[recipe.unlock.npcId as NpcId] ?? 0) >= recipe.unlock.friendship
+    case 'SECRET':
+      return false
+    default:
+      return false
+  }
+}
+
+export function knownRecipes(ctx: RecipeContext): RecipeDef[] {
+  return RECIPES.filter((r) => isRecipeKnown(r, ctx))
+}
+
+/** 아직 모르는 레시피가 몇 개 남았는지 — 목록은 보여주지 않는다 */
+export function unknownRecipeCount(ctx: RecipeContext): number {
+  return RECIPES.length - knownRecipes(ctx).length
+}
+
+export function canCraft(recipe: RecipeDef, c: CollectionState): boolean {
+  return recipe.ingredients.every((i) => ownedCount(c, i.itemId) >= i.count)
+}
+
+// ── 트로피 ──────────────────────────────────────────────
+
+export interface TrophyContext {
+  totalCompletedQuests: number
+  categoryCompleted: Record<Category, number>
+  bossClears: number
+  completedSetIds: string[]
+  discoveredCount: number
+}
+
+export function trophyEarned(trophy: TrophyDef, ctx: TrophyContext): boolean {
+  switch (trophy.condition.kind) {
+    case 'TOTAL_QUESTS':
+      return ctx.totalCompletedQuests >= trophy.condition.count
+    case 'CATEGORY_QUESTS':
+      return (ctx.categoryCompleted[trophy.condition.category] ?? 0) >= trophy.condition.count
+    case 'BOSS_CLEARS':
+      return ctx.bossClears >= trophy.condition.count
+    case 'COLLECTION':
+      return ctx.discoveredCount >= trophy.condition.count
+    case 'SET_COMPLETE':
+      return ctx.completedSetIds.includes(trophy.condition.setId)
+    default:
+      return false
+  }
+}
+
+/** 이번에 새로 받을 트로피 */
+export function newTrophies(c: CollectionState, ctx: TrophyContext): TrophyDef[] {
+  return TROPHIES.filter((t) => !c.earnedTrophyIds.includes(t.id) && trophyEarned(t, ctx))
+}
+
+// ── 도감 보상 ───────────────────────────────────────────
+
+export interface Milestone {
+  count: number
+  coins: number
+  message: string
+}
+
+/** 도감을 채우다 만나는 자리들 */
+export const MILESTONES: Milestone[] = [
+  { count: 10, coins: 100, message: '열 개. 방이 조금 달라 보이기 시작한다.' },
+  { count: 25, coins: 200, message: '스물다섯 개. 이제 뭘 찾는지 알겠다.' },
+  { count: 50, coins: 300, message: '쉰 개. 절반의 절반.' },
+  { count: 75, coins: 400, message: '일흔다섯 개.' },
+  { count: 100, coins: 600, message: '백 개. 세어보니 그렇게 됐다.' },
+  { count: 150, coins: 900, message: '백쉰 개. 남은 게 더 적어졌다.' },
+  { count: 200, coins: 1200, message: '이백 개. 이제 못 찾은 것들이 눈에 띈다.' },
+  { count: 240, coins: 2000, message: '전부. 하나도 안 빼고.' },
+]
+
+export function newMilestones(c: CollectionState): Milestone[] {
+  const found = discoveredCount(c)
+  return MILESTONES.filter((m) => found >= m.count && !c.claimedMilestones.includes(m.count))
+}
+
+// ── 힌트 ────────────────────────────────────────────────
+
+/**
+ * 아직 못 만난 물건에 붙는 한 줄.
+ * "어디선가" 로 끝나면 힌트가 아니다. 갈 곳을 말해준다.
+ */
+export function acquisitionHint(item: CollectionItemDef, shopName: (id: string) => string): string {
+  const first = item.acquisitionSources[0]
+  if (!first) return '어디서 만날 수 있을까.'
+
+  switch (first.kind) {
+    case 'SHOP':
+      return `${shopName(first.shopId)}에서 팔아.`
+    case 'CRAFT':
+      return '작은 작업실에서 만들 수 있어.'
+    case 'QUEST':
+      return first.category
+        ? `${CATEGORY_KO[first.category]} 퀘스트를 하다 보면 나와.`
+        : '퀘스트를 하다 보면 나와.'
+    case 'NPC':
+      return '도시 사람 중 누군가가 준대.'
+    case 'BOSS':
+      return '큰 걸 하나 넘고 나면.'
+    case 'EVENT':
+      return '도시에 무슨 일이 있는 날에.'
+    case 'REPUTATION':
+      return '그 동네에서 얼굴이 알려지면.'
+    case 'MILESTONE':
+      return `도감을 ${first.count}개 채우면.`
+    case 'SET':
+      return '어떤 세트를 완성하면.'
+    case 'TROPHY':
+      return '현실에서 충분히 쌓이면.'
+    case 'SECRET':
+      return first.hint ?? '언제 만나게 될지는 아직.'
+    default:
+      return '어디서 만날 수 있을까.'
+  }
+}
+
+const CATEGORY_KO: Record<Category, string> = {
+  LIFE: '생활',
+  WORK: '일',
+  BODY: '몸',
+  PLAY: '놀이',
+  MIND: '마음',
+  HEART: '관계',
+}

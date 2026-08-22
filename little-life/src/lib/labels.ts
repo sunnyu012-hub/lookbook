@@ -1,10 +1,11 @@
 import type {
   Category,
+  CollectionCategory,
+  CollectionRarity,
   Difficulty,
   EquipSlot,
   FriendshipLevel,
   ItemType,
-  Rarity,
   ReputationLevel,
   StatKey,
 } from '@/types'
@@ -31,11 +32,31 @@ export const DIFFICULTY_KO: Record<Difficulty, string> = {
   HARD: '어려움',
 }
 
-export const RARITY_LABEL: Record<Rarity, string> = {
+export const RARITY_LABEL: Record<CollectionRarity, string> = {
   COMMON: '흔함',
   RARE: '귀함',
   EPIC: '특별',
   LEGENDARY: '전설',
+  SECRET: '비밀',
+}
+
+/** 도감 분류 */
+export const COLLECTION_CATEGORY_LABEL: Record<CollectionCategory, string> = {
+  FURNITURE: '가구',
+  LIGHTING: '조명',
+  PLANT: '식물',
+  RUG: '러그',
+  WALL: '벽',
+  LITTLE_THING: '작은 물건',
+  KITCHEN: '주방',
+  FOOD: '먹을 것',
+  BOOK: '책',
+  HOBBY: '취미',
+  TECH: '기계',
+  OUTDOOR: '바깥',
+  MAGIC: '보물',
+  TROPHY: '트로피',
+  MATERIAL: '재료',
 }
 
 export const ITEM_TYPE_LABEL: Record<ItemType, string> = {

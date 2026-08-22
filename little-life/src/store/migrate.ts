@@ -7,15 +7,28 @@ import type {
   AreaId,
   Battle,
   Category,
+  CategoryStats,
   ClassId,
+  CollectionState,
   EquippedItems,
   InventoryEntry,
+  HomeEffectId,
   NpcStates,
+  PlacedItem,
   Rarity,
   Reputation,
+  RoomId,
   Stats,
 } from '@/types'
-import { AREA_IDS, CATEGORIES, CLASS_IDS, EQUIP_SLOTS, RARITIES, STAT_KEYS } from '@/types'
+import {
+  AREA_IDS,
+  CATEGORIES,
+  CLASS_IDS,
+  EQUIP_SLOTS,
+  HOME_EFFECT_IDS,
+  RARITIES,
+  STAT_KEYS,
+} from '@/types'
 import { findBattleDef, findItem } from '@/lib/rpg/content'
 import { NPCS, findNpc } from '@/lib/city/npcs'
 import { findSkill, availableSkillPoints } from '@/lib/city/skills'
@@ -29,6 +42,9 @@ import {
   emptyDayCounts,
   RECENT_DATES_KEPT,
 } from '@/lib/library/usage'
+import { findCollectionItem } from '@/lib/collection/catalog'
+import { emptyCollection } from '@/lib/collection/progress'
+import { findRoom } from '@/lib/collection/rooms'
 
 /**
  * 저장된 데이터를 지금 버전으로 끌어올린다.
@@ -37,7 +53,7 @@ import {
  * 없는 항목만 기본값으로 채우고, 있는 값은 손대지 않는다.
  */
 
-export const STATE_VERSION = 5
+export const STATE_VERSION = 6
 
 export function defaultStats(): Stats {
   return STAT_KEYS.reduce((acc, key) => {
@@ -404,6 +420,143 @@ export function backfillUsage(state: AppState): AppState {
   if (Object.keys(state.usageProfiles).length > 0) return state
   if (state.quests.length === 0) return state
   return { ...state, usageProfiles: backfillProfiles(state.quests) }
+}
+
+// ── 수집 · 방 ───────────────────────────────────────────
+
+/**
+ * 저장된 수집 기록.
+ *
+ * 정의가 사라진 물건은 조용히 버린다. 방에 놓여 있던 것도 같이 사라진다 —
+ * 없는 물건을 그리려다 화면이 깨지는 것보다 낫다.
+ */
+export function sanitizeCollection(raw: unknown): CollectionState {
+  const empty = emptyCollection()
+  if (!raw || typeof raw !== 'object') return empty
+  const s = raw as Record<string, unknown>
+
+  const discovered: Record<string, string> = {}
+  if (s.discovered && typeof s.discovered === 'object') {
+    for (const [id, at] of Object.entries(s.discovered as Record<string, unknown>)) {
+      if (!findCollectionItem(id)) continue
+      discovered[id] = typeof at === 'string' ? at : new Date().toISOString()
+    }
+  }
+
+  const owned: Record<string, number> = {}
+  if (s.owned && typeof s.owned === 'object') {
+    for (const [id, count] of Object.entries(s.owned as Record<string, unknown>)) {
+      const def = findCollectionItem(id)
+      if (!def) continue
+      const n = numberOr(count, 0)
+      if (n <= 0) continue
+      owned[id] = def.unique ? 1 : n
+      // 가진 적이 있으면 발견한 것이다
+      if (!discovered[id]) discovered[id] = new Date().toISOString()
+    }
+  }
+
+  const rooms: CollectionState['rooms'] = {}
+  if (s.rooms && typeof s.rooms === 'object') {
+    for (const [roomId, placed] of Object.entries(s.rooms as Record<string, unknown>)) {
+      if (!findRoom(roomId) || !Array.isArray(placed)) continue
+      rooms[roomId] = placed
+        .map((p, i) => sanitizePlaced(p, `${roomId}-${i}`))
+        .filter((p): p is PlacedItem => p !== null)
+    }
+  }
+
+  const purchases: Record<string, number> = {}
+  if (s.purchases && typeof s.purchases === 'object') {
+    for (const [key, count] of Object.entries(s.purchases as Record<string, unknown>)) {
+      const n = numberOr(count, 0)
+      if (n > 0) purchases[key] = n
+    }
+  }
+
+  // 걸어둔 방 공기. 아직 안 열린 것이 저장돼 있으면 조용히 비운다.
+  const roomEffects: Record<string, HomeEffectId | null> = {}
+  if (s.roomEffects && typeof s.roomEffects === 'object') {
+    for (const [roomId, effectId] of Object.entries(s.roomEffects as Record<string, unknown>)) {
+      if (!findRoom(roomId)) continue
+      roomEffects[roomId] =
+        typeof effectId === 'string' && HOME_EFFECT_IDS.includes(effectId as HomeEffectId)
+          ? (effectId as HomeEffectId)
+          : null
+    }
+  }
+
+  return {
+    discovered,
+    owned,
+    roomEffects,
+    wishlist: Array.isArray(s.wishlist)
+      ? [...new Set(s.wishlist.filter((v): v is string => typeof v === 'string' && !!findCollectionItem(v)))]
+      : [],
+    rooms,
+    currentRoomId: findRoom(s.currentRoomId as string) ? (s.currentRoomId as RoomId) : 'MY_ROOM',
+    purchases,
+    discoveredRecipeIds: Array.isArray(s.discoveredRecipeIds)
+      ? [...new Set(s.discoveredRecipeIds.filter((v): v is string => typeof v === 'string'))]
+      : [],
+    claimedMilestones: Array.isArray(s.claimedMilestones)
+      ? [...new Set(s.claimedMilestones.filter((v): v is number => typeof v === 'number'))]
+      : [],
+    claimedSetIds: Array.isArray(s.claimedSetIds)
+      ? [...new Set(s.claimedSetIds.filter((v): v is string => typeof v === 'string'))]
+      : [],
+    earnedTrophyIds: Array.isArray(s.earnedTrophyIds)
+      ? [...new Set(s.earnedTrophyIds.filter((v): v is string => typeof v === 'string'))]
+      : [],
+  }
+}
+
+function sanitizePlaced(raw: unknown, fallbackId: string): PlacedItem | null {
+  if (!raw || typeof raw !== 'object') return null
+  const p = raw as Record<string, unknown>
+
+  const itemId = typeof p.itemId === 'string' ? p.itemId : null
+  if (!itemId || !findCollectionItem(itemId)) return null
+
+  const clamp = (v: unknown, fallback: number) => {
+    const n = typeof v === 'number' && Number.isFinite(v) ? v : fallback
+    return Math.min(100, Math.max(0, Math.round(n * 10) / 10))
+  }
+
+  return {
+    uid: typeof p.uid === 'string' ? p.uid : fallbackId,
+    itemId,
+    x: clamp(p.x, 50),
+    y: clamp(p.y, 50),
+    scale: typeof p.scale === 'number' && p.scale >= 0.5 && p.scale <= 1.6 ? p.scale : 1,
+    flipped: p.flipped === true,
+  }
+}
+
+/** 분야별 완료 수. 예전 저장본에는 없어서 지금 남아 있는 퀘스트에서 센다. */
+export function backfillCategoryCompleted(state: AppState, raw: unknown): CategoryStats {
+  if (raw && typeof raw === 'object') {
+    const source = raw as Record<string, unknown>
+    const hasAny = CATEGORIES.some((c) => typeof source[c] === 'number')
+    if (hasAny) {
+      return CATEGORIES.reduce((acc, c) => {
+        acc[c] = numberOr(source[c], 0)
+        return acc
+      }, {} as CategoryStats)
+    }
+  }
+
+  // 지운 퀘스트는 셀 방법이 없다. 그건 그대로 인정하고 남은 것만 센다 —
+  // 0 에서 시작하는 것보다는 훨씬 실제에 가깝다.
+  const counts = CATEGORIES.reduce((acc, c) => {
+    acc[c] = 0
+    return acc
+  }, {} as CategoryStats)
+
+  for (const quest of state.quests) {
+    if (quest.completed) counts[quest.category] += 1
+  }
+  return counts
 }
 
 /** 업데이트하고 처음 열었을 때 주는 선물. 한 번만 준다. */

@@ -1,6 +1,8 @@
 export * from './rpg'
 export * from './city'
 export * from './library'
+export * from './collection'
+import type { CollectionState } from './collection'
 import type {
   AreaId,
   Battle,
@@ -115,6 +117,11 @@ export interface QuestReward {
   friendship?: number
   /** 이때 써버린 일시 버프. 되돌리면 다시 살려낸다. */
   usedBuff?: ActiveBuff
+  /**
+   * 이때 나온 재료·수집품.
+   * 그게 처음 본 것이었는지까지 적어둬야 되돌릴 때 도감도 정확히 돌아간다.
+   */
+  collectDrops?: Array<{ itemId: string; wasNew: boolean }>
 }
 
 export interface User {
@@ -186,7 +193,19 @@ export interface AppState {
    */
   usageProfiles: UsageProfiles
   recommendSettings: RecommendSettings
-  // 향후 확장 예정: achievements, character, room, pets …
+  /**
+   * 분야별로 끝낸 퀘스트 수.
+   *
+   * categoryStats 는 EXP 라서 개수를 알 수 없다. 트로피와 방 조건이
+   * "일 퀘스트 100개" 같은 개수를 보기 때문에 따로 쌓는다.
+   * quests 에서 세지 않는 이유는 categoryStats 와 같다 — 지워도 남아야 한다.
+   */
+  categoryCompleted: CategoryStats
+  /** 넘긴 보스 수. 보스는 클리어 뒤 목록에서 지울 수 있어서 따로 센다. */
+  bossClears: number
+  /** 발견한 것, 가진 것, 방에 놓은 것 */
+  collection: CollectionState
+  // 향후 확장 예정: achievements, character, pets …
   //
   // 오늘의 이벤트와 상점 진열은 여기 없다.
   // 날짜에서 그대로 계산하기 때문에 저장할 게 없고, 자정이 지나면 알아서 바뀐다.
@@ -226,4 +245,6 @@ export interface CompleteResult {
   usedBuffName: string | null
   /** 레벨업으로 스킬 포인트가 생겼으면 */
   gainedSkillPoints: number
+  /** 이번에 나온 재료·수집품. 처음 본 것은 따로 연출한다. */
+  collected: import('./collection').DiscoveryResult[]
 }
