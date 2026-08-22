@@ -5,6 +5,7 @@ import { ExpToastLayer } from '@/components/feedback/ExpToastLayer'
 import { GreetingHeader } from '@/components/home/GreetingHeader'
 import { AdventureStatusCard } from '@/components/home/AdventureStatusCard'
 import { TodayInTheCity } from '@/components/home/TodayInTheCity'
+import { WeeklyGoalsCard } from '@/components/home/WeeklyGoalsCard'
 import { TodayQuestSection } from '@/components/home/TodayQuestSection'
 import { DailySummary } from '@/components/home/DailySummary'
 import { ScreenHeader } from '@/components/layout/ScreenHeader'
@@ -99,6 +100,8 @@ export function HomeScreen({
           <span className="text-[17px] leading-none">+</span> 퀘스트 추가
         </Button>
       )}
+
+      <WeeklyGoalsCard state={state} />
 
       <TodayInTheCity state={state} events={events} onOpenMap={onOpenMap} />
 

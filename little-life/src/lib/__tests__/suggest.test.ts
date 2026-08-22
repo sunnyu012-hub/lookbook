@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Category, Difficulty, Quest } from '@/types'
 import { classifyQuest, normalizeTitle, readMinutes, suggestQuests } from '../suggest'
+import { withJosa } from '@/lib/labels'
 
 let seq = 0
 function quest(partial: Partial<Quest> & { title: string }): Quest {
@@ -180,5 +181,24 @@ describe('suggestQuests', () => {
     const found = suggestQuests(history).find((s) => s.title === '한 번도 안 한 일')
 
     expect(found).toBeUndefined()
+  })
+})
+
+describe('조사', () => {
+  it('받침이 있으면 은 · 없으면 는', () => {
+    expect(withJosa('책상', '은', '는')).toBe('책상은')
+    expect(withJosa('의자', '은', '는')).toBe('의자는')
+    expect(withJosa('러그', '은', '는')).toBe('러그는')
+    expect(withJosa('플로어 체어', '은', '는')).toBe('플로어 체어는')
+    expect(withJosa('별빛 화분', '은', '는')).toBe('별빛 화분은')
+  })
+
+  it('이/가 도 된다', () => {
+    expect(withJosa('모빌', '이', '가')).toBe('모빌이')
+    expect(withJosa('의자', '이', '가')).toBe('의자가')
+  })
+
+  it('한글이 아니면 받침 없는 쪽', () => {
+    expect(withJosa('Moon Globe', '은', '는')).toBe('Moon Globe는')
   })
 })

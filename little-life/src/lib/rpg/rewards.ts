@@ -28,11 +28,17 @@ import { findArea, findClass, findItem } from './content'
  * 새 출처가 생겨도 이 파일의 계산식은 그대로다.
  */
 
-/** 난이도별 기본 Coin */
+/**
+ * 난이도별 기본 Coin.
+ *
+ * 하루치를 하면 방에 놓을 것 하나는 살 수 있어야 한다.
+ * 처음엔 5/10/20 이었는데, 그러면 제일 싼 러그(120)가 나흘치였다.
+ * 나흘을 모아야 러그 하나면 그건 모으는 게 아니라 막힌 거다.
+ */
 export const DIFFICULTY_COINS: Record<Difficulty, number> = {
-  EASY: 5,
-  NORMAL: 10,
-  HARD: 20,
+  EASY: 15,
+  NORMAL: 30,
+  HARD: 60,
 }
 
 /** 등급별 기본 드롭 확률 (%) */

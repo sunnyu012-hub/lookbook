@@ -777,8 +777,61 @@ describe('저장된 수집 기록', () => {
     expect(counts.WORK).toBe(42)
   })
 
-  it('스키마 버전이 6 이다', () => {
-    expect(STATE_VERSION).toBe(6)
-    expect(createDefaultState().version).toBe(6)
+  it('스키마 버전이 7 이다', () => {
+    expect(STATE_VERSION).toBe(7)
+    expect(createDefaultState().version).toBe(7)
+  })
+})
+
+describe('오늘의 가게', () => {
+  const shop = COLLECTION_SHOPS.find((s) => s.id === 'HOME_ATELIER')!
+
+  it('같은 날은 몇 번을 봐도 같다', () => {
+    const a = todayListings(shop, '2026-03-04')
+    const b = todayListings(shop, '2026-03-04')
+    expect(a).toEqual(b)
+  })
+
+  it('오늘까지인 것은 내일 진열에 없다', () => {
+    const today = todayListings(shop, '2026-03-04')
+    const tomorrow = new Set(todayListings(shop, '2026-03-05').map((l) => l.itemId))
+
+    for (const listing of today) {
+      expect(tomorrow.has(listing.itemId), listing.itemId).toBe(!listing.lastDay)
+    }
+  })
+
+  it('깎아주는 건 하루 한둘이다', () => {
+    for (const day of ['2026-03-04', '2026-03-05', '2026-03-06', '2026-03-07']) {
+      const sale = todayListings(shop, day).filter((l) => l.wasPrice !== undefined)
+      expect(sale.length, day).toBeLessThanOrEqual(2)
+    }
+  })
+
+  it('깎아준 값은 원래보다 싸다', () => {
+    for (const day of ['2026-03-04', '2026-03-05', '2026-03-06']) {
+      for (const l of todayListings(shop, day)) {
+        if (l.wasPrice === undefined) continue
+        expect(l.price).toBeLessThan(l.wasPrice)
+      }
+    }
+  })
+
+  it('귀한 것은 깎아주지 않는다', () => {
+    for (const day of ['2026-03-04', '2026-03-05', '2026-03-06', '2026-03-07']) {
+      for (const l of todayListings(shop, day)) {
+        if (l.wasPrice === undefined) continue
+        const item = findCollectionItem(l.itemId)!
+        expect(item.rarity, l.itemId).not.toBe('EPIC')
+        expect(item.rarity, l.itemId).not.toBe('LEGENDARY')
+      }
+    }
+  })
+
+  it('며칠 지켜보면 깎아주는 날이 있다', () => {
+    // 하나도 안 깎으면 매일 들여다볼 이유가 없다
+    const days = ['2026-03-04', '2026-03-05', '2026-03-06', '2026-03-07', '2026-03-08']
+    const any = days.some((d) => todayListings(shop, d).some((l) => l.wasPrice !== undefined))
+    expect(any).toBe(true)
   })
 })

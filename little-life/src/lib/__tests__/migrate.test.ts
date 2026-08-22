@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import type { AppState } from '@/types'
 import { createDefaultState } from '@/store/defaultState'
 import {
+  COIN_REBALANCE_PER_QUEST,
   WELCOME_GIFT,
+  grantCoinRebalance,
   defaultStats,
   emptyEquipped,
   grantWelcomeGift,
@@ -264,5 +266,42 @@ describe('첫 실행 상태 (v4)', () => {
     expect(state.user.unlockedSkills).toEqual([])
     expect(state.user.activeBuffs).toEqual([])
     expect(state.user.skillPoints).toBe(0)
+  })
+})
+
+describe('밸런스 보정', () => {
+  const base = (): AppState => {
+    const state = createDefaultState()
+    return {
+      ...state,
+      coinRebalanceGiven: false,
+      user: { ...state.user, coins: 50, totalCompletedQuests: 12 },
+    }
+  }
+
+  it('지금까지 한 만큼 한 번 채워준다', () => {
+    const { state, coins } = grantCoinRebalance(base())
+    expect(coins).toBe(12 * COIN_REBALANCE_PER_QUEST)
+    expect(state.user.coins).toBe(50 + coins)
+    expect(state.coinRebalanceGiven).toBe(true)
+  })
+
+  it('두 번 열어도 두 번 주지 않는다', () => {
+    const first = grantCoinRebalance(base())
+    const second = grantCoinRebalance(first.state)
+    expect(second.coins).toBe(0)
+    expect(second.state.user.coins).toBe(first.state.user.coins)
+  })
+
+  it('한 번도 안 한 사람에게는 줄 것이 없다', () => {
+    const empty = { ...base(), user: { ...base().user, totalCompletedQuests: 0 } }
+    const { state, coins } = grantCoinRebalance(empty)
+    expect(coins).toBe(0)
+    // 그래도 플래그는 세워둔다. 나중에 퀘스트를 해도 소급해주지 않는다.
+    expect(state.coinRebalanceGiven).toBe(true)
+  })
+
+  it('새로 시작하는 사람은 대상이 아니다', () => {
+    expect(createDefaultState().coinRebalanceGiven).toBe(true)
   })
 })

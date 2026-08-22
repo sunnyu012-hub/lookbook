@@ -72,7 +72,12 @@ import {
   toggleFavorite,
   type ProfileSeed,
 } from '@/lib/library/usage'
-import { grantWelcomeGift, withSkillPoints, defaultRecommendSettings } from '@/store/migrate'
+import {
+  grantCoinRebalance,
+  grantWelcomeGift,
+  withSkillPoints,
+  defaultRecommendSettings,
+} from '@/store/migrate'
 import { createDefaultState } from '@/store/defaultState'
 import { repository } from '@/store/localStorage'
 import { applyExp, levelFromTotalExp } from '@/lib/level'
@@ -86,6 +91,8 @@ interface GameState {
   state: AppState
   /** 이번에 Welcome Gift 를 받았는지 */
   justGifted: boolean
+  /** 밸런스를 고치면서 채워준 코인 (0 이면 없었다) */
+  justRebalanced: number
   addQuest: (draft: QuestDraft) => Quest | null
   completeQuest: (id: string) => CompleteResult | null
   /** 완료를 되돌린다. EXP·레벨·통계·기록까지 전부 원래대로. */
@@ -391,6 +398,8 @@ export function useGameState(): GameState {
   const loaded = useRef(false)
   /** Welcome Gift 를 방금 줬는지 — 화면에서 안내하려고 들고 있는다 */
   const giftedRef = useRef(false)
+  /** 밸런스 보정으로 채워준 코인. 한 번 알려주고 끝이다. */
+  const rebalancedRef = useRef(0)
 
   /**
    * 모든 상태 변경은 여기를 지난다. ref 를 먼저 갱신해 연속 클릭에도 최신값을 본다.
@@ -409,9 +418,12 @@ export function useGameState(): GameState {
       if (saved) {
         // 업데이트하고 처음 열었으면 선물을 한 번 준다
         const gift = grantWelcomeGift(saved)
+        // 벌이를 세 배로 올리기 전에 한 퀘스트들의 몫도 한 번 채워준다
+        const fixed = grantCoinRebalance(gift.state)
+        if (fixed.coins > 0) rebalancedRef.current = fixed.coins
         // 그동안 조건을 이미 넘긴 것들 — 평판으로 받는 물건, 완성해둔 세트, 트로피 —
         // 은 앱을 열 때 도착한다. 다음에 뭘 하기 전까지 기다리게 두지 않는다.
-        commit(applyCollectionDerived(gift.state).state)
+        commit(applyCollectionDerived(fixed.state).state)
         if (gift.given) giftedRef.current = true
       } else if (defaults.current) {
         // 첫 실행이면 샘플 데이터와 선물을 그 자리에서 저장해 둔다.
@@ -1533,6 +1545,7 @@ export function useGameState(): GameState {
       ready,
       state,
       justGifted: giftedRef.current,
+      justRebalanced: rebalancedRef.current,
       addQuest,
       completeQuest,
       uncompleteQuest,

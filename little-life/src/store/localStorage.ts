@@ -173,6 +173,22 @@ function sanitizeCategoryStats(raw: unknown): CategoryStats {
   return stats
 }
 
+/**
+ * 받아간 주간 목표.
+ *
+ * 주마다 세 줄씩 쌓이니 그냥 두면 한 해에 150줄이 된다.
+ * 지난 것은 다시 볼 일이 없어서 최근 여덟 주만 남긴다.
+ */
+const WEEKS_KEPT = 8
+
+function sanitizeClaimedGoals(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return []
+  const keys = raw.filter((v): v is string => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}:/.test(v))
+  const weeks = [...new Set(keys.map((k) => k.slice(0, 10)))].sort().slice(-WEEKS_KEPT)
+  const keep = new Set(weeks)
+  return [...new Set(keys.filter((k) => keep.has(k.slice(0, 10))))]
+}
+
 function sanitizeDailyLog(raw: unknown): DailyLog {
   if (!raw || typeof raw !== 'object') return {}
   const source = raw as Record<string, unknown>
@@ -238,6 +254,8 @@ function sanitizeState(raw: unknown): AppState | null {
     categoryStats: sanitizeCategoryStats(s.categoryStats),
     dailyLog: sanitizeDailyLog(s.dailyLog),
     welcomeGiftGiven: s.welcomeGiftGiven === true,
+    coinRebalanceGiven: s.coinRebalanceGiven === true,
+    claimedWeeklyGoals: sanitizeClaimedGoals(s.claimedWeeklyGoals),
     npcs: sanitizeNpcs(s.npcs),
     reputation: sanitizeReputation(s.reputation),
     usageProfiles: sanitizeUsageProfiles(s.usageProfiles),

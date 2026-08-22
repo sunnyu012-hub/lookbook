@@ -1,6 +1,7 @@
 import type { AppState, DiscoveryResult } from '@/types'
 import { isNightOpen } from '@/lib/rpg/time'
 import { addItem, discoveredCount, completedSetIds, newMilestones, newTrophies, unclaimedSets } from './progress'
+import { claimableGoals, goalKey } from '@/lib/goals'
 import { pendingGrants } from './grants'
 import { findCollectionItem } from './catalog'
 
@@ -114,6 +115,18 @@ export function applyCollectionDerived(
         },
       }
       notes.push(`${milestone.message} · 🪙 +${milestone.coins}`)
+      changed = true
+    }
+
+    // 5. 이번 주 목표
+    // 버튼을 하나 더 누르게 하지 않는다. 채운 순간 들어온다.
+    for (const { goal } of claimableGoals(current, now)) {
+      current = {
+        ...current,
+        user: { ...current.user, coins: current.user.coins + goal.coins },
+        claimedWeeklyGoals: [...current.claimedWeeklyGoals, goalKey(goal, now)],
+      }
+      notes.push(`이번 주 목표 · ${goal.label} · 🪙 +${goal.coins}`)
       changed = true
     }
 
