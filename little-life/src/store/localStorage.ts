@@ -1,15 +1,17 @@
 import type {
   AppState,
+  AreaId,
   Category,
   CategoryStats,
   DailyLog,
   DayStat,
   Difficulty,
+  NpcId,
   Quest,
   RepeatRule,
   Routine,
 } from '@/types'
-import { CATEGORIES, DIFFICULTIES } from '@/types'
+import { AREA_IDS, CATEGORIES, DIFFICULTIES, NPC_IDS } from '@/types'
 import { emptyCategoryStats } from '@/lib/stats'
 import type { StateRepository } from './repository'
 import { createDefaultState } from './defaultState'
@@ -17,10 +19,15 @@ import {
   STATE_VERSION,
   sanitizeAreaId,
   sanitizeBattles,
+  sanitizeBuffs,
   sanitizeClassId,
   sanitizeEquipped,
   sanitizeInventory,
+  sanitizeNpcs,
+  sanitizeReputation,
+  sanitizeSkills,
   sanitizeStats,
+  withSkillPoints,
 } from './migrate'
 
 const STORAGE_KEY = 'little-life-v1'
@@ -66,8 +73,15 @@ function sanitizeQuest(raw: unknown): Quest | null {
     ...(typeof q.snoozedUntil === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(q.snoozedUntil)
       ? { snoozedUntil: q.snoozedUntil }
       : {}),
-    // 예전 퀘스트에는 없던 항목. 없으면 DAILY 로 본다.
-    questType: 'DAILY',
+    // 예전 퀘스트에는 없던 항목. 없으면 내가 만든 것으로 본다.
+    questType: q.questType === 'NPC' ? 'NPC' : 'DAILY',
+    // NPC 의뢰라면 누가 부탁했고 몇 번째 단계인지
+    ...(typeof q.npcId === 'string' && NPC_IDS.includes(q.npcId as NpcId)
+      ? { npcId: q.npcId as NpcId }
+      : {}),
+    ...(typeof q.chainId === 'string' ? { chainId: q.chainId } : {}),
+    ...(typeof q.step === 'number' ? { step: numberOr(q.step, 1, 1) } : {}),
+    ...(typeof q.totalSteps === 'number' ? { totalSteps: numberOr(q.totalSteps, 1, 1) } : {}),
     ...(q.reward && typeof q.reward === 'object' ? { reward: sanitizeReward(q.reward) } : {}),
   }
 }
@@ -115,11 +129,23 @@ function sanitizeRoutine(raw: unknown): Routine | null {
 
 function sanitizeReward(raw: unknown): Quest['reward'] {
   const r = (raw ?? {}) as Record<string, unknown>
+  const buffs = sanitizeBuffs(r.usedBuff ? [r.usedBuff] : [])
+
   return {
     exp: numberOr(r.exp, 0),
     coins: numberOr(r.coins, 0),
     statKey: typeof r.statKey === 'string' ? (r.statKey as never) : null,
     ...(typeof r.droppedItemId === 'string' ? { droppedItemId: r.droppedItemId } : {}),
+    // 되돌리기가 정확히 반대로 돌리려면 그때 뭘 올렸는지도 알아야 한다
+    ...(typeof r.areaId === 'string' && AREA_IDS.includes(r.areaId as AreaId)
+      ? { areaId: r.areaId as AreaId }
+      : {}),
+    ...(typeof r.reputation === 'number' ? { reputation: numberOr(r.reputation, 0) } : {}),
+    ...(typeof r.npcId === 'string' && NPC_IDS.includes(r.npcId as NpcId)
+      ? { npcId: r.npcId as NpcId }
+      : {}),
+    ...(typeof r.friendship === 'number' ? { friendship: numberOr(r.friendship, 0) } : {}),
+    ...(buffs.length > 0 ? { usedBuff: buffs[0] } : {}),
   }
 }
 
@@ -165,7 +191,8 @@ function sanitizeState(raw: unknown): AppState | null {
   const s = raw as Record<string, unknown>
   const user = (s.user ?? {}) as Record<string, unknown>
 
-  return {
+  // 스킬 포인트는 저장된 값을 믿지 않고 레벨에서 다시 계산한다 (migrate.withSkillPoints)
+  return withSkillPoints({
     version: STATE_VERSION,
     user: {
       name: typeof user.name === 'string' && user.name.trim() ? user.name.trim() : 'Yuli',
@@ -179,6 +206,10 @@ function sanitizeState(raw: unknown): AppState | null {
       stats: sanitizeStats(user.stats),
       equippedItems: sanitizeEquipped(user.equippedItems),
       currentAreaId: sanitizeAreaId(user.currentAreaId),
+      // v3 에는 없던 항목들
+      skillPoints: 0,
+      unlockedSkills: sanitizeSkills(user.unlockedSkills),
+      activeBuffs: sanitizeBuffs(user.activeBuffs),
     },
     quests: Array.isArray(s.quests)
       ? s.quests.map(sanitizeQuest).filter((q): q is Quest => q !== null)
@@ -192,7 +223,9 @@ function sanitizeState(raw: unknown): AppState | null {
     categoryStats: sanitizeCategoryStats(s.categoryStats),
     dailyLog: sanitizeDailyLog(s.dailyLog),
     welcomeGiftGiven: s.welcomeGiftGiven === true,
-  }
+    npcs: sanitizeNpcs(s.npcs),
+    reputation: sanitizeReputation(s.reputation),
+  })
 }
 
 export class LocalStorageRepository implements StateRepository {

@@ -1,24 +1,31 @@
 import type {
+  ActiveBuff,
   AreaId,
   Bonuses,
   Category,
+  CityEvent,
   ClassId,
   Difficulty,
   DropResult,
   EquippedItems,
   Rarity,
+  Reputation,
   RewardBreakdown,
   StatKey,
 } from '@/types'
 import { RARITIES } from '@/types'
+import { findSkill } from '@/lib/city/skills'
+import { areaReputation, reputationCoinPct } from '@/lib/city/reputation'
 import { expForDifficulty } from '../difficulty'
 import { findArea, findClass, findItem } from './content'
 
 /**
  * 보상 계산.
  *
- * 장비·직업·지역이 전부 같은 모양(Bonuses)으로 보너스를 내놓고,
- * 여기 한 군데에서만 합쳐진다. 밸런스를 고칠 일이 생기면 이 파일과 content.ts 만 본다.
+ * 직업·장비·지역·스킬·평판·도시 이벤트·마신 것 — 전부 같은 모양(Bonuses)으로
+ * 보너스를 내놓고, 여기 한 군데에서만 합쳐진다.
+ * 어디서 온 보너스인지 계산하는 쪽은 알 필요가 없고,
+ * 새 출처가 생겨도 이 파일의 계산식은 그대로다.
  */
 
 /** 난이도별 기본 Coin */
@@ -45,6 +52,8 @@ export function emptyBonuses(): Bonuses {
     rareDropChancePct: 0,
     coinPct: 0,
     luck: 0,
+    friendshipPct: 0,
+    dailyTalkBonus: 0,
   }
 }
 
@@ -64,6 +73,8 @@ function merge(into: Bonuses, add: Partial<Bonuses> | undefined): Bonuses {
   into.rareDropChancePct += add.rareDropChancePct ?? 0
   into.coinPct += add.coinPct ?? 0
   into.luck += add.luck ?? 0
+  into.friendshipPct += add.friendshipPct ?? 0
+  into.dailyTalkBonus += add.dailyTalkBonus ?? 0
   return into
 }
 
@@ -77,18 +88,52 @@ export function calculateEquipmentBonus(equipped: EquippedItems): Bonuses {
   return total
 }
 
+/** 찍어둔 스킬의 보너스만 모은다. */
+export function calculateSkillBonus(unlockedSkills: string[]): Bonuses {
+  const total = emptyBonuses()
+  for (const id of unlockedSkills) {
+    merge(total, findSkill(id)?.bonuses)
+  }
+  return total
+}
+
 export interface BonusSources {
   classId: ClassId | null
   equipped: EquippedItems
   areaId: AreaId
+  /** 찍어둔 스킬 */
+  unlockedSkills?: string[]
+  /** 지금 열려 있는 도시 이벤트 */
+  events?: CityEvent[]
+  /** 지역별 평판 */
+  reputation?: Reputation
 }
 
-/** 직업 + 장비 + 지역을 하나로 합친다. */
-export function collectBonuses({ classId, equipped, areaId }: BonusSources): Bonuses {
+/**
+ * 모든 출처를 하나로 합친다.
+ *
+ * 순서: 직업 → 장비 → 지역 → 스킬 → 평판 → 도시 이벤트.
+ * 전부 더하기라서 순서 자체는 결과를 바꾸지 않는다. 읽는 사람을 위한 순서다.
+ */
+export function collectBonuses(sources: BonusSources): Bonuses {
+  const { classId, equipped, areaId, unlockedSkills, events, reputation } = sources
   const total = emptyBonuses()
+
   merge(total, findClass(classId)?.bonuses)
   merge(total, calculateEquipmentBonus(equipped))
   merge(total, findArea(areaId).bonuses)
+  merge(total, calculateSkillBonus(unlockedSkills ?? []))
+
+  // 평판은 지금 있는 동네 것만 붙는다
+  if (reputation) {
+    merge(total, { coinPct: reputationCoinPct(areaReputation(reputation, areaId)) })
+  }
+
+  // 도시 이벤트는 지금 있는 동네 것과 도시 전체 것만
+  for (const event of events ?? []) {
+    if (event.areaId === null || event.areaId === areaId) merge(total, event.bonuses)
+  }
+
   return total
 }
 
@@ -97,27 +142,29 @@ export interface QuestRewardInput extends BonusSources {
   difficulty: Difficulty
   /** 퀘스트에 굳혀둔 EXP. 없으면 난이도로 계산한다. */
   baseExp?: number
+  /** 이번 퀘스트에 쓰이는 일시 버프 (마신 것) */
+  buff?: ActiveBuff | null
 }
 
 /**
  * 퀘스트 하나의 보상.
  *
- * 순서: 기본 → 난이도 → 직업 → 장비 → 지역.
  * 퍼센트는 곱하지 않고 모두 더한 뒤 한 번에 적용한다.
- * 곱하면 장비를 몇 개 끼웠는지에 따라 값이 튀어서 예측이 안 된다.
+ * 곱하면 장비를 몇 개 꼈는지, 스킬을 몇 개 찍었는지에 따라 값이 튀어서 예측이 안 된다.
  */
 export function calculateQuestReward(input: QuestRewardInput): RewardBreakdown {
-  const { category, difficulty, areaId, classId, equipped } = input
+  const { category, difficulty, buff } = input
   const baseExp = input.baseExp ?? expForDifficulty(difficulty)
   const baseCoins = DIFFICULTY_COINS[difficulty]
 
-  const bonuses = collectBonuses({ classId, equipped, areaId })
+  const bonuses = collectBonuses(input)
 
   const categoryExpPct = bonuses.expPctByCategory[category] ?? 0
   const categoryRewardPct = bonuses.rewardPctByCategory[category] ?? 0
   const hardPct = difficulty === 'HARD' ? bonuses.hardExpPct : 0
+  const buffPct = buff && buffApplies(buff, category) ? buff.expPct : 0
 
-  const expPct = categoryExpPct + categoryRewardPct + hardPct
+  const expPct = categoryExpPct + categoryRewardPct + hardPct + buffPct
   const coinPct = categoryRewardPct + bonuses.coinPct
 
   // 올림이 아니라 반올림. +5% 가 늘 +1 이 되어버리면 등급 차이가 사라진다.
@@ -132,6 +179,19 @@ export function calculateQuestReward(input: QuestRewardInput): RewardBreakdown {
     bonusExp: exp - baseExp,
     bonusCoins: coins - baseCoins,
   }
+}
+
+/** 이 버프가 이 카테고리 퀘스트에 걸리는지 */
+export function buffApplies(buff: ActiveBuff, category: Category): boolean {
+  return buff.category === null || buff.category === category
+}
+
+/** 이번 퀘스트에 쓰일 버프 하나를 고른다. 딱 맞는 것을 먼저 쓴다. */
+export function pickBuff(buffs: ActiveBuff[], category: Category): ActiveBuff | null {
+  const usable = buffs.filter((b) => buffApplies(b, category) && b.uses > 0)
+  if (usable.length === 0) return null
+  // 카테고리가 정해진 것부터 쓴다 — 아무 데나 쓰는 건 남겨두는 게 이득이다
+  return usable.find((b) => b.category !== null) ?? usable[0]
 }
 
 /** 등급별 최종 드롭 확률 (%) */

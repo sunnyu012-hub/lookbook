@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
+  ActiveBuff,
   AppState,
   AreaId,
   Battle,
@@ -9,15 +10,32 @@ import type {
   DayStat,
   DropResult,
   EquipSlot,
+  NpcId,
+  NpcQuestChainDef,
+  NpcState,
   Quest,
   QuestDraft,
   Rarity,
   Routine,
+  ShopDef,
 } from '@/types'
-import { ITEMS } from '@/lib/rpg/content'
-import { calculateQuestReward, rollDrop, STAT_BY_CATEGORY } from '@/lib/rpg/rewards'
+import { ITEMS, findItem } from '@/lib/rpg/content'
+import {
+  calculateQuestReward,
+  collectBonuses,
+  pickBuff,
+  rollDrop,
+  STAT_BY_CATEGORY,
+} from '@/lib/rpg/rewards'
 import { applyBattleAction, clearRarities, createBattle, undoBattleAction } from '@/lib/rpg/battle'
-import { grantWelcomeGift } from '@/store/migrate'
+import { activeEvents } from '@/lib/city/events'
+import { emptyNpcState, giftGain, talkGain } from '@/lib/city/friendship'
+import { FRIENDSHIP_MAX, findNpc, friendshipLevel } from '@/lib/city/npcs'
+import { reputationGain } from '@/lib/city/reputation'
+import { shopStock } from '@/lib/city/shops'
+import { findSkill as findSkillDef, skillState } from '@/lib/city/skills'
+import { expForDifficulty as npcStepExp } from '@/lib/difficulty'
+import { grantWelcomeGift, withSkillPoints } from '@/store/migrate'
 import { createDefaultState } from '@/store/defaultState'
 import { repository } from '@/store/localStorage'
 import { applyExp, levelFromTotalExp } from '@/lib/level'
@@ -54,7 +72,39 @@ interface GameState {
   doBattleAction: (battleId: string, actionId: string) => BattleClearResult | null
   undoBattleActionById: (battleId: string, actionId: string) => void
   removeBattle: (battleId: string) => void
+  // ── 도시 ──
+  /** 하루 첫 대화면 친밀도가 오른다. 오른 만큼을 돌려준다. */
+  talkToNpc: (npcId: NpcId) => TalkResult | null
+  /** 선물을 준다. 아이템이 하나 줄고 친밀도가 오른다. */
+  giftToNpc: (npcId: NpcId, itemId: string) => GiftResult | null
+  /** 의뢰를 받는다. 첫 단계 퀘스트가 생긴다. */
+  acceptChain: (chain: NpcQuestChainDef) => Quest | null
+  /** 상점에서 하나 산다. */
+  buyItem: (shop: ShopDef, itemId: string) => BuyResult
+  /** 마시거나 먹는다. 다음 퀘스트에 걸린다. */
+  useConsumable: (itemId: string) => ActiveBuff | null
+  /** 스킬을 찍는다. */
+  unlockSkill: (skillId: string) => boolean
 }
+
+export interface TalkResult {
+  /** 이번에 오른 친밀도. 0 이면 오늘은 이미 인사했다는 뜻. */
+  gained: number
+  friendship: number
+  /** 단계가 올라갔으면 */
+  leveledUp: boolean
+}
+
+export interface GiftResult {
+  gained: number
+  friendship: number
+  liked: boolean
+  leveledUp: boolean
+}
+
+export type BuyResult =
+  | { ok: true; itemId: string; price: number }
+  | { ok: false; reason: 'NOT_ENOUGH_COINS' | 'ALREADY_OWNED' | 'CLOSED' | 'UNKNOWN' }
 
 export interface BattleClearResult {
   cleared: boolean
@@ -92,6 +142,117 @@ function removeFromInventory(
   return inventory
     .map((e) => (e.itemId === itemId ? { ...e, quantity: e.quantity - 1 } : e))
     .filter((e) => e.quantity > 0)
+}
+
+/** 선물하거나 써버린 물건이 슬롯에 남아 있으면 비운다. */
+function unequipIfGone(equipped: AppState['user']['equippedItems'], itemId: string) {
+  const slot = (Object.keys(equipped) as EquipSlot[]).find((s) => equipped[s] === itemId)
+  return slot ? { ...equipped, [slot]: null } : equipped
+}
+
+/** 이번에 친밀도 단계가 올라갔는지 */
+function crossedFriendshipLevel(before: number, after: number): boolean {
+  return friendshipLevel(before) !== friendshipLevel(after)
+}
+
+/** 보상 계산에 넘길 출처 묶음. 한 군데서만 만들어 빠뜨리는 곳이 없게 한다. */
+function bonusSources(state: AppState) {
+  return {
+    classId: state.user.classId,
+    equipped: state.user.equippedItems,
+    areaId: state.user.currentAreaId,
+    unlockedSkills: state.user.unlockedSkills,
+    events: activeEvents(),
+    reputation: state.reputation,
+  }
+}
+
+/** 버프를 한 번 쓴다. 다 쓴 건 목록에서 빠진다. */
+function spendBuff(buffs: ActiveBuff[], used: ActiveBuff | null): ActiveBuff[] {
+  if (!used) return buffs
+  return buffs
+    .map((b) => (b.id === used.id ? { ...b, uses: b.uses - 1 } : b))
+    .filter((b) => b.uses > 0)
+}
+
+/** 되돌릴 때 버프를 도로 살린다. 이미 사라졌으면 다시 넣어준다. */
+function restoreBuff(buffs: ActiveBuff[], used: ActiveBuff | undefined): ActiveBuff[] {
+  if (!used) return buffs
+  const found = buffs.find((b) => b.id === used.id)
+  if (found) return buffs.map((b) => (b.id === used.id ? { ...b, uses: b.uses + 1 } : b))
+  return [...buffs, { ...used, uses: 1 }]
+}
+
+/** 친밀도를 올린다. 상한을 넘지 않는다. */
+function bumpFriendship(state: AppState, npcId: NpcId, amount: number): AppState {
+  const prev = state.npcs[npcId] ?? emptyNpcState()
+  return {
+    ...state,
+    npcs: {
+      ...state.npcs,
+      [npcId]: { ...prev, friendship: Math.min(FRIENDSHIP_MAX, prev.friendship + amount) },
+    },
+  }
+}
+
+/**
+ * NPC 의뢰의 다음 단계를 연다.
+ *
+ * 한 번에 하나씩만 만든다. 세 개를 한꺼번에 던져주면 그 자체로 밀린 일이 된다.
+ * 마지막 단계였으면 의뢰를 끝내고 약속한 것을 준다.
+ */
+function advanceChain(state: AppState, done: Quest, now: Date): AppState {
+  const { npcId, chainId, step, totalSteps } = done
+  if (!npcId || !chainId || !step || !totalSteps) return state
+
+  const npc = findNpc(npcId)
+  const chain = npc?.chains.find((c) => c.id === chainId)
+  if (!npc || !chain) return state
+
+  // 아직 남은 단계가 있으면 다음 것 하나만 만든다
+  if (step < totalSteps) {
+    const nextStep = chain.steps[step]
+    if (!nextStep) return state
+
+    const quest: Quest = {
+      id: createId(),
+      title: nextStep.title,
+      category: nextStep.category,
+      difficulty: nextStep.difficulty,
+      exp: npcStepExp(nextStep.difficulty),
+      completed: false,
+      createdAt: new Date(now.getTime() + 1).toISOString(),
+      completedAt: null,
+      questType: 'NPC',
+      npcId,
+      chainId,
+      step: step + 1,
+      totalSteps,
+    }
+    return { ...state, quests: [quest, ...state.quests] }
+  }
+
+  // 마지막 단계 — 약속한 보상을 준다
+  const npcState = state.npcs[npcId] ?? emptyNpcState()
+  if (npcState.clearedChainIds.includes(chainId)) return state
+
+  const inventory = chain.rewardItemId
+    ? addToInventory(state.inventory, chain.rewardItemId, `${npc.name} 의뢰`, now)
+    : state.inventory
+
+  return {
+    ...state,
+    inventory,
+    user: { ...state.user, coins: state.user.coins + chain.rewardCoins },
+    npcs: {
+      ...state.npcs,
+      [npcId]: {
+        ...npcState,
+        friendship: Math.min(FRIENDSHIP_MAX, npcState.friendship + chain.rewardFriendship),
+        clearedChainIds: [...npcState.clearedChainIds, chainId],
+      },
+    },
+  }
 }
 
 /** 오늘 칸에 완료 기록을 한 건 더한다. */
@@ -136,8 +297,12 @@ export function useGameState(): GameState {
   /** Welcome Gift 를 방금 줬는지 — 화면에서 안내하려고 들고 있는다 */
   const giftedRef = useRef(false)
 
-  /** 모든 상태 변경은 여기를 지난다. ref 를 먼저 갱신해 연속 클릭에도 최신값을 본다. */
-  const commit = useCallback((next: AppState) => {
+  /**
+   * 모든 상태 변경은 여기를 지난다. ref 를 먼저 갱신해 연속 클릭에도 최신값을 본다.
+   * 스킬 포인트는 여기서 레벨에 맞춰 다시 계산된다 — 따로 쌓지 않아 어긋날 수가 없다.
+   */
+  const commit = useCallback((raw: AppState) => {
+    const next = withSkillPoints(raw)
     stateRef.current = next
     setState(next)
   }, [])
@@ -278,26 +443,39 @@ export function useGameState(): GameState {
       if (!target || target.completed) return null
 
       const now = new Date()
-      const sources = {
-        classId: prev.user.classId,
-        equipped: prev.user.equippedItems,
-        areaId: prev.user.currentAreaId,
-      }
+      const sources = bonusSources(prev)
+
+      // 마셔둔 게 있으면 이번 퀘스트에 한 번 쓴다
+      const buff = pickBuff(prev.user.activeBuffs, target.category)
 
       const reward = calculateQuestReward({
         ...sources,
         category: target.category,
         difficulty: target.difficulty,
         baseExp: target.exp,
+        buff,
       })
 
       const outcome = applyExp(prev.user.level, prev.user.currentExp, reward.exp)
       const statKey = STAT_BY_CATEGORY[target.category]
       const drop = rollDrop(sources, itemsByRarity)
 
-      const earned = { ...target, exp: reward.exp }
+      // 평판은 NPC 의뢰면 그 사람의 동네에, 아니면 지금 있는 동네에 쌓인다
+      const npc = target.npcId ? findNpc(target.npcId) : null
+      const areaId = npc ? npc.areaId : prev.user.currentAreaId
+      const isNpcQuest = target.questType === 'NPC'
+      const gainedReputation = reputationGain(target.difficulty, isNpcQuest)
 
-      commit({
+      // NPC 의뢰는 한 단계 끝낼 때마다 조금씩 가까워진다
+      const bonuses = collectBonuses(sources)
+      const gainedFriendship = npc
+        ? Math.max(1, Math.round(3 * (1 + bonuses.friendshipPct / 100)))
+        : 0
+
+      const earned = { ...target, exp: reward.exp }
+      const withBuffUsed = spendBuff(prev.user.activeBuffs, buff)
+
+      let next: AppState = {
         ...prev,
         user: {
           ...prev.user,
@@ -307,6 +485,7 @@ export function useGameState(): GameState {
           totalCompletedQuests: prev.user.totalCompletedQuests + 1,
           coins: prev.user.coins + reward.coins,
           stats: { ...prev.user.stats, [statKey]: prev.user.stats[statKey] + 1 },
+          activeBuffs: withBuffUsed,
         },
         quests: prev.quests.map((q) =>
           q.id === id
@@ -319,6 +498,10 @@ export function useGameState(): GameState {
                   coins: reward.coins,
                   statKey,
                   ...(drop ? { droppedItemId: drop.itemId } : {}),
+                  areaId,
+                  reputation: gainedReputation,
+                  ...(npc ? { npcId: npc.id, friendship: gainedFriendship } : {}),
+                  ...(buff ? { usedBuff: buff } : {}),
                 },
               }
             : q,
@@ -331,7 +514,21 @@ export function useGameState(): GameState {
           [target.category]: prev.categoryStats[target.category] + reward.exp,
         },
         dailyLog: bumpDailyLog(prev, earned),
-      })
+        reputation: {
+          ...prev.reputation,
+          [areaId]: (prev.reputation[areaId] ?? 0) + gainedReputation,
+        },
+      }
+
+      if (npc) {
+        next = bumpFriendship(next, npc.id, gainedFriendship)
+        // 다음 단계를 열거나, 마지막이면 의뢰를 끝낸다
+        next = advanceChain(next, target, now)
+      }
+
+      const gainedSkillPoints = outcome.level - prev.user.level
+
+      commit(next)
 
       return {
         gainedExp: reward.exp,
@@ -341,6 +538,12 @@ export function useGameState(): GameState {
         newLevel: outcome.level,
         statKey,
         drop,
+        areaId,
+        gainedReputation,
+        npcId: npc?.id ?? null,
+        gainedFriendship,
+        usedBuffName: buff?.name ?? null,
+        gainedSkillPoints,
       }
     },
     [commit],
@@ -380,6 +583,19 @@ export function useGameState(): GameState {
         else dailyLog[dayKey] = { completed, exp, byCategory }
       }
 
+      // 이 완료 때문에 열렸던 다음 단계는 도로 거둔다.
+      // 안 그러면 3단계짜리 의뢰가 되돌릴 때마다 하나씩 늘어난다.
+      const openedNext =
+        target.chainId && target.step
+          ? prev.quests.find(
+              (q) =>
+                q.chainId === target.chainId && q.step === target.step! + 1 && !q.completed,
+            )
+          : undefined
+
+      const npcId = gained.npcId
+      const npcState = npcId ? (prev.npcs[npcId] ?? emptyNpcState()) : null
+
       commit({
         ...prev,
         user: {
@@ -395,12 +611,16 @@ export function useGameState(): GameState {
                 [gained.statKey]: Math.max(0, prev.user.stats[gained.statKey] - 1),
               }
             : prev.user.stats,
+          // 마셨던 건 다시 살려낸다 — 아직 안 쓴 셈이 되니까
+          activeBuffs: restoreBuff(prev.user.activeBuffs, gained.usedBuff),
         },
-        quests: prev.quests.map((q) => {
-          if (q.id !== id) return q
-          const { reward: _dropped, ...rest } = q
-          return { ...rest, completed: false, completedAt: null }
-        }),
+        quests: prev.quests
+          .filter((q) => q.id !== openedNext?.id)
+          .map((q) => {
+            if (q.id !== id) return q
+            const { reward: _dropped, ...rest } = q
+            return { ...rest, completed: false, completedAt: null }
+          }),
         // 떨어졌던 아이템도 도로 가져간다. 안 그러면 완료·되돌리기로 계속 주울 수 있다.
         inventory: gained.droppedItemId
           ? removeFromInventory(prev.inventory, gained.droppedItemId)
@@ -410,6 +630,27 @@ export function useGameState(): GameState {
           [target.category]: Math.max(0, prev.categoryStats[target.category] - gained.exp),
         },
         dailyLog,
+        reputation: gained.areaId
+          ? {
+              ...prev.reputation,
+              [gained.areaId]: Math.max(
+                0,
+                (prev.reputation[gained.areaId] ?? 0) - (gained.reputation ?? 0),
+              ),
+            }
+          : prev.reputation,
+        // 친밀도는 시간이 지나도 줄지 않지만, 잘못 누른 완료를 되돌리는 건 다른 얘기다.
+        // 그때 받은 만큼만 정확히 돌려놓는다.
+        npcs:
+          npcId && npcState
+            ? {
+                ...prev.npcs,
+                [npcId]: {
+                  ...npcState,
+                  friendship: Math.max(0, npcState.friendship - (gained.friendship ?? 0)),
+                },
+              }
+            : prev.npcs,
       })
     },
     [commit],
@@ -655,6 +896,171 @@ export function useGameState(): GameState {
     [commit],
   )
 
+  // ── 도시 ────────────────────────────────────────────────
+
+  /** 하루 첫 대화만 친밀도가 오른다. 계속 누르면 오르는 구조면 대화가 버튼이 된다. */
+  const talkToNpc = useCallback(
+    (npcId: NpcId): TalkResult | null => {
+      const prev = stateRef.current
+      const npc = findNpc(npcId)
+      if (!npc) return null
+
+      const npcState: NpcState = prev.npcs[npcId] ?? emptyNpcState()
+      const dayKey = todayKey()
+      const gained = talkGain(npcState, dayKey, collectBonuses(bonusSources(prev)))
+
+      const friendship = Math.min(FRIENDSHIP_MAX, npcState.friendship + gained)
+      const leveledUp = crossedFriendshipLevel(npcState.friendship, friendship)
+
+      commit({
+        ...prev,
+        npcs: { ...prev.npcs, [npcId]: { ...npcState, friendship, lastTalkedOn: dayKey } },
+      })
+
+      return { gained, friendship, leveledUp }
+    },
+    [commit],
+  )
+
+  /** 선물. 좋아하는 결이면 두 배쯤 오른다. */
+  const giftToNpc = useCallback(
+    (npcId: NpcId, itemId: string): GiftResult | null => {
+      const prev = stateRef.current
+      const npc = findNpc(npcId)
+      const item = findItem(itemId)
+      if (!npc || !item) return null
+      if (!prev.inventory.some((e) => e.itemId === itemId)) return null
+
+      const bonuses = collectBonuses(bonusSources(prev))
+      const gained = giftGain(npc, item, bonuses)
+      const liked = (item.giftTags ?? []).some((tag) => npc.likes.includes(tag))
+
+      const npcState: NpcState = prev.npcs[npcId] ?? emptyNpcState()
+      const friendship = Math.min(FRIENDSHIP_MAX, npcState.friendship + gained)
+
+      commit({
+        ...prev,
+        // 준 물건은 손에서 떠난다. 장착 중이었으면 슬롯도 비운다.
+        inventory: removeFromInventory(prev.inventory, itemId),
+        user: { ...prev.user, equippedItems: unequipIfGone(prev.user.equippedItems, itemId) },
+        npcs: { ...prev.npcs, [npcId]: { ...npcState, friendship } },
+      })
+
+      return {
+        gained,
+        friendship,
+        liked,
+        leveledUp: crossedFriendshipLevel(npcState.friendship, friendship),
+      }
+    },
+    [commit],
+  )
+
+  /** 의뢰를 받는다. 첫 단계 하나만 만들어진다. */
+  const acceptChain = useCallback(
+    (chain: NpcQuestChainDef): Quest | null => {
+      const prev = stateRef.current
+      const first = chain.steps[0]
+      if (!first) return null
+
+      // 이미 진행 중이거나 끝낸 의뢰는 다시 받지 않는다
+      const running = prev.quests.some((q) => q.chainId === chain.id && !q.completed)
+      const cleared = (prev.npcs[chain.npcId]?.clearedChainIds ?? []).includes(chain.id)
+      if (running || cleared) return null
+
+      const quest: Quest = {
+        id: createId(),
+        title: first.title,
+        category: first.category,
+        difficulty: first.difficulty,
+        exp: npcStepExp(first.difficulty),
+        completed: false,
+        createdAt: new Date().toISOString(),
+        completedAt: null,
+        questType: 'NPC',
+        npcId: chain.npcId,
+        chainId: chain.id,
+        step: 1,
+        totalSteps: chain.steps.length,
+      }
+
+      commit({ ...prev, quests: [quest, ...prev.quests] })
+      return quest
+    },
+    [commit],
+  )
+
+  /** 상점에서 하나 산다. Coin 은 현실에서 뭔가 해야만 생긴다. */
+  const buyItem = useCallback(
+    (shop: ShopDef, itemId: string): BuyResult => {
+      const prev = stateRef.current
+      const entry = shopStock(shop).find((e) => e.itemId === itemId)
+      const def = findItem(itemId)
+      if (!entry || !def) return { ok: false, reason: 'UNKNOWN' }
+
+      // 장비는 하나면 충분하다. 소모품은 얼마든지 더 살 수 있다.
+      const owned = prev.inventory.some((e) => e.itemId === itemId)
+      if (owned && def.type !== 'CONSUMABLE') return { ok: false, reason: 'ALREADY_OWNED' }
+      if (prev.user.coins < entry.price) return { ok: false, reason: 'NOT_ENOUGH_COINS' }
+
+      commit({
+        ...prev,
+        user: { ...prev.user, coins: prev.user.coins - entry.price },
+        inventory: addToInventory(prev.inventory, itemId, shop.name, new Date()),
+      })
+
+      return { ok: true, itemId, price: entry.price }
+    },
+    [commit],
+  )
+
+  /** 마시거나 먹는다. 다음 퀘스트 하나에만 걸린다. */
+  const useConsumable = useCallback(
+    (itemId: string): ActiveBuff | null => {
+      const prev = stateRef.current
+      const def = findItem(itemId)
+      if (!def?.consumable) return null
+      if (!prev.inventory.some((e) => e.itemId === itemId)) return null
+
+      const buff: ActiveBuff = {
+        id: createId(),
+        itemId,
+        name: def.name,
+        icon: def.icon,
+        category: def.consumable.category,
+        expPct: def.consumable.expPct,
+        uses: def.consumable.uses,
+        startedAt: new Date().toISOString(),
+      }
+
+      commit({
+        ...prev,
+        inventory: removeFromInventory(prev.inventory, itemId),
+        user: { ...prev.user, activeBuffs: [...prev.user.activeBuffs, buff] },
+      })
+
+      return buff
+    },
+    [commit],
+  )
+
+  /** 스킬을 찍는다. 포인트가 모자라거나 앞 단계를 안 찍었으면 아무 일도 없다. */
+  const unlockSkill = useCallback(
+    (skillId: string): boolean => {
+      const prev = stateRef.current
+      const skill = findSkillDef(skillId)
+      if (!skill) return false
+      if (skillState(skill, prev.user.level, prev.user.unlockedSkills) !== 'AVAILABLE') return false
+
+      commit({
+        ...prev,
+        user: { ...prev.user, unlockedSkills: [...prev.user.unlockedSkills, skillId] },
+      })
+      return true
+    },
+    [commit],
+  )
+
   const renameUser = useCallback(
     (name: string) => {
       const trimmed = name.trim()
@@ -688,6 +1094,12 @@ export function useGameState(): GameState {
       doBattleAction,
       undoBattleActionById,
       removeBattle,
+      talkToNpc,
+      giftToNpc,
+      acceptChain,
+      buyItem,
+      useConsumable,
+      unlockSkill,
     }),
     [
       ready,
@@ -710,6 +1122,12 @@ export function useGameState(): GameState {
       doBattleAction,
       undoBattleActionById,
       removeBattle,
+      talkToNpc,
+      giftToNpc,
+      acceptChain,
+      buyItem,
+      useConsumable,
+      unlockSkill,
     ],
   )
 }

@@ -20,7 +20,7 @@ Safari에서 열고 "홈 화면에 추가"하면 앱처럼 전체화면으로 �
 npm run build      # 타입 체크 + 프로덕션 빌드
 npm run preview    # 빌드 결과 확인
 npm run typecheck  # 타입만 확인
-npm test           # 단위 테스트 (분류기 · 반복 · 레벨 · 보상 · 전투 · 마이그레이션)
+npm test           # 단위 테스트 (분류기 · 반복 · 레벨 · 보상 · 전투 · 도시 · 마이그레이션)
 ```
 
 아이폰 홈 화면에 앱처럼 올리는 순서는 [DEPLOY.md](./DEPLOY.md) 에 있다.
@@ -31,8 +31,18 @@ npm test           # 단위 테스트 (분류기 · 반복 · 레벨 · 보상 �
 ```
 src/
 ├── types/          User, Quest, Routine, CategoryStats, DailyLog, AppState
-│   └── rpg.ts          Area, Class, Stat, Item, Battle, Bonuses
+│   ├── rpg.ts          Area, Class, Stat, Item, Battle, Bonuses
+│   └── city.ts         NPC, Friendship, Shop, CityEvent, Skill, Reputation
 ├── lib/            순수 로직 — 화면과 무관
+│   ├── city/
+│   │   ├── npcs.ts       도시 사람 6명 · 대사 · 의뢰 · 친밀도 단계
+│   │   ├── friendship.ts 친밀도가 오르는 규칙 (대화 · 선물)
+│   │   ├── dialogue.ts   지금 할 만한 말 고르기
+│   │   ├── shops.ts      지역 상점과 오늘의 진열
+│   │   ├── events.ts     오늘의 도시 이벤트
+│   │   ├── skills.ts     6갈래 × 3단계 스킬트리
+│   │   ├── reputation.ts 지역 평판 단계와 획득량
+│   │   └── seed.ts       날짜로 고정되는 무작위
 │   ├── rpg/
 │   │   ├── content.ts  지역·직업·아이템·몬스터·보스   ← 밸런스 값은 전부 여기
 │   │   ├── rewards.ts  보너스 합산 → EXP / Coin / Drop
@@ -56,12 +66,14 @@ src/
 ├── components/
 │   ├── character/  CharacterAvatar, RoomBackground, CharacterRoomCard,
 │   │               LevelBadge, ExpProgress
-│   ├── home/       GreetingHeader, TodayQuestSection, CompactQuestCard, DailySummary
+│   ├── home/       GreetingHeader, AdventureStatusCard, TodayQuestSection,
+│   │               TodayInTheCity, CompactQuestCard, DailySummary
 │   ├── quest/      FullQuestCard, CategoryFilter, QuestCreationSheet, QuestMenu,
 │   │               QuestModeTabs
 │   ├── rpg/        RarityBadge, BattleCard, BattleSheet
+│   ├── city/       CityBadges(친밀도·평판), NpcSheet, ShopSheet
 │   ├── profile/    ProfileHeader, StatCard, StatGrid, ClassCard, EquipSlotGrid,
-│   │               CategoryGrowthBar, WeeklyInsightCard
+│   │               SkillTreeCard, CategoryGrowthBar, WeeklyInsightCard
 │   ├── feedback/   ExpToastLayer, LevelUpOverlay, BattleClearOverlay, DropRevealOverlay
 │   ├── navigation/ BottomNavigation
 │   └── ui/         Card, Button, ProgressBar, BottomSheet, ConfirmDialog, Toast …
@@ -239,3 +251,68 @@ QUEST 화면 아래 **Repeat** 목록에서 잠시 멈추거나 그만둘 수 �
 
 업데이트하고 처음 열면 Welcome Gift(Favorite Mug + 50 Coin)를 한 번 준다.
 `welcomeGiftGiven` 플래그로 막아서 다시 열어도 또 주지 않는다.
+
+## CITY LIFE
+
+RPG 시스템이 있는 생활 앱에서, 사람과 사건이 있는 도시로 한 겹 더 넓혔다.
+NPC · 상점 · 이벤트는 앱 안에 오래 붙잡아두려고 두는 게 아니라,
+**현실에서 뭔가 해보고 싶게 만드는 장치**로만 쓴다. 모든 성장의 원천은 여전히 현실 행동이다.
+
+### 도시 사람 6명
+
+| 이름 | 자리 | 하는 일 |
+| --- | --- | --- |
+| Mina | Cafe Street | 카페 주인 · WORK · MIND 의뢰 · 커피와 차를 판다 |
+| Haru | Green Park | 아침에 뛰는 사람 · BODY · HEART 의뢰 |
+| Lulu | Creative District | 만드는 사람 · PLAY · MIND 의뢰 |
+| June | Creative District | 빈티지 가게 주인 · 옷과 장신구를 판다 |
+| Rio | Training Zone | 코치 · BODY 의뢰 · 운동 장비를 판다 |
+| Noa | Night Town | 밤에만 보이는 사람 · 밤 시장 |
+
+**친밀도는 시간이 지나도 줄지 않는다.** 며칠 안 와도 아무도 서운해하지 않는다.
+하루 첫 인사(+2), 선물(+5, 좋아하는 결이면 +10), 의뢰 완료(+10)로만 오른다.
+계속 눌러서 올릴 수 있으면 대화가 버튼이 되기 때문에, 대화는 하루 한 번만 센다.
+
+### NPC 의뢰
+
+`questType: 'NPC'` 인 보통 Quest 다. 기존 완료 파이프라인을 그대로 지나서
+EXP · Coin · Stat · Drop 을 받고, 그 위에 친밀도와 평판이 얹힌다.
+
+**다음 단계는 앞 단계를 끝낸 뒤에 하나씩 열린다.** 3단계를 한꺼번에 던져주면
+그 자체로 밀린 일이 된다. 되돌리면 그때 열렸던 다음 단계도 같이 거둔다 —
+안 그러면 되돌릴 때마다 퀘스트가 하나씩 늘어난다.
+
+### 상점 · 이벤트 · 오늘의 도시
+
+**오늘 뭐가 열렸는지는 저장하지 않는다.** 날짜를 씨앗 삼아 그 자리에서 계산한다
+(`lib/city/seed.ts`). 새로고침해도 같은 결과가 나오고, 자정이 지나면 알아서 바뀌고,
+저장할 게 없으니 어긋날 것도 없다.
+
+이벤트는 하루 1~3개. **전부 보너스뿐이고 벌점은 하나도 없다** — "오늘 안 왔으니 손해" 를
+만들지 않으려는 것이고, 테스트로 묶어뒀다.
+
+### 스킬
+
+6갈래 × 3단계 = 18개. 앞 단계를 찍어야 뒤가 열린다.
+
+**스킬 포인트는 따로 쌓지 않고 레벨에서 계산한다** (`레벨 - 1 - 쓴 만큼`).
+따로 쌓아두면 완료를 되돌려 레벨이 내려가도 포인트가 남고, 완료·되돌리기를 반복해서
+포인트만 불릴 수 있다. 상태가 바뀔 때마다 `withSkillPoints` 가 다시 계산해 덮는다.
+
+### 보상 파이프라인
+
+출처가 여섯 개로 늘었지만 계산하는 곳은 여전히 `lib/rpg/rewards.ts` 하나다.
+
+```
+직업 → 장비 → 지역 → 스킬 → 평판 → 도시 이벤트 → 마신 것
+                    ↓
+        전부 같은 모양(Bonuses)으로 합쳐진 뒤 한 번에 적용
+```
+
+퍼센트는 여전히 곱하지 않고 더한다. 출처가 늘어날수록 곱셈은 더 빨리 튄다.
+
+### 기존 데이터
+
+`STATE_VERSION = 4`. 없는 항목만 채우고 있는 값은 손대지 않는다.
+없어진 스킬·아이템이 저장돼 있으면 조용히 버리고, 정의가 사라진 NPC 도 마찬가지다.
+v3 데이터를 심어서 이름·레벨·Coin·직업·장비·통계·인벤토리가 그대로 남는지 브라우저로 확인한다.

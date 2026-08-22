@@ -1,9 +1,10 @@
 import { useMemo } from 'react'
-import type { AppState } from '@/types'
+import type { AppState, CityEvent } from '@/types'
 import { CharacterRoomCard } from '@/components/character/CharacterRoomCard'
 import { ExpToastLayer } from '@/components/feedback/ExpToastLayer'
 import { GreetingHeader } from '@/components/home/GreetingHeader'
 import { AdventureStatusCard } from '@/components/home/AdventureStatusCard'
+import { TodayInTheCity } from '@/components/home/TodayInTheCity'
 import { TodayQuestSection } from '@/components/home/TodayQuestSection'
 import { DailySummary } from '@/components/home/DailySummary'
 import { ScreenHeader } from '@/components/layout/ScreenHeader'
@@ -23,6 +24,7 @@ interface HomeScreenProps {
   onOpenMap: () => void
   onOpenBag: () => void
   onOpenMe: () => void
+  events: CityEvent[]
 }
 
 export function HomeScreen({
@@ -35,6 +37,7 @@ export function HomeScreen({
   onOpenMap,
   onOpenBag,
   onOpenMe,
+  events,
 }: HomeScreenProps) {
   const openQuests = useMemo(
     () => sortByNewest(state.quests.filter((q) => !q.completed && isTodayQuest(q))),
@@ -89,6 +92,8 @@ export function HomeScreen({
           <span className="text-[17px] leading-none">+</span> Add Quest
         </Button>
       )}
+
+      <TodayInTheCity state={state} events={events} onOpenMap={onOpenMap} />
 
       <DailySummary completed={summary.completed} earnedExp={summary.earnedExp} />
     </div>

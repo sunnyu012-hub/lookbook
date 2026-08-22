@@ -7,9 +7,14 @@ import {
   emptyEquipped,
   grantWelcomeGift,
   sanitizeBattles,
+  sanitizeBuffs,
   sanitizeEquipped,
   sanitizeInventory,
+  sanitizeNpcs,
+  sanitizeReputation,
+  sanitizeSkills,
   sanitizeStats,
+  withSkillPoints,
 } from '@/store/migrate'
 import { CATEGORIES } from '@/types'
 
@@ -139,5 +144,124 @@ describe('grantWelcomeGift', () => {
     const { state: next } = grantWelcomeGift(withMug)
     expect(next.inventory).toHaveLength(1)
     expect(next.user.coins).toBe(WELCOME_GIFT.coins)
+  })
+})
+
+// ── 도시가 붙은 뒤 (v4) ─────────────────────────────────
+describe('sanitizeNpcs', () => {
+  it('없으면 여섯 명 모두 빈 관계로 시작한다', () => {
+    const npcs = sanitizeNpcs(undefined)
+    expect(Object.keys(npcs)).toHaveLength(6)
+    expect(npcs.MINA).toEqual({ friendship: 0, lastTalkedOn: null, clearedChainIds: [] })
+  })
+
+  it('쌓아둔 친밀도는 그대로 둔다', () => {
+    const npcs = sanitizeNpcs({ MINA: { friendship: 42, lastTalkedOn: '2026-08-22', clearedChainIds: ['mina_focus'] } })
+    expect(npcs.MINA.friendship).toBe(42)
+    expect(npcs.MINA.lastTalkedOn).toBe('2026-08-22')
+    expect(npcs.MINA.clearedChainIds).toEqual(['mina_focus'])
+  })
+
+  it('정의가 사라진 NPC 는 버린다', () => {
+    const npcs = sanitizeNpcs({ GHOST: { friendship: 99 } })
+    expect(npcs.GHOST).toBeUndefined()
+  })
+
+  it('상한을 넘은 친밀도는 잘라낸다', () => {
+    expect(sanitizeNpcs({ MINA: { friendship: 9999 } }).MINA.friendship).toBe(100)
+  })
+
+  it('날짜 모양이 아니면 안 본 것으로 친다', () => {
+    expect(sanitizeNpcs({ MINA: { friendship: 1, lastTalkedOn: 'yesterday' } }).MINA.lastTalkedOn).toBeNull()
+  })
+})
+
+describe('sanitizeReputation', () => {
+  it('없으면 여섯 지역 모두 0', () => {
+    const rep = sanitizeReputation(undefined)
+    expect(Object.keys(rep)).toHaveLength(6)
+    expect(rep.CAFE_STREET).toBe(0)
+  })
+
+  it('쌓아둔 평판은 그대로 둔다', () => {
+    expect(sanitizeReputation({ CAFE_STREET: 88 }).CAFE_STREET).toBe(88)
+  })
+
+  it('없는 지역 값은 무시한다', () => {
+    const rep = sanitizeReputation({ ATLANTIS: 500 })
+    expect((rep as Record<string, number>).ATLANTIS).toBeUndefined()
+  })
+})
+
+describe('sanitizeSkills', () => {
+  it('없어진 스킬은 버린다', () => {
+    expect(sanitizeSkills(['work_focus_1', 'nope'])).toEqual(['work_focus_1'])
+  })
+
+  it('중복은 하나로 합친다', () => {
+    expect(sanitizeSkills(['work_focus_1', 'work_focus_1'])).toEqual(['work_focus_1'])
+  })
+
+  it('배열이 아니면 빈 목록', () => {
+    expect(sanitizeSkills('work_focus_1')).toEqual([])
+  })
+})
+
+describe('sanitizeBuffs', () => {
+  it('마셔둔 것을 지킨다', () => {
+    const buffs = sanitizeBuffs([
+      { id: 'b', itemId: 'focus_coffee', name: 'Focus Coffee', icon: '☕', category: 'WORK', expPct: 20, uses: 1, startedAt: 'x' },
+    ])
+    expect(buffs).toHaveLength(1)
+    expect(buffs[0].category).toBe('WORK')
+  })
+
+  it('다 쓴 것은 버린다', () => {
+    expect(sanitizeBuffs([{ itemId: 'focus_coffee', uses: 0 }])).toEqual([])
+  })
+
+  it('마실 수 없는 아이템이면 버린다', () => {
+    expect(sanitizeBuffs([{ itemId: 'cozy_hoodie', uses: 1 }])).toEqual([])
+  })
+
+  it('없는 아이템이면 버린다', () => {
+    expect(sanitizeBuffs([{ itemId: 'nope', uses: 1 }])).toEqual([])
+  })
+})
+
+describe('withSkillPoints', () => {
+  it('레벨에서 쓴 만큼 뺀 값으로 덮는다', () => {
+    const state = createDefaultState()
+    const next = withSkillPoints({
+      ...state,
+      user: { ...state.user, level: 6, unlockedSkills: ['work_focus_1'], skillPoints: 999 },
+    })
+    // LV.6 → 5점, work_focus_1 에 1점 → 4점
+    expect(next.user.skillPoints).toBe(4)
+  })
+
+  it('레벨이 내려가도 음수가 되지 않는다', () => {
+    const state = createDefaultState()
+    const next = withSkillPoints({
+      ...state,
+      user: { ...state.user, level: 1, unlockedSkills: ['work_focus_1', 'work_focus_2'] },
+    })
+    expect(next.user.skillPoints).toBe(0)
+  })
+
+  it('이미 맞으면 같은 객체를 그대로 돌려준다', () => {
+    const state = withSkillPoints(createDefaultState())
+    expect(withSkillPoints(state)).toBe(state)
+  })
+})
+
+describe('첫 실행 상태 (v4)', () => {
+  it('도시 항목이 전부 들어 있다', () => {
+    const state: AppState = createDefaultState()
+    expect(Object.keys(state.npcs)).toHaveLength(6)
+    expect(Object.keys(state.reputation)).toHaveLength(6)
+    expect(state.user.unlockedSkills).toEqual([])
+    expect(state.user.activeBuffs).toEqual([])
+    expect(state.user.skillPoints).toBe(0)
   })
 })

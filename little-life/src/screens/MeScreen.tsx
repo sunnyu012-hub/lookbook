@@ -7,6 +7,7 @@ import { StatCard } from '@/components/profile/StatCard'
 import { StatGrid } from '@/components/profile/StatGrid'
 import { ClassCard } from '@/components/profile/ClassCard'
 import { EquipSlotGrid } from '@/components/profile/EquipSlotGrid'
+import { SkillTreeCard } from '@/components/profile/SkillTreeCard'
 import { CategoryGrowthBar } from '@/components/profile/CategoryGrowthBar'
 import { WeeklyInsightCard } from '@/components/profile/WeeklyInsightCard'
 import { ScreenHeader, SectionHeader } from '@/components/layout/ScreenHeader'
@@ -20,9 +21,16 @@ interface MeScreenProps {
   onRename: (name: string) => void
   onSelectClass: (classId: ClassId) => void
   onOpenBag: () => void
+  onUnlockSkill: (skillId: string) => void
 }
 
-export function MeScreen({ state, onRename, onSelectClass, onOpenBag }: MeScreenProps) {
+export function MeScreen({
+  state,
+  onRename,
+  onSelectClass,
+  onOpenBag,
+  onUnlockSkill,
+}: MeScreenProps) {
   const { user, categoryStats, dailyLog } = state
 
   const weekCompleted = useMemo(() => weekCompletedCount(dailyLog), [dailyLog])
@@ -78,6 +86,11 @@ export function MeScreen({ state, onRename, onSelectClass, onOpenBag }: MeScreen
           }
         />
         <EquipSlotGrid equipped={user.equippedItems} onOpenBag={onOpenBag} />
+      </section>
+
+      <section className="mt-6">
+        <SectionHeader title="Skills" />
+        <SkillTreeCard user={user} onUnlock={onUnlockSkill} />
       </section>
 
       <section className="mt-6">
