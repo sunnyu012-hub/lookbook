@@ -14,7 +14,14 @@
       "neckY": 357,
       "shoulderY": 372,
       "waistY": 584,
-      "feetY": 937
+      "feetY": 937,
+      "headLeft": 39,
+      "headRight": 451,
+      "headTop": 0,
+      "faceLeft": 96,
+      "faceTop": 32,
+      "faceRight": 395,
+      "faceBottom": 350
     }
   },
   "items": {
@@ -308,6 +315,582 @@
       "offsetY": 446.2,
       "file": "/assets/wardrobe/bottom/pink_pleats.webp",
       "category": "BOTTOM"
+    },
+    "bear_fleece_onesie": {
+      "w": 290,
+      "h": 404,
+      "scale": 1.4233,
+      "offsetX": 45.6,
+      "offsetY": 372,
+      "file": "/assets/wardrobe/onepiece/bear_fleece_onesie.webp",
+      "category": "ONEPIECE"
+    },
+    "beige_long_overalls": {
+      "w": 292,
+      "h": 394,
+      "scale": 1.4594,
+      "offsetX": 26.6,
+      "offsetY": 372,
+      "file": "/assets/wardrobe/onepiece/beige_long_overalls.webp",
+      "category": "ONEPIECE"
+    },
+    "black_puff_dress": {
+      "w": 296,
+      "h": 401,
+      "scale": 1.4339,
+      "offsetX": 33.3,
+      "offsetY": 372,
+      "file": "/assets/wardrobe/onepiece/black_puff_dress.webp",
+      "category": "ONEPIECE"
+    },
+    "black_slip_dress": {
+      "w": 299,
+      "h": 392,
+      "scale": 1.4668,
+      "offsetX": 35.8,
+      "offsetY": 372,
+      "file": "/assets/wardrobe/onepiece/black_slip_dress.webp",
+      "category": "ONEPIECE"
+    },
+    "cardigan_skirt_set": {
+      "w": 313,
+      "h": 404,
+      "scale": 1.4233,
+      "offsetX": 28.5,
+      "offsetY": 372,
+      "file": "/assets/wardrobe/onepiece/cardigan_skirt_set.webp",
+      "category": "ONEPIECE"
+    },
+    "cream_shirt_dress": {
+      "w": 294,
+      "h": 393,
+      "scale": 1.4631,
+      "offsetX": 23.1,
+      "offsetY": 372,
+      "file": "/assets/wardrobe/onepiece/cream_shirt_dress.webp",
+      "category": "ONEPIECE"
+    },
+    "denim_long_overalls": {
+      "w": 314,
+      "h": 395,
+      "scale": 1.4557,
+      "offsetX": 6.8,
+      "offsetY": 372,
+      "file": "/assets/wardrobe/onepiece/denim_long_overalls.webp",
+      "category": "ONEPIECE"
+    },
+    "khaki_jumpsuit": {
+      "w": 306,
+      "h": 395,
+      "scale": 1.4557,
+      "offsetX": 26.5,
+      "offsetY": 372,
+      "file": "/assets/wardrobe/onepiece/khaki_jumpsuit.webp",
+      "category": "ONEPIECE"
+    },
+    "navy_pinafore": {
+      "w": 314,
+      "h": 393,
+      "scale": 1.4631,
+      "offsetX": -0.3,
+      "offsetY": 372,
+      "file": "/assets/wardrobe/onepiece/navy_pinafore.webp",
+      "category": "ONEPIECE"
+    },
+    "pink_gingham_dress": {
+      "w": 308,
+      "h": 403,
+      "scale": 1.4268,
+      "offsetX": 28.0,
+      "offsetY": 372,
+      "file": "/assets/wardrobe/onepiece/pink_gingham_dress.webp",
+      "category": "ONEPIECE"
+    },
+    "pink_knit_dress": {
+      "w": 313,
+      "h": 393,
+      "scale": 1.4631,
+      "offsetX": 21.0,
+      "offsetY": 372,
+      "file": "/assets/wardrobe/onepiece/pink_knit_dress.webp",
+      "category": "ONEPIECE"
+    },
+    "trench_set": {
+      "w": 297,
+      "h": 408,
+      "scale": 1.4093,
+      "offsetX": 39.1,
+      "offsetY": 372,
+      "file": "/assets/wardrobe/onepiece/trench_set.webp",
+      "category": "ONEPIECE"
+    },
+    "beige_canvas": {
+      "w": 255,
+      "h": 361,
+      "scale": 1.6,
+      "offsetX": 43.0,
+      "offsetY": 369.4,
+      "file": "/assets/wardrobe/shoes/beige_canvas.webp",
+      "category": "SHOES"
+    },
+    "black_derby": {
+      "w": 264,
+      "h": 359,
+      "scale": 1.6,
+      "offsetX": 35.8,
+      "offsetY": 372.6,
+      "file": "/assets/wardrobe/shoes/black_derby.webp",
+      "category": "SHOES"
+    },
+    "black_loafers": {
+      "w": 252,
+      "h": 356,
+      "scale": 1.6,
+      "offsetX": 45.4,
+      "offsetY": 377.4,
+      "file": "/assets/wardrobe/shoes/black_loafers.webp",
+      "category": "SHOES"
+    },
+    "brown_boots": {
+      "w": 254,
+      "h": 352,
+      "scale": 1.6,
+      "offsetX": 43.8,
+      "offsetY": 383.8,
+      "file": "/assets/wardrobe/shoes/brown_boots.webp",
+      "category": "SHOES"
+    },
+    "brown_loafers": {
+      "w": 251,
+      "h": 356,
+      "scale": 1.6,
+      "offsetX": 46.2,
+      "offsetY": 377.4,
+      "file": "/assets/wardrobe/shoes/brown_loafers.webp",
+      "category": "SHOES"
+    },
+    "bunny_slippers": {
+      "w": 269,
+      "h": 355,
+      "scale": 1.6,
+      "offsetX": 31.8,
+      "offsetY": 379.0,
+      "file": "/assets/wardrobe/shoes/bunny_slippers.webp",
+      "category": "SHOES"
+    },
+    "cream_mary_janes": {
+      "w": 252,
+      "h": 357,
+      "scale": 1.6,
+      "offsetX": 45.4,
+      "offsetY": 375.8,
+      "file": "/assets/wardrobe/shoes/cream_mary_janes.webp",
+      "category": "SHOES"
+    },
+    "khaki_trail": {
+      "w": 270,
+      "h": 361,
+      "scale": 1.6,
+      "offsetX": 31.0,
+      "offsetY": 369.4,
+      "file": "/assets/wardrobe/shoes/khaki_trail.webp",
+      "category": "SHOES"
+    },
+    "navy_sneakers": {
+      "w": 253,
+      "h": 354,
+      "scale": 1.6,
+      "offsetX": 44.6,
+      "offsetY": 380.6,
+      "file": "/assets/wardrobe/shoes/navy_sneakers.webp",
+      "category": "SHOES"
+    },
+    "pink_runners": {
+      "w": 276,
+      "h": 357,
+      "scale": 1.6,
+      "offsetX": 26.2,
+      "offsetY": 375.8,
+      "file": "/assets/wardrobe/shoes/pink_runners.webp",
+      "category": "SHOES"
+    },
+    "white_sneakers": {
+      "w": 250,
+      "h": 354,
+      "scale": 1.6,
+      "offsetX": 47.0,
+      "offsetY": 380.6,
+      "file": "/assets/wardrobe/shoes/white_sneakers.webp",
+      "category": "SHOES"
+    },
+    "yellow_rainboots": {
+      "w": 254,
+      "h": 355,
+      "scale": 1.6,
+      "offsetX": 43.8,
+      "offsetY": 379.0,
+      "file": "/assets/wardrobe/shoes/yellow_rainboots.webp",
+      "category": "SHOES"
+    },
+    "ash_short": {
+      "w": 289,
+      "h": 308,
+      "scale": 1.8571,
+      "offsetX": -21.0,
+      "offsetY": -146.3,
+      "file": "/assets/wardrobe/hair/ash_short.webp",
+      "category": "HAIR"
+    },
+    "black_long": {
+      "w": 293,
+      "h": 409,
+      "scale": 2.0621,
+      "offsetX": -56.6,
+      "offsetY": -135.0,
+      "file": "/assets/wardrobe/hair/black_long.webp",
+      "category": "HAIR"
+    },
+    "blonde_long_wave": {
+      "w": 314,
+      "h": 448,
+      "scale": 2.2148,
+      "offsetX": -105.5,
+      "offsetY": -140.8,
+      "file": "/assets/wardrobe/hair/blonde_long_wave.webp",
+      "category": "HAIR"
+    },
+    "brown_bob": {
+      "w": 301,
+      "h": 294,
+      "scale": 1.9167,
+      "offsetX": -45.8,
+      "offsetY": -186.5,
+      "file": "/assets/wardrobe/hair/brown_bob.webp",
+      "category": "HAIR"
+    },
+    "brown_bun_wave": {
+      "w": 315,
+      "h": 412,
+      "scale": 2.3359,
+      "offsetX": -111.9,
+      "offsetY": -225.0,
+      "file": "/assets/wardrobe/hair/brown_bun_wave.webp",
+      "category": "HAIR"
+    },
+    "brown_curly_long": {
+      "w": 312,
+      "h": 320,
+      "scale": 2.1357,
+      "offsetX": -91.9,
+      "offsetY": -143.1,
+      "file": "/assets/wardrobe/hair/brown_curly_long.webp",
+      "category": "HAIR"
+    },
+    "brown_long_straight": {
+      "w": 297,
+      "h": 342,
+      "scale": 1.8924,
+      "offsetX": -32.7,
+      "offsetY": -140.2,
+      "file": "/assets/wardrobe/hair/brown_long_straight.webp",
+      "category": "HAIR"
+    },
+    "brown_low_pony": {
+      "w": 269,
+      "h": 370,
+      "scale": 2.1056,
+      "offsetX": -28.2,
+      "offsetY": -153.3,
+      "file": "/assets/wardrobe/hair/brown_low_pony.webp",
+      "category": "HAIR"
+    },
+    "brown_short_wave": {
+      "w": 307,
+      "h": 323,
+      "scale": 1.8687,
+      "offsetX": -42.3,
+      "offsetY": -199.7,
+      "file": "/assets/wardrobe/hair/brown_short_wave.webp",
+      "category": "HAIR"
+    },
+    "brown_shoulder": {
+      "w": 300,
+      "h": 298,
+      "scale": 2.034,
+      "offsetX": -66.7,
+      "offsetY": -145.0,
+      "file": "/assets/wardrobe/hair/brown_shoulder.webp",
+      "category": "HAIR"
+    },
+    "dark_mid_wave": {
+      "w": 308,
+      "h": 363,
+      "scale": 1.9416,
+      "offsetX": -47.7,
+      "offsetY": -162.2,
+      "file": "/assets/wardrobe/hair/dark_mid_wave.webp",
+      "category": "HAIR"
+    },
+    "navy_short_wave": {
+      "w": 296,
+      "h": 306,
+      "scale": 2.0479,
+      "offsetX": -59.6,
+      "offsetY": -168.7,
+      "file": "/assets/wardrobe/hair/navy_short_wave.webp",
+      "category": "HAIR"
+    },
+    "calm": {
+      "w": 386,
+      "h": 311,
+      "scale": 1.0674,
+      "offsetX": 39,
+      "offsetY": 25.1,
+      "file": "/assets/wardrobe/face/calm.webp",
+      "category": "FACE"
+    },
+    "grin": {
+      "w": 382,
+      "h": 315,
+      "scale": 1.0785,
+      "offsetX": 39,
+      "offsetY": 17.3,
+      "file": "/assets/wardrobe/face/grin.webp",
+      "category": "FACE"
+    },
+    "laugh": {
+      "w": 383,
+      "h": 315,
+      "scale": 1.0757,
+      "offsetX": 39,
+      "offsetY": 18.1,
+      "file": "/assets/wardrobe/face/laugh.webp",
+      "category": "FACE"
+    },
+    "oh": {
+      "w": 381,
+      "h": 300,
+      "scale": 1.0814,
+      "offsetX": 39,
+      "offsetY": 32.6,
+      "file": "/assets/wardrobe/face/oh.webp",
+      "category": "FACE"
+    },
+    "playful_wink": {
+      "w": 371,
+      "h": 284,
+      "scale": 1.1105,
+      "offsetX": 39,
+      "offsetY": 41.6,
+      "file": "/assets/wardrobe/face/playful_wink.webp",
+      "category": "FACE"
+    },
+    "pout": {
+      "w": 375,
+      "h": 283,
+      "scale": 1.0987,
+      "offsetX": 39,
+      "offsetY": 46.1,
+      "file": "/assets/wardrobe/face/pout.webp",
+      "category": "FACE"
+    },
+    "sleepy": {
+      "w": 381,
+      "h": 299,
+      "scale": 1.0814,
+      "offsetX": 39,
+      "offsetY": 33.7,
+      "file": "/assets/wardrobe/face/sleepy.webp",
+      "category": "FACE"
+    },
+    "smile": {
+      "w": 383,
+      "h": 313,
+      "scale": 1.0757,
+      "offsetX": 39,
+      "offsetY": 20.3,
+      "file": "/assets/wardrobe/face/smile.webp",
+      "category": "FACE"
+    },
+    "soft_smile": {
+      "w": 384,
+      "h": 312,
+      "scale": 1.0729,
+      "offsetX": 39,
+      "offsetY": 22.2,
+      "file": "/assets/wardrobe/face/soft_smile.webp",
+      "category": "FACE"
+    },
+    "surprised": {
+      "w": 367,
+      "h": 299,
+      "scale": 1.1226,
+      "offsetX": 39,
+      "offsetY": 21.3,
+      "file": "/assets/wardrobe/face/surprised.webp",
+      "category": "FACE"
+    },
+    "teary": {
+      "w": 371,
+      "h": 284,
+      "scale": 1.1105,
+      "offsetX": 39,
+      "offsetY": 41.6,
+      "file": "/assets/wardrobe/face/teary.webp",
+      "category": "FACE"
+    },
+    "wink": {
+      "w": 384,
+      "h": 311,
+      "scale": 1.0729,
+      "offsetX": 39,
+      "offsetY": 23.3,
+      "file": "/assets/wardrobe/face/wink.webp",
+      "category": "FACE"
+    },
+    "beige_beret": {
+      "w": 287,
+      "h": 204,
+      "scale": 1.1484,
+      "offsetX": 54.2,
+      "offsetY": -18.0,
+      "file": "/assets/wardrobe/acc/beige_beret.webp",
+      "category": "HEAD"
+    },
+    "black_cap": {
+      "w": 299,
+      "h": 207,
+      "scale": 1.3504,
+      "offsetX": 45.1,
+      "offsetY": -6.0,
+      "file": "/assets/wardrobe/acc/black_cap.webp",
+      "category": "HEAD"
+    },
+    "brown_hobo_bag": {
+      "w": 282,
+      "h": 331,
+      "scale": 0.7597,
+      "offsetX": 239.9,
+      "offsetY": 458.3,
+      "file": "/assets/wardrobe/acc/brown_hobo_bag.webp",
+      "category": "BAG"
+    },
+    "canvas_tote": {
+      "w": 238,
+      "h": 325,
+      "scale": 0.9002,
+      "offsetX": 243.9,
+      "offsetY": 447.7,
+      "file": "/assets/wardrobe/acc/canvas_tote.webp",
+      "category": "BAG"
+    },
+    "charcoal_beanie": {
+      "w": 283,
+      "h": 239,
+      "scale": 1.3394,
+      "offsetX": 57.5,
+      "offsetY": -12.0,
+      "file": "/assets/wardrobe/acc/charcoal_beanie.webp",
+      "category": "HEAD"
+    },
+    "clear_glasses": {
+      "w": 293,
+      "h": 133,
+      "scale": 1.0968,
+      "offsetX": 86.3,
+      "offsetY": 105.3,
+      "file": "/assets/wardrobe/acc/clear_glasses.webp",
+      "category": "ACCESSORY"
+    },
+    "cream_beanie": {
+      "w": 267,
+      "h": 288,
+      "scale": 1.4196,
+      "offsetX": 57.5,
+      "offsetY": -24.0,
+      "file": "/assets/wardrobe/acc/cream_beanie.webp",
+      "category": "HEAD"
+    },
+    "cream_saddle_bag": {
+      "w": 262,
+      "h": 300,
+      "scale": 0.8177,
+      "offsetX": 235.9,
+      "offsetY": 461.3,
+      "file": "/assets/wardrobe/acc/cream_saddle_bag.webp",
+      "category": "BAG"
+    },
+    "flower_bow": {
+      "w": 217,
+      "h": 160,
+      "scale": 0.6455,
+      "offsetX": 59.0,
+      "offsetY": 44.0,
+      "file": "/assets/wardrobe/acc/flower_bow.webp",
+      "category": "HEAD"
+    },
+    "flower_umbrella": {
+      "w": 310,
+      "h": 301,
+      "scale": 0.9569,
+      "offsetX": -17.3,
+      "offsetY": 428.8,
+      "file": "/assets/wardrobe/acc/flower_umbrella.webp",
+      "category": "ACCESSORY"
+    },
+    "gingham_headband": {
+      "w": 241,
+      "h": 211,
+      "scale": 1.4702,
+      "offsetX": 69.8,
+      "offsetY": 10.0,
+      "file": "/assets/wardrobe/acc/gingham_headband.webp",
+      "category": "HEAD"
+    },
+    "gingham_pouch": {
+      "w": 304,
+      "h": 190,
+      "scale": 0.5963,
+      "offsetX": 260.4,
+      "offsetY": 547.4,
+      "file": "/assets/wardrobe/acc/gingham_pouch.webp",
+      "category": "BAG"
+    },
+    "gold_earrings": {
+      "w": 133,
+      "h": 103,
+      "scale": 1.9206,
+      "offsetX": 119.3,
+      "offsetY": 130.2,
+      "file": "/assets/wardrobe/acc/gold_earrings.webp",
+      "category": "ACCESSORY"
+    },
+    "khaki_chalk_bag": {
+      "w": 217,
+      "h": 228,
+      "scale": 0.6835,
+      "offsetX": 270.8,
+      "offsetY": 530.1,
+      "file": "/assets/wardrobe/acc/khaki_chalk_bag.webp",
+      "category": "BAG"
+    },
+    "pink_backpack": {
+      "w": 254,
+      "h": 293,
+      "scale": 0.8435,
+      "offsetX": 35.9,
+      "offsetY": 460.4,
+      "file": "/assets/wardrobe/acc/pink_backpack.webp",
+      "category": "BAG"
+    },
+    "round_glasses": {
+      "w": 304,
+      "h": 134,
+      "scale": 1.0571,
+      "offsetX": 86.3,
+      "offsetY": 107.5,
+      "file": "/assets/wardrobe/acc/round_glasses.webp",
+      "category": "ACCESSORY"
     }
   }
 }
