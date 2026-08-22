@@ -1,5 +1,7 @@
 import type { Quest } from '@/types'
 import { CategoryThumb } from '@/components/ui/CategoryBadge'
+import { findNpc } from '@/lib/city/npcs'
+import { cn } from '@/components/ui/cn'
 import { DifficultyBadge } from '@/components/ui/DifficultyBadge'
 import { Button } from '@/components/ui/Button'
 import { formatTime } from '@/lib/date'
@@ -57,13 +59,31 @@ export function FullQuestCard({
     )
   }
 
+  const npc = quest.npcId ? findNpc(quest.npcId) : null
+
   return (
     <div className="flex items-start gap-3 rounded-card border border-line bg-surface p-3 shadow-soft">
       <CategoryThumb category={quest.category} />
 
       <div className="min-w-0 flex-1">
+        {npc && (
+          <p className="flex items-center gap-1 pt-0.5 text-[11.5px] text-rose-deep">
+            <span className="text-[13px] leading-none">{npc.avatar}</span>
+            <span className="truncate">{npc.name} 의 부탁</span>
+            {quest.step && quest.totalSteps && (
+              <span className="shrink-0 font-game text-[10px] text-inkfaint">
+                {quest.step}/{quest.totalSteps}
+              </span>
+            )}
+          </p>
+        )}
         <div className="flex items-start gap-1">
-          <p className="min-w-0 flex-1 break-words pt-1.5 text-[14.5px] font-medium leading-snug text-ink">
+          <p
+            className={cn(
+              'min-w-0 flex-1 break-words text-[14.5px] font-medium leading-snug text-ink',
+              npc ? 'pt-0.5' : 'pt-1.5',
+            )}
+          >
             {quest.title}
           </p>
           <QuestMenu items={menuItems} label={`${quest.title} 메뉴`} />

@@ -39,7 +39,7 @@ export type Stats = Record<StatKey, number>
 export const RARITIES = ['COMMON', 'RARE', 'EPIC', 'LEGENDARY'] as const
 export type Rarity = (typeof RARITIES)[number]
 
-export const ITEM_TYPES = ['EQUIPMENT', 'MATERIAL', 'COLLECTIBLE'] as const
+export const ITEM_TYPES = ['EQUIPMENT', 'CONSUMABLE', 'MATERIAL', 'COLLECTIBLE'] as const
 export type ItemType = (typeof ITEM_TYPES)[number]
 
 export const EQUIP_SLOTS = ['HEAD', 'TOP', 'BOTTOM', 'SHOES', 'ACCESSORY', 'CHARM'] as const
@@ -64,6 +64,10 @@ export interface Bonuses {
   coinPct: number
   /** 표시용 행운 */
   luck: number
+  /** NPC 친밀도 획득 증가 (%) */
+  friendshipPct: number
+  /** 하루 첫 대화에 더 붙는 친밀도 */
+  dailyTalkBonus: number
 }
 
 /** 아이템 원본 정의. 코드에 상수로 들고 있고 저장하지 않는다. */
@@ -79,6 +83,16 @@ export interface ItemDef {
   /** 화면에 보여줄 효과 문구 */
   effectLabel: string
   bonuses: Partial<Bonuses>
+  /** 마셔서 쓰는 것이면 어떤 버프가 걸리는지 */
+  consumable?: {
+    /** null 이면 아무 퀘스트에나 걸린다 */
+    category: Category | null
+    expPct: number
+    /** 몇 번 쓰고 사라지는지 */
+    uses: number
+  }
+  /** 선물할 수 있는 것이면 어떤 결의 물건인지 */
+  giftTags?: import('./city').GiftTag[]
 }
 
 /** 실제로 가지고 있는 것. 저장된다. */

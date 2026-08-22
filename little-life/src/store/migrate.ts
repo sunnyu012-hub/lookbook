@@ -1,4 +1,5 @@
 import type {
+  ActiveBuff,
   AppState,
   AreaId,
   Battle,
@@ -6,11 +7,17 @@ import type {
   ClassId,
   EquippedItems,
   InventoryEntry,
+  NpcStates,
   Rarity,
+  Reputation,
   Stats,
 } from '@/types'
-import { AREA_IDS, CLASS_IDS, EQUIP_SLOTS, RARITIES, STAT_KEYS } from '@/types'
+import { AREA_IDS, CATEGORIES, CLASS_IDS, EQUIP_SLOTS, RARITIES, STAT_KEYS } from '@/types'
 import { findBattleDef, findItem } from '@/lib/rpg/content'
+import { NPCS, findNpc } from '@/lib/city/npcs'
+import { findSkill, availableSkillPoints } from '@/lib/city/skills'
+import { emptyNpcState } from '@/lib/city/friendship'
+import { emptyReputation } from '@/lib/city/reputation'
 
 /**
  * 저장된 데이터를 지금 버전으로 끌어올린다.
@@ -19,7 +26,7 @@ import { findBattleDef, findItem } from '@/lib/rpg/content'
  * 없는 항목만 기본값으로 채우고, 있는 값은 손대지 않는다.
  */
 
-export const STATE_VERSION = 3
+export const STATE_VERSION = 4
 
 export function defaultStats(): Stats {
   return STAT_KEYS.reduce((acc, key) => {
@@ -161,6 +168,103 @@ export function sanitizeClassId(raw: unknown): ClassId | null {
 
 export function sanitizeAreaId(raw: unknown): AreaId {
   return AREA_IDS.includes(raw as AreaId) ? (raw as AreaId) : 'HOME_BASE'
+}
+
+// ── 도시 ────────────────────────────────────────────────
+
+export function emptyNpcStates(): NpcStates {
+  return NPCS.reduce((acc, npc) => {
+    acc[npc.id] = emptyNpcState()
+    return acc
+  }, {} as NpcStates)
+}
+
+/**
+ * 나와 도시 사람들 사이의 기록.
+ * 정의가 사라진 NPC 는 버리고, 새로 생긴 NPC 는 빈 관계로 채운다.
+ */
+export function sanitizeNpcs(raw: unknown): NpcStates {
+  const states = emptyNpcStates()
+  if (!raw || typeof raw !== 'object') return states
+  const source = raw as Record<string, unknown>
+
+  for (const [id, value] of Object.entries(source)) {
+    if (!findNpc(id) || !value || typeof value !== 'object') continue
+    const entry = value as Record<string, unknown>
+
+    states[id] = {
+      friendship: Math.min(100, numberOr(entry.friendship, 0)),
+      lastTalkedOn:
+        typeof entry.lastTalkedOn === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(entry.lastTalkedOn)
+          ? entry.lastTalkedOn
+          : null,
+      clearedChainIds: Array.isArray(entry.clearedChainIds)
+        ? [...new Set(entry.clearedChainIds.filter((v): v is string => typeof v === 'string'))]
+        : [],
+    }
+  }
+  return states
+}
+
+export function sanitizeReputation(raw: unknown): Reputation {
+  const reputation = emptyReputation()
+  if (!raw || typeof raw !== 'object') return reputation
+  const source = raw as Record<string, unknown>
+
+  for (const id of AREA_IDS) {
+    reputation[id] = numberOr(source[id], 0)
+  }
+  return reputation
+}
+
+/** 없어진 스킬은 조용히 버린다. 안 그러면 쓴 포인트만 사라진 채로 남는다. */
+export function sanitizeSkills(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return []
+  return [...new Set(raw.filter((v): v is string => typeof v === 'string' && findSkill(v) !== null))]
+}
+
+/** 마셔둔 것. 정의가 사라졌거나 다 쓴 것은 버린다. */
+export function sanitizeBuffs(raw: unknown): ActiveBuff[] {
+  if (!Array.isArray(raw)) return []
+  const result: ActiveBuff[] = []
+
+  for (const value of raw) {
+    if (!value || typeof value !== 'object') continue
+    const b = value as Record<string, unknown>
+
+    const itemId = typeof b.itemId === 'string' ? b.itemId : null
+    const def = itemId ? findItem(itemId) : null
+    if (!def?.consumable) continue
+
+    const uses = numberOr(b.uses, 0)
+    if (uses <= 0) continue
+
+    const category = CATEGORIES.includes(b.category as Category) ? (b.category as Category) : null
+
+    result.push({
+      id: typeof b.id === 'string' ? b.id : `${itemId}-${result.length}`,
+      itemId: itemId!,
+      name: typeof b.name === 'string' ? b.name : def.name,
+      icon: typeof b.icon === 'string' ? b.icon : def.icon,
+      category,
+      expPct: numberOr(b.expPct, def.consumable.expPct),
+      uses,
+      startedAt: typeof b.startedAt === 'string' ? b.startedAt : new Date().toISOString(),
+    })
+  }
+  return result
+}
+
+/**
+ * 스킬 포인트를 레벨과 찍어둔 스킬에서 다시 계산해 덮는다.
+ *
+ * 따로 쌓아두면 완료를 되돌려 레벨이 내려가도 포인트가 남고,
+ * 완료·되돌리기를 반복해서 포인트만 불릴 수 있다. 늘 계산하면 그럴 일이 없다.
+ */
+export function withSkillPoints(state: AppState): AppState {
+  const points = availableSkillPoints(state.user.level, state.user.unlockedSkills)
+  if (state.user.skillPoints === points) return state
+  return { ...state, user: { ...state.user, skillPoints: points } }
 }
 
 /** 업데이트하고 처음 열었을 때 주는 선물. 한 번만 준다. */

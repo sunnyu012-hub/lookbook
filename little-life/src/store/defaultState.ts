@@ -2,7 +2,8 @@ import type { AppState, Quest, QuestDraft } from '@/types'
 import { emptyCategoryStats } from '@/lib/stats'
 import { expForDifficulty } from '@/lib/difficulty'
 import { createId } from '@/lib/id'
-import { STATE_VERSION, defaultStats, emptyEquipped } from './migrate'
+import { emptyReputation } from '@/lib/city/reputation'
+import { STATE_VERSION, defaultStats, emptyEquipped, emptyNpcStates } from './migrate'
 
 export { STATE_VERSION } from './migrate'
 
@@ -46,6 +47,9 @@ export function createDefaultState(): AppState {
       stats: defaultStats(),
       equippedItems: emptyEquipped(),
       currentAreaId: 'HOME_BASE',
+      skillPoints: 0,
+      unlockedSkills: [],
+      activeBuffs: [],
     },
     // 목록에 적어둔 순서대로 보이도록 생성 시각을 1ms 씩 어긋나게 준다.
     quests: SAMPLE_QUESTS.map((draft, i) =>
@@ -57,5 +61,7 @@ export function createDefaultState(): AppState {
     categoryStats: emptyCategoryStats(),
     dailyLog: {},
     welcomeGiftGiven: false,
+    npcs: emptyNpcStates(),
+    reputation: emptyReputation(),
   }
 }

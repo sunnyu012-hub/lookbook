@@ -1,9 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { Battle, BattleDef, Quest, QuestDraft, Routine } from '@/types'
+import type {
+  AreaId,
+  Battle,
+  BattleDef,
+  NpcDef,
+  NpcQuestChainDef,
+  Quest,
+  QuestDraft,
+  Routine,
+  ShopDef,
+} from '@/types'
 import { AppShell } from '@/components/layout/AppShell'
 import { BottomNavigation, type TabKey } from '@/components/navigation/BottomNavigation'
 import { QuestCreationSheet } from '@/components/quest/QuestCreationSheet'
 import { BattleSheet } from '@/components/rpg/BattleSheet'
+import { NpcSheet } from '@/components/city/NpcSheet'
+import { ShopSheet } from '@/components/city/ShopSheet'
 import { LevelUpOverlay } from '@/components/feedback/LevelUpOverlay'
 import { BattleClearOverlay } from '@/components/feedback/BattleClearOverlay'
 import { DropRevealOverlay } from '@/components/feedback/DropRevealOverlay'
@@ -13,6 +25,10 @@ import { useGameState } from '@/hooks/useGameState'
 import { useFeedback } from '@/hooks/useFeedback'
 import { WELCOME_GIFT } from '@/store/migrate'
 import { findArea } from '@/lib/rpg/content'
+import { activeEvents } from '@/lib/city/events'
+import { emptyNpcState } from '@/lib/city/friendship'
+import { isShopOpen, shopInArea } from '@/lib/city/shops'
+import { findSkill } from '@/lib/city/skills'
 import { TIME_TINT, isNightOpen, timeBand } from '@/lib/rpg/time'
 import { HomeScreen } from '@/screens/HomeScreen'
 import { QuestScreen } from '@/screens/QuestScreen'
@@ -43,6 +59,12 @@ export default function App() {
     doBattleAction,
     undoBattleActionById,
     removeBattle,
+    talkToNpc,
+    giftToNpc,
+    acceptChain,
+    buyItem,
+    useConsumable,
+    unlockSkill,
   } = useGameState()
   const feedback = useFeedback()
 
@@ -53,6 +75,23 @@ export default function App() {
   const [editingQuest, setEditingQuest] = useState<Quest | null>(null)
   // id 로만 들고 있는다. 상태에서 매번 다시 찾아야 HP 가 깎이는 게 시트에 바로 보인다.
   const [openBattleId, setOpenBattleId] = useState<string | null>(null)
+  const [openNpc, setOpenNpc] = useState<NpcDef | null>(null)
+  const [openShop, setOpenShop] = useState<ShopDef | null>(null)
+
+  // 오늘의 이벤트는 저장하지 않고 날짜에서 계산한다. 한 번만 구해서 화면 전체가 같은 걸 본다.
+  const events = useMemo(() => activeEvents(), [])
+
+  const equippedIds = useMemo(
+    () => new Set(Object.values(state.user.equippedItems).filter((v): v is string => v !== null)),
+    [state.user.equippedItems],
+  )
+
+  // 이 사람 가게가 지금 문을 열었는지. 가게가 없으면 null.
+  const openNpcShopOpen = useMemo(() => {
+    if (!openNpc?.shopId) return null
+    const shop = shopInArea(openNpc.areaId)
+    return shop ? isShopOpen(shop) : null
+  }, [openNpc])
 
   const openBattle = useMemo(
     () => state.battles.find((b) => b.id === openBattleId) ?? null,
@@ -164,6 +203,82 @@ export default function App() {
     [equipItem, feedback],
   )
 
+  // ── 도시 ────────────────────────────────────────────────
+  const handleTalk = useCallback(() => {
+    if (!openNpc) return
+    const result = talkToNpc(openNpc.id)
+    if (!result) return
+
+    if (result.gained > 0) {
+      feedback.notify(
+        result.leveledUp
+          ? `${openNpc.name} 와 조금 더 가까워졌어 💗`
+          : `💗 +${result.gained}`,
+      )
+    }
+  }, [openNpc, talkToNpc, feedback])
+
+  const handleGift = useCallback(
+    (itemId: string) => {
+      if (!openNpc) return
+      const result = giftToNpc(openNpc.id, itemId)
+      if (!result) return
+      feedback.notify(
+        result.liked ? `좋아하는 것 같아 · 💗 +${result.gained}` : `💗 +${result.gained}`,
+      )
+    },
+    [openNpc, giftToNpc, feedback],
+  )
+
+  const handleAcceptChain = useCallback(
+    (chain: NpcQuestChainDef) => {
+      const quest = acceptChain(chain)
+      if (!quest) return
+      setOpenNpc(null)
+      setTab('quest')
+      feedback.notify(`의뢰를 받았어 · ${chain.name}`)
+    },
+    [acceptChain, feedback],
+  )
+
+  const handleOpenShopForArea = useCallback((areaId: AreaId) => {
+    const shop = shopInArea(areaId)
+    if (shop) setOpenShop(shop)
+  }, [])
+
+  const handleBuy = useCallback(
+    (itemId: string) => {
+      if (!openShop) return
+      const result = buyItem(openShop, itemId)
+
+      if (result.ok) {
+        feedback.notify(`샀어 · 🪙 -${result.price}`)
+        return
+      }
+      // 혼내지 않는다. 왜 안 됐는지만 짧게 말한다.
+      if (result.reason === 'NOT_ENOUGH_COINS') feedback.notify('Coin 이 조금 모자라')
+      else if (result.reason === 'ALREADY_OWNED') feedback.notify('이미 가지고 있어')
+    },
+    [openShop, buyItem, feedback],
+  )
+
+  const handleUseConsumable = useCallback(
+    (itemId: string) => {
+      const buff = useConsumable(itemId)
+      if (!buff) return
+      feedback.notify(`${buff.name} · 다음 ${buff.category ?? '아무'} 퀘스트 EXP +${buff.expPct}%`)
+    },
+    [useConsumable, feedback],
+  )
+
+  const handleUnlockSkill = useCallback(
+    (skillId: string) => {
+      if (!unlockSkill(skillId)) return
+      feedback.notify(`${findSkill(skillId)?.name ?? '스킬'} 배웠어 ✦`)
+    },
+    [unlockSkill, feedback],
+  )
+
   // Night Town 에 있는데 밤이 지났으면 조용히 집으로 돌려보낸다.
   // 닫힌 곳의 버프를 계속 받게 두면 지도의 규칙이 거짓말이 된다.
   useEffect(() => {
@@ -201,6 +316,7 @@ export default function App() {
             onOpenMap={() => setTab('map')}
             onOpenBag={() => setTab('bag')}
             onOpenMe={() => setTab('me')}
+            events={events}
           />
         )}
         {tab === 'quest' && (
@@ -224,7 +340,12 @@ export default function App() {
           <MapScreen
             currentAreaId={state.user.currentAreaId}
             quests={state.quests}
+            reputation={state.reputation}
+            npcs={state.npcs}
+            events={events}
             onSelectArea={handleSelectArea}
+            onOpenNpc={setOpenNpc}
+            onOpenShop={handleOpenShopForArea}
           />
         )}
         {tab === 'bag' && (
@@ -232,8 +353,10 @@ export default function App() {
             inventory={state.inventory}
             equipped={state.user.equippedItems}
             coins={state.user.coins}
+            activeBuffs={state.user.activeBuffs}
             onEquip={handleEquip}
             onUnequip={unequipSlot}
+            onUse={handleUseConsumable}
           />
         )}
         {tab === 'me' && (
@@ -242,6 +365,7 @@ export default function App() {
             onRename={renameUser}
             onSelectClass={setClass}
             onOpenBag={() => setTab('bag')}
+            onUnlockSkill={handleUnlockSkill}
           />
         )}
       </AppShell>
@@ -261,6 +385,34 @@ export default function App() {
         onAction={handleBattleAction}
         onUndo={undoBattleActionById}
         onRemove={handleRemoveBattle}
+      />
+
+      <NpcSheet
+        npc={openNpc}
+        npcState={(openNpc && state.npcs[openNpc.id]) || emptyNpcState()}
+        quests={state.quests}
+        inventory={state.inventory}
+        equippedIds={equippedIds}
+        events={events}
+        shopOpen={openNpcShopOpen}
+        onClose={() => setOpenNpc(null)}
+        onTalk={handleTalk}
+        onAcceptChain={handleAcceptChain}
+        onGift={handleGift}
+        onOpenShop={() => {
+          if (!openNpc?.shopId) return
+          const shop = shopInArea(openNpc.areaId)
+          setOpenNpc(null)
+          if (shop) setOpenShop(shop)
+        }}
+      />
+
+      <ShopSheet
+        shop={openShop}
+        coins={state.user.coins}
+        inventory={state.inventory}
+        onClose={() => setOpenShop(null)}
+        onBuy={handleBuy}
       />
 
       <ConfirmDialog

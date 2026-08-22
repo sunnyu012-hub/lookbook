@@ -1,4 +1,5 @@
 export * from './rpg'
+export * from './city'
 import type {
   AreaId,
   Battle,
@@ -7,6 +8,7 @@ import type {
   InventoryEntry,
   Stats,
 } from './rpg'
+import type { ActiveBuff, NpcId, NpcStates, Reputation } from './city'
 
 /**
  * Little Life 의 데이터 모델.
@@ -67,8 +69,14 @@ export interface Quest {
    * 지우기는 아깝고 오늘은 안 할 때 쓴다. 지워지는 게 아니라 미뤄지는 것이다.
    */
   snoozedUntil?: string
-  /** 지금은 늘 DAILY. 몬스터·보스는 Battle 로 따로 다룬다. */
-  questType?: 'DAILY'
+  /** DAILY 는 내가 만든 것, NPC 는 누가 부탁한 것. 몬스터·보스는 Battle 로 따로 다룬다. */
+  questType?: 'DAILY' | 'NPC'
+  /** NPC 의뢰라면 누가 부탁했는지 */
+  npcId?: NpcId
+  /** 여러 단계짜리 의뢰의 몇 번째인지 */
+  chainId?: string
+  step?: number
+  totalSteps?: number
   /**
    * 완료할 때 실제로 받은 것.
    *
@@ -83,6 +91,14 @@ export interface QuestReward {
   coins: number
   statKey: import('./rpg').StatKey | null
   droppedItemId?: string
+  /** 어느 지역 평판을 올려줬는지 */
+  areaId?: AreaId
+  reputation?: number
+  /** NPC 의뢰였다면 누구와 얼마나 가까워졌는지 */
+  npcId?: NpcId
+  friendship?: number
+  /** 이때 써버린 일시 버프. 되돌리면 다시 살려낸다. */
+  usedBuff?: ActiveBuff
 }
 
 export interface User {
@@ -99,6 +115,18 @@ export interface User {
   stats: Stats
   equippedItems: EquippedItems
   currentAreaId: AreaId
+  /**
+   * 아직 안 쓴 스킬 포인트.
+   *
+   * 레벨과 찍어둔 스킬에서 그대로 계산되는 값이라 따로 쌓지 않는다.
+   * 저장은 하지만 상태를 바꿀 때마다 다시 계산해서 덮는다 —
+   * 그래야 완료를 되돌려 레벨이 내려갔을 때 포인트도 같이 돌아가고,
+   * 완료·되돌리기를 반복해서 포인트만 불리는 일이 생기지 않는다.
+   */
+  skillPoints: number
+  unlockedSkills: string[]
+  /** 마시거나 먹어서 지금 걸려 있는 것 */
+  activeBuffs: ActiveBuff[]
 }
 
 /** 카테고리별 누적 EXP. 퀘스트에서 계산하지 않고 따로 쌓는다 — 아래 주석 참고. */
@@ -132,7 +160,14 @@ export interface AppState {
   dailyLog: DailyLog
   /** Welcome Gift 를 이미 줬는지. 두 번 주지 않으려고 둔다. */
   welcomeGiftGiven: boolean
-  // 향후 확장 예정: coins, inventory, achievements, character, room, pets, randomQuest …
+  /** 나와 도시 사람들 사이의 기록 */
+  npcs: NpcStates
+  /** 지역별 평판 */
+  reputation: Reputation
+  // 향후 확장 예정: achievements, character, room, pets …
+  //
+  // 오늘의 이벤트와 상점 진열은 여기 없다.
+  // 날짜에서 그대로 계산하기 때문에 저장할 게 없고, 자정이 지나면 알아서 바뀐다.
 }
 
 /** 퀘스트를 만들 때 화면에서 넘겨주는 입력값 */
@@ -154,4 +189,14 @@ export interface CompleteResult {
   newLevel: number
   statKey: import('./rpg').StatKey | null
   drop: import('./rpg').DropResult | null
+  /** 이번에 오른 지역 평판 */
+  areaId: AreaId | null
+  gainedReputation: number
+  /** NPC 의뢰였다면 */
+  npcId: NpcId | null
+  gainedFriendship: number
+  /** 이번에 써버린 일시 버프 이름 */
+  usedBuffName: string | null
+  /** 레벨업으로 스킬 포인트가 생겼으면 */
+  gainedSkillPoints: number
 }

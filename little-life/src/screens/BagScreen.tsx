@@ -1,5 +1,12 @@
 import { useMemo, useState } from 'react'
-import type { EquipSlot, EquippedItems, InventoryEntry, ItemDef, ItemType } from '@/types'
+import type {
+  ActiveBuff,
+  EquipSlot,
+  EquippedItems,
+  InventoryEntry,
+  ItemDef,
+  ItemType,
+} from '@/types'
 import { findItem } from '@/lib/rpg/content'
 import { ScreenHeader } from '@/components/layout/ScreenHeader'
 import { BottomSheet } from '@/components/ui/BottomSheet'
@@ -13,20 +20,31 @@ type BagFilter = 'ALL' | ItemType
 
 const FILTERS: Array<{ value: BagFilter; label: string }> = [
   { value: 'ALL', label: 'ALL' },
-  { value: 'EQUIPMENT', label: 'EQUIPMENT' },
+  { value: 'EQUIPMENT', label: 'GEAR' },
+  { value: 'CONSUMABLE', label: 'DRINK' },
   { value: 'MATERIAL', label: 'MATERIAL' },
-  { value: 'COLLECTIBLE', label: 'COLLECTIBLE' },
+  { value: 'COLLECTIBLE', label: 'COLLECT' },
 ]
 
 interface BagScreenProps {
   inventory: InventoryEntry[]
   equipped: EquippedItems
   coins: number
+  activeBuffs: ActiveBuff[]
   onEquip: (itemId: string) => void
   onUnequip: (slot: EquipSlot) => void
+  onUse: (itemId: string) => void
 }
 
-export function BagScreen({ inventory, equipped, coins, onEquip, onUnequip }: BagScreenProps) {
+export function BagScreen({
+  inventory,
+  equipped,
+  coins,
+  activeBuffs,
+  onEquip,
+  onUnequip,
+  onUse,
+}: BagScreenProps) {
   const [filter, setFilter] = useState<BagFilter>('ALL')
   const [openItem, setOpenItem] = useState<ItemDef | null>(null)
 
@@ -77,6 +95,24 @@ export function BagScreen({ inventory, equipped, coins, onEquip, onUnequip }: Ba
           </button>
         ))}
       </div>
+
+      {activeBuffs.length > 0 && (
+        <div className="mt-4 rounded-card border border-butter/50 bg-butter-soft/50 px-4 py-3.5">
+          <p className="font-game text-[9px] tracking-[0.12em] text-butter-deep">ACTIVE</p>
+          <ul className="mt-2 space-y-1">
+            {activeBuffs.map((buff) => (
+              <li key={buff.id} className="flex items-center gap-2 text-[13px] text-ink">
+                <span className="text-[16px] leading-none">{buff.icon}</span>
+                <span className="min-w-0 flex-1 truncate">{buff.name}</span>
+                <span className="shrink-0 font-game text-[10px] text-butter-deep">
+                  {buff.category ?? '아무'} +{buff.expPct}%
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-1.5 text-[12px] text-inkdim">다음 퀘스트 하나에 걸려.</p>
+        </div>
+      )}
 
       <div className="mt-5">
         {rows.length === 0 ? (
@@ -138,6 +174,10 @@ export function BagScreen({ inventory, equipped, coins, onEquip, onUnequip }: Ba
           onUnequip(slot)
           setOpenItem(null)
         }}
+        onUse={(itemId) => {
+          onUse(itemId)
+          setOpenItem(null)
+        }}
       />
     </div>
   )
@@ -150,9 +190,10 @@ interface ItemSheetProps {
   onClose: () => void
   onEquip: (itemId: string) => void
   onUnequip: (slot: EquipSlot) => void
+  onUse: (itemId: string) => void
 }
 
-function ItemSheet({ def, entry, equipped, onClose, onEquip, onUnequip }: ItemSheetProps) {
+function ItemSheet({ def, entry, equipped, onClose, onEquip, onUnequip, onUse }: ItemSheetProps) {
   if (!def) return null
 
   const slot = def.equipSlot
@@ -182,9 +223,19 @@ function ItemSheet({ def, entry, equipped, onClose, onEquip, onUnequip }: ItemSh
       </div>
 
       <div className="mt-6">
-        {slot === null ? (
+        {def.consumable ? (
+          <>
+            <Button size="lg" className="w-full" onClick={() => onUse(def.id)}>
+              <img src={EFFECT.sparkle} alt="" aria-hidden className="h-4 w-4 object-contain" />
+              마시기
+            </Button>
+            <p className="mt-2 text-center text-[12px] text-inkfaint">
+              다음 {def.consumable.category ?? '아무'} 퀘스트 하나에 걸려. 서둘러 쓸 필요는 없어.
+            </p>
+          </>
+        ) : slot === null ? (
           <p className="text-center text-[12.5px] text-inkfaint">
-            아직 쓸 곳이 없는 물건이야. 그냥 가지고 있어도 돼.
+            아직 쓸 곳이 없는 물건이야. NPC 에게 선물할 수는 있어.
           </p>
         ) : isEquipped ? (
           <Button variant="soft" size="lg" className="w-full" onClick={() => onUnequip(slot)}>
