@@ -1,0 +1,45 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="glass" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#fff9fb"/>
+      <stop offset="1" stop-color="#f4e3ea"/>
+    </linearGradient>
+    <linearGradient id="juice" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffc0d0"/>
+      <stop offset="1" stop-color="#f58fae"/>
+    </linearGradient>
+    <linearGradient id="cork" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e0b078"/>
+      <stop offset="1" stop-color="#bd8a4e"/>
+    </linearGradient>
+    <clipPath id="heartclip">
+      <path d="M256 178 q-52 -62 -104 -18 q-52 44 -6 116 q40 62 110 122 q70 -60 110 -122 q46 -72 -6 -116 q-52 -44 -104 18 Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- 코르크 -->
+  <path d="M228 92 h56 q12 0 12 14 v42 q0 12 -12 12 h-56 q-12 0 -12 -12 v-42 q0 -14 12 -14 Z"
+        fill="url(#cork)" stroke="#6b4a22" stroke-width="9" stroke-linejoin="round"/>
+  <path d="M236 112 v40" stroke="#a8763f" stroke-width="6" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- 병목 -->
+  <path d="M232 152 h48 v46 h-48 Z" fill="url(#glass)" stroke="#7a5570" stroke-width="9" stroke-linejoin="round"/>
+
+  <!-- 하트 몸통 -->
+  <g>
+    <path d="M256 178 q-52 -62 -104 -18 q-52 44 -6 116 q40 62 110 122 q70 -60 110 -122 q46 -72 -6 -116 q-52 -44 -104 18 Z"
+          fill="url(#glass)" stroke="#7a5570" stroke-width="11" stroke-linejoin="round"/>
+    <g clip-path="url(#heartclip)">
+      <path d="M110 268 q146 -30 292 0 v160 h-292 Z" fill="url(#juice)"/>
+      <g fill="#fff3f7" opacity="0.95">
+        <circle cx="196" cy="316" r="10"/>
+        <circle cx="252" cy="352" r="7"/>
+        <circle cx="308" cy="308" r="9"/>
+        <circle cx="228" cy="292" r="6"/>
+      </g>
+    </g>
+    <path d="M186 210 q-30 30 -22 66" stroke="#ffffff" stroke-width="15" fill="none"
+          stroke-linecap="round" opacity="0.85"/>
+  </g>
+
+</svg>

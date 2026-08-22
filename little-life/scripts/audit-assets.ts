@@ -23,6 +23,14 @@ const REPORT = path.join(ROOT, 'reports/asset-audit.md')
 const SMALL_PX = 120
 /** 이 크기보다 크면 폰에서 굳이 필요 없다 */
 const BIG_BYTES = 120 * 1024
+/**
+ * 테두리가 이만큼 넘게 물감으로 차 있으면 목록에 올린다.
+ *
+ * 네모난 물건(액자·모니터·러그)은 원래 여기 걸린다. 잘렸다는 뜻이 아니다.
+ * 그래도 옆 조각이 딸려 들어온 그림도 같이 걸리니, 몇 장 안 될 때
+ * 한 번 훑어보라는 목록으로 쓴다. 위에서 97% 쯤에 걸리는 값이다.
+ */
+const EDGE_RATIO = 0.35
 
 interface Row {
   id: string
@@ -37,8 +45,19 @@ const tooSmall: Row[] = []
 const tooBig: Row[] = []
 const emojiOnly: Row[] = []
 const silhouetteOnly: Row[] = []
+const possibleCrop: Row[] = []
+const styleReview: Row[] = []
 
 let mapped = 0
+
+/**
+ * 테두리에 물감이 얼마나 닿아 있는지는 `npm run assets:thumbs` 가 재서
+ * 매니페스트에 적어둔다 (webp 를 열려면 디코더가 있어야 해서 파이썬 쪽에서 잰다).
+ * 이만큼 넘으면 옆 조각이 잘려 들어왔을 수 있으니 사람이 한 번 본다.
+ */
+const manifest = JSON.parse(
+  readFileSync(path.join(ROOT, 'src/data/asset-manifest.json'), 'utf8'),
+) as Record<string, { edgeAlpha?: number; bytes: number; width: number; height: number }>
 
 function webpSize(file: string): { width: number; height: number } {
   const buf = readFileSync(file)
@@ -87,6 +106,22 @@ for (const item of ALL_COLLECTION_ITEMS) {
   }
   if (bytes > BIG_BYTES) {
     tooBig.push({ id: item.id, name: label, note: `${Math.round(bytes / 1024)} KB` })
+  }
+  const edge = manifest[item.id]?.edgeAlpha
+  if (edge !== undefined && edge > EDGE_RATIO) {
+    possibleCrop.push({
+      id: item.id,
+      name: label,
+      note: `테두리 ${Math.round(edge * 100)}% 가 차 있다`,
+    })
+  }
+  // 같은 크기인데 유난히 무거우면 잔선이 많다는 뜻이다. 화풍이 섞이면 대개 여기 걸린다.
+  if (width > 0 && bytes / (width * height) > 0.55) {
+    styleReview.push({
+      id: item.id,
+      name: label,
+      note: `${(bytes / (width * height)).toFixed(2)} B/px`,
+    })
   }
 }
 
@@ -144,6 +179,8 @@ const lines = [
   `| 카탈로그에 없는 파일 | ${orphans.length} |`,
   `| id 중복 | ${dupIds.length} |`,
   `| 경로 중복 | ${dupPaths.length} |`,
+  `| 테두리까지 꽉 참 (POSSIBLE_CROP) | ${possibleCrop.length} |`,
+  `| 유난히 촘촘함 (STYLE_REVIEW) | ${styleReview.length} |`,
   '',
   '## 배치 분류',
   '',
@@ -175,6 +212,19 @@ const lines = [
   '## 너무 큰 그림',
   '',
   table(tooBig),
+  '## 테두리까지 꽉 찬 그림 (POSSIBLE_CROP)',
+  '',
+  `테두리가 ${Math.round(EDGE_RATIO * 100)}% 넘게 차 있는 것.`,
+  '',
+  '**네모난 물건은 원래 여기 걸린다.** 잘렸다는 판정이 아니라 한 번 보라는 목록이다.',
+  '',
+  table(possibleCrop),
+  '## 유난히 촘촘한 그림 (STYLE_REVIEW)',
+  '',
+  '같은 크기인데 파일이 무겁다 — 잔선이 많다는 뜻이다.',
+  '다른 화풍이 섞이면 대개 여기 먼저 걸리지만, 잎이 많은 화분처럼 원래 촘촘한 것도 걸린다.',
+  '',
+  table(styleReview),
 ]
 
 mkdirSync(path.dirname(REPORT), { recursive: true })
@@ -182,6 +232,7 @@ writeFileSync(REPORT, `${lines.join('\n')}\n`)
 
 console.log(`도감 ${CATALOG.length} · 연결 ${mapped} · 이모지 ${emojiOnly.length} · 실루엣 ${silhouetteOnly.length}`)
 console.log(`깨진 경로 ${brokenPath.length} · 주인 없는 파일 ${orphans.length} · 중복 ${dupIds.length + dupPaths.length}`)
+console.log(`볼 것: 테두리 꽉 참 ${possibleCrop.length} · 촘촘함 ${styleReview.length}`)
 console.log(`리포트: reports/asset-audit.md`)
 
 // 깨진 경로나 중복은 그냥 넘어가면 안 된다

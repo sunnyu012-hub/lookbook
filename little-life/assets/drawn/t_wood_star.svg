@@ -1,0 +1,39 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="wood" x1="0.15" y1="0" x2="0.6" y2="1">
+      <stop offset="0" stop-color="#f9e2b4"/>
+      <stop offset="0.5" stop-color="#efc684"/>
+      <stop offset="1" stop-color="#d9a55c"/>
+    </linearGradient>
+    <clipPath id="starclip">
+      <path d="M256 92 q14 0 20 14 l36 78 l86 10 q16 2 20 16 q4 14 -8 24 l-64 58 l18 84
+               q3 15 -9 23 q-12 8 -25 1 l-74 -41 l-74 41 q-13 7 -25 -1 q-12 -8 -9 -23
+               l18 -84 l-64 -58 q-12 -10 -8 -24 q4 -14 20 -16 l86 -10 l36 -78 q6 -14 20 -14 Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- 꿰어둔 가죽끈 -->
+  <ellipse cx="256" cy="104" rx="34" ry="42" fill="none" stroke="#c9a06a" stroke-width="14"/>
+
+  <!-- 별 -->
+  <path d="M256 92 q14 0 20 14 l36 78 l86 10 q16 2 20 16 q4 14 -8 24 l-64 58 l18 84
+           q3 15 -9 23 q-12 8 -25 1 l-74 -41 l-74 41 q-13 7 -25 -1 q-12 -8 -9 -23
+           l18 -84 l-64 -58 q-12 -10 -8 -24 q4 -14 20 -16 l86 -10 l36 -78 q6 -14 20 -14 Z"
+        fill="url(#wood)" stroke="#6b4a22" stroke-width="12" stroke-linejoin="round"/>
+
+  <!-- 나뭇결 -->
+  <g clip-path="url(#starclip)" stroke="#cf9a55" stroke-width="7" fill="none"
+     opacity="0.45" stroke-linecap="round">
+    <path d="M108 206 q78 28 158 22 t134 -18"/>
+    <path d="M120 262 q86 30 170 22 t124 -20"/>
+    <path d="M142 322 q86 28 158 20 t112 -18"/>
+    <path d="M168 380 q76 22 148 14"/>
+  </g>
+
+  <!-- 끈 꿰는 구멍 -->
+  <ellipse cx="256" cy="146" rx="13" ry="15" fill="#c99a5c" stroke="#6b4a22" stroke-width="9"/>
+
+  <!-- 광 -->
+  <path d="M186 208 q22 -30 50 -44" stroke="#fff7e2" stroke-width="16" fill="none"
+        stroke-linecap="round" opacity="0.85"/>
+</svg>

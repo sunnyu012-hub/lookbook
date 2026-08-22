@@ -1,0 +1,42 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0" stop-color="#fdf1dc"/>
+      <stop offset="0.6" stop-color="#f7e2c1"/>
+      <stop offset="1" stop-color="#e9cb9f"/>
+    </linearGradient>
+    <linearGradient id="top" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fdf4e4"/>
+      <stop offset="1" stop-color="#eeddbb"/>
+    </linearGradient>
+    <linearGradient id="door" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#fbeed6"/>
+      <stop offset="1" stop-color="#f0dcb6"/>
+    </linearGradient>
+  </defs>
+
+  <g stroke="#6b4a22" stroke-width="11" stroke-linejoin="round" stroke-linecap="round">
+    <!-- 몸통 -->
+    <path d="M112 168 h288 q10 0 10 10 v212 q0 10 -10 10 h-288 q-10 0 -10 -10 v-212 q0 -10 10 -10 Z"
+          fill="url(#body)"/>
+
+    <!-- 상판 -->
+    <path d="M96 140 h320 q12 0 12 14 v14 q0 12 -12 12 h-320 q-12 0 -12 -12 v-14 q0 -14 12 -14 Z"
+          fill="url(#top)"/>
+
+    <!-- 문 두 짝 -->
+    <path d="M136 196 h108 v170 h-108 Z" fill="url(#door)"/>
+    <path d="M268 196 h108 v170 h-108 Z" fill="url(#door)"/>
+
+    <!-- 다리 -->
+    <path d="M136 400 v34 M376 400 v34" stroke-width="17"/>
+  </g>
+
+  <!-- 손잡이 -->
+  <circle cx="228" cy="282" r="12" fill="#d3a166" stroke="#6b4a22" stroke-width="8"/>
+  <circle cx="284" cy="282" r="12" fill="#d3a166" stroke="#6b4a22" stroke-width="8"/>
+
+  <!-- 광 -->
+  <path d="M126 152 q56 -6 116 -4" stroke="#fffaf0" stroke-width="10" fill="none"
+        stroke-linecap="round" opacity="0.8"/>
+</svg>

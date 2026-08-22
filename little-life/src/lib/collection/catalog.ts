@@ -1,6 +1,6 @@
 import type { CollectionCategory, CollectionItemDef, CollectionRarity } from '@/types'
 import { CATALOG_ROWS, MATERIALS } from './items'
-import { artPath } from './assets'
+import { artPath, thumbPath } from './assets'
 import { placementFor } from './placement'
 import { TROPHY_ITEMS } from './trophies'
 import { CRAFTABLE_ITEM_IDS } from './recipes'
@@ -22,6 +22,7 @@ function finish(item: CollectionItemDef): CollectionItemDef {
   // 그림이 들어왔는지도 여기서 붙인다. 아이템 표에는 파일 경로를 적지 않는다 —
   // 그림은 나중에 하나씩 채워지는 것이라, 표와 폴더가 어긋나기 십상이다.
   const art = artPath(item.id, item.category)
+  const thumb = thumbPath(item.id, item.category)
   const place = placementFor(item.id, item.category, item.subcategory)
   const placeable = place.placement === 'PLACEABLE'
 
@@ -30,6 +31,7 @@ function finish(item: CollectionItemDef): CollectionItemDef {
     acquisitionSources: sources,
     collectionSetIds: setsForItem(item.id),
     ...(art ? { assetKey: art } : {}),
+    ...(thumb ? { thumbKey: thumb } : {}),
     placementType: place.placementType,
     layer: place.layer,
     anchor: place.anchor,

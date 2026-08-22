@@ -30,9 +30,10 @@ function stampServiceWorker() {
         const precache = listFiles(dist, '')
           // 워커 자신과 매니페스트는 캐시에 넣지 않는다
           .filter((url) => url !== '/sw.js' && url !== '/manifest.webmanifest')
-          // 도감 그림 200여 장은 첫 실행에 한꺼번에 받지 않는다.
+          // 도감 그림 250여 장은 첫 실행에 한꺼번에 받지 않는다.
           // 처음 보는 순간 받아서 캐시에 남으니 오프라인에서도 두 번째부터는 뜬다.
           .filter((url) => !url.startsWith('/assets/items/'))
+          .filter((url) => !url.startsWith('/assets/thumbs/'))
           .concat('/')
 
         const buildId = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14)

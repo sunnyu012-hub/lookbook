@@ -18,7 +18,7 @@ import {
 } from 'node:fs'
 import path from 'node:path'
 import { ALL_COLLECTION_ITEMS } from '../src/lib/collection/catalog'
-import { HAS_ART } from '../src/lib/collection/assets'
+import { DRAWN_BY_HAND, HAS_ART } from '../src/lib/collection/assets'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 const FLAT = path.join(ROOT, 'public/assets/collection')
@@ -53,7 +53,29 @@ interface Entry {
   height: number
   bytes: number
   verified: boolean
+  /** 어느 시트 몇 번째 조각에서 나왔는지. 직접 그린 것은 'drawn' 이다. */
+  source: string
+  sourceIndex: number | null
 }
+
+/**
+ * 어느 시트에서 나왔는지는 extract 스크립트의 매핑 표가 알고 있다.
+ * 표를 두 벌 적어두면 언젠가 어긋나서, 여기서는 그 파일을 읽어 온다.
+ */
+function readSources(): Map<string, { sheet: string; index: number | null }> {
+  const out = new Map<string, { sheet: string; index: number | null }>()
+  const file = path.join(ROOT, 'scripts/extract-assets.py')
+  if (!existsSync(file)) return out
+
+  const re = /^\s*"([a-z0-9_]+)":\s*"([a-z0-9_]+)\/([^"]+)\.png",/gm
+  for (const [, id, sheet, piece] of readFileSync(file, 'utf8').matchAll(re)) {
+    const n = Number.parseInt(piece, 10)
+    out.set(id, { sheet, index: Number.isNaN(n) ? null : n })
+  }
+  return out
+}
+
+const sources = readSources()
 
 function pngSize(file: string): { width: number; height: number } {
   // WebP 헤더에서 크기만 읽는다 (VP8L / VP8X / VP8)
@@ -110,6 +132,8 @@ for (const item of ALL_COLLECTION_ITEMS) {
     bytes: statSync(target).size,
     // 사람이 대조 시트로 눈으로 확인한 것들이다
     verified: true,
+    source: DRAWN_BY_HAND.has(item.id) ? 'drawn' : (sources.get(item.id)?.sheet ?? 'unknown'),
+    sourceIndex: DRAWN_BY_HAND.has(item.id) ? null : (sources.get(item.id)?.index ?? null),
   }
 }
 

@@ -146,10 +146,10 @@ describe('아이템 표', () => {
       const placeable = item.placement === 'PLACEABLE'
       expect(item.hasPlaceableAsset, item.id).toBe(placeable && drawable)
     }
-    // 아직 아무 그림도 없는 칸이 남아 있다 — 도감에는 실루엣으로 나온다
-    const noArt = CATALOG.filter((i) => i.assetKey === undefined && i.icon === undefined)
-    expect(noArt.length).toBeGreaterThan(0)
-    for (const item of noArt) expect(item.hasPlaceableAsset, item.id).toBe(false)
+    // 그림이 없어 이모지나 실루엣으로 때우는 칸은 이제 없다.
+    // 이모지는 폰마다 모양이 달라서 한 칸만 결이 다르게 보인다.
+    const noArt = CATALOG.filter((i) => i.assetKey === undefined)
+    expect(noArt.map((i) => i.id)).toEqual([])
   })
 
   it('그려둔 그림이 실제 물건에만 붙어 있다', () => {

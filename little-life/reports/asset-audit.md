@@ -9,13 +9,15 @@
 | 도감 | 240 |
 | 트로피 | 11 |
 | 재료 | 8 |
-| 그림 연결됨 | 248 |
-| 그림 없음 (이모지로 그림) | 8 |
-| 그림도 이모지도 없음 | 3 |
+| 그림 연결됨 | 259 |
+| 그림 없음 (이모지로 그림) | 0 |
+| 그림도 이모지도 없음 | 0 |
 | 경로는 있는데 파일 없음 | 0 |
 | 카탈로그에 없는 파일 | 0 |
 | id 중복 | 0 |
 | 경로 중복 | 0 |
+| 테두리까지 꽉 참 (POSSIBLE_CROP) | 7 |
+| 유난히 촘촘함 (STYLE_REVIEW) | 3 |
 
 ## 배치 분류
 
@@ -37,23 +39,11 @@
 
 ## 그림이 없는 물건
 
-- `small_cabinet` 작은 수납장 — FURNITURE
-- `beanbag` 푹신한 빈백 — FURNITURE
-- `mini_table` 미니 식탁 — FURNITURE
-- `secret_drawer` 비밀 서랍장 — FURNITURE
-- `star_pot` 별빛 화분 — PLANT
-- `constellation_rug` 별자리 러그 — RUG
-- `t_wood_star` 작은 나무별 — TROPHY
-- `t_adventure_book` 모험 기록책 — TROPHY
-- `t_thousand_stars` 천 개의 별이 든 병 — TROPHY
-- `t_moon_shard` 고요한 달 조각 — TROPHY
-- `t_heart_bottle` 작은 하트 유리병 — TROPHY
+없음
 
 ## 방에 놓을 수 있는데 그림이 없는 것
 
-- `beanbag` 푹신한 빈백 — FURNITURE
-- `mini_table` 미니 식탁 — FURNITURE
-- `constellation_rug` 별자리 러그 — RUG
+없음
 
 ## 경로는 있는데 파일이 없는 것
 
@@ -70,4 +60,27 @@
 ## 너무 큰 그림
 
 없음
+
+## 테두리까지 꽉 찬 그림 (POSSIBLE_CROP)
+
+테두리가 35% 넘게 차 있는 것.
+
+**네모난 물건은 원래 여기 걸린다.** 잘렸다는 판정이 아니라 한 번 보라는 목록이다.
+
+- `full_shelf` 꽉 찬 책장 — 테두리 42% 가 차 있다
+- `secret_drawer` 비밀 서랍장 — 테두리 43% 가 차 있다
+- `check_rug` 체크 러그 — 테두리 44% 가 차 있다
+- `monitor` 데스크 모니터 — 테두리 57% 가 차 있다
+- `friend_photo` 친구와 찍은 사진 액자 — 테두리 57% 가 차 있다
+- `cork_board` 작은 코르크보드 — 테두리 44% 가 차 있다
+- `t_adventure_book` 모험 기록책 — 테두리 52% 가 차 있다
+
+## 유난히 촘촘한 그림 (STYLE_REVIEW)
+
+같은 크기인데 파일이 무겁다 — 잔선이 많다는 뜻이다.
+다른 화풍이 섞이면 대개 여기 먼저 걸리지만, 잎이 많은 화분처럼 원래 촘촘한 것도 걸린다.
+
+- `rosemary_pot` 로즈마리 화분 — 0.55 B/px
+- `lavender_pot` 라벤더 화분 — 0.58 B/px
+- `baby_breath` 안개꽃 화병 — 0.60 B/px
 

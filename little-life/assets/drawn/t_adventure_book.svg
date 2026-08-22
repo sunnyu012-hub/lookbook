@@ -1,0 +1,46 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="cover" x1="0.1" y1="0" x2="0.6" y2="1">
+      <stop offset="0" stop-color="#e8a49b"/>
+      <stop offset="0.6" stop-color="#d98a80"/>
+      <stop offset="1" stop-color="#c4726a"/>
+    </linearGradient>
+    <linearGradient id="spine" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#c4726a"/>
+      <stop offset="1" stop-color="#e0978e"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="0.3">
+      <stop offset="0" stop-color="#fdf7ea"/>
+      <stop offset="1" stop-color="#ecdcc0"/>
+    </linearGradient>
+  </defs>
+
+  <g stroke="#5e3a30" stroke-width="10" stroke-linejoin="round" stroke-linecap="round">
+    <!-- 책등 -->
+    <path d="M132 138 q0 -14 14 -14 h34 v268 h-34 q-14 0 -14 -14 Z" fill="url(#spine)"/>
+
+    <!-- 종이 (오른쪽으로 살짝 삐져나온다) -->
+    <path d="M180 142 h192 q14 0 14 14 v208 q0 14 -14 14 h-192 Z" fill="url(#paper)"/>
+    <path d="M374 176 q10 80 0 160" fill="none" stroke="#dccbab" stroke-width="6"/>
+
+    <!-- 앞표지 -->
+    <path d="M164 128 h186 q16 0 16 16 v212 q0 16 -16 16 h-186 Z" fill="url(#cover)"/>
+
+    <!-- 표지 테두리 -->
+    <path d="M194 160 h128 q8 0 8 8 v164 q0 8 -8 8 h-128 Z"
+          fill="none" stroke="#f6d9b4" stroke-width="7" opacity="0.9"/>
+
+  </g>
+
+  <!-- 별 -->
+  <path d="M256 208 l17 36 l40 5 l-29 28 l7 40 l-35 -19 l-35 19 l7 -40 l-29 -28 l40 -5 Z"
+        fill="#f8d78f" stroke="#5e3a30" stroke-width="7" stroke-linejoin="round"/>
+
+  <!-- 책갈피 끈 -->
+  <path d="M336 128 v116 l-16 -15 l-16 15 v-116 Z" fill="#93b07c" stroke="#5e3a30"
+        stroke-width="9" stroke-linejoin="round"/>
+
+  <!-- 표지 광 -->
+  <path d="M196 152 q30 -8 62 -10" stroke="#ffdcd2" stroke-width="10" fill="none"
+        stroke-linecap="round" opacity="0.55"/>
+</svg>

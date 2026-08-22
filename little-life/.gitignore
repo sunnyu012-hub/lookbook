@@ -7,3 +7,6 @@ dist
 # assets/source-sheets/README.md 참고.
 assets/source-sheets/*.png
 assets/slices/
+
+# 그린 SVG 를 webp 로 만드는 중간 단계
+assets/drawn/.rendered/

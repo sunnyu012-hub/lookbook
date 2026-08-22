@@ -141,9 +141,11 @@ export interface CollectionItemDef {
   /** 상점에 나올 때의 기준 가격. 없으면 살 수 없는 물건이다. */
   price?: number
   sellPrice?: number
-  /** 그림 파일을 붙일 자리. 지금은 이모지로 그린다. */
+  /** 그림 파일. 방과 도감 상세처럼 크게 보는 자리에서 쓴다. */
   assetKey?: string
-  /** 이모지 한 글자. 없으면 아직 그림이 없는 물건이다. */
+  /** 같은 그림의 작은 판. 도감 격자처럼 작게 보는 자리에서 쓴다. */
+  thumbKey?: string
+  /** 이모지 한 글자. 그림이 없을 때만 쓴다 — 지금은 전부 그림이 있다. */
   icon?: string
   /** 방에 놓을 그림이 준비돼 있는지 */
   hasPlaceableAsset: boolean

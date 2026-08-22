@@ -5,9 +5,12 @@ import { cn } from '@/components/ui/cn'
 /**
  * 물건 하나의 그림.
  *
- * 이모지가 있으면 이모지를, 없으면 분류별 실루엣을 그린다.
- * 240개 데이터가 전부 있다고 해서 그림도 전부 있는 건 아니다.
- * 그림이 없다고 빈 네모나 깨진 글자가 나오면 그건 그냥 버그처럼 보인다.
+ * 작게 보이는 자리(sm·md·lg)에서는 작은 판을 쓴다. 도감 한 칸은 32~56px 인데
+ * 240칸에 320px 짜리를 다 받게 하면 필요 없는 데이터를 몇 배로 받는다.
+ * 크게 보이는 자리(xl)는 원본을 쓴다.
+ *
+ * 그림이 없으면 이모지, 그것도 없으면 분류별 실루엣으로 내려간다.
+ * 지금은 240개 전부 그림이 있지만, 없다고 빈 네모가 나오면 그건 버그처럼 보인다.
  */
 
 /** 그림이 아직 없는 물건을 위한 분류별 모양 */
@@ -47,6 +50,7 @@ const SIZE = {
 export function ItemIcon({ item, hidden = false, size = 'md', className }: ItemIconProps) {
   const [broken, setBroken] = useState(false)
   const shape = SILHOUETTE[item.category]
+  const src = size === 'xl' ? item.assetKey : (item.thumbKey ?? item.assetKey)
 
   if (hidden) {
     // 그림이 있으면 그 물건의 실루엣을 보여준다. 모양이 보여야 궁금해진다.
@@ -64,7 +68,7 @@ export function ItemIcon({ item, hidden = false, size = 'md', className }: ItemI
       >
         {shadow ? (
           <img
-            src={item.assetKey}
+            src={src}
             alt=""
             draggable={false}
             loading="lazy"
@@ -84,7 +88,7 @@ export function ItemIcon({ item, hidden = false, size = 'md', className }: ItemI
         className={cn('flex shrink-0 items-center justify-center', SIZE[size], className)}
       >
         <img
-          src={item.assetKey}
+          src={src}
           alt=""
           aria-hidden
           draggable={false}

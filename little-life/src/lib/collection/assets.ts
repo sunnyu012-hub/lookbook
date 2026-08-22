@@ -11,6 +11,8 @@
  * 아직 그림이 없는 물건은 이모지로, 이모지도 없으면 분류 실루엣으로 그린다.
  */
 const BASE = '/assets/items'
+/** 도감 격자에서 쓰는 작은 그림 (npm run assets:thumbs) */
+const THUMB_BASE = '/assets/thumbs'
 
 /** 파일이 들어 있는 분류별 폴더 */
 const FOLDER: Record<string, string> = {
@@ -282,11 +284,48 @@ const WITH_ART = [
   'yoga_mat',
 ] as const
 
+/**
+ * 시트에 없어서 직접 그린 것.
+ *
+ * 원본은 assets/drawn/<id>.svg 다. SVG 를 고치고 `npm run assets:draw` 를
+ * 다시 돌리면 게임 안 그림도 따라 바뀐다.
+ *
+ * 이모지로 그리던 자리를 없애려고 그렸다. 이모지는 폰마다 모양이 달라서
+ * 어떤 기기에서는 도감 한 칸만 결이 다르게 보인다.
+ */
+const DRAWN = [
+  'beanbag',
+  'constellation_rug',
+  'mini_table',
+  'secret_drawer',
+  'small_cabinet',
+  'star_pot',
+  't_adventure_book',
+  't_heart_bottle',
+  't_moon_shard',
+  't_thousand_stars',
+  't_wood_star',
+] as const
+
+/** 손으로 그린 것 (도감에서 따로 표시하지는 않는다 — 그림은 그림이다) */
+export const DRAWN_BY_HAND = new Set<string>(DRAWN)
+
 /** 그림이 있는지 */
-export const HAS_ART = new Set<string>(WITH_ART)
+export const HAS_ART = new Set<string>([...WITH_ART, ...DRAWN])
 
 /** 분류를 알아야 경로가 나온다 */
 export function artPath(itemId: string, category: string): string | undefined {
   if (!HAS_ART.has(itemId)) return undefined
   return `${BASE}/${FOLDER[category] ?? 'misc'}/${itemId}.webp`
+}
+
+/**
+ * 작게 보여줄 때 쓰는 그림.
+ *
+ * 도감 한 칸은 폰에서 32~56px 다. 240칸을 훑는데 320px 짜리를 다 받으면
+ * 필요 없는 데이터를 몇 배로 받는다. 크게 보는 자리(방·상세)는 원본을 쓴다.
+ */
+export function thumbPath(itemId: string, category: string): string | undefined {
+  if (!HAS_ART.has(itemId)) return undefined
+  return `${THUMB_BASE}/${FOLDER[category] ?? 'misc'}/${itemId}.webp`
 }

@@ -1,0 +1,41 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bag" x1="0.25" y1="0.05" x2="0.75" y2="1">
+      <stop offset="0" stop-color="#e5efd9"/>
+      <stop offset="0.45" stop-color="#cbdab8"/>
+      <stop offset="1" stop-color="#a0b787"/>
+    </linearGradient>
+    <linearGradient id="cushion" x1="0.2" y1="0" x2="0.6" y2="1">
+      <stop offset="0" stop-color="#fbf7ea"/>
+      <stop offset="1" stop-color="#e6dfc8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 위는 둥글고 아래로 퍼지는 한 덩어리 -->
+  <path d="M256 112
+           q76 0 110 66
+           q30 58 56 122
+           q22 54 -34 66
+           q-132 24 -264 0
+           q-56 -12 -34 -66
+           q26 -64 56 -122
+           q34 -66 110 -66 Z"
+        fill="url(#bag)" stroke="#4e5c3c" stroke-width="12" stroke-linejoin="round"/>
+
+  <!-- 누빈 골 (가장자리까지 이어지는 큰 결 셋) -->
+  <g stroke="#94ab7c" stroke-width="10" fill="none" stroke-linecap="round" opacity="0.55">
+    <path d="M170 200 q-24 78 -34 150"/>
+    <path d="M342 200 q24 78 34 150"/>
+    <path d="M256 118 q-4 40 -2 66"/>
+  </g>
+
+  <!-- 가운데 쿠션 -->
+  <path d="M256 212 q36 -24 58 4 q34 -6 34 34 q20 26 -14 44 q-2 34 -40 26
+           q-28 22 -50 -6 q-38 4 -38 -34 q-24 -28 10 -46 q6 -28 40 -22 Z"
+        fill="url(#cushion)" stroke="#4e5c3c" stroke-width="11" stroke-linejoin="round"/>
+  <circle cx="256" cy="266" r="21" fill="#f5cf6c" stroke="#4e5c3c" stroke-width="10"/>
+
+  <!-- 광 -->
+  <path d="M182 196 q22 -46 56 -62" stroke="#f7fbf2" stroke-width="16" fill="none"
+        stroke-linecap="round" opacity="0.8"/>
+</svg>

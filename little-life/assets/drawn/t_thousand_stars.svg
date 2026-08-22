@@ -1,0 +1,46 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="jar" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#fbfaf4"/>
+      <stop offset="1" stop-color="#e8e2d2"/>
+    </linearGradient>
+    <linearGradient id="night" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5f6aa8"/>
+      <stop offset="1" stop-color="#3a3f74"/>
+    </linearGradient>
+    <linearGradient id="cork2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e0b078"/>
+      <stop offset="1" stop-color="#bd8a4e"/>
+    </linearGradient>
+    <clipPath id="jarclip">
+      <path d="M186 142 h140 q10 0 12 30 q6 74 0 142 q-4 66 -106 66 t-106 -66 q-6 -68 0 -142 q2 -30 12 -30 Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- 코르크 -->
+  <path d="M190 96 q0 -26 66 -26 t66 26 v30 q0 16 -66 16 t-66 -16 Z"
+        fill="url(#cork2)" stroke="#6b4a22" stroke-width="9" stroke-linejoin="round"/>
+  <path d="M218 106 v30 M256 110 v32 M294 106 v30" stroke="#a8763f" stroke-width="6"
+        stroke-linecap="round" opacity="0.5"/>
+
+  <!-- 병 -->
+  <g>
+    <path d="M186 142 h140 q10 0 12 30 q6 74 0 142 q-4 66 -106 66 t-106 -66 q-6 -68 0 -142 q2 -30 12 -30 Z"
+          fill="url(#jar)" stroke="#6b5a3c" stroke-width="11" stroke-linejoin="round"/>
+    <g clip-path="url(#jarclip)">
+      <path d="M120 200 q136 -20 272 0 v240 h-272 Z" fill="url(#night)"/>
+      <g fill="#ffe79a">
+        <path d="M196 268 l9 19 l19 9 l-19 9 l-9 19 l-9 -19 l-19 -9 l19 -9 Z"/>
+        <path d="M312 300 l8 16 l16 8 l-16 8 l-8 16 l-8 -16 l-16 -8 l16 -8 Z"/>
+        <path d="M244 348 l7 14 l14 7 l-14 7 l-7 14 l-7 -14 l-14 -7 l14 -7 Z"/>
+        <circle cx="286" cy="250" r="6"/><circle cx="176" cy="330" r="6"/>
+        <circle cx="330" cy="368" r="6"/><circle cx="216" cy="404" r="6"/>
+        <circle cx="278" cy="392" r="5"/><circle cx="158" cy="278" r="5"/>
+        <circle cx="342" cy="264" r="5"/><circle cx="192" cy="228" r="4"/>
+      </g>
+    </g>
+    <path d="M188 210 q-16 76 -10 146" stroke="#ffffff" stroke-width="14" fill="none"
+          stroke-linecap="round" opacity="0.6"/>
+  </g>
+
+</svg>

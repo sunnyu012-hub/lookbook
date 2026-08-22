@@ -1,0 +1,57 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="ttop" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#fdf3e0"/>
+      <stop offset="1" stop-color="#ecdab7"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#dfc196"/>
+      <stop offset="1" stop-color="#c39760"/>
+    </linearGradient>
+    <linearGradient id="legg" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#e2c093"/>
+      <stop offset="1" stop-color="#bb8e57"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 뒷다리 -->
+  <path d="M256 302 v92" stroke="#6b4a22" stroke-width="26" stroke-linecap="round"/>
+  <path d="M256 302 v88" stroke="url(#legg)" stroke-width="14" stroke-linecap="round"/>
+
+  <!-- 앞다리 둘 -->
+  <g>
+    <path d="M158 300 l-26 128" stroke="#6b4a22" stroke-width="26" stroke-linecap="round"/>
+    <path d="M354 300 l26 128" stroke="#6b4a22" stroke-width="26" stroke-linecap="round"/>
+    <path d="M158 302 l-24 122" stroke="url(#legg)" stroke-width="14" stroke-linecap="round"/>
+    <path d="M354 302 l24 122" stroke="url(#legg)" stroke-width="14" stroke-linecap="round"/>
+  </g>
+
+  <!-- 다리 가로대 -->
+  <path d="M146 366 q110 20 220 0" stroke="#6b4a22" stroke-width="19" fill="none"
+        stroke-linecap="round"/>
+  <path d="M148 364 q108 19 216 0" stroke="url(#legg)" stroke-width="9" fill="none"
+        stroke-linecap="round"/>
+
+  <!-- 상판 옆면 -->
+  <path d="M92 272 q164 36 328 0 v26 q-164 36 -328 0 Z" fill="url(#edge)"
+        stroke="#6b4a22" stroke-width="11" stroke-linejoin="round"/>
+
+  <!-- 상판 -->
+  <ellipse cx="256" cy="268" rx="164" ry="46" fill="url(#ttop)"
+           stroke="#6b4a22" stroke-width="11"/>
+  <path d="M150 254 q56 -20 118 -18" stroke="#fffaf0" stroke-width="12" fill="none"
+        stroke-linecap="round" opacity="0.85"/>
+
+  <!-- 접시 하나 -->
+  <ellipse cx="188" cy="272" rx="46" ry="16" fill="#f8f1e3" stroke="#6b4a22" stroke-width="9"/>
+  <ellipse cx="188" cy="269" rx="26" ry="8" fill="#eadfc9"/>
+
+  <!-- 컵 하나 -->
+  <g stroke="#6b4a22" stroke-width="9" stroke-linejoin="round">
+    <path d="M296 224 q34 -8 68 0 l-8 44 q-2 12 -26 12 t-26 -12 Z" fill="#f8f2e6"/>
+    <path d="M364 236 q20 4 17 18 q-3 14 -21 14" fill="none"/>
+    <ellipse cx="330" cy="226" rx="34" ry="10" fill="#efe3cd"/>
+  </g>
+  <path d="M306 246 q10 12 24 12" stroke="#ffffff" stroke-width="7" fill="none"
+        stroke-linecap="round" opacity="0.9"/>
+</svg>
