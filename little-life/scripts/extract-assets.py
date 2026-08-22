@@ -41,6 +41,8 @@ PARAMS = {
     "fabric": dict(dilate=6, min_area=2500, row_h=170),
     "lamps": dict(dilate=6, min_area=2500, row_h=170),
     "sofa": dict(dilate=6, min_area=3000, row_h=250),
+    # 이 시트만 물건마다 흰 테두리(스티커 선)가 둘려 있다
+    "extra": dict(dilate=9, min_area=4000, row_h=300, sticker=True),
 }
 
 # 아이템이 들어갈 폴더 (카탈로그 분류와 같은 이름)
@@ -61,6 +63,31 @@ def clean_alpha(im):
     return Image.fromarray(a, "RGBA")
 
 
+def strip_sticker(im):
+    """스티커처럼 둘러 있는 흰 테두리를 벗긴다.
+
+    어떤 시트는 물건마다 흰 선이 둘려 있다. 그대로 두면 방에 놓았을 때
+    그 물건만 오려붙인 것처럼 보인다.
+
+    **바깥에서 이어져 들어오는** 거의 흰 덩어리만 지운다. 그래야 빈백이나
+    크림색 수납장처럼 몸통이 밝은 것을 파먹지 않는다 — 그것들은 순백이 아니다.
+    """
+    a = np.array(im).astype(int)
+    alpha = a[..., 3]
+    mask = alpha > 40
+    rgb = a[..., :3]
+    white = (rgb.min(2) > 238) & ((rgb.max(2) - rgb.min(2)) < 14) & mask
+
+    labels, _ = ndimage.label(white)
+    outside = ndimage.binary_dilation(~mask, structure=np.ones((3, 3)))
+    touching = [n for n in np.unique(labels[outside & (labels > 0)]) if n > 0]
+    border = np.isin(labels, touching)
+
+    out = np.array(im)
+    out[..., 3] = np.where(border, 0, alpha).astype(np.uint8)
+    return Image.fromarray(out, "RGBA")
+
+
 def drop_fragments(im, keep_ratio=0.12):
     """옆 조각이 잘려 들어온 부스러기를 지운다. 제일 큰 덩어리만 남긴다."""
     a = np.array(im)
@@ -77,9 +104,11 @@ def drop_fragments(im, keep_ratio=0.12):
     return out.crop(bb) if bb else out
 
 
-def slice_sheet(name, path, dilate=6, min_area=1800, row_h=130):
+def slice_sheet(name, path, dilate=6, min_area=1800, row_h=130, sticker=False):
     """시트 하나를 조각으로 나눈다. 왼→오른쪽, 위→아래 순서로 번호를 매긴다."""
     im = clean_alpha(Image.open(path).convert("RGBA"))
+    if sticker:
+        im = strip_sticker(im)
     mask = np.array(im)[..., 3] > 40
     grown = ndimage.binary_dilation(mask, structure=np.ones((dilate, dilate)))
     labels, _ = ndimage.label(grown)
@@ -416,6 +445,13 @@ MAP = {
     "check_sofa": "sofa/00.png",
     "star_side_table": "sofa/01.png",
     "wood_bench": "sofa/02.png",
+    # ── 1차에 빠졌던 여섯 개 ──
+    "beanbag": "extra/00.png",
+    "mini_table": "extra/01.png",
+    "constellation_rug": "extra/02.png",
+    "small_cabinet": "extra/03.png",
+    "secret_drawer": "extra/04.png",
+    "star_pot": "extra/05.png",
 }
 
 

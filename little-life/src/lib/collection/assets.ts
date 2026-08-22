@@ -40,6 +40,7 @@ const WITH_ART = [
   'art_box',
   'baby_breath',
   'basil_pot',
+  'beanbag',
   'big_monstera',
   'board_game',
   'bud_lamp',
@@ -67,6 +68,7 @@ const WITH_ART = [
   'clover_bottle',
   'coat_rack',
   'coffee_cup',
+  'constellation_rug',
   'controller',
   'cook_book',
   'cookie_plate',
@@ -140,6 +142,7 @@ const WITH_ART = [
   'mini_cactus',
   'mini_piano',
   'mini_shelf',
+  'mini_table',
   'monitor',
   'moon_globe',
   'moon_keyring_c',
@@ -199,6 +202,7 @@ const WITH_ART = [
   'sage_chair',
   'sage_rug',
   'secret_diary',
+  'secret_drawer',
   'shiny_pebble',
   'shoe_cabinet',
   'sketchbook',
@@ -206,6 +210,7 @@ const WITH_ART = [
   'sleepy_bear_cushion',
   'small_bin',
   'small_blanket',
+  'small_cabinet',
   'small_candle',
   'small_comb',
   'small_frame',
@@ -228,6 +233,7 @@ const WITH_ART = [
   'star_mobile',
   'star_music_box',
   'star_piece',
+  'star_pot',
   'star_projector',
   'star_side_table',
   'stardust_jar',
@@ -285,21 +291,18 @@ const WITH_ART = [
 ] as const
 
 /**
- * 시트에 없어서 직접 그린 것.
+ * 시트에 없어서 직접 그린 것. 트로피 다섯 개다.
  *
  * 원본은 assets/drawn/<id>.svg 다. SVG 를 고치고 `npm run assets:draw` 를
  * 다시 돌리면 게임 안 그림도 따라 바뀐다.
  *
  * 이모지로 그리던 자리를 없애려고 그렸다. 이모지는 폰마다 모양이 달라서
  * 어떤 기기에서는 도감 한 칸만 결이 다르게 보인다.
+ *
+ * 여기 있던 가구 여섯 개는 나중에 시트(`extra.png`)가 와서 진짜 그림으로 바꿨다.
+ * 그림이 들어오면 그린 것은 미련 없이 뺀다.
  */
 const DRAWN = [
-  'beanbag',
-  'constellation_rug',
-  'mini_table',
-  'secret_drawer',
-  'small_cabinet',
-  'star_pot',
   't_adventure_book',
   't_heart_bottle',
   't_moon_shard',

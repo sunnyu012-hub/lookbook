@@ -3,7 +3,7 @@
  *
  *   npm run assets:draw
  *
- * 시트에 없는 물건 열한 개는 직접 그렸다. 원본은 assets/drawn/<id>.svg 다.
+ * 시트에 없는 트로피 다섯 개는 직접 그렸다. 원본은 assets/drawn/<id>.svg 다.
  * SVG 를 고치고 이 명령을 다시 돌리면 게임 안 그림도 따라 바뀐다.
  *
  * 크롬은 playwright 로 띄운다. 그림 다시 그릴 때만 쓰는 것이라

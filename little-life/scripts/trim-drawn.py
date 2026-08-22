@@ -18,12 +18,6 @@ MAX = 320
 
 # 어떤 물건이 어느 폴더로 가는지. 카탈로그 분류와 같은 이름을 쓴다.
 FOLDER = {
-    "small_cabinet": "furniture",
-    "secret_drawer": "furniture",
-    "beanbag": "furniture",
-    "mini_table": "furniture",
-    "star_pot": "plants",
-    "constellation_rug": "rugs",
     "t_wood_star": "trophies",
     "t_adventure_book": "trophies",
     "t_thousand_stars": "trophies",
