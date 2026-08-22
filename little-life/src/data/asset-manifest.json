@@ -1,0 +1,2482 @@
+{
+  "cream_bed": {
+    "file": "/assets/items/furniture/cream_bed.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 320,
+    "height": 290,
+    "bytes": 23326,
+    "verified": true
+  },
+  "cloud_bed": {
+    "file": "/assets/items/furniture/cloud_bed.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 320,
+    "height": 240,
+    "bytes": 22228,
+    "verified": true
+  },
+  "wood_bed": {
+    "file": "/assets/items/furniture/wood_bed.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 273,
+    "height": 283,
+    "bytes": 19546,
+    "verified": true
+  },
+  "daybed": {
+    "file": "/assets/items/furniture/daybed.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 320,
+    "height": 184,
+    "bytes": 20660,
+    "verified": true
+  },
+  "check_sofa": {
+    "file": "/assets/items/furniture/check_sofa.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 320,
+    "height": 197,
+    "bytes": 20464,
+    "verified": true
+  },
+  "pink_sofa": {
+    "file": "/assets/items/furniture/pink_sofa.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 320,
+    "height": 185,
+    "bytes": 15488,
+    "verified": true
+  },
+  "sage_chair": {
+    "file": "/assets/items/furniture/sage_chair.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 228,
+    "height": 202,
+    "bytes": 12136,
+    "verified": true
+  },
+  "vintage_sofa": {
+    "file": "/assets/items/furniture/vintage_sofa.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 320,
+    "height": 177,
+    "bytes": 17314,
+    "verified": true
+  },
+  "rattan_chair": {
+    "file": "/assets/items/furniture/rattan_chair.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 155,
+    "height": 185,
+    "bytes": 13150,
+    "verified": true
+  },
+  "round_stool": {
+    "file": "/assets/items/furniture/round_stool.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 116,
+    "height": 108,
+    "bytes": 5640,
+    "verified": true
+  },
+  "mushroom_stool": {
+    "file": "/assets/items/furniture/mushroom_stool.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 110,
+    "height": 121,
+    "bytes": 4670,
+    "verified": true
+  },
+  "work_chair": {
+    "file": "/assets/items/furniture/work_chair.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 113,
+    "height": 184,
+    "bytes": 8898,
+    "verified": true
+  },
+  "reading_chair": {
+    "file": "/assets/items/furniture/reading_chair.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 177,
+    "height": 197,
+    "bytes": 11302,
+    "verified": true
+  },
+  "acrylic_chair": {
+    "file": "/assets/items/furniture/acrylic_chair.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 160,
+    "height": 216,
+    "bytes": 15336,
+    "verified": true
+  },
+  "wood_desk": {
+    "file": "/assets/items/furniture/wood_desk.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 216,
+    "height": 245,
+    "bytes": 19320,
+    "verified": true
+  },
+  "window_desk": {
+    "file": "/assets/items/furniture/window_desk.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 245,
+    "height": 244,
+    "bytes": 21066,
+    "verified": true
+  },
+  "cafe_table": {
+    "file": "/assets/items/furniture/cafe_table.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 215,
+    "height": 179,
+    "bytes": 16632,
+    "verified": true
+  },
+  "tea_table": {
+    "file": "/assets/items/furniture/tea_table.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 215,
+    "height": 167,
+    "bytes": 13124,
+    "verified": true
+  },
+  "vintage_side_table": {
+    "file": "/assets/items/furniture/vintage_side_table.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 125,
+    "height": 211,
+    "bytes": 11802,
+    "verified": true
+  },
+  "star_side_table": {
+    "file": "/assets/items/furniture/star_side_table.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 150,
+    "height": 320,
+    "bytes": 18256,
+    "verified": true
+  },
+  "small_nightstand": {
+    "file": "/assets/items/furniture/small_nightstand.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 157,
+    "height": 229,
+    "bytes": 13268,
+    "verified": true
+  },
+  "drawer_nightstand": {
+    "file": "/assets/items/furniture/drawer_nightstand.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 179,
+    "height": 251,
+    "bytes": 16020,
+    "verified": true
+  },
+  "mini_shelf": {
+    "file": "/assets/items/furniture/mini_shelf.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 177,
+    "height": 203,
+    "bytes": 13496,
+    "verified": true
+  },
+  "low_shelf": {
+    "file": "/assets/items/furniture/low_shelf.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 194,
+    "height": 170,
+    "bytes": 12478,
+    "verified": true
+  },
+  "full_shelf": {
+    "file": "/assets/items/furniture/full_shelf.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 199,
+    "height": 306,
+    "bytes": 21278,
+    "verified": true
+  },
+  "glass_cabinet": {
+    "file": "/assets/items/furniture/glass_cabinet.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 176,
+    "height": 289,
+    "bytes": 16786,
+    "verified": true
+  },
+  "cream_drawer": {
+    "file": "/assets/items/furniture/cream_drawer.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 157,
+    "height": 238,
+    "bytes": 11934,
+    "verified": true
+  },
+  "sage_cabinet": {
+    "file": "/assets/items/furniture/sage_cabinet.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 211,
+    "height": 234,
+    "bytes": 17236,
+    "verified": true
+  },
+  "rattan_storage": {
+    "file": "/assets/items/furniture/rattan_storage.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 183,
+    "height": 233,
+    "bytes": 17222,
+    "verified": true
+  },
+  "small_hanger": {
+    "file": "/assets/items/furniture/small_hanger.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 260,
+    "height": 251,
+    "bytes": 30922,
+    "verified": true
+  },
+  "coat_rack": {
+    "file": "/assets/items/furniture/coat_rack.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 241,
+    "height": 209,
+    "bytes": 22528,
+    "verified": true
+  },
+  "wood_bench": {
+    "file": "/assets/items/furniture/wood_bench.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 320,
+    "height": 270,
+    "bytes": 25000,
+    "verified": true
+  },
+  "window_bench": {
+    "file": "/assets/items/furniture/window_bench.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 244,
+    "height": 238,
+    "bytes": 18730,
+    "verified": true
+  },
+  "pink_beanbag": {
+    "file": "/assets/items/furniture/pink_beanbag.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 239,
+    "height": 182,
+    "bytes": 10028,
+    "verified": true
+  },
+  "floor_chair": {
+    "file": "/assets/items/furniture/floor_chair.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 265,
+    "height": 218,
+    "bytes": 20084,
+    "verified": true
+  },
+  "vanity": {
+    "file": "/assets/items/furniture/vanity.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 201,
+    "height": 231,
+    "bytes": 20498,
+    "verified": true
+  },
+  "round_vanity": {
+    "file": "/assets/items/furniture/round_vanity.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 233,
+    "height": 257,
+    "bytes": 22114,
+    "verified": true
+  },
+  "duo_table": {
+    "file": "/assets/items/furniture/duo_table.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 320,
+    "height": 179,
+    "bytes": 26934,
+    "verified": true
+  },
+  "kitchen_shelf": {
+    "file": "/assets/items/furniture/kitchen_shelf.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 262,
+    "height": 169,
+    "bytes": 21900,
+    "verified": true
+  },
+  "home_cafe_cart": {
+    "file": "/assets/items/furniture/home_cafe_cart.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 238,
+    "height": 217,
+    "bytes": 23814,
+    "verified": true
+  },
+  "trolley": {
+    "file": "/assets/items/furniture/trolley.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 167,
+    "height": 216,
+    "bytes": 19000,
+    "verified": true
+  },
+  "record_cabinet": {
+    "file": "/assets/items/furniture/record_cabinet.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 254,
+    "height": 212,
+    "bytes": 20878,
+    "verified": true
+  },
+  "craft_cabinet": {
+    "file": "/assets/items/furniture/craft_cabinet.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 215,
+    "height": 227,
+    "bytes": 21110,
+    "verified": true
+  },
+  "shoe_cabinet": {
+    "file": "/assets/items/furniture/shoe_cabinet.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 186,
+    "height": 192,
+    "bytes": 14960,
+    "verified": true
+  },
+  "entry_bench": {
+    "file": "/assets/items/furniture/entry_bench.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 235,
+    "height": 167,
+    "bytes": 13932,
+    "verified": true
+  },
+  "window_ledge": {
+    "file": "/assets/items/furniture/window_ledge.webp",
+    "category": "FURNITURE",
+    "placement": "PLACEABLE",
+    "placementType": "WINDOW",
+    "width": 234,
+    "height": 201,
+    "bytes": 17164,
+    "verified": true
+  },
+  "floor_lamp": {
+    "file": "/assets/items/lighting/floor_lamp.webp",
+    "category": "LIGHTING",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 173,
+    "height": 310,
+    "bytes": 12724,
+    "verified": true
+  },
+  "mushroom_lamp": {
+    "file": "/assets/items/lighting/mushroom_lamp.webp",
+    "category": "LIGHTING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 181,
+    "height": 231,
+    "bytes": 9746,
+    "verified": true
+  },
+  "cloud_light": {
+    "file": "/assets/items/lighting/cloud_light.webp",
+    "category": "LIGHTING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 182,
+    "height": 161,
+    "bytes": 7684,
+    "verified": true
+  },
+  "moon_light": {
+    "file": "/assets/items/lighting/moon_light.webp",
+    "category": "LIGHTING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 186,
+    "height": 220,
+    "bytes": 9374,
+    "verified": true
+  },
+  "star_lamp": {
+    "file": "/assets/items/lighting/star_lamp.webp",
+    "category": "LIGHTING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 162,
+    "height": 195,
+    "bytes": 7508,
+    "verified": true
+  },
+  "vintage_lamp": {
+    "file": "/assets/items/lighting/vintage_lamp.webp",
+    "category": "LIGHTING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 178,
+    "height": 232,
+    "bytes": 13152,
+    "verified": true
+  },
+  "green_stand": {
+    "file": "/assets/items/lighting/green_stand.webp",
+    "category": "LIGHTING",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 156,
+    "height": 222,
+    "bytes": 11728,
+    "verified": true
+  },
+  "pink_glass_lamp": {
+    "file": "/assets/items/lighting/pink_glass_lamp.webp",
+    "category": "LIGHTING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 143,
+    "height": 227,
+    "bytes": 10816,
+    "verified": true
+  },
+  "reading_light": {
+    "file": "/assets/items/lighting/reading_light.webp",
+    "category": "LIGHTING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 170,
+    "height": 237,
+    "bytes": 11596,
+    "verified": true
+  },
+  "candle_light": {
+    "file": "/assets/items/lighting/candle_light.webp",
+    "category": "LIGHTING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 217,
+    "height": 320,
+    "bytes": 22808,
+    "verified": true
+  },
+  "sunset_lamp": {
+    "file": "/assets/items/lighting/sunset_lamp.webp",
+    "category": "LIGHTING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 252,
+    "height": 320,
+    "bytes": 18368,
+    "verified": true
+  },
+  "raindrop_light": {
+    "file": "/assets/items/lighting/raindrop_light.webp",
+    "category": "LIGHTING",
+    "placement": "PLACEABLE",
+    "placementType": "HANGING",
+    "width": 203,
+    "height": 320,
+    "bytes": 21720,
+    "verified": true
+  },
+  "bud_lamp": {
+    "file": "/assets/items/lighting/bud_lamp.webp",
+    "category": "LIGHTING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 287,
+    "height": 320,
+    "bytes": 29140,
+    "verified": true
+  },
+  "paper_lantern": {
+    "file": "/assets/items/lighting/paper_lantern.webp",
+    "category": "LIGHTING",
+    "placement": "PLACEABLE",
+    "placementType": "HANGING",
+    "width": 186,
+    "height": 320,
+    "bytes": 14940,
+    "verified": true
+  },
+  "neon_star": {
+    "file": "/assets/items/lighting/neon_star.webp",
+    "category": "LIGHTING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 236,
+    "height": 320,
+    "bytes": 30466,
+    "verified": true
+  },
+  "firefly_jar": {
+    "file": "/assets/items/lighting/firefly_jar.webp",
+    "category": "LIGHTING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 130,
+    "height": 208,
+    "bytes": 11930,
+    "verified": true
+  },
+  "star_projector": {
+    "file": "/assets/items/lighting/star_projector.webp",
+    "category": "LIGHTING",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 238,
+    "height": 320,
+    "bytes": 26684,
+    "verified": true
+  },
+  "moon_globe": {
+    "file": "/assets/items/lighting/moon_globe.webp",
+    "category": "LIGHTING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 161,
+    "height": 217,
+    "bytes": 14962,
+    "verified": true
+  },
+  "cat_lamp": {
+    "file": "/assets/items/lighting/cat_lamp.webp",
+    "category": "LIGHTING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 320,
+    "height": 249,
+    "bytes": 18512,
+    "verified": true
+  },
+  "dawn_lamp": {
+    "file": "/assets/items/lighting/dawn_lamp.webp",
+    "category": "LIGHTING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 283,
+    "height": 320,
+    "bytes": 21918,
+    "verified": true
+  },
+  "small_monstera": {
+    "file": "/assets/items/plants/small_monstera.webp",
+    "category": "PLANT",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 171,
+    "height": 210,
+    "bytes": 17586,
+    "verified": true
+  },
+  "big_monstera": {
+    "file": "/assets/items/plants/big_monstera.webp",
+    "category": "PLANT",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 245,
+    "height": 277,
+    "bytes": 28730,
+    "verified": true
+  },
+  "succulent": {
+    "file": "/assets/items/plants/succulent.webp",
+    "category": "PLANT",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 147,
+    "height": 167,
+    "bytes": 10044,
+    "verified": true
+  },
+  "mini_cactus": {
+    "file": "/assets/items/plants/mini_cactus.webp",
+    "category": "PLANT",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 106,
+    "height": 166,
+    "bytes": 7264,
+    "verified": true
+  },
+  "bunny_cactus": {
+    "file": "/assets/items/plants/bunny_cactus.webp",
+    "category": "PLANT",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 118,
+    "height": 234,
+    "bytes": 10856,
+    "verified": true
+  },
+  "rubber_tree": {
+    "file": "/assets/items/plants/rubber_tree.webp",
+    "category": "PLANT",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 185,
+    "height": 277,
+    "bytes": 17466,
+    "verified": true
+  },
+  "olive_tree": {
+    "file": "/assets/items/plants/olive_tree.webp",
+    "category": "PLANT",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 175,
+    "height": 274,
+    "bytes": 24952,
+    "verified": true
+  },
+  "window_ivy": {
+    "file": "/assets/items/plants/window_ivy.webp",
+    "category": "PLANT",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 248,
+    "height": 316,
+    "bytes": 30500,
+    "verified": true
+  },
+  "pothos": {
+    "file": "/assets/items/plants/pothos.webp",
+    "category": "PLANT",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 178,
+    "height": 310,
+    "bytes": 24904,
+    "verified": true
+  },
+  "herb_pot": {
+    "file": "/assets/items/plants/herb_pot.webp",
+    "category": "PLANT",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 228,
+    "height": 320,
+    "bytes": 37286,
+    "verified": true
+  },
+  "basil_pot": {
+    "file": "/assets/items/plants/basil_pot.webp",
+    "category": "PLANT",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 237,
+    "height": 320,
+    "bytes": 28118,
+    "verified": true
+  },
+  "rosemary_pot": {
+    "file": "/assets/items/plants/rosemary_pot.webp",
+    "category": "PLANT",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 222,
+    "height": 320,
+    "bytes": 39226,
+    "verified": true
+  },
+  "lavender_pot": {
+    "file": "/assets/items/plants/lavender_pot.webp",
+    "category": "PLANT",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 195,
+    "height": 320,
+    "bytes": 36374,
+    "verified": true
+  },
+  "yellow_tulip": {
+    "file": "/assets/items/plants/yellow_tulip.webp",
+    "category": "PLANT",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 224,
+    "height": 320,
+    "bytes": 29264,
+    "verified": true
+  },
+  "pink_tulip": {
+    "file": "/assets/items/plants/pink_tulip.webp",
+    "category": "PLANT",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 230,
+    "height": 320,
+    "bytes": 27996,
+    "verified": true
+  },
+  "white_daisy": {
+    "file": "/assets/items/plants/white_daisy.webp",
+    "category": "PLANT",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 237,
+    "height": 320,
+    "bytes": 35702,
+    "verified": true
+  },
+  "rose_vase": {
+    "file": "/assets/items/plants/rose_vase.webp",
+    "category": "PLANT",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 231,
+    "height": 320,
+    "bytes": 33120,
+    "verified": true
+  },
+  "wildflowers": {
+    "file": "/assets/items/plants/wildflowers.webp",
+    "category": "PLANT",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 264,
+    "height": 317,
+    "bytes": 41050,
+    "verified": true
+  },
+  "baby_breath": {
+    "file": "/assets/items/plants/baby_breath.webp",
+    "category": "PLANT",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 254,
+    "height": 311,
+    "bytes": 47126,
+    "verified": true
+  },
+  "sunflower": {
+    "file": "/assets/items/plants/sunflower.webp",
+    "category": "PLANT",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 210,
+    "height": 320,
+    "bytes": 27328,
+    "verified": true
+  },
+  "sprout_jar": {
+    "file": "/assets/items/plants/sprout_jar.webp",
+    "category": "PLANT",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 184,
+    "height": 304,
+    "bytes": 22128,
+    "verified": true
+  },
+  "clover": {
+    "file": "/assets/items/plants/clover.webp",
+    "category": "PLANT",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 227,
+    "height": 284,
+    "bytes": 23568,
+    "verified": true
+  },
+  "night_flower": {
+    "file": "/assets/items/plants/night_flower.webp",
+    "category": "PLANT",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 272,
+    "height": 280,
+    "bytes": 27616,
+    "verified": true
+  },
+  "mushroom_pot": {
+    "file": "/assets/items/plants/mushroom_pot.webp",
+    "category": "PLANT",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 208,
+    "height": 280,
+    "bytes": 19940,
+    "verified": true
+  },
+  "cream_rug": {
+    "file": "/assets/items/rugs/cream_rug.webp",
+    "category": "RUG",
+    "placement": "PLACEABLE",
+    "placementType": "RUG",
+    "width": 320,
+    "height": 165,
+    "bytes": 14478,
+    "verified": true
+  },
+  "check_rug": {
+    "file": "/assets/items/rugs/check_rug.webp",
+    "category": "RUG",
+    "placement": "PLACEABLE",
+    "placementType": "RUG",
+    "width": 320,
+    "height": 188,
+    "bytes": 23000,
+    "verified": true
+  },
+  "pink_cloud_rug": {
+    "file": "/assets/items/rugs/pink_cloud_rug.webp",
+    "category": "RUG",
+    "placement": "PLACEABLE",
+    "placementType": "RUG",
+    "width": 320,
+    "height": 187,
+    "bytes": 13806,
+    "verified": true
+  },
+  "sage_rug": {
+    "file": "/assets/items/rugs/sage_rug.webp",
+    "category": "RUG",
+    "placement": "PLACEABLE",
+    "placementType": "RUG",
+    "width": 320,
+    "height": 174,
+    "bytes": 18546,
+    "verified": true
+  },
+  "sunlight_rug": {
+    "file": "/assets/items/rugs/sunlight_rug.webp",
+    "category": "RUG",
+    "placement": "PLACEABLE",
+    "placementType": "RUG",
+    "width": 320,
+    "height": 296,
+    "bytes": 25768,
+    "verified": true
+  },
+  "raindrop_rug": {
+    "file": "/assets/items/rugs/raindrop_rug.webp",
+    "category": "RUG",
+    "placement": "PLACEABLE",
+    "placementType": "RUG",
+    "width": 320,
+    "height": 171,
+    "bytes": 15400,
+    "verified": true
+  },
+  "flower_rug": {
+    "file": "/assets/items/rugs/flower_rug.webp",
+    "category": "RUG",
+    "placement": "PLACEABLE",
+    "placementType": "RUG",
+    "width": 320,
+    "height": 165,
+    "bytes": 20180,
+    "verified": true
+  },
+  "mushroom_rug": {
+    "file": "/assets/items/rugs/mushroom_rug.webp",
+    "category": "RUG",
+    "placement": "PLACEABLE",
+    "placementType": "RUG",
+    "width": 294,
+    "height": 300,
+    "bytes": 20176,
+    "verified": true
+  },
+  "cat_paw_rug": {
+    "file": "/assets/items/rugs/cat_paw_rug.webp",
+    "category": "RUG",
+    "placement": "PLACEABLE",
+    "placementType": "RUG",
+    "width": 311,
+    "height": 278,
+    "bytes": 23608,
+    "verified": true
+  },
+  "white_rug": {
+    "file": "/assets/items/rugs/white_rug.webp",
+    "category": "RUG",
+    "placement": "PLACEABLE",
+    "placementType": "RUG",
+    "width": 320,
+    "height": 265,
+    "bytes": 22164,
+    "verified": true
+  },
+  "persian_rug": {
+    "file": "/assets/items/rugs/persian_rug.webp",
+    "category": "RUG",
+    "placement": "PLACEABLE",
+    "placementType": "RUG",
+    "width": 320,
+    "height": 218,
+    "bytes": 28924,
+    "verified": true
+  },
+  "picnic_mat": {
+    "file": "/assets/items/rugs/picnic_mat.webp",
+    "category": "RUG",
+    "placement": "PLACEABLE",
+    "placementType": "RUG",
+    "width": 320,
+    "height": 209,
+    "bytes": 23544,
+    "verified": true
+  },
+  "small_blanket": {
+    "file": "/assets/items/rugs/small_blanket.webp",
+    "category": "RUG",
+    "placement": "PLACEABLE",
+    "placementType": "DECOR",
+    "width": 320,
+    "height": 257,
+    "bytes": 24054,
+    "verified": true
+  },
+  "check_blanket": {
+    "file": "/assets/items/rugs/check_blanket.webp",
+    "category": "RUG",
+    "placement": "PLACEABLE",
+    "placementType": "DECOR",
+    "width": 317,
+    "height": 280,
+    "bytes": 24476,
+    "verified": true
+  },
+  "cloud_blanket": {
+    "file": "/assets/items/rugs/cloud_blanket.webp",
+    "category": "RUG",
+    "placement": "PLACEABLE",
+    "placementType": "DECOR",
+    "width": 320,
+    "height": 227,
+    "bytes": 21858,
+    "verified": true
+  },
+  "yellow_cushion": {
+    "file": "/assets/items/rugs/yellow_cushion.webp",
+    "category": "RUG",
+    "placement": "PLACEABLE",
+    "placementType": "DECOR",
+    "width": 289,
+    "height": 293,
+    "bytes": 22184,
+    "verified": true
+  },
+  "sleepy_bear_cushion": {
+    "file": "/assets/items/rugs/sleepy_bear_cushion.webp",
+    "category": "RUG",
+    "placement": "PLACEABLE",
+    "placementType": "DECOR",
+    "width": 205,
+    "height": 172,
+    "bytes": 11040,
+    "verified": true
+  },
+  "cat_cushion": {
+    "file": "/assets/items/rugs/cat_cushion.webp",
+    "category": "RUG",
+    "placement": "PLACEABLE",
+    "placementType": "DECOR",
+    "width": 221,
+    "height": 174,
+    "bytes": 11272,
+    "verified": true
+  },
+  "star_cushion": {
+    "file": "/assets/items/rugs/star_cushion.webp",
+    "category": "RUG",
+    "placement": "PLACEABLE",
+    "placementType": "DECOR",
+    "width": 292,
+    "height": 289,
+    "bytes": 19354,
+    "verified": true
+  },
+  "my_mug": {
+    "file": "/assets/items/little_things/my_mug.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 248,
+    "height": 212,
+    "bytes": 12708,
+    "verified": true
+  },
+  "glass_teacup": {
+    "file": "/assets/items/little_things/glass_teacup.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 264,
+    "height": 207,
+    "bytes": 18652,
+    "verified": true
+  },
+  "small_tumbler": {
+    "file": "/assets/items/little_things/small_tumbler.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 180,
+    "height": 318,
+    "bytes": 13924,
+    "verified": true
+  },
+  "water_bottle": {
+    "file": "/assets/items/little_things/water_bottle.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 158,
+    "height": 313,
+    "bytes": 10908,
+    "verified": true
+  },
+  "flower_plate": {
+    "file": "/assets/items/little_things/flower_plate.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 290,
+    "height": 206,
+    "bytes": 12854,
+    "verified": true
+  },
+  "toast_plate": {
+    "file": "/assets/items/little_things/toast_plate.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 287,
+    "height": 214,
+    "bytes": 18132,
+    "verified": true
+  },
+  "wood_tray": {
+    "file": "/assets/items/little_things/wood_tray.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 316,
+    "height": 192,
+    "bytes": 14874,
+    "verified": true
+  },
+  "rattan_basket": {
+    "file": "/assets/items/little_things/rattan_basket.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 272,
+    "height": 219,
+    "bytes": 18398,
+    "verified": true
+  },
+  "laundry_basket": {
+    "file": "/assets/items/little_things/laundry_basket.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 225,
+    "height": 247,
+    "bytes": 16184,
+    "verified": true
+  },
+  "small_bin": {
+    "file": "/assets/items/little_things/small_bin.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 177,
+    "height": 268,
+    "bytes": 11886,
+    "verified": true
+  },
+  "cream_clock": {
+    "file": "/assets/items/little_things/cream_clock.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 198,
+    "height": 258,
+    "bytes": 13606,
+    "verified": true
+  },
+  "vintage_alarm": {
+    "file": "/assets/items/little_things/vintage_alarm.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 176,
+    "height": 240,
+    "bytes": 16762,
+    "verified": true
+  },
+  "desk_calendar": {
+    "file": "/assets/items/little_things/desk_calendar.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 230,
+    "height": 207,
+    "bytes": 14726,
+    "verified": true
+  },
+  "small_candle": {
+    "file": "/assets/items/little_things/small_candle.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 162,
+    "height": 174,
+    "bytes": 10072,
+    "verified": true
+  },
+  "rainy_candle": {
+    "file": "/assets/items/little_things/rainy_candle.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 188,
+    "height": 246,
+    "bytes": 13592,
+    "verified": true
+  },
+  "matchbox": {
+    "file": "/assets/items/little_things/matchbox.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 200,
+    "height": 183,
+    "bytes": 10668,
+    "verified": true
+  },
+  "small_umbrella": {
+    "file": "/assets/items/little_things/small_umbrella.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 114,
+    "height": 289,
+    "bytes": 11176,
+    "verified": true
+  },
+  "clear_umbrella": {
+    "file": "/assets/items/little_things/clear_umbrella.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 292,
+    "height": 269,
+    "bytes": 20170,
+    "verified": true
+  },
+  "umbrella_stand": {
+    "file": "/assets/items/little_things/umbrella_stand.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 141,
+    "height": 300,
+    "bytes": 14222,
+    "verified": true
+  },
+  "eco_bag": {
+    "file": "/assets/items/little_things/eco_bag.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 237,
+    "height": 297,
+    "bytes": 20988,
+    "verified": true
+  },
+  "small_pouch": {
+    "file": "/assets/items/little_things/small_pouch.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 242,
+    "height": 167,
+    "bytes": 14890,
+    "verified": true
+  },
+  "lucky_keyring_c": {
+    "file": "/assets/items/little_things/lucky_keyring_c.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 203,
+    "height": 216,
+    "bytes": 18404,
+    "verified": true
+  },
+  "cloud_keyring": {
+    "file": "/assets/items/little_things/cloud_keyring.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 207,
+    "height": 230,
+    "bytes": 16782,
+    "verified": true
+  },
+  "moon_keyring_c": {
+    "file": "/assets/items/little_things/moon_keyring_c.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 187,
+    "height": 229,
+    "bytes": 18732,
+    "verified": true
+  },
+  "jewel_box": {
+    "file": "/assets/items/little_things/jewel_box.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 237,
+    "height": 261,
+    "bytes": 19230,
+    "verified": true
+  },
+  "glasses_case": {
+    "file": "/assets/items/little_things/glasses_case.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 242,
+    "height": 173,
+    "bytes": 15292,
+    "verified": true
+  },
+  "vintage_camera": {
+    "file": "/assets/items/little_things/vintage_camera.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 267,
+    "height": 181,
+    "bytes": 18742,
+    "verified": true
+  },
+  "instant_camera": {
+    "file": "/assets/items/little_things/instant_camera.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 223,
+    "height": 191,
+    "bytes": 14504,
+    "verified": true
+  },
+  "film_roll": {
+    "file": "/assets/items/little_things/film_roll.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 209,
+    "height": 160,
+    "bytes": 11470,
+    "verified": true
+  },
+  "headphones_c": {
+    "file": "/assets/items/little_things/headphones_c.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 217,
+    "height": 222,
+    "bytes": 15880,
+    "verified": true
+  },
+  "small_radio": {
+    "file": "/assets/items/little_things/small_radio.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 151,
+    "height": 156,
+    "bytes": 8796,
+    "verified": true
+  },
+  "turntable": {
+    "file": "/assets/items/little_things/turntable.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 295,
+    "height": 305,
+    "bytes": 24918,
+    "verified": true
+  },
+  "record": {
+    "file": "/assets/items/little_things/record.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 209,
+    "height": 210,
+    "bytes": 10976,
+    "verified": true
+  },
+  "hand_mirror": {
+    "file": "/assets/items/little_things/hand_mirror.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 193,
+    "height": 221,
+    "bytes": 11820,
+    "verified": true
+  },
+  "small_comb": {
+    "file": "/assets/items/little_things/small_comb.webp",
+    "category": "LITTLE_THING",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 175,
+    "height": 240,
+    "bytes": 13356,
+    "verified": true
+  },
+  "unfinished_novel": {
+    "file": "/assets/items/books/unfinished_novel.webp",
+    "category": "BOOK",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 276,
+    "height": 260,
+    "bytes": 20726,
+    "verified": true
+  },
+  "thick_essay": {
+    "file": "/assets/items/books/thick_essay.webp",
+    "category": "BOOK",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 274,
+    "height": 281,
+    "bytes": 23360,
+    "verified": true
+  },
+  "poem_book": {
+    "file": "/assets/items/books/poem_book.webp",
+    "category": "BOOK",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 212,
+    "height": 261,
+    "bytes": 18254,
+    "verified": true
+  },
+  "travel_magazine": {
+    "file": "/assets/items/books/travel_magazine.webp",
+    "category": "BOOK",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 257,
+    "height": 298,
+    "bytes": 23636,
+    "verified": true
+  },
+  "fashion_magazine": {
+    "file": "/assets/items/books/fashion_magazine.webp",
+    "category": "BOOK",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 257,
+    "height": 274,
+    "bytes": 22458,
+    "verified": true
+  },
+  "old_picture_book": {
+    "file": "/assets/items/books/old_picture_book.webp",
+    "category": "BOOK",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 273,
+    "height": 275,
+    "bytes": 26804,
+    "verified": true
+  },
+  "plant_book": {
+    "file": "/assets/items/books/plant_book.webp",
+    "category": "BOOK",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 268,
+    "height": 290,
+    "bytes": 27192,
+    "verified": true
+  },
+  "star_book": {
+    "file": "/assets/items/books/star_book.webp",
+    "category": "BOOK",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 270,
+    "height": 298,
+    "bytes": 26876,
+    "verified": true
+  },
+  "cook_book": {
+    "file": "/assets/items/books/cook_book.webp",
+    "category": "BOOK",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 263,
+    "height": 272,
+    "bytes": 24340,
+    "verified": true
+  },
+  "small_notebook": {
+    "file": "/assets/items/books/small_notebook.webp",
+    "category": "BOOK",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 235,
+    "height": 228,
+    "bytes": 18940,
+    "verified": true
+  },
+  "checklist_notebook": {
+    "file": "/assets/items/books/checklist_notebook.webp",
+    "category": "BOOK",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 226,
+    "height": 256,
+    "bytes": 17634,
+    "verified": true
+  },
+  "secret_diary": {
+    "file": "/assets/items/books/secret_diary.webp",
+    "category": "BOOK",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 280,
+    "height": 241,
+    "bytes": 21296,
+    "verified": true
+  },
+  "sketchbook": {
+    "file": "/assets/items/books/sketchbook.webp",
+    "category": "BOOK",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 302,
+    "height": 225,
+    "bytes": 25848,
+    "verified": true
+  },
+  "pencil_case": {
+    "file": "/assets/items/books/pencil_case.webp",
+    "category": "BOOK",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 187,
+    "height": 217,
+    "bytes": 16446,
+    "verified": true
+  },
+  "fountain_pen": {
+    "file": "/assets/items/books/fountain_pen.webp",
+    "category": "BOOK",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 156,
+    "height": 209,
+    "bytes": 12056,
+    "verified": true
+  },
+  "pencil_cup": {
+    "file": "/assets/items/books/pencil_cup.webp",
+    "category": "BOOK",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 219,
+    "height": 221,
+    "bytes": 16984,
+    "verified": true
+  },
+  "sticky_notes": {
+    "file": "/assets/items/books/sticky_notes.webp",
+    "category": "BOOK",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 226,
+    "height": 216,
+    "bytes": 17808,
+    "verified": true
+  },
+  "letter": {
+    "file": "/assets/items/books/letter.webp",
+    "category": "BOOK",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 258,
+    "height": 241,
+    "bytes": 17262,
+    "verified": true
+  },
+  "postcards": {
+    "file": "/assets/items/books/postcards.webp",
+    "category": "BOOK",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 248,
+    "height": 218,
+    "bytes": 23700,
+    "verified": true
+  },
+  "old_map": {
+    "file": "/assets/items/books/old_map.webp",
+    "category": "BOOK",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 289,
+    "height": 249,
+    "bytes": 25636,
+    "verified": true
+  },
+  "small_pot": {
+    "file": "/assets/items/kitchen/small_pot.webp",
+    "category": "KITCHEN",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 267,
+    "height": 215,
+    "bytes": 13572,
+    "verified": true
+  },
+  "frying_pan": {
+    "file": "/assets/items/kitchen/frying_pan.webp",
+    "category": "KITCHEN",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 283,
+    "height": 201,
+    "bytes": 13418,
+    "verified": true
+  },
+  "cutting_board": {
+    "file": "/assets/items/kitchen/cutting_board.webp",
+    "category": "KITCHEN",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 284,
+    "height": 251,
+    "bytes": 17892,
+    "verified": true
+  },
+  "oven_mitt": {
+    "file": "/assets/items/kitchen/oven_mitt.webp",
+    "category": "KITCHEN",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 201,
+    "height": 249,
+    "bytes": 12984,
+    "verified": true
+  },
+  "toast_butter": {
+    "file": "/assets/items/food/toast_butter.webp",
+    "category": "FOOD",
+    "placement": "DISPLAY_ONLY",
+    "placementType": "TABLETOP",
+    "width": 278,
+    "height": 228,
+    "bytes": 20000,
+    "verified": true
+  },
+  "jam_toast": {
+    "file": "/assets/items/food/jam_toast.webp",
+    "category": "FOOD",
+    "placement": "DISPLAY_ONLY",
+    "placementType": "TABLETOP",
+    "width": 254,
+    "height": 236,
+    "bytes": 19442,
+    "verified": true
+  },
+  "pancake": {
+    "file": "/assets/items/food/pancake.webp",
+    "category": "FOOD",
+    "placement": "DISPLAY_ONLY",
+    "placementType": "TABLETOP",
+    "width": 253,
+    "height": 227,
+    "bytes": 18118,
+    "verified": true
+  },
+  "croissant": {
+    "file": "/assets/items/food/croissant.webp",
+    "category": "FOOD",
+    "placement": "DISPLAY_ONLY",
+    "placementType": "TABLETOP",
+    "width": 251,
+    "height": 209,
+    "bytes": 17118,
+    "verified": true
+  },
+  "cake_slice": {
+    "file": "/assets/items/food/cake_slice.webp",
+    "category": "FOOD",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 257,
+    "height": 247,
+    "bytes": 17918,
+    "verified": true
+  },
+  "strawberry_cake": {
+    "file": "/assets/items/food/strawberry_cake.webp",
+    "category": "FOOD",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 269,
+    "height": 253,
+    "bytes": 20168,
+    "verified": true
+  },
+  "cookie_plate": {
+    "file": "/assets/items/food/cookie_plate.webp",
+    "category": "FOOD",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 263,
+    "height": 208,
+    "bytes": 18620,
+    "verified": true
+  },
+  "apple_basket": {
+    "file": "/assets/items/food/apple_basket.webp",
+    "category": "FOOD",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 244,
+    "height": 258,
+    "bytes": 22818,
+    "verified": true
+  },
+  "tangerine_basket": {
+    "file": "/assets/items/food/tangerine_basket.webp",
+    "category": "FOOD",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 259,
+    "height": 262,
+    "bytes": 23590,
+    "verified": true
+  },
+  "strawberry_pack": {
+    "file": "/assets/items/food/strawberry_pack.webp",
+    "category": "FOOD",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 256,
+    "height": 231,
+    "bytes": 20820,
+    "verified": true
+  },
+  "coffee_cup": {
+    "file": "/assets/items/food/coffee_cup.webp",
+    "category": "FOOD",
+    "placement": "DISPLAY_ONLY",
+    "placementType": "TABLETOP",
+    "width": 259,
+    "height": 212,
+    "bytes": 17370,
+    "verified": true
+  },
+  "latte_cup": {
+    "file": "/assets/items/food/latte_cup.webp",
+    "category": "FOOD",
+    "placement": "DISPLAY_ONLY",
+    "placementType": "TABLETOP",
+    "width": 210,
+    "height": 266,
+    "bytes": 17886,
+    "verified": true
+  },
+  "warm_tea": {
+    "file": "/assets/items/food/warm_tea.webp",
+    "category": "FOOD",
+    "placement": "DISPLAY_ONLY",
+    "placementType": "TABLETOP",
+    "width": 261,
+    "height": 200,
+    "bytes": 19082,
+    "verified": true
+  },
+  "lemonade": {
+    "file": "/assets/items/food/lemonade.webp",
+    "category": "FOOD",
+    "placement": "DISPLAY_ONLY",
+    "placementType": "TABLETOP",
+    "width": 181,
+    "height": 278,
+    "bytes": 19748,
+    "verified": true
+  },
+  "milk_bottle": {
+    "file": "/assets/items/food/milk_bottle.webp",
+    "category": "FOOD",
+    "placement": "DISPLAY_ONLY",
+    "placementType": "TABLETOP",
+    "width": 140,
+    "height": 246,
+    "bytes": 10910,
+    "verified": true
+  },
+  "cereal_bowl": {
+    "file": "/assets/items/food/cereal_bowl.webp",
+    "category": "FOOD",
+    "placement": "DISPLAY_ONLY",
+    "placementType": "TABLETOP",
+    "width": 239,
+    "height": 240,
+    "bytes": 17284,
+    "verified": true
+  },
+  "small_laptop": {
+    "file": "/assets/items/tech/small_laptop.webp",
+    "category": "TECH",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 272,
+    "height": 229,
+    "bytes": 16438,
+    "verified": true
+  },
+  "monitor": {
+    "file": "/assets/items/tech/monitor.webp",
+    "category": "TECH",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 273,
+    "height": 245,
+    "bytes": 12468,
+    "verified": true
+  },
+  "keyboard": {
+    "file": "/assets/items/tech/keyboard.webp",
+    "category": "TECH",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 306,
+    "height": 144,
+    "bytes": 16326,
+    "verified": true
+  },
+  "mouse": {
+    "file": "/assets/items/tech/mouse.webp",
+    "category": "TECH",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 117,
+    "height": 142,
+    "bytes": 6410,
+    "verified": true
+  },
+  "tablet": {
+    "file": "/assets/items/tech/tablet.webp",
+    "category": "TECH",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 278,
+    "height": 219,
+    "bytes": 19312,
+    "verified": true
+  },
+  "controller": {
+    "file": "/assets/items/tech/controller.webp",
+    "category": "TECH",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 262,
+    "height": 175,
+    "bytes": 13510,
+    "verified": true
+  },
+  "handheld": {
+    "file": "/assets/items/tech/handheld.webp",
+    "category": "TECH",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 279,
+    "height": 147,
+    "bytes": 14728,
+    "verified": true
+  },
+  "speaker": {
+    "file": "/assets/items/tech/speaker.webp",
+    "category": "TECH",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 131,
+    "height": 209,
+    "bytes": 11606,
+    "verified": true
+  },
+  "guitar": {
+    "file": "/assets/items/hobby/guitar.webp",
+    "category": "HOBBY",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 251,
+    "height": 312,
+    "bytes": 17550,
+    "verified": true
+  },
+  "mini_piano": {
+    "file": "/assets/items/hobby/mini_piano.webp",
+    "category": "HOBBY",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 309,
+    "height": 173,
+    "bytes": 17770,
+    "verified": true
+  },
+  "knitting_basket": {
+    "file": "/assets/items/hobby/knitting_basket.webp",
+    "category": "HOBBY",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 223,
+    "height": 285,
+    "bytes": 22104,
+    "verified": true
+  },
+  "yarn": {
+    "file": "/assets/items/hobby/yarn.webp",
+    "category": "HOBBY",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 218,
+    "height": 247,
+    "bytes": 16154,
+    "verified": true
+  },
+  "art_box": {
+    "file": "/assets/items/hobby/art_box.webp",
+    "category": "HOBBY",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 256,
+    "height": 218,
+    "bytes": 20160,
+    "verified": true
+  },
+  "easel": {
+    "file": "/assets/items/hobby/easel.webp",
+    "category": "HOBBY",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 220,
+    "height": 300,
+    "bytes": 17270,
+    "verified": true
+  },
+  "palette": {
+    "file": "/assets/items/hobby/palette.webp",
+    "category": "HOBBY",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 254,
+    "height": 194,
+    "bytes": 16616,
+    "verified": true
+  },
+  "puzzle_box": {
+    "file": "/assets/items/hobby/puzzle_box.webp",
+    "category": "HOBBY",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 250,
+    "height": 236,
+    "bytes": 17494,
+    "verified": true
+  },
+  "board_game": {
+    "file": "/assets/items/hobby/board_game.webp",
+    "category": "HOBBY",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 287,
+    "height": 240,
+    "bytes": 20392,
+    "verified": true
+  },
+  "yoga_mat": {
+    "file": "/assets/items/hobby/yoga_mat.webp",
+    "category": "HOBBY",
+    "placement": "PLACEABLE",
+    "placementType": "RUG",
+    "width": 295,
+    "height": 208,
+    "bytes": 16758,
+    "verified": true
+  },
+  "chalk_bag": {
+    "file": "/assets/items/hobby/chalk_bag.webp",
+    "category": "HOBBY",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 217,
+    "height": 209,
+    "bytes": 17148,
+    "verified": true
+  },
+  "sneakers_c": {
+    "file": "/assets/items/hobby/sneakers_c.webp",
+    "category": "HOBBY",
+    "placement": "PLACEABLE",
+    "placementType": "FLOOR",
+    "width": 228,
+    "height": 196,
+    "bytes": 15274,
+    "verified": true
+  },
+  "landscape_poster": {
+    "file": "/assets/items/wall/landscape_poster.webp",
+    "category": "WALL",
+    "placement": "PLACEABLE",
+    "placementType": "WALL",
+    "width": 189,
+    "height": 318,
+    "bytes": 15320,
+    "verified": true
+  },
+  "abstract_poster": {
+    "file": "/assets/items/wall/abstract_poster.webp",
+    "category": "WALL",
+    "placement": "PLACEABLE",
+    "placementType": "WALL",
+    "width": 181,
+    "height": 319,
+    "bytes": 12646,
+    "verified": true
+  },
+  "flower_poster": {
+    "file": "/assets/items/wall/flower_poster.webp",
+    "category": "WALL",
+    "placement": "PLACEABLE",
+    "placementType": "WALL",
+    "width": 173,
+    "height": 319,
+    "bytes": 15628,
+    "verified": true
+  },
+  "moon_poster": {
+    "file": "/assets/items/wall/moon_poster.webp",
+    "category": "WALL",
+    "placement": "PLACEABLE",
+    "placementType": "WALL",
+    "width": 175,
+    "height": 320,
+    "bytes": 13290,
+    "verified": true
+  },
+  "movie_poster": {
+    "file": "/assets/items/wall/movie_poster.webp",
+    "category": "WALL",
+    "placement": "PLACEABLE",
+    "placementType": "WALL",
+    "width": 187,
+    "height": 320,
+    "bytes": 17742,
+    "verified": true
+  },
+  "small_frame": {
+    "file": "/assets/items/wall/small_frame.webp",
+    "category": "WALL",
+    "placement": "PLACEABLE",
+    "placementType": "WALL",
+    "width": 176,
+    "height": 221,
+    "bytes": 11440,
+    "verified": true
+  },
+  "friend_photo": {
+    "file": "/assets/items/wall/friend_photo.webp",
+    "category": "WALL",
+    "placement": "PLACEABLE",
+    "placementType": "WALL",
+    "width": 199,
+    "height": 186,
+    "bytes": 9650,
+    "verified": true
+  },
+  "polaroid_wall": {
+    "file": "/assets/items/wall/polaroid_wall.webp",
+    "category": "WALL",
+    "placement": "PLACEABLE",
+    "placementType": "WALL",
+    "width": 302,
+    "height": 302,
+    "bytes": 28180,
+    "verified": true
+  },
+  "wall_clock": {
+    "file": "/assets/items/wall/wall_clock.webp",
+    "category": "WALL",
+    "placement": "PLACEABLE",
+    "placementType": "WALL",
+    "width": 218,
+    "height": 291,
+    "bytes": 16950,
+    "verified": true
+  },
+  "cloud_mobile": {
+    "file": "/assets/items/wall/cloud_mobile.webp",
+    "category": "WALL",
+    "placement": "PLACEABLE",
+    "placementType": "HANGING",
+    "width": 182,
+    "height": 320,
+    "bytes": 22854,
+    "verified": true
+  },
+  "star_mobile": {
+    "file": "/assets/items/wall/star_mobile.webp",
+    "category": "WALL",
+    "placement": "PLACEABLE",
+    "placementType": "HANGING",
+    "width": 231,
+    "height": 311,
+    "bytes": 26708,
+    "verified": true
+  },
+  "garland": {
+    "file": "/assets/items/wall/garland.webp",
+    "category": "WALL",
+    "placement": "PLACEABLE",
+    "placementType": "WALL",
+    "width": 320,
+    "height": 96,
+    "bytes": 16296,
+    "verified": true
+  },
+  "fairy_lights": {
+    "file": "/assets/items/wall/fairy_lights.webp",
+    "category": "WALL",
+    "placement": "PLACEABLE",
+    "placementType": "WALL",
+    "width": 320,
+    "height": 105,
+    "bytes": 16870,
+    "verified": true
+  },
+  "wall_mirror": {
+    "file": "/assets/items/wall/wall_mirror.webp",
+    "category": "WALL",
+    "placement": "PLACEABLE",
+    "placementType": "WALL",
+    "width": 205,
+    "height": 320,
+    "bytes": 20640,
+    "verified": true
+  },
+  "cork_board": {
+    "file": "/assets/items/wall/cork_board.webp",
+    "category": "WALL",
+    "placement": "PLACEABLE",
+    "placementType": "WALL",
+    "width": 294,
+    "height": 249,
+    "bytes": 20402,
+    "verified": true
+  },
+  "star_piece": {
+    "file": "/assets/items/magic/star_piece.webp",
+    "category": "MAGIC",
+    "placement": "DISPLAY_ONLY",
+    "placementType": "DECOR",
+    "width": 99,
+    "height": 138,
+    "bytes": 5698,
+    "verified": true
+  },
+  "stardust_jar": {
+    "file": "/assets/items/magic/stardust_jar.webp",
+    "category": "MAGIC",
+    "placement": "PLACEABLE",
+    "placementType": "DECOR",
+    "width": 156,
+    "height": 225,
+    "bytes": 14050,
+    "verified": true
+  },
+  "moondust_jar": {
+    "file": "/assets/items/magic/moondust_jar.webp",
+    "category": "MAGIC",
+    "placement": "PLACEABLE",
+    "placementType": "DECOR",
+    "width": 176,
+    "height": 230,
+    "bytes": 15660,
+    "verified": true
+  },
+  "shiny_pebble": {
+    "file": "/assets/items/magic/shiny_pebble.webp",
+    "category": "MAGIC",
+    "placement": "DISPLAY_ONLY",
+    "placementType": "DECOR",
+    "width": 168,
+    "height": 140,
+    "bytes": 9022,
+    "verified": true
+  },
+  "clover_bottle": {
+    "file": "/assets/items/magic/clover_bottle.webp",
+    "category": "MAGIC",
+    "placement": "PLACEABLE",
+    "placementType": "DECOR",
+    "width": 159,
+    "height": 209,
+    "bytes": 15156,
+    "verified": true
+  },
+  "cloud_piece": {
+    "file": "/assets/items/magic/cloud_piece.webp",
+    "category": "MAGIC",
+    "placement": "DISPLAY_ONLY",
+    "placementType": "DECOR",
+    "width": 173,
+    "height": 159,
+    "bytes": 10552,
+    "verified": true
+  },
+  "dream_piece": {
+    "file": "/assets/items/magic/dream_piece.webp",
+    "category": "MAGIC",
+    "placement": "DISPLAY_ONLY",
+    "placementType": "DECOR",
+    "width": 136,
+    "height": 177,
+    "bytes": 9838,
+    "verified": true
+  },
+  "dawn_crystal": {
+    "file": "/assets/items/magic/dawn_crystal.webp",
+    "category": "MAGIC",
+    "placement": "DISPLAY_ONLY",
+    "placementType": "DECOR",
+    "width": 153,
+    "height": 205,
+    "bytes": 10696,
+    "verified": true
+  },
+  "sunset_crystal": {
+    "file": "/assets/items/magic/sunset_crystal.webp",
+    "category": "MAGIC",
+    "placement": "DISPLAY_ONLY",
+    "placementType": "DECOR",
+    "width": 166,
+    "height": 213,
+    "bytes": 12234,
+    "verified": true
+  },
+  "raindrop_crystal": {
+    "file": "/assets/items/magic/raindrop_crystal.webp",
+    "category": "MAGIC",
+    "placement": "DISPLAY_ONLY",
+    "placementType": "DECOR",
+    "width": 112,
+    "height": 180,
+    "bytes": 9834,
+    "verified": true
+  },
+  "moon_ticket_c": {
+    "file": "/assets/items/magic/moon_ticket_c.webp",
+    "category": "MAGIC",
+    "placement": "DISPLAY_ONLY",
+    "placementType": "DECOR",
+    "width": 211,
+    "height": 167,
+    "bytes": 11352,
+    "verified": true
+  },
+  "night_ticket_c": {
+    "file": "/assets/items/magic/night_ticket_c.webp",
+    "category": "MAGIC",
+    "placement": "DISPLAY_ONLY",
+    "placementType": "DECOR",
+    "width": 208,
+    "height": 167,
+    "bytes": 12412,
+    "verified": true
+  },
+  "star_music_box": {
+    "file": "/assets/items/magic/star_music_box.webp",
+    "category": "MAGIC",
+    "placement": "PLACEABLE",
+    "placementType": "DECOR",
+    "width": 159,
+    "height": 205,
+    "bytes": 13368,
+    "verified": true
+  },
+  "sleeping_star": {
+    "file": "/assets/items/magic/sleeping_star.webp",
+    "category": "MAGIC",
+    "placement": "PLACEABLE",
+    "placementType": "DECOR",
+    "width": 182,
+    "height": 166,
+    "bytes": 10566,
+    "verified": true
+  },
+  "little_moon": {
+    "file": "/assets/items/magic/little_moon.webp",
+    "category": "MAGIC",
+    "placement": "PLACEABLE",
+    "placementType": "DECOR",
+    "width": 147,
+    "height": 184,
+    "bytes": 8214,
+    "verified": true
+  },
+  "t_hundred_stars": {
+    "file": "/assets/items/trophies/t_hundred_stars.webp",
+    "category": "TROPHY",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 174,
+    "height": 236,
+    "bytes": 17048,
+    "verified": true
+  },
+  "t_dragon": {
+    "file": "/assets/items/trophies/t_dragon.webp",
+    "category": "TROPHY",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 183,
+    "height": 228,
+    "bytes": 15340,
+    "verified": true
+  },
+  "t_golden_pen": {
+    "file": "/assets/items/trophies/t_golden_pen.webp",
+    "category": "TROPHY",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 134,
+    "height": 214,
+    "bytes": 11628,
+    "verified": true
+  },
+  "t_shoe_trophy": {
+    "file": "/assets/items/trophies/t_shoe_trophy.webp",
+    "category": "TROPHY",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 164,
+    "height": 221,
+    "bytes": 13414,
+    "verified": true
+  },
+  "t_golden_broom": {
+    "file": "/assets/items/trophies/t_golden_broom.webp",
+    "category": "TROPHY",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 133,
+    "height": 214,
+    "bytes": 11086,
+    "verified": true
+  },
+  "t_shiny_palette": {
+    "file": "/assets/items/trophies/t_shiny_palette.webp",
+    "category": "TROPHY",
+    "placement": "PLACEABLE",
+    "placementType": "TABLETOP",
+    "width": 154,
+    "height": 227,
+    "bytes": 13448,
+    "verified": true
+  },
+  "m_wood": {
+    "file": "/assets/items/materials/m_wood.webp",
+    "category": "MATERIAL",
+    "placement": "MATERIAL_ONLY",
+    "placementType": "DECOR",
+    "width": 189,
+    "height": 172,
+    "bytes": 10524,
+    "verified": true
+  },
+  "m_cloth": {
+    "file": "/assets/items/materials/m_cloth.webp",
+    "category": "MATERIAL",
+    "placement": "MATERIAL_ONLY",
+    "placementType": "DECOR",
+    "width": 190,
+    "height": 178,
+    "bytes": 12274,
+    "verified": true
+  },
+  "m_glass": {
+    "file": "/assets/items/materials/m_glass.webp",
+    "category": "MATERIAL",
+    "placement": "MATERIAL_ONLY",
+    "placementType": "DECOR",
+    "width": 176,
+    "height": 172,
+    "bytes": 13308,
+    "verified": true
+  },
+  "m_metal": {
+    "file": "/assets/items/materials/m_metal.webp",
+    "category": "MATERIAL",
+    "placement": "MATERIAL_ONLY",
+    "placementType": "DECOR",
+    "width": 167,
+    "height": 170,
+    "bytes": 12928,
+    "verified": true
+  },
+  "m_paper": {
+    "file": "/assets/items/materials/m_paper.webp",
+    "category": "MATERIAL",
+    "placement": "MATERIAL_ONLY",
+    "placementType": "DECOR",
+    "width": 173,
+    "height": 165,
+    "bytes": 12808,
+    "verified": true
+  },
+  "m_leaf": {
+    "file": "/assets/items/materials/m_leaf.webp",
+    "category": "MATERIAL",
+    "placement": "MATERIAL_ONLY",
+    "placementType": "DECOR",
+    "width": 184,
+    "height": 177,
+    "bytes": 17036,
+    "verified": true
+  },
+  "m_petal": {
+    "file": "/assets/items/materials/m_petal.webp",
+    "category": "MATERIAL",
+    "placement": "MATERIAL_ONLY",
+    "placementType": "DECOR",
+    "width": 168,
+    "height": 173,
+    "bytes": 13558,
+    "verified": true
+  },
+  "m_stone": {
+    "file": "/assets/items/materials/m_stone.webp",
+    "category": "MATERIAL",
+    "placement": "MATERIAL_ONLY",
+    "placementType": "DECOR",
+    "width": 179,
+    "height": 136,
+    "bytes": 10100,
+    "verified": true
+  }
+}

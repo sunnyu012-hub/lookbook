@@ -2,3 +2,8 @@ node_modules
 dist
 .DS_Store
 *.local
+
+# 원본 에셋 시트는 무겁다 (15장 40MB). 개별 아이템 파일만 저장소에 둔다.
+# assets/source-sheets/README.md 참고.
+assets/source-sheets/*.png
+assets/slices/

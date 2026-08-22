@@ -1,13 +1,35 @@
 /**
  * 그림이 있는 물건.
  *
- * 파일 이름이 곧 아이템 id 다. 새 그림이 들어오면
- * public/assets/collection/ 에 <id>.webp 를 넣고 여기에 한 줄만 더하면
- * 도감·상점·방·가방이 전부 알아서 쓴다.
+ * 파일 이름이 곧 아이템 id 이고, 분류가 곧 폴더다.
+ * 새 그림이 들어오면 public/assets/items/<분류>/<id>.webp 에 넣고
+ * 아래 목록에 한 줄만 더하면 도감·상점·방·가방이 전부 알아서 쓴다.
+ *
+ * 경로를 여기서 만들지 않는 이유: 분류는 아이템 표가 알고 있다.
+ * 두 곳에 적어두면 언젠가 어긋난다. (조립은 catalog.ts 에서 한다)
  *
  * 아직 그림이 없는 물건은 이모지로, 이모지도 없으면 분류 실루엣으로 그린다.
  */
-const BASE = '/assets/collection'
+const BASE = '/assets/items'
+
+/** 파일이 들어 있는 분류별 폴더 */
+const FOLDER: Record<string, string> = {
+  FURNITURE: 'furniture',
+  LIGHTING: 'lighting',
+  PLANT: 'plants',
+  RUG: 'rugs',
+  WALL: 'wall',
+  LITTLE_THING: 'little_things',
+  KITCHEN: 'kitchen',
+  FOOD: 'food',
+  BOOK: 'books',
+  HOBBY: 'hobby',
+  TECH: 'tech',
+  OUTDOOR: 'outdoor',
+  MAGIC: 'magic',
+  TROPHY: 'trophies',
+  MATERIAL: 'materials',
+}
 
 const WITH_ART = [
   'abstract_poster',
@@ -260,10 +282,11 @@ const WITH_ART = [
   'yoga_mat',
 ] as const
 
-export const COLLECTION_ART: Record<string, string> = Object.fromEntries(
-  WITH_ART.map((id) => [id, `${BASE}/${id}.webp`]),
-)
+/** 그림이 있는지 */
+export const HAS_ART = new Set<string>(WITH_ART)
 
-export function artFor(itemId: string): string | undefined {
-  return COLLECTION_ART[itemId]
+/** 분류를 알아야 경로가 나온다 */
+export function artPath(itemId: string, category: string): string | undefined {
+  if (!HAS_ART.has(itemId)) return undefined
+  return `${BASE}/${FOLDER[category] ?? 'misc'}/${itemId}.webp`
 }

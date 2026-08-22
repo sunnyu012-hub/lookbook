@@ -113,6 +113,22 @@ export interface Footprint {
   height: number
 }
 
+// ── 배치 ────────────────────────────────────────────────
+export const PLACEMENT_TYPES = [
+  'FLOOR',
+  'WALL',
+  'TABLETOP',
+  'HANGING',
+  'RUG',
+  'WINDOW',
+  'SHELF',
+  'DECOR',
+] as const
+export type PlacementType = (typeof PLACEMENT_TYPES)[number]
+
+/** 좌표를 어디에 맞출지 */
+export type PlacementAnchor = 'BOTTOM_CENTER' | 'CENTER'
+
 export interface CollectionItemDef {
   id: string
   nameKo: string
@@ -134,6 +150,17 @@ export interface CollectionItemDef {
   /** 애초에 방에 놓는 종류의 물건인지 (재료는 아니다) */
   placeable: boolean
   footprint?: Footprint
+  /** 바닥인지 벽인지 위에 올리는 것인지 (lib/collection/placement.ts 에서 붙인다) */
+  placementType?: PlacementType
+  /** 앞뒤 순서. 러그는 늘 밑에 깔린다. */
+  layer?: number
+  anchor?: PlacementAnchor
+  /** 방 너비 대비 비율 (0~1) */
+  defaultScale?: number
+  /** 방에 놓을 수 있는지 · 도감에만 있는지 · 재료인지 */
+  placement?: 'PLACEABLE' | 'DISPLAY_ONLY' | 'MATERIAL_ONLY'
+  canRotate?: boolean
+  canFlip?: boolean
   acquisitionSources: AcquisitionSource[]
   collectionSetIds: string[]
   tags: string[]

@@ -1417,11 +1417,24 @@ export function useGameState(): GameState {
       const inRoom = prev.collection.rooms[roomId] ?? []
       const offset = (inRoom.length % 5) * 6
 
+      // 종류에 맞는 자리에서 시작한다. 벽걸이가 바닥 한가운데에 놓이면
+      // 놓자마자 옮겨야 하고, 그게 매번 반복되면 그것도 일이다.
+      const startY: Record<string, number> = {
+        RUG: 84,
+        FLOOR: 66,
+        TABLETOP: 58,
+        DECOR: 62,
+        SHELF: 52,
+        WINDOW: 44,
+        WALL: 28,
+        HANGING: 18,
+      }
+
       const placed: PlacedItem = {
         uid: createId(),
         itemId,
         x: Math.min(90, 32 + offset),
-        y: Math.min(90, 52 + ((inRoom.length % 3) * 7)),
+        y: Math.min(92, (startY[def.placementType ?? 'FLOOR'] ?? 60) + ((inRoom.length % 3) * 4)),
         scale: 1,
         flipped: false,
       }

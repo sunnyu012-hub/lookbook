@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { CollectionCategory, CollectionItemDef } from '@/types'
 import { cn } from '@/components/ui/cn'
 
@@ -44,9 +45,14 @@ const SIZE = {
 }
 
 export function ItemIcon({ item, hidden = false, size = 'md', className }: ItemIconProps) {
+  const [broken, setBroken] = useState(false)
   const shape = SILHOUETTE[item.category]
 
   if (hidden) {
+    // 그림이 있으면 그 물건의 실루엣을 보여준다. 모양이 보여야 궁금해진다.
+    // 다만 비밀 물건은 모양까지 감춘다 — 알아보면 그건 이미 비밀이 아니다.
+    const shadow = item.assetKey && !item.hiddenUntilDiscovered
+
     return (
       <span
         aria-hidden
@@ -56,13 +62,23 @@ export function ItemIcon({ item, hidden = false, size = 'md', className }: ItemI
           className,
         )}
       >
-        <span className="text-inkfaint/45">{shape.glyph}</span>
+        {shadow ? (
+          <img
+            src={item.assetKey}
+            alt=""
+            draggable={false}
+            loading="lazy"
+            className="h-full w-full select-none object-contain opacity-30 brightness-0 saturate-0"
+          />
+        ) : (
+          <span className="text-inkfaint/45">{shape.glyph}</span>
+        )}
       </span>
     )
   }
 
   // 그려둔 그림이 있으면 그걸 쓴다
-  if (item.assetKey) {
+  if (item.assetKey && !broken) {
     return (
       <span
         className={cn('flex shrink-0 items-center justify-center', SIZE[size], className)}
@@ -72,6 +88,9 @@ export function ItemIcon({ item, hidden = false, size = 'md', className }: ItemI
           alt=""
           aria-hidden
           draggable={false}
+          loading="lazy"
+          // 파일이 없거나 못 받아도 깨진 그림 아이콘을 보여주지 않는다
+          onError={() => setBroken(true)}
           className="h-full w-full select-none object-contain"
         />
       </span>
