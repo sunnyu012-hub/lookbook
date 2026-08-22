@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { DiscoveryResult } from '@/types'
 import { Portal } from '@/components/ui/Portal'
+import { useOverlay } from '@/hooks/useOverlay'
 import { ItemIcon } from './ItemIcon'
 import { RarityBadge, RARITY_STYLE } from '@/components/rpg/RarityBadge'
 import { findCollectionItem } from '@/lib/collection/catalog'
@@ -30,6 +31,7 @@ export function DiscoveryOverlay({
   onPlace,
 }: DiscoveryOverlayProps) {
   const [index, setIndex] = useState(0)
+  useOverlay(discoveries.length > 0, onClose)
 
   useEffect(() => {
     setIndex(0)
