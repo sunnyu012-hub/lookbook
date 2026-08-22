@@ -1,5 +1,14 @@
 import { useMemo, useState } from 'react'
-import type { AreaDef, AreaId, CityEvent, NpcDef, NpcStates, Quest, Reputation } from '@/types'
+import type {
+  AreaDef,
+  AreaId,
+  CityEvent,
+  CollectionShopDef,
+  NpcDef,
+  NpcStates,
+  Quest,
+  Reputation,
+} from '@/types'
 import { AREAS } from '@/lib/rpg/content'
 import { TIME_ICON, TIME_LABEL, isNightOpen, timeBand } from '@/lib/rpg/time'
 import { ScreenHeader } from '@/components/layout/ScreenHeader'
@@ -10,6 +19,11 @@ import { ReputationBadge, ReputationMeter, FriendshipHearts } from '@/components
 import { eventsForArea } from '@/lib/city/events'
 import { npcsInArea } from '@/lib/city/npcs'
 import { isShopOpen, shopInArea } from '@/lib/city/shops'
+import {
+  collectionShopsInArea,
+  isCollectionShopOpen,
+  openingLabel,
+} from '@/lib/collection/shops'
 import { isTodayQuest } from '@/lib/stats'
 import { cn } from '@/components/ui/cn'
 
@@ -22,6 +36,10 @@ interface MapScreenProps {
   onSelectArea: (areaId: AreaId) => void
   onOpenNpc: (npc: NpcDef) => void
   onOpenShop: (areaId: AreaId) => void
+  /** 도감 상점 */
+  onOpenCollectionShop: (shop: CollectionShopDef) => void
+  /** 작은 작업실 (집에만 있다) */
+  onOpenWorkshop: () => void
 }
 
 /**
@@ -39,6 +57,8 @@ export function MapScreen({
   onSelectArea,
   onOpenNpc,
   onOpenShop,
+  onOpenCollectionShop,
+  onOpenWorkshop,
 }: MapScreenProps) {
   const [openArea, setOpenArea] = useState<AreaDef | null>(null)
   const now = new Date()
@@ -172,6 +192,14 @@ export function MapScreen({
           setOpenArea(null)
           onOpenNpc(npc)
         }}
+        onOpenCollectionShop={(collectionShop) => {
+          setOpenArea(null)
+          onOpenCollectionShop(collectionShop)
+        }}
+        onOpenWorkshop={() => {
+          setOpenArea(null)
+          onOpenWorkshop()
+        }}
         onOpenShop={(id) => {
           setOpenArea(null)
           onOpenShop(id)
@@ -195,6 +223,8 @@ interface AreaSheetProps {
   onSelect: (id: AreaId) => void
   onOpenNpc: (npc: NpcDef) => void
   onOpenShop: (id: AreaId) => void
+  onOpenCollectionShop: (shop: CollectionShopDef) => void
+  onOpenWorkshop: () => void
 }
 
 function AreaSheet({
@@ -210,6 +240,8 @@ function AreaSheet({
   onSelect,
   onOpenNpc,
   onOpenShop,
+  onOpenCollectionShop,
+  onOpenWorkshop,
 }: AreaSheetProps) {
   if (!area) return null
 
@@ -298,19 +330,87 @@ function AreaSheet({
         </div>
       )}
 
-      {shop && (
-        <div className="mt-4">
-          <Button
-            variant="soft"
-            size="lg"
-            className="w-full"
-            disabled={!shopOpen}
-            onClick={() => onOpenShop(area.id)}
-          >
-            🛍️ {shopOpen ? `${shop.name} 들어가기` : `${shop.name} · 지금은 닫혀 있어`}
-          </Button>
-        </div>
-      )}
+      <div className="mt-4">
+        <p className="mb-2 text-[13px] font-medium text-inkdim">여기 있는 가게</p>
+        <ul className="space-y-1.5">
+          {shop && (
+            <li>
+              <button
+                type="button"
+                disabled={!shopOpen}
+                onClick={() => onOpenShop(area.id)}
+                className={cn(
+                  'flex w-full items-center gap-3 rounded-card border border-line bg-surface px-3.5 py-3 text-left',
+                  'transition-transform duration-150 ease-out active:scale-[0.98]',
+                  'disabled:opacity-60 disabled:active:scale-100',
+                )}
+              >
+                <span className="text-[22px] leading-none">{shop.icon}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[14px] font-medium text-ink">
+                    {shop.name}
+                  </span>
+                  <span className="mt-0.5 block truncate text-[11.5px] text-inkdim">
+                    {shopOpen ? shop.description : '지금은 닫혀 있어'}
+                  </span>
+                </span>
+              </button>
+            </li>
+          )}
+
+          {collectionShopsInArea(area.id).map((collectionShop) => {
+            const open = isCollectionShopOpen(collectionShop)
+            return (
+              <li key={collectionShop.id}>
+                <button
+                  type="button"
+                  disabled={!open}
+                  onClick={() => onOpenCollectionShop(collectionShop)}
+                  className={cn(
+                    'flex w-full items-center gap-3 rounded-card border border-line bg-surface px-3.5 py-3 text-left',
+                    'transition-transform duration-150 ease-out active:scale-[0.98]',
+                    'disabled:opacity-60 disabled:active:scale-100',
+                  )}
+                >
+                  <span className="text-[22px] leading-none">{collectionShop.icon}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[14px] font-medium text-ink">
+                      {collectionShop.name}
+                    </span>
+                    <span className="mt-0.5 block truncate text-[11.5px] text-inkdim">
+                      {open ? collectionShop.description : openingLabel(collectionShop) ?? '지금은 닫혀 있어'}
+                    </span>
+                  </span>
+                </button>
+              </li>
+            )
+          })}
+
+          {/* 작업실은 집에만 있다 */}
+          {area.id === 'HOME_BASE' && (
+            <li>
+              <button
+                type="button"
+                onClick={onOpenWorkshop}
+                className={cn(
+                  'flex w-full items-center gap-3 rounded-card border border-line bg-surface px-3.5 py-3 text-left',
+                  'transition-transform duration-150 ease-out active:scale-[0.98]',
+                )}
+              >
+                <span className="text-[22px] leading-none">🧰</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[14px] font-medium text-ink">
+                    작은 작업실
+                  </span>
+                  <span className="mt-0.5 block truncate text-[11.5px] text-inkdim">
+                    주운 재료로 하나씩 만든다
+                  </span>
+                </span>
+              </button>
+            </li>
+          )}
+        </ul>
+      </div>
 
       <div className="mt-4">
         <p className="mb-2 text-[13px] font-medium text-inkdim">잘 맞는 분야</p>

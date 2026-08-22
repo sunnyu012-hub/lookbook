@@ -109,6 +109,24 @@ export default {
           '0%': { opacity: '1', maxHeight: '120px' },
           '100%': { opacity: '0', maxHeight: '0px', transform: 'translateY(-4px)' },
         },
+        // 방의 공기 — 전부 아주 느리게. 눈에 띄면 그때부터 방해가 된다.
+        rain: {
+          '0%': { transform: 'translateY(0)' },
+          '100%': { transform: 'translateY(50%)' },
+        },
+        drift: {
+          '0%,100%': { opacity: '0.15', transform: 'translate(0, 0)' },
+          '35%': { opacity: '0.9', transform: 'translate(6px, -10px)' },
+          '70%': { opacity: '0.4', transform: 'translate(-4px, -18px)' },
+        },
+        twinkle: {
+          '0%,100%': { opacity: '0.35' },
+          '50%': { opacity: '0.9' },
+        },
+        sway: {
+          '0%,100%': { transform: 'translateX(0)' },
+          '50%': { transform: 'translateX(6px)' },
+        },
       },
       animation: {
         breathe: 'breathe 4s ease-in-out infinite',
@@ -123,6 +141,10 @@ export default {
         fadein: 'fadein 200ms ease-out both',
         checkdraw: 'checkdraw 320ms ease-out 60ms both',
         sparkle: 'sparkle 1200ms ease-in-out infinite',
+        rain: 'rain 900ms linear infinite',
+        drift: 'drift 7s ease-in-out infinite',
+        twinkle: 'twinkle 4s ease-in-out infinite',
+        sway: 'sway 9s ease-in-out infinite',
         settle: 'settle 320ms ease-in 240ms both',
       },
     },

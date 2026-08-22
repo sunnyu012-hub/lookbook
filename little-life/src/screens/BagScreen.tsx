@@ -1,12 +1,14 @@
 import { useMemo, useState } from 'react'
 import type {
   ActiveBuff,
+  AppState,
   EquipSlot,
   EquippedItems,
   InventoryEntry,
   ItemDef,
   ItemType,
 } from '@/types'
+import { CollectionBook } from '@/components/collection/CollectionBook'
 import { findItem } from '@/lib/rpg/content'
 import { ScreenHeader } from '@/components/layout/ScreenHeader'
 import { BottomSheet } from '@/components/ui/BottomSheet'
@@ -28,6 +30,7 @@ const FILTERS: Array<{ value: BagFilter; label: string }> = [
 ]
 
 interface BagScreenProps {
+  state: AppState
   inventory: InventoryEntry[]
   equipped: EquippedItems
   coins: number
@@ -35,9 +38,18 @@ interface BagScreenProps {
   onEquip: (itemId: string) => void
   onUnequip: (slot: EquipSlot) => void
   onUse: (itemId: string) => void
+  /** 도감에서 바로 할 수 있는 것들 */
+  onToggleWishlist: (itemId: string) => void
+  onPlace: (itemId: string) => void
+  onOpenWorkshop: () => void
+  /** 처음 열 때 도감부터 보여줄지 */
+  initialView?: BagView
 }
 
+type BagView = 'BAG' | 'BOOK'
+
 export function BagScreen({
+  state,
   inventory,
   equipped,
   coins,
@@ -45,7 +57,12 @@ export function BagScreen({
   onEquip,
   onUnequip,
   onUse,
+  onToggleWishlist,
+  onPlace,
+  onOpenWorkshop,
+  initialView = 'BAG',
 }: BagScreenProps) {
+  const [view, setView] = useState<BagView>(initialView)
   const [filter, setFilter] = useState<BagFilter>('ALL')
   const [openItem, setOpenItem] = useState<ItemDef | null>(null)
 
@@ -75,8 +92,41 @@ export function BagScreen({
           </span>
         }
       />
-      <p className="-mt-1 mb-4 text-[13px] text-inkdim">주워온 것들.</p>
+      <p className="-mt-1 mb-3 text-[13px] text-inkdim">주워온 것들.</p>
 
+      {/* 가방은 지금 쓸 수 있는 것, 도감은 지금까지 만난 것 */}
+      <div className="mb-4 flex gap-1.5">
+        {(
+          [
+            ['BAG', '가방'],
+            ['BOOK', '도감'],
+          ] as Array<[BagView, string]>
+        ).map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={view === value}
+            onClick={() => setView(value)}
+            className={cn(
+              'flex-1 rounded-pill py-2 text-[13px] font-medium',
+              'transition-transform duration-150 ease-out active:scale-[0.98]',
+              view === value ? 'bg-coral text-surface' : 'bg-sunken text-inkdim',
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {view === 'BOOK' ? (
+        <CollectionBook
+          state={state}
+          onToggleWishlist={onToggleWishlist}
+          onPlace={onPlace}
+          onOpenWorkshop={onOpenWorkshop}
+        />
+      ) : (
+      <>
       <div className="flex flex-wrap gap-1.5">
         {FILTERS.map((f) => (
           <button
@@ -161,6 +211,8 @@ export function BagScreen({
           </ul>
         )}
       </div>
+      </>
+      )}
 
       <ItemSheet
         def={openItem}

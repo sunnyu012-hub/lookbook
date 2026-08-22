@@ -120,7 +120,9 @@ export function favoriteScore(p: QuestUsageProfile): number {
  * 세 번쯤 누르면 점수가 0 아래로 떨어져 추천에서 아예 빠진다.
  */
 export function dismissPenalty(p: QuestUsageProfile): number {
-  return Math.min(p.dismissCount * 15, 45)
+  // 누를수록 확실히 내려간다. 상한을 낮게 잡으면 아침마다 하던 일처럼
+  // 점수가 높은 항목은 몇 번을 눌러도 그대로 남아서, 누른 게 소용없어 보인다.
+  return Math.min(p.dismissCount * 25, 100)
 }
 
 export interface ScoreInput {

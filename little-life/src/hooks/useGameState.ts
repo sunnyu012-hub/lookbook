@@ -19,7 +19,34 @@ import type {
   Routine,
   ShopDef,
 } from '@/types'
+import type {
+  CollectionShopId,
+  DiscoveryResult,
+  HomeEffectId,
+  PlacedItem,
+  RoomId,
+} from '@/types'
 import { ITEMS, findItem } from '@/lib/rpg/content'
+import { findCollectionItem } from '@/lib/collection/catalog'
+import { applyCollectionDerived } from '@/lib/collection/derive'
+import { rollBossDrop, rollCollectDrops } from '@/lib/collection/drops'
+import { findRecipe } from '@/lib/collection/recipes'
+import {
+  addItem,
+  canCraft,
+  completedSetIds,
+  discoveredCount,
+  isRecipeKnown,
+  ownedCount,
+  removeItem,
+  spendItems,
+  unlockedEffectIds,
+} from '@/lib/collection/progress'
+import {
+  findCollectionShop,
+  isCollectionShopOpen,
+  todayListings,
+} from '@/lib/collection/shops'
 import {
   calculateQuestReward,
   collectBonuses,
@@ -106,7 +133,40 @@ interface GameState {
   setPersonalized: (on: boolean) => void
   /** 추천 기록만 지운다. 퀘스트·EXP·반복·완료 기록은 그대로 둔다. */
   resetUsageProfiles: () => void
+  // ── 수집 · 방 ──
+  /** 도감 상점에서 하나 산다. */
+  buyCollectionItem: (shopId: CollectionShopId, itemId: string) => CollectBuyResult
+  /** 작은 작업실에서 하나 만든다. */
+  craftItem: (recipeId: string) => CraftResult
+  /** ♡ 찾는 물건에 넣고 뺀다. */
+  toggleWishlist: (itemId: string) => void
+  /** 지금 보고 있는 방에 하나 놓는다. */
+  placeInRoom: (itemId: string) => PlacedItem | null
+  /** 놓은 것을 옮긴다. */
+  movePlaced: (uid: string, x: number, y: number) => void
+  /** 크기를 바꾸거나 뒤집는다. */
+  updatePlaced: (uid: string, patch: { scale?: number; flipped?: boolean }) => void
+  /** 방에서 거둬 가방으로 돌린다. */
+  removePlaced: (uid: string) => void
+  setCurrentRoom: (roomId: RoomId) => void
+  /** 지금 방에 걸어둘 공기를 고른다. 세트를 완성해 열린 것 중에서만. */
+  setRoomEffect: (effectId: HomeEffectId | null) => void
 }
+
+export type CollectBuyResult =
+  | {
+      ok: true
+      itemId: string
+      price: number
+      isNew: boolean
+      discoveries: DiscoveryResult[]
+      notes: string[]
+    }
+  | { ok: false; reason: 'NOT_ENOUGH_COINS' | 'SOLD_OUT' | 'CLOSED' | 'LOCKED' | 'UNKNOWN' }
+
+export type CraftResult =
+  | { ok: true; itemId: string; isNew: boolean; discoveries: DiscoveryResult[]; notes: string[] }
+  | { ok: false; reason: 'MISSING' | 'UNKNOWN' | 'LOCKED' }
 
 export interface TalkResult {
   /** 이번에 오른 친밀도. 0 이면 오늘은 이미 인사했다는 뜻. */
@@ -134,6 +194,8 @@ export interface BattleClearResult {
   leveledUp: boolean
   newLevel: number
   drops: DropResult[]
+  /** 보스를 넘고 나온 도감 물건 */
+  collected: DiscoveryResult[]
 }
 
 /** 등급별로 얻을 수 있는 아이템 목록. 재료·수집품도 드롭 대상에 포함한다. */
@@ -347,7 +409,9 @@ export function useGameState(): GameState {
       if (saved) {
         // 업데이트하고 처음 열었으면 선물을 한 번 준다
         const gift = grantWelcomeGift(saved)
-        commit(gift.state)
+        // 그동안 조건을 이미 넘긴 것들 — 평판으로 받는 물건, 완성해둔 세트, 트로피 —
+        // 은 앱을 열 때 도착한다. 다음에 뭘 하기 전까지 기다리게 두지 않는다.
+        commit(applyCollectionDerived(gift.state).state)
         if (gift.given) giftedRef.current = true
       } else if (defaults.current) {
         // 첫 실행이면 샘플 데이터와 선물을 그 자리에서 저장해 둔다.
@@ -518,6 +582,24 @@ export function useGameState(): GameState {
       const earned = { ...target, exp: reward.exp }
       const withBuffUsed = spendBuff(prev.user.activeBuffs, buff)
 
+      // 재료·수집품은 EXP·Coin 계산과 따로 굴린다. 보상 계산기는 손대지 않는다 —
+      // 여기서 쓰는 건 이미 계산된 행운 값 하나뿐이다.
+      const dropped = rollCollectDrops({
+        category: target.category,
+        luckPct: bonuses.dropChancePct,
+        eventActive: sources.events.length > 0,
+      })
+      let collection = prev.collection
+      const collectDrops: Array<{ itemId: string; wasNew: boolean }> = []
+      const collected: DiscoveryResult[] = []
+
+      for (const itemId of dropped) {
+        const added = addItem(collection, itemId, now)
+        collection = added.collection
+        collectDrops.push({ itemId, wasNew: added.isNew })
+        collected.push({ itemId, isNew: added.isNew, source: `${target.title} 완료` })
+      }
+
       let next: AppState = {
         ...prev,
         user: {
@@ -545,6 +627,7 @@ export function useGameState(): GameState {
                   reputation: gainedReputation,
                   ...(npc ? { npcId: npc.id, friendship: gainedFriendship } : {}),
                   ...(buff ? { usedBuff: buff } : {}),
+                  ...(collectDrops.length > 0 ? { collectDrops } : {}),
                 },
               }
             : q,
@@ -556,12 +639,17 @@ export function useGameState(): GameState {
           ...prev.categoryStats,
           [target.category]: prev.categoryStats[target.category] + reward.exp,
         },
+        categoryCompleted: {
+          ...prev.categoryCompleted,
+          [target.category]: prev.categoryCompleted[target.category] + 1,
+        },
         dailyLog: bumpDailyLog(prev, earned),
         usageProfiles: recordCompleted(prev.usageProfiles, seedOf(target), now),
         reputation: {
           ...prev.reputation,
           [areaId]: (prev.reputation[areaId] ?? 0) + gainedReputation,
         },
+        collection,
       }
 
       if (npc) {
@@ -572,7 +660,9 @@ export function useGameState(): GameState {
 
       const gainedSkillPoints = outcome.level - prev.user.level
 
-      commit(next)
+      // 평판이 오르거나 세트가 완성되면 여기서 따라온다
+      const derived = applyCollectionDerived(next, now)
+      commit(derived.state)
 
       return {
         gainedExp: reward.exp,
@@ -588,6 +678,7 @@ export function useGameState(): GameState {
         gainedFriendship,
         usedBuffName: buff?.name ?? null,
         gainedSkillPoints,
+        collected: [...collected, ...derived.discoveries],
       }
     },
     [commit],
@@ -640,8 +731,20 @@ export function useGameState(): GameState {
       const npcId = gained.npcId
       const npcState = npcId ? (prev.npcs[npcId] ?? emptyNpcState()) : null
 
+      // 그때 나온 재료·수집품도 도로 가져간다.
+      // 처음 본 것이었으면 도감에서도 지운다 — 안 그러면 완료·되돌리기로 도감만 채울 수 있다.
+      let collection = prev.collection
+      for (const drop of gained.collectDrops ?? []) {
+        collection = removeItem(collection, drop.itemId, drop.wasNew)
+      }
+
       commit({
         ...prev,
+        collection,
+        categoryCompleted: {
+          ...prev.categoryCompleted,
+          [target.category]: Math.max(0, prev.categoryCompleted[target.category] - 1),
+        },
         user: {
           ...prev.user,
           level,
@@ -879,7 +982,15 @@ export function useGameState(): GameState {
 
       if (!result.cleared) {
         commit({ ...prev, battles })
-        return { cleared: false, exp: 0, coins: 0, leveledUp: false, newLevel: prev.user.level, drops: [] }
+        return {
+          cleared: false,
+          exp: 0,
+          coins: 0,
+          leveledUp: false,
+          newLevel: prev.user.level,
+          drops: [],
+          collected: [],
+        }
       }
 
       // 클리어 — 보장 등급을 먼저 주고, 보너스 등급이 있으면 하나 더 굴린다
@@ -896,10 +1007,24 @@ export function useGameState(): GameState {
 
       const outcome = applyExp(prev.user.level, prev.user.currentExp, battle.rewardExp)
 
-      commit({
+      // 보스를 넘으면 도감 물건도 하나 나온다. 몬스터는 기존 드롭만.
+      let collection = prev.collection
+      const collected: DiscoveryResult[] = []
+      if (battle.kind === 'BOSS') {
+        const itemId = rollBossDrop()
+        if (itemId) {
+          const added = addItem(collection, itemId, now)
+          collection = added.collection
+          collected.push({ itemId, isNew: added.isNew, source: `${battle.name} 클리어` })
+        }
+      }
+
+      const cleared: AppState = {
         ...prev,
         battles,
         inventory,
+        collection,
+        bossClears: prev.bossClears + (battle.kind === 'BOSS' ? 1 : 0),
         user: {
           ...prev.user,
           level: outcome.level,
@@ -911,7 +1036,10 @@ export function useGameState(): GameState {
           ...prev.categoryStats,
           [battle.category]: prev.categoryStats[battle.category] + battle.rewardExp,
         },
-      })
+      }
+
+      const derived = applyCollectionDerived(cleared, now)
+      commit(derived.state)
 
       return {
         cleared: true,
@@ -920,6 +1048,7 @@ export function useGameState(): GameState {
         leveledUp: outcome.leveledUp,
         newLevel: outcome.level,
         drops,
+        collected: [...collected, ...derived.discoveries],
       }
     },
     [commit],
@@ -1150,6 +1279,232 @@ export function useGameState(): GameState {
     commit({ ...prev, usageProfiles: {}, recommendSettings: defaultRecommendSettings() })
   }, [commit])
 
+  // ── 수집 · 방 ──────────────────────────────────────────
+
+  /**
+   * 도감 상점에서 산다.
+   *
+   * 하나뿐인 물건은 오늘 하루 한 개까지만. 가구·소품은 여러 개 살 수 있다 —
+   * 의자를 두 개 놓고 싶은 사람을 막을 이유가 없다.
+   */
+  const buyCollectionItem = useCallback(
+    (shopId: CollectionShopId, itemId: string): CollectBuyResult => {
+      const prev = stateRef.current
+      const shop = findCollectionShop(shopId)
+      const def = findCollectionItem(itemId)
+      if (!shop || !def) return { ok: false, reason: 'UNKNOWN' }
+
+      const now = new Date()
+      if (!isCollectionShopOpen(shop, now)) return { ok: false, reason: 'CLOSED' }
+
+      const dayKey = todayKey()
+      const listing = todayListings(shop, dayKey, {
+        reputation: prev.reputation[shop.areaId] ?? 0,
+      }).find((l) => l.itemId === itemId)
+      if (!listing) return { ok: false, reason: 'UNKNOWN' }
+      if (listing.locked) return { ok: false, reason: 'LOCKED' }
+
+      const key = `${dayKey}:${shopId}:${itemId}`
+      const boughtToday = prev.collection.purchases[key] ?? 0
+      if (listing.limited && boughtToday >= 1) return { ok: false, reason: 'SOLD_OUT' }
+      if (def.unique && ownedCount(prev.collection, itemId) > 0) {
+        return { ok: false, reason: 'SOLD_OUT' }
+      }
+      if (prev.user.coins < listing.price) return { ok: false, reason: 'NOT_ENOUGH_COINS' }
+
+      const added = addItem(prev.collection, itemId, now)
+      const bought: AppState = {
+        ...prev,
+        user: { ...prev.user, coins: prev.user.coins - listing.price },
+        collection: {
+          ...added.collection,
+          purchases: { ...added.collection.purchases, [key]: boughtToday + 1 },
+          // 찾던 물건을 샀으면 목록에서 뺀다. 계속 남아 있으면 매일 알림이 온다.
+          wishlist: added.collection.wishlist.filter((id) => id !== itemId),
+        },
+      }
+
+      const derived = applyCollectionDerived(bought, now)
+      commit(derived.state)
+
+      return {
+        ok: true,
+        itemId,
+        price: listing.price,
+        isNew: added.isNew,
+        discoveries: [
+          ...(added.isNew ? [{ itemId, isNew: true, source: shop.name }] : []),
+          ...derived.discoveries,
+        ],
+        notes: derived.notes,
+      }
+    },
+    [commit],
+  )
+
+  /** 작은 작업실. 재료를 쓰고 하나 만든다. */
+  const craftItem = useCallback(
+    (recipeId: string): CraftResult => {
+      const prev = stateRef.current
+      const recipe = findRecipe(recipeId)
+      if (!recipe) return { ok: false, reason: 'UNKNOWN' }
+
+      const known = isRecipeKnown(recipe, {
+        level: prev.user.level,
+        discoveredCount: discoveredCount(prev.collection),
+        completedSetIds: completedSetIds(prev.collection),
+        friendship: Object.fromEntries(
+          Object.entries(prev.npcs).map(([id, npc]) => [id, npc.friendship]),
+        ),
+        discoveredRecipeIds: prev.collection.discoveredRecipeIds,
+      })
+      if (!known) return { ok: false, reason: 'LOCKED' }
+      if (!canCraft(recipe, prev.collection)) return { ok: false, reason: 'MISSING' }
+
+      const now = new Date()
+      const spent = spendItems(prev.collection, recipe.ingredients)
+      if (!spent) return { ok: false, reason: 'MISSING' }
+
+      const added = addItem(spent, recipe.resultItemId, now)
+      const derived = applyCollectionDerived({ ...prev, collection: added.collection }, now)
+      commit(derived.state)
+
+      return {
+        ok: true,
+        itemId: recipe.resultItemId,
+        isNew: added.isNew,
+        discoveries: [
+          ...(added.isNew
+            ? [{ itemId: recipe.resultItemId, isNew: true, source: '작은 작업실' }]
+            : []),
+          ...derived.discoveries,
+        ],
+        notes: derived.notes,
+      }
+    },
+    [commit],
+  )
+
+  const toggleWishlist = useCallback(
+    (itemId: string) => {
+      const prev = stateRef.current
+      const list = prev.collection.wishlist
+      const next = list.includes(itemId)
+        ? list.filter((id) => id !== itemId)
+        : [...list, itemId]
+      commit({ ...prev, collection: { ...prev.collection, wishlist: next } })
+    },
+    [commit],
+  )
+
+  /**
+   * 지금 보고 있는 방에 하나 놓는다.
+   *
+   * 가진 개수보다 많이 놓을 수는 없다. 한가운데에서 조금씩 어긋나게 놓아서
+   * 여러 개를 이어 놓아도 정확히 겹치지 않게 한다.
+   */
+  const placeInRoom = useCallback(
+    (itemId: string): PlacedItem | null => {
+      const prev = stateRef.current
+      const def = findCollectionItem(itemId)
+      if (!def || !def.placeable || !def.hasPlaceableAsset) return null
+
+      const roomId = prev.collection.currentRoomId
+      const placedEverywhere = Object.values(prev.collection.rooms).flat()
+      const used = placedEverywhere.filter((p) => p.itemId === itemId).length
+      if (used >= ownedCount(prev.collection, itemId)) return null
+
+      const inRoom = prev.collection.rooms[roomId] ?? []
+      const offset = (inRoom.length % 5) * 6
+
+      const placed: PlacedItem = {
+        uid: createId(),
+        itemId,
+        x: Math.min(90, 32 + offset),
+        y: Math.min(90, 52 + ((inRoom.length % 3) * 7)),
+        scale: 1,
+        flipped: false,
+      }
+
+      commit({
+        ...prev,
+        collection: {
+          ...prev.collection,
+          rooms: { ...prev.collection.rooms, [roomId]: [...inRoom, placed] },
+        },
+      })
+      return placed
+    },
+    [commit],
+  )
+
+  /** 놓은 것 하나를 바꾼다 — 옮기기·크기·뒤집기·거두기가 전부 여기를 지난다 */
+  const patchPlaced = useCallback(
+    (uid: string, change: ((p: PlacedItem) => PlacedItem) | null) => {
+      const prev = stateRef.current
+      const roomId = prev.collection.currentRoomId
+      const inRoom = prev.collection.rooms[roomId] ?? []
+      if (!inRoom.some((p) => p.uid === uid)) return
+
+      const next = change
+        ? inRoom.map((p) => (p.uid === uid ? change(p) : p))
+        : inRoom.filter((p) => p.uid !== uid)
+
+      commit({
+        ...prev,
+        collection: { ...prev.collection, rooms: { ...prev.collection.rooms, [roomId]: next } },
+      })
+    },
+    [commit],
+  )
+
+  const movePlaced = useCallback(
+    (uid: string, x: number, y: number) => {
+      const clamp = (v: number) => Math.min(96, Math.max(4, Math.round(v * 10) / 10))
+      patchPlaced(uid, (p) => ({ ...p, x: clamp(x), y: clamp(y) }))
+    },
+    [patchPlaced],
+  )
+
+  const updatePlaced = useCallback(
+    (uid: string, patch: { scale?: number; flipped?: boolean }) => {
+      patchPlaced(uid, (p) => ({
+        ...p,
+        scale: patch.scale !== undefined ? Math.min(1.6, Math.max(0.6, patch.scale)) : p.scale,
+        flipped: patch.flipped !== undefined ? patch.flipped : p.flipped,
+      }))
+    },
+    [patchPlaced],
+  )
+
+  const removePlaced = useCallback((uid: string) => patchPlaced(uid, null), [patchPlaced])
+
+  const setCurrentRoom = useCallback(
+    (roomId: RoomId) => {
+      const prev = stateRef.current
+      commit({ ...prev, collection: { ...prev.collection, currentRoomId: roomId } })
+    },
+    [commit],
+  )
+
+  const setRoomEffect = useCallback(
+    (effectId: HomeEffectId | null) => {
+      const prev = stateRef.current
+      const roomId = prev.collection.currentRoomId
+      // 아직 안 열린 공기는 걸 수 없다
+      if (effectId && !unlockedEffectIds(prev.collection).includes(effectId)) return
+
+      commit({
+        ...prev,
+        collection: {
+          ...prev.collection,
+          roomEffects: { ...prev.collection.roomEffects, [roomId]: effectId },
+        },
+      })
+    },
+    [commit],
+  )
+
   const renameUser = useCallback(
     (name: string) => {
       const trimmed = name.trim()
@@ -1194,6 +1549,15 @@ export function useGameState(): GameState {
       hideRecommendationToday,
       setPersonalized,
       resetUsageProfiles,
+      buyCollectionItem,
+      craftItem,
+      toggleWishlist,
+      placeInRoom,
+      movePlaced,
+      updatePlaced,
+      removePlaced,
+      setCurrentRoom,
+      setRoomEffect,
     }),
     [
       ready,
@@ -1227,6 +1591,15 @@ export function useGameState(): GameState {
       hideRecommendationToday,
       setPersonalized,
       resetUsageProfiles,
+      buyCollectionItem,
+      craftItem,
+      toggleWishlist,
+      placeInRoom,
+      movePlaced,
+      updatePlaced,
+      removePlaced,
+      setCurrentRoom,
+      setRoomEffect,
     ],
   )
 }

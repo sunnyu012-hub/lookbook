@@ -1,18 +1,24 @@
 import type { ReactNode } from 'react'
-import type { User } from '@/types'
+import type { CollectionState, User } from '@/types'
 import { CharacterAvatar } from './CharacterAvatar'
 import { RoomScene } from './RoomScene'
+import { RoomCanvas } from '@/components/room/RoomCanvas'
 import { LevelBadge } from './LevelBadge'
 import { ExpProgress } from './ExpProgress'
 import type { CharacterMood } from './types'
 import { titleForLevel } from '@/lib/titles'
+import { findRoom } from '@/lib/collection/rooms'
 import { EFFECT } from '@/lib/assets'
 
 interface CharacterRoomCardProps {
   user: User
   mood: CharacterMood
+  /** 지금 꾸며둔 방 */
+  collection: CollectionState
   /** 캐릭터 위에 겹쳐 띄우는 것들 (+EXP 등) */
   overlay?: ReactNode
+  onDecorate: () => void
+  onOpenCollection: () => void
 }
 
 /**
@@ -29,18 +35,41 @@ const PLACEMENT: Record<CharacterMood, { width: string; bottom: string }> = {
 /**
  * HOME 의 주인공 카드.
  *
- * 방 · 캐릭터 · 레벨 · EXP 를 한 덩어리로 묶는다.
- * 나중에 방 꾸미기나 펫이 붙으면 전부 이 카드 안에서 해결된다.
+ * 방·캐릭터·레벨·EXP 를 한 덩어리로 묶는다.
+ * 아무것도 안 놓은 방은 원래 있던 그림 그대로 두고,
+ * 하나라도 놓은 순간부터 내가 놓은 것들이 보인다 —
+ * 첫날부터 텅 빈 방을 보여주면 그건 시작이 아니라 숙제다.
  */
-export function CharacterRoomCard({ user, mood, overlay }: CharacterRoomCardProps) {
+export function CharacterRoomCard({
+  user,
+  mood,
+  collection,
+  overlay,
+  onDecorate,
+  onOpenCollection,
+}: CharacterRoomCardProps) {
   const place = PLACEMENT[mood]
+  const roomId = collection.currentRoomId
+  const room = findRoom(roomId)
+  const placed = collection.rooms[roomId] ?? []
+  const effect = collection.roomEffects[roomId] ?? null
+  const decorated = placed.length > 0 || effect !== null || roomId !== 'MY_ROOM'
 
   return (
     <section className="overflow-hidden rounded-card border border-line bg-surface shadow-soft">
       <div className="relative aspect-[16/12] w-full">
-        <RoomScene hideBeanbag={mood === 'resting'} />
+        {decorated && room ? (
+          // RoomCanvas 는 스스로 relative 라서 여기서 absolute 를 덧씌우면 서로 부딪힌다.
+          // (같은 property 라 CSS 순서가 이기고, 그러면 카드 안에서 높이가 0 이 된다)
+          // 자리는 바깥 div 가 잡고, 캔버스는 그 안을 채운다.
+          <div className="absolute inset-0">
+            <RoomCanvas room={room} placed={placed} effect={effect} className="h-full w-full" />
+          </div>
+        ) : (
+          <RoomScene hideBeanbag={mood === 'resting'} />
+        )}
 
-        {/* 캐릭터는 러그 위에 선다 */}
+        {/* 캐릭터는 바닥 가운데에 선다 */}
         <div
           className="absolute left-1/2 h-[62%] -translate-x-1/2 transition-[width,bottom] duration-300 ease-out"
           style={{ width: place.width, bottom: place.bottom }}
@@ -56,6 +85,23 @@ export function CharacterRoomCard({ user, mood, overlay }: CharacterRoomCardProp
             className="absolute bottom-[52%] left-[24%] w-[13%] animate-sparkle select-none"
           />
         )}
+
+        <div className="absolute right-2.5 top-2.5 flex gap-1.5">
+          <button
+            type="button"
+            onClick={onOpenCollection}
+            className="rounded-pill bg-surface/90 px-3 py-1.5 text-[11.5px] font-medium text-inkdim shadow-soft backdrop-blur-sm active:scale-[0.96]"
+          >
+            도감
+          </button>
+          <button
+            type="button"
+            onClick={onDecorate}
+            className="rounded-pill bg-surface/90 px-3 py-1.5 text-[11.5px] font-medium text-inkdim shadow-soft backdrop-blur-sm active:scale-[0.96]"
+          >
+            꾸미기
+          </button>
+        </div>
 
         {overlay}
       </div>

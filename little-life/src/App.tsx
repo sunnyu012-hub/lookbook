@@ -3,6 +3,8 @@ import type {
   AreaId,
   Battle,
   BattleDef,
+  CollectionShopDef,
+  DiscoveryResult,
   NpcDef,
   NpcQuestChainDef,
   Quest,
@@ -19,6 +21,10 @@ import { PackDetailSheet } from '@/components/quest/PackDetailSheet'
 import { BattleSheet } from '@/components/rpg/BattleSheet'
 import { NpcSheet } from '@/components/city/NpcSheet'
 import { ShopSheet } from '@/components/city/ShopSheet'
+import { CollectionShopSheet } from '@/components/collection/CollectionShopSheet'
+import { WorkshopSheet } from '@/components/collection/WorkshopSheet'
+import { DiscoveryOverlay } from '@/components/collection/DiscoveryOverlay'
+import { DecorateMode } from '@/components/room/DecorateMode'
 import { LevelUpOverlay } from '@/components/feedback/LevelUpOverlay'
 import { BattleClearOverlay } from '@/components/feedback/BattleClearOverlay'
 import { DropRevealOverlay } from '@/components/feedback/DropRevealOverlay'
@@ -32,6 +38,8 @@ import { activeEvents } from '@/lib/city/events'
 import { emptyNpcState } from '@/lib/city/friendship'
 import { isShopOpen, shopInArea } from '@/lib/city/shops'
 import { findSkill } from '@/lib/city/skills'
+import { collectionProgress } from '@/lib/collection/progress'
+import { findCollectionItem } from '@/lib/collection/catalog'
 import { TIME_TINT, isNightOpen, timeBand } from '@/lib/rpg/time'
 import { HomeScreen } from '@/screens/HomeScreen'
 import { QuestScreen } from '@/screens/QuestScreen'
@@ -73,6 +81,15 @@ export default function App() {
     hideRecommendationToday,
     setPersonalized,
     resetUsageProfiles,
+    buyCollectionItem,
+    craftItem,
+    toggleWishlist,
+    placeInRoom,
+    movePlaced,
+    updatePlaced,
+    removePlaced,
+    setCurrentRoom,
+    setRoomEffect,
   } = useGameState()
   const feedback = useFeedback()
 
@@ -87,6 +104,12 @@ export default function App() {
   const [openPack, setOpenPack] = useState<QuestPackDef | null>(null)
   const [openNpc, setOpenNpc] = useState<NpcDef | null>(null)
   const [openShop, setOpenShop] = useState<ShopDef | null>(null)
+  const [openCollectionShop, setOpenCollectionShop] = useState<CollectionShopDef | null>(null)
+  const [workshopOpen, setWorkshopOpen] = useState(false)
+  const [decorating, setDecorating] = useState(false)
+  const [discoveries, setDiscoveries] = useState<DiscoveryResult[]>([])
+  /** BAG 을 열 때 도감부터 보여줄지 */
+  const [bagView, setBagView] = useState<'BAG' | 'BOOK'>('BAG')
 
   // 오늘의 이벤트는 저장하지 않고 날짜에서 계산한다. 한 번만 구해서 화면 전체가 같은 걸 본다.
   const events = useMemo(() => activeEvents(), [])
@@ -108,6 +131,28 @@ export default function App() {
     [state.battles, openBattleId],
   )
 
+  /**
+   * 방금 손에 들어온 것들.
+   *
+   * 처음 만난 것만 NEW DISCOVERY 로 띄운다. 두 번째부터는 작은 줄 하나면 충분하다 —
+   * 같은 연출을 매번 보면 그때부터는 닫아야 하는 창이 된다.
+   */
+  const showCollected = useCallback(
+    (collected: DiscoveryResult[]) => {
+      if (collected.length === 0) return
+      const fresh = collected.filter((c) => c.isNew)
+      if (fresh.length > 0) {
+        setDiscoveries(fresh)
+        return
+      }
+      const names = collected
+        .map((c) => findCollectionItem(c.itemId)?.nameKo)
+        .filter((name): name is string => !!name)
+      if (names.length > 0) feedback.notify(`${names.join(' · ')} ×1`)
+    },
+    [feedback],
+  )
+
   const handleComplete = useCallback(
     (id: string) => {
       const result = completeQuest(id)
@@ -120,8 +165,11 @@ export default function App() {
         label: '되돌리기',
         onClick: () => uncompleteQuest(id),
       })
+
+      // 처음 만난 것만 크게 보여주고, 이미 아는 건 한 줄로 지나간다
+      showCollected(result.collected)
     },
-    [completeQuest, uncompleteQuest, feedback],
+    [completeQuest, uncompleteQuest, feedback, showCollected],
   )
 
   const openEditor = useCallback((quest: Quest) => {
@@ -218,9 +266,11 @@ export default function App() {
       if (result.cleared) {
         setOpenBattleId(null)
         feedback.celebrateBattleClear(battle, result)
+        // 보스를 넘고 나온 것은 클리어 연출이 끝난 뒤에 보여준다
+        window.setTimeout(() => showCollected(result.collected), 1500)
       }
     },
-    [state.battles, doBattleAction, feedback],
+    [state.battles, doBattleAction, feedback, showCollected],
   )
 
   const handleRemoveBattle = useCallback(
@@ -316,6 +366,67 @@ export default function App() {
     [useConsumable, feedback],
   )
 
+  // ── 수집 · 방 ──────────────────────────────────────────
+  const handleCollectionBuy = useCallback(
+    (itemId: string) => {
+      if (!openCollectionShop) return
+      const result = buyCollectionItem(openCollectionShop.id, itemId)
+
+      if (result.ok) {
+        if (result.isNew) showCollected(result.discoveries)
+        else feedback.notify(`샀어 · 🪙 -${result.price}`)
+        result.notes.forEach((note) => feedback.notify(note))
+        return
+      }
+      // 혼내지 않는다. 왜 안 됐는지만 짧게 말한다.
+      if (result.reason === 'NOT_ENOUGH_COINS') feedback.notify('Coin 이 조금 모자라')
+      else if (result.reason === 'SOLD_OUT') feedback.notify('오늘 것은 다 나갔어')
+      else if (result.reason === 'LOCKED') feedback.notify('몇 번 더 오면 꺼내준대')
+      else if (result.reason === 'CLOSED') feedback.notify('지금은 닫혀 있어')
+    },
+    [openCollectionShop, buyCollectionItem, feedback, showCollected],
+  )
+
+  const handleCraft = useCallback(
+    (recipeId: string) => {
+      const result = craftItem(recipeId)
+      if (result.ok) {
+        if (result.isNew) showCollected(result.discoveries)
+        else {
+          const name = findCollectionItem(result.itemId)?.nameKo ?? '하나'
+          feedback.notify(`${name} 만들었어 ✦`)
+        }
+        result.notes.forEach((note) => feedback.notify(note))
+        return
+      }
+      if (result.reason === 'MISSING') feedback.notify('재료가 조금 모자라')
+      else if (result.reason === 'LOCKED') feedback.notify('아직 만드는 법을 몰라')
+    },
+    [craftItem, feedback, showCollected],
+  )
+
+  /** 도감·발견 연출에서 바로 방에 놓기 */
+  const handlePlace = useCallback(
+    (itemId: string) => {
+      const placed = placeInRoom(itemId)
+      if (!placed) {
+        feedback.notify('지금은 방에 놓을 수 없어')
+        return
+      }
+      setDecorating(true)
+    },
+    [placeInRoom, feedback],
+  )
+
+  const handleToggleWishlist = useCallback(
+    (itemId: string) => {
+      const wished = state.collection.wishlist.includes(itemId)
+      toggleWishlist(itemId)
+      feedback.notify(wished ? '찾는 물건에서 뺐어' : '♥ 찾는 물건에 넣었어')
+    },
+    [state.collection.wishlist, toggleWishlist, feedback],
+  )
+
   const handleUnlockSkill = useCallback(
     (skillId: string) => {
       if (!unlockSkill(skillId)) return
@@ -348,7 +459,17 @@ export default function App() {
     <>
       <AppShell
         tint={TIME_TINT[timeBand()]}
-        tabBar={<BottomNavigation active={tab} onChange={setTab} />}
+        tabBar={
+          <BottomNavigation
+            active={tab}
+            onChange={(next) => {
+              // 아래에서 직접 가방을 누른 거면 가방부터 보여준다.
+              // 도감은 발견 연출에서 넘어올 때만 먼저 열린다.
+              if (next === 'bag') setBagView('BAG')
+              setTab(next)
+            }}
+          />
+        }
       >
         {tab === 'home' && (
           <HomeScreen
@@ -359,8 +480,16 @@ export default function App() {
             onAddQuest={() => setHubOpen(true)}
             onSeeAll={() => setTab('quest')}
             onOpenMap={() => setTab('map')}
-            onOpenBag={() => setTab('bag')}
+            onOpenBag={() => {
+              setBagView('BAG')
+              setTab('bag')
+            }}
             onOpenMe={() => setTab('me')}
+            onDecorate={() => setDecorating(true)}
+            onOpenCollection={() => {
+              setBagView('BOOK')
+              setTab('bag')
+            }}
             events={events}
           />
         )}
@@ -391,10 +520,13 @@ export default function App() {
             onSelectArea={handleSelectArea}
             onOpenNpc={setOpenNpc}
             onOpenShop={handleOpenShopForArea}
+            onOpenCollectionShop={setOpenCollectionShop}
+            onOpenWorkshop={() => setWorkshopOpen(true)}
           />
         )}
         {tab === 'bag' && (
           <BagScreen
+            state={state}
             inventory={state.inventory}
             equipped={state.user.equippedItems}
             coins={state.user.coins}
@@ -402,6 +534,10 @@ export default function App() {
             onEquip={handleEquip}
             onUnequip={unequipSlot}
             onUse={handleUseConsumable}
+            onToggleWishlist={handleToggleWishlist}
+            onPlace={handlePlace}
+            onOpenWorkshop={() => setWorkshopOpen(true)}
+            initialView={bagView}
           />
         )}
         {tab === 'me' && (
@@ -482,6 +618,45 @@ export default function App() {
         inventory={state.inventory}
         onClose={() => setOpenShop(null)}
         onBuy={handleBuy}
+      />
+
+      <CollectionShopSheet
+        shop={openCollectionShop}
+        state={state}
+        onClose={() => setOpenCollectionShop(null)}
+        onBuy={handleCollectionBuy}
+        onToggleWishlist={toggleWishlist}
+      />
+
+      <WorkshopSheet
+        open={workshopOpen}
+        state={state}
+        onClose={() => setWorkshopOpen(false)}
+        onCraft={handleCraft}
+      />
+
+      <DecorateMode
+        open={decorating}
+        state={state}
+        onClose={() => setDecorating(false)}
+        onPlace={placeInRoom}
+        onMove={movePlaced}
+        onUpdate={updatePlaced}
+        onRemove={removePlaced}
+        onSelectRoom={setCurrentRoom}
+        onSelectEffect={setRoomEffect}
+        onNotify={feedback.notify}
+      />
+
+      <DiscoveryOverlay
+        discoveries={discoveries}
+        progress={collectionProgress(state.collection)}
+        onClose={() => setDiscoveries([])}
+        onOpenCollection={() => {
+          setBagView('BOOK')
+          setTab('bag')
+        }}
+        onPlace={handlePlace}
       />
 
       <ConfirmDialog

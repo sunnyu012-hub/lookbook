@@ -3,6 +3,7 @@ import { emptyCategoryStats } from '@/lib/stats'
 import { expForDifficulty } from '@/lib/difficulty'
 import { createId } from '@/lib/id'
 import { emptyReputation } from '@/lib/city/reputation'
+import { emptyCollection } from '@/lib/collection/progress'
 import {
   STATE_VERSION,
   defaultRecommendSettings,
@@ -71,5 +72,8 @@ export function createDefaultState(): AppState {
     reputation: emptyReputation(),
     usageProfiles: {},
     recommendSettings: defaultRecommendSettings(),
+    categoryCompleted: emptyCategoryStats(),
+    bossClears: 0,
+    collection: emptyCollection(),
   }
 }

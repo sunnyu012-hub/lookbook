@@ -24,6 +24,8 @@ interface HomeScreenProps {
   onOpenMap: () => void
   onOpenBag: () => void
   onOpenMe: () => void
+  onDecorate: () => void
+  onOpenCollection: () => void
   events: CityEvent[]
 }
 
@@ -37,6 +39,8 @@ export function HomeScreen({
   onOpenMap,
   onOpenBag,
   onOpenMe,
+  onDecorate,
+  onOpenCollection,
   events,
 }: HomeScreenProps) {
   const openQuests = useMemo(
@@ -76,6 +80,9 @@ export function HomeScreen({
       <CharacterRoomCard
         user={state.user}
         mood={shownMood}
+        collection={state.collection}
+        onDecorate={onDecorate}
+        onOpenCollection={onOpenCollection}
         overlay={<ExpToastLayer toasts={expToasts} />}
       />
 
@@ -89,7 +96,7 @@ export function HomeScreen({
 
       {openQuests.length > 0 && (
         <Button variant="soft" size="md" className="w-full" onClick={onAddQuest}>
-          <span className="text-[17px] leading-none">+</span> Add Quest
+          <span className="text-[17px] leading-none">+</span> 퀘스트 추가
         </Button>
       )}
 
