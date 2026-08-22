@@ -43,6 +43,7 @@ PARAMS = {
     "sofa": dict(dilate=6, min_area=3000, row_h=250),
     # 이 시트만 물건마다 흰 테두리(스티커 선)가 둘려 있다
     "extra": dict(dilate=9, min_area=4000, row_h=300, sticker=True),
+    "trophy": dict(dilate=9, min_area=4000, row_h=380),
 }
 
 # 아이템이 들어갈 폴더 (카탈로그 분류와 같은 이름)
@@ -445,6 +446,12 @@ MAP = {
     "check_sofa": "sofa/00.png",
     "star_side_table": "sofa/01.png",
     "wood_bench": "sofa/02.png",
+    # ── 트로피 ──
+    "t_wood_star": "trophy/00.png",
+    "t_adventure_book": "trophy/01.png",
+    "t_thousand_stars": "trophy/02.png",
+    "t_moon_shard": "trophy/03.png",
+    "t_heart_bottle": "trophy/04.png",
     # ── 1차에 빠졌던 여섯 개 ──
     "beanbag": "extra/00.png",
     "mini_table": "extra/01.png",

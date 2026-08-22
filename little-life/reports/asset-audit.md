@@ -16,7 +16,7 @@
 | 카탈로그에 없는 파일 | 0 |
 | id 중복 | 0 |
 | 경로 중복 | 0 |
-| 테두리까지 꽉 참 (POSSIBLE_CROP) | 6 |
+| 테두리까지 꽉 참 (POSSIBLE_CROP) | 5 |
 | 유난히 촘촘함 (STYLE_REVIEW) | 3 |
 
 ## 배치 분류
@@ -72,7 +72,6 @@
 - `monitor` 데스크 모니터 — 테두리 57% 가 차 있다
 - `friend_photo` 친구와 찍은 사진 액자 — 테두리 57% 가 차 있다
 - `cork_board` 작은 코르크보드 — 테두리 44% 가 차 있다
-- `t_adventure_book` 모험 기록책 — 테두리 52% 가 차 있다
 
 ## 유난히 촘촘한 그림 (STYLE_REVIEW)
 

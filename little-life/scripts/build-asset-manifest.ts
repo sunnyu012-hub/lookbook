@@ -18,7 +18,7 @@ import {
 } from 'node:fs'
 import path from 'node:path'
 import { ALL_COLLECTION_ITEMS } from '../src/lib/collection/catalog'
-import { DRAWN_BY_HAND, HAS_ART } from '../src/lib/collection/assets'
+import { HAS_ART } from '../src/lib/collection/assets'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 const FLAT = path.join(ROOT, 'public/assets/collection')
@@ -53,7 +53,7 @@ interface Entry {
   height: number
   bytes: number
   verified: boolean
-  /** 어느 시트 몇 번째 조각에서 나왔는지. 직접 그린 것은 'drawn' 이다. */
+  /** 어느 시트 몇 번째 조각에서 나왔는지 */
   source: string
   sourceIndex: number | null
 }
@@ -111,8 +111,9 @@ for (const item of ALL_COLLECTION_ITEMS) {
   const target = path.join(dir, `${item.id}.webp`)
   const flat = path.join(FLAT, `${item.id}.webp`)
 
-  // 예전 평면 폴더에 있으면 옮긴다. 이미 옮겼으면 그대로 둔다.
-  if (!existsSync(target) && existsSync(flat)) {
+  // 시트에서 새로 뽑은 것이 평면 폴더에 있으면 그것으로 갈아끼운다.
+  // 시트가 원본이니, 다시 뽑았으면 그게 맞는 그림이다.
+  if (existsSync(flat)) {
     renameSync(flat, target)
     moved += 1
   }
@@ -132,8 +133,8 @@ for (const item of ALL_COLLECTION_ITEMS) {
     bytes: statSync(target).size,
     // 사람이 대조 시트로 눈으로 확인한 것들이다
     verified: true,
-    source: DRAWN_BY_HAND.has(item.id) ? 'drawn' : (sources.get(item.id)?.sheet ?? 'unknown'),
-    sourceIndex: DRAWN_BY_HAND.has(item.id) ? null : (sources.get(item.id)?.index ?? null),
+    source: sources.get(item.id)?.sheet ?? 'unknown',
+    sourceIndex: sources.get(item.id)?.index ?? null,
   }
 }
 

@@ -12,7 +12,6 @@
     "preview": "vite preview",
     "typecheck": "tsc -b --force",
     "test": "vitest run",
-    "assets:draw": "node scripts/render-drawn.mjs && python3 scripts/trim-drawn.py",
     "assets:extract": "python3 scripts/extract-assets.py",
     "assets:manifest": "vite-node scripts/build-asset-manifest.ts",
     "assets:thumbs": "python3 scripts/build-thumbs.py",

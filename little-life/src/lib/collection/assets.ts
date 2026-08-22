@@ -9,6 +9,7 @@
  * 두 곳에 적어두면 언젠가 어긋난다. (조립은 catalog.ts 에서 한다)
  *
  * 아직 그림이 없는 물건은 이모지로, 이모지도 없으면 분류 실루엣으로 그린다.
+ * 지금은 240개 전부 그림이 있어서 그 길로 내려갈 일이 없다.
  */
 const BASE = '/assets/items'
 /** 도감 격자에서 쓰는 작은 그림 (npm run assets:thumbs) */
@@ -245,12 +246,17 @@ const WITH_ART = [
   'sunlight_rug',
   'sunset_crystal',
   'sunset_lamp',
+  't_adventure_book',
   't_dragon',
   't_golden_broom',
   't_golden_pen',
+  't_heart_bottle',
   't_hundred_stars',
+  't_moon_shard',
   't_shiny_palette',
   't_shoe_trophy',
+  't_thousand_stars',
+  't_wood_star',
   'tablet',
   'tangerine_basket',
   'tea_table',
@@ -290,31 +296,8 @@ const WITH_ART = [
   'yoga_mat',
 ] as const
 
-/**
- * 시트에 없어서 직접 그린 것. 트로피 다섯 개다.
- *
- * 원본은 assets/drawn/<id>.svg 다. SVG 를 고치고 `npm run assets:draw` 를
- * 다시 돌리면 게임 안 그림도 따라 바뀐다.
- *
- * 이모지로 그리던 자리를 없애려고 그렸다. 이모지는 폰마다 모양이 달라서
- * 어떤 기기에서는 도감 한 칸만 결이 다르게 보인다.
- *
- * 여기 있던 가구 여섯 개는 나중에 시트(`extra.png`)가 와서 진짜 그림으로 바꿨다.
- * 그림이 들어오면 그린 것은 미련 없이 뺀다.
- */
-const DRAWN = [
-  't_adventure_book',
-  't_heart_bottle',
-  't_moon_shard',
-  't_thousand_stars',
-  't_wood_star',
-] as const
-
-/** 손으로 그린 것 (도감에서 따로 표시하지는 않는다 — 그림은 그림이다) */
-export const DRAWN_BY_HAND = new Set<string>(DRAWN)
-
 /** 그림이 있는지 */
-export const HAS_ART = new Set<string>([...WITH_ART, ...DRAWN])
+export const HAS_ART = new Set<string>(WITH_ART)
 
 /** 분류를 알아야 경로가 나온다 */
 export function artPath(itemId: string, category: string): string | undefined {

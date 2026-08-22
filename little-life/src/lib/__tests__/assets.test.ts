@@ -2,7 +2,7 @@ import { existsSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { ALL_COLLECTION_ITEMS, CATALOG } from '@/lib/collection/catalog'
-import { DRAWN_BY_HAND, HAS_ART } from '@/lib/collection/assets'
+import { HAS_ART } from '@/lib/collection/assets'
 import { LAYER } from '@/lib/collection/placement'
 import manifest from '@/data/asset-manifest.json'
 
@@ -118,12 +118,12 @@ describe('배치 정보', () => {
     expect(CATALOG.filter((i) => !i.assetKey).map((i) => i.id)).toEqual([])
   })
 
-  it('직접 그린 것에도 원본 SVG 가 남아 있다', () => {
-    for (const id of DRAWN_BY_HAND) {
-      const svg = path.resolve(__dirname, '../../../assets/drawn', `${id}.svg`)
-      expect(existsSync(svg), id).toBe(true)
-    }
-    expect(DRAWN_BY_HAND.size).toBeGreaterThan(0)
+  it('모든 그림이 어느 시트에서 왔는지 남아 있다', () => {
+    const unknown = Object.entries(manifest as Record<string, { source?: string }>)
+      .filter(([, e]) => !e.source || e.source === 'unknown')
+      .map(([id]) => id)
+
+    expect(unknown).toEqual([])
   })
 
   it('놓을 수 있는 물건이 절반은 넘는다', () => {

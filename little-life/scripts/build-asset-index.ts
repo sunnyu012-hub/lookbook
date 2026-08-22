@@ -13,7 +13,6 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { ALL_COLLECTION_ITEMS } from '../src/lib/collection/catalog'
-import { DRAWN_BY_HAND } from '../src/lib/collection/assets'
 import manifest from '../src/data/asset-manifest.json'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
@@ -54,16 +53,10 @@ const cells = (items: typeof ALL_COLLECTION_ITEMS) =>
   items
     .map((item) => {
       const m = meta[item.id] ?? {}
-      const from =
-        m.source === 'drawn'
-          ? '직접 그림'
-          : m.source
-            ? `${m.source}/${String(m.sourceIndex ?? '?').padStart(2, '0')}`
-            : '—'
-      const marks = [
-        item.placement !== 'PLACEABLE' ? `<b class="tag">${item.placement}</b>` : '',
-        DRAWN_BY_HAND.has(item.id) ? '<b class="tag drawn">그림</b>' : '',
-      ].join('')
+      const from = m.source
+        ? `${m.source}/${String(m.sourceIndex ?? '?').padStart(2, '0')}`
+        : '—'
+      const marks = item.placement !== 'PLACEABLE' ? `<b class="tag">${item.placement}</b>` : ''
 
       return `<figure>
   ${item.assetKey ? `<img src="../public${item.assetKey}" alt="" loading="lazy">` : '<div class="none">없음</div>'}
@@ -104,7 +97,6 @@ const html = `<!doctype html>
   figcaption span { font-size: 10px; color: #8a7f72; }
   .tag { display: inline-block; margin-top: 3px; padding: 1px 6px; border-radius: 6px;
          background: #f0e8dc; color: #7d7266; font-size: 9px; font-weight: 600; }
-  .tag.drawn { background: #e5efdc; color: #5c7048; }
 </style>
 <h1>그림 대조표</h1>
 <p class="lead">${ALL_COLLECTION_ITEMS.length}개 · <code>npm run assets:index</code> 로 다시 만든다. 앱에는 들어가지 않는다.</p>
