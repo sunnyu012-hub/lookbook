@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { Button } from './Button'
+import { Portal } from './Portal'
 
 interface ConfirmDialogProps {
   open: boolean
@@ -33,25 +34,33 @@ export function ConfirmDialog({
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center px-8">
-      <div className="absolute inset-0 animate-fadein bg-ink/25 backdrop-blur-[2px]" onClick={onCancel} aria-hidden />
-      <div
-        role="alertdialog"
-        aria-modal="true"
-        aria-label={title}
-        className="relative w-full max-w-[320px] animate-pop rounded-card bg-surface px-6 py-6 shadow-lift"
-      >
-        <p className="text-[16px] font-semibold text-ink">{title}</p>
-        {description && <p className="mt-2 text-[13px] leading-relaxed text-inkdim">{description}</p>}
-        <div className="mt-6 flex gap-2">
-          <Button variant="soft" size="sm" className="flex-1" onClick={onCancel}>
-            {cancelLabel}
-          </Button>
-          <Button variant="danger" size="sm" className="flex-1" onClick={onConfirm}>
-            {confirmLabel}
-          </Button>
+    <Portal>
+      <div className="fixed inset-0 z-[70] flex items-center justify-center px-8">
+        <div
+          className="absolute inset-0 animate-fadein bg-ink/25 backdrop-blur-[2px]"
+          onClick={onCancel}
+          aria-hidden
+        />
+        <div
+          role="alertdialog"
+          aria-modal="true"
+          aria-label={title}
+          className="relative w-full max-w-[320px] animate-pop rounded-card bg-surface px-6 py-6 shadow-lift"
+        >
+          <p className="text-[16px] font-semibold text-ink">{title}</p>
+          {description && (
+            <p className="mt-2 text-[13px] leading-relaxed text-inkdim">{description}</p>
+          )}
+          <div className="mt-6 flex gap-2">
+            <Button variant="soft" size="sm" className="flex-1" onClick={onCancel}>
+              {cancelLabel}
+            </Button>
+            <Button variant="danger" size="sm" className="flex-1" onClick={onConfirm}>
+              {confirmLabel}
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
+    </Portal>
   )
 }
