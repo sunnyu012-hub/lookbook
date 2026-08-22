@@ -43,6 +43,9 @@ export function createDefaultState(): AppState {
 
   return {
     version: STATE_VERSION,
+    // 새로 시작하는 사람은 옛 표로 받은 적이 없다
+    coinRebalanceGiven: true,
+    claimedWeeklyGoals: [],
     user: {
       name: 'Yuli',
       level: 1,

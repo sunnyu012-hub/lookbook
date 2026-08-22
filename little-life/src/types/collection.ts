@@ -306,6 +306,10 @@ export interface ShopListing {
   limited: boolean
   /** 평판이 모자라 아직 못 사는 자리인지 */
   locked: boolean
+  /** 내일이면 빠지는 물건인지 */
+  lastDay: boolean
+  /** 오늘 깎아준 값이면 원래 값. 안 깎았으면 없다. */
+  wasPrice?: number
 }
 
 // ── 저장되는 것 ─────────────────────────────────────────

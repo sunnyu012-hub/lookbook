@@ -9,9 +9,11 @@ import {
   isCollectionShopOpen,
   isWeekend,
   shopsSellingToday,
+  todayListings,
 } from '@/lib/collection/shops'
 import { findCollectionItem } from '@/lib/collection/catalog'
 import { isNightOpen } from '@/lib/rpg/time'
+import { withJosa } from '@/lib/labels'
 import { cn } from '@/components/ui/cn'
 
 interface TodayInTheCityProps {
@@ -23,6 +25,49 @@ interface TodayInTheCityProps {
 interface Line {
   icon: string
   text: string
+}
+
+/**
+ * 오늘만 참인 가게 소식.
+ *
+ * 깎아주는 것 한 줄, 오늘까지인 것 한 줄. 둘 다 없으면 아무 줄도 만들지 않는다.
+ * 매일 뜨는 문장은 며칠 지나면 안 읽힌다.
+ */
+function shopLines(): Line[] {
+  const out: Line[] = []
+
+  for (const shop of COLLECTION_SHOPS) {
+    if (!isCollectionShopOpen(shop)) continue
+    const listings = todayListings(shop)
+
+    const sale = listings.find((l) => l.wasPrice !== undefined)
+    if (sale && out.length === 0) {
+      const item = findCollectionItem(sale.itemId)
+      if (item) {
+        out.push({
+          icon: shop.icon,
+          text: `${shop.name} · ${item.nameKo} 오늘 ${sale.price}코인.`,
+        })
+      }
+    }
+
+    // 오늘까지인 것 중에서는 귀한 것만. 흔한 게 빠지는 건 아쉽지 않다.
+    const leaving = listings.find(
+      (l) => l.lastDay && !l.locked && (l.limited || findCollectionItem(l.itemId)?.rarity === 'RARE'),
+    )
+    if (leaving && out.length < 2) {
+      const item = findCollectionItem(leaving.itemId)
+      if (item) {
+        out.push({
+          icon: '⏳',
+          text: `${shop.name} · ${withJosa(item.nameKo, '은', '는')} 오늘까지.`,
+        })
+      }
+    }
+
+    if (out.length >= 2) break
+  }
+  return out
 }
 
 /**
@@ -89,7 +134,11 @@ function buildLines(state: AppState, events: CityEvent[]): Line[] {
     break
   }
 
-  for (const event of events) {
+  // 오늘만 참인 것을 먼저. 이벤트는 매일 몇 개씩 있어서 이 자리를 다 먹는다.
+  lines.push(...shopLines())
+
+  // 이벤트는 둘까지. 셋 넘어가면 그냥 목록이 된다.
+  for (const event of events.slice(0, 2)) {
     const where = event.areaId ? findArea(event.areaId).name : '도시 전체'
     lines.push({ icon: event.icon, text: `${where} · ${event.name} — ${event.effectLabel}` })
   }
@@ -136,13 +185,6 @@ function buildLines(state: AppState, events: CityEvent[]): Line[] {
     )
   }
 
-  // 오늘 새로 들어온 가구가 있는 가게 하나
-  const restocked = COLLECTION_SHOPS.find(
-    (shop) => !shop.weekendOnly && !shop.nightOnly && isCollectionShopOpen(shop),
-  )
-  if (restocked) {
-    lines.push({ icon: restocked.icon, text: `${restocked.name}에 오늘 물건이 새로 깔렸어.` })
-  }
 
-  return lines.slice(0, 4)
+  return lines.slice(0, 5)
 }

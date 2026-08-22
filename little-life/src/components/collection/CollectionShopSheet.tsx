@@ -163,6 +163,16 @@ function Section({
                         NEW
                       </span>
                     )}
+                    {listing.wasPrice !== undefined && (
+                      <span className="rounded-pill bg-butter-soft px-1.5 py-0.5 text-[9.5px] font-medium text-butter-deep">
+                        오늘 싸게
+                      </span>
+                    )}
+                    {listing.lastDay && !listing.isNew && (
+                      <span className="rounded-pill bg-dusty-soft px-1.5 py-0.5 text-[9.5px] text-dusty-deep">
+                        오늘까지
+                      </span>
+                    )}
                     {!found && (
                       <span className="rounded-pill bg-lavender-soft px-1.5 py-0.5 text-[9.5px] text-lavender-deep">
                         처음 보는 것
@@ -205,6 +215,11 @@ function Section({
                     <span className="text-[10px] leading-tight">단골에게만</span>
                   ) : (
                     <>
+                      {listing.wasPrice !== undefined && (
+                        <span className="font-game text-[9px] leading-none text-inkfaint line-through">
+                          {listing.wasPrice}
+                        </span>
+                      )}
                       <span className="font-game text-[11.5px] leading-none">🪙 {listing.price}</span>
                       <span className="mt-0.5 text-[10px] font-medium">
                         {affordable ? '사기' : '모자라'}
