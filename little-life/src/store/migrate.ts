@@ -53,7 +53,7 @@ import { findRoom } from '@/lib/collection/rooms'
  * 없는 항목만 기본값으로 채우고, 있는 값은 손대지 않는다.
  */
 
-export const STATE_VERSION = 7
+export const STATE_VERSION = 8
 
 export function defaultStats(): Stats {
   return STAT_KEYS.reduce((acc, key) => {

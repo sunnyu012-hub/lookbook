@@ -18,6 +18,7 @@ import type {
   Rarity,
   Routine,
   ShopDef,
+  WardrobeCategory,
 } from '@/types'
 import type {
   CollectionShopId,
@@ -72,6 +73,7 @@ import {
   toggleFavorite,
   type ProfileSeed,
 } from '@/lib/library/usage'
+import { randomOutfit, takeOff, wearItem } from '@/lib/wardrobe/state'
 import {
   grantCoinRebalance,
   grantWelcomeGift,
@@ -113,6 +115,10 @@ interface GameState {
   equipItem: (itemId: string) => void
   unequipSlot: (slot: EquipSlot) => void
   startBattle: (def: BattleDef) => Battle
+  /** 옷 한 벌 입는다. 같은 걸 다시 누르면 벗는다. */
+  wearWardrobeItem: (itemId: string) => void
+  takeOffWardrobe: (category: WardrobeCategory) => void
+  randomizeOutfit: () => void
   doBattleAction: (battleId: string, actionId: string) => BattleClearResult | null
   undoBattleActionById: (battleId: string, actionId: string) => void
   removeBattle: (battleId: string) => void
@@ -966,6 +972,38 @@ export function useGameState(): GameState {
     [commit],
   )
 
+  /**
+   * 옷장.
+   *
+   * 누르는 순간이 곧 저장이다. 미리보기와 실제를 따로 두지 않는다 —
+   * 그러면 "적용" 버튼이 생기고, 갈아입기가 장난이 아니라 절차가 된다.
+   */
+  const wearWardrobeItem = useCallback(
+    (itemId: string) => {
+      const prev = stateRef.current
+      const outfit = wearItem(prev.wardrobe.outfit, itemId)
+      commit({ ...prev, wardrobe: { ...prev.wardrobe, outfit } })
+    },
+    [commit],
+  )
+
+  const takeOffWardrobe = useCallback(
+    (category: WardrobeCategory) => {
+      const prev = stateRef.current
+      const outfit = takeOff(prev.wardrobe.outfit, category)
+      commit({ ...prev, wardrobe: { ...prev.wardrobe, outfit } })
+    },
+    [commit],
+  )
+
+  const randomizeOutfit = useCallback(() => {
+    const prev = stateRef.current
+    commit({
+      ...prev,
+      wardrobe: { ...prev.wardrobe, outfit: randomOutfit(prev.wardrobe) },
+    })
+  }, [commit])
+
   const startBattle = useCallback(
     (def: BattleDef): Battle => {
       const prev = stateRef.current
@@ -1561,6 +1599,9 @@ export function useGameState(): GameState {
       equipItem,
       unequipSlot,
       startBattle,
+      wearWardrobeItem,
+      takeOffWardrobe,
+      randomizeOutfit,
       doBattleAction,
       undoBattleActionById,
       removeBattle,
@@ -1603,6 +1644,9 @@ export function useGameState(): GameState {
       equipItem,
       unequipSlot,
       startBattle,
+      wearWardrobeItem,
+      takeOffWardrobe,
+      randomizeOutfit,
       doBattleAction,
       undoBattleActionById,
       removeBattle,

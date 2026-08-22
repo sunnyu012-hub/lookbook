@@ -84,8 +84,9 @@ src/
 │   └── defaultState.ts   첫 실행 샘플 퀘스트
 ├── hooks/          useGameState · useFeedback · useCountUp
 ├── components/
-│   ├── character/  CharacterAvatar, RoomBackground, CharacterRoomCard,
-│   │               LevelBadge, ExpProgress
+│   ├── character/  AvatarRenderer(레이어로 겹쳐 그리는 캐릭터), WardrobeSheet,
+│   │               AvatarLab(개발용 정렬 검수), RoomBackground,
+│   │               CharacterRoomCard, LevelBadge, ExpProgress
 │   ├── home/       GreetingHeader, AdventureStatusCard, TodayQuestSection,
 │   │               TodayInTheCity, CompactQuestCard, DailySummary
 │   ├── quest/      FullQuestCard, CategoryFilter, QuestCreationSheet, QuestMenu,
@@ -218,6 +219,87 @@ public/assets/
 - **오늘 싸게** — 가게마다 하루 한둘, 25% 깎아준다. 귀한 건 안 깎는다 (EPIC 하나가 25% 빠지면 그날이 다른 날 열흘이 된다)
 - **오늘까지** — 내일 진열에 없는 것. 진열은 날짜만 알면 나오는 값이라 하루 앞뒤로 한 번 더 굴리면 된다
 - 둘 다 저장하지 않는다. 홈의 도시 카드에는 이 둘을 먼저 올린다
+
+## 옷 갈아입기
+
+캐릭터를 한 장으로 그리지 않고 **여러 장을 겹쳐** 그린다.
+그래야 옷을 바꿔 입힐 수 있다.
+
+```
+AvatarRenderer
+ └ 베이스 위에 순서대로
+    HAIR_BACK → BASE → BOTTOM → SHOES → TOP → ONE_PIECE
+              → FACE → HAIR → HEAD → ACCESSORY → BAG
+```
+
+Phase 1 에서 실제로 도는 것은 **BASE · BOTTOM · TOP** 이고,
+나머지는 자리와 데이터만 열어뒀다.
+
+- **순서는 `lib/wardrobe/layers.ts` 한 곳에서만 정한다.** 화면마다 따로 정하면
+  홈에서와 옷장에서 앞뒤가 달라지고, 그러면 어느 쪽이 맞는지 아무도 모르게 된다
+- 능력치 장비(`EquippedItems`)와 **일부러 나눠뒀다.** 하나는 세지려고 끼는 것이고
+  이건 그냥 입고 싶어서 입는 것이다. 섞으면 "예쁜 걸 입으면 손해" 가 된다
+- 성별로 가르지 않는다. 캐릭터의 결은 머리·표정·옷의 조합으로 드러나면 된다
+
+### 왜 어긋나지 않는가
+
+옷마다 CSS 로 margin 을 붙이지 않는다. 그러면 화면 크기가 바뀔 때마다 목이 어긋난다.
+
+1. `scripts/align-wardrobe.py` 가 **그림에서** 베이스의 목·어깨·허리·발끝을 잰다
+2. 옷에서도 같은 자리를 찾아 `offsetX` · `offsetY` · `scale` 을 구한다
+3. 값은 `src/data/wardrobe-manifest.json` 에 베이스 그림의 픽셀로 적힌다
+4. 렌더러는 그 픽셀을 **베이스 비율 상자 안의 %** 로 환산해 얹는다
+
+```bash
+npm run wardrobe:extract   # 시트 → public/assets/wardrobe/<종류>/<id>.webp
+npm run wardrobe:align     # 그림에서 좌표 계산 → wardrobe-manifest.json
+```
+
+찾은 규칙은 이랬다.
+
+| | 어떻게 맞추나 |
+| --- | --- |
+| 상의 | 소매 끝 폭을 490px 에 맞추고, 어깨선을 베이스 어깨(y=372)에 놓는다 |
+| 하의 | 배율 1.6 고정. **신발 밑창이 발끝(y=947)에 닿도록 y 를 역산한다** |
+
+하의를 세로 배율로 맞추지 않는 이유: 미니스커트든 긴바지든 그림에 다리와 신발이
+같이 들어 있어서, 밑창을 바닥에 세우는 게 유일하게 옳은 기준이다.
+
+**손으로 고친 것은 세 벌뿐이다** (후디·트랙자켓 둘). 세운 깃을 어깨로 착각해서
+옷이 통째로 올라가 얼굴을 덮었다. 값과 이유는 `align-wardrobe.py` 의 `OVERRIDES` 에 있다.
+화면에서 눈대중으로 붙이지 않는다 — 그러면 다시 뽑을 때 사라진다.
+
+### 검수판
+
+주소 뒤에 `#avatar-lab` 을 붙이면 개발용 검수판이 뜬다.
+옷을 갈아입혀 보면서 offset·scale 을 그 자리에서 움직여 볼 수 있다.
+여기서 찾은 값은 스크립트의 `OVERRIDES` 에 적는다. 내비게이션에는 넣지 않았다.
+
+### 옷장
+
+홈의 캐릭터 옆 `🧺 옷장` 으로 들어간다.
+
+- **한 번 누르면 그 자리에서 갈아입는다.** 고르기 → 적용 → 확인 같은 건 만들지 않았다
+- 저장 버튼도 없다. 누르는 순간이 곧 저장이다
+- 위쪽 캐릭터는 붙어 있고 아래만 넘어간다. 옷을 고르느라 캐릭터가 사라지면
+  갈아입는 재미가 없다
+- 🎲 를 누르면 가진 것 중에서 아무렇게나 한 벌
+
+**원피스를 입으면 상·하의는 가려지기만 한다.** 골라둔 것을 지우지 않아서,
+벗으면 입고 있던 게 그대로 돌아온다. 다시 고르게 만들면 그건 갈아입기가 아니라 숙제다.
+
+다 벗으면 베이스의 러닝과 반바지가 드러난다. 그건 사용자가 그러기로 한 것이고
+앱이 되돌릴 일이 아니다. 다만 **옷장이 없던 세이브를 올릴 때만** 기본 한 벌을 입혀준다.
+
+### 아직 안 한 것
+
+- **머리와 표정.** 머리 조각에 얼굴 자리가 크림색으로 막혀 있어서,
+  머리를 얹으면 얼굴이 가려진다. 원래 "머리 + 표정" 을 한 세트로 얹는 구조다.
+  표정 시트를 받아야 둘을 같이 붙일 수 있다. 그때까지 캐릭터는 민머리다
+- **신발.** 하의 그림에 신발이 붙어 있어서 따로 뗄 수가 없다.
+  레이어와 데이터는 열어뒀으니 신발만 그린 시트가 오면 바로 붙는다
+- **옷 가게.** Phase 1 에서는 32벌을 다 열어뒀다 (`STARTING_OWNED`).
+  가게가 생기면 그 한 줄만 `BASIC_ITEM_IDS` 로 바꾸면 된다
 
 ## 퀘스트 입력 줄이기
 

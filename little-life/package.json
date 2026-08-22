@@ -16,7 +16,9 @@
     "assets:manifest": "vite-node scripts/build-asset-manifest.ts",
     "assets:thumbs": "python3 scripts/build-thumbs.py",
     "assets:audit": "vite-node scripts/audit-assets.ts",
-    "assets:index": "vite-node scripts/build-asset-index.ts"
+    "assets:index": "vite-node scripts/build-asset-index.ts",
+    "wardrobe:extract": "python3 scripts/extract-wardrobe.py",
+    "wardrobe:align": "python3 scripts/align-wardrobe.py"
   },
   "dependencies": {
     "react": "^18.3.1",

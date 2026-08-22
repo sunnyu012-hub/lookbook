@@ -25,6 +25,8 @@ import { CollectionShopSheet } from '@/components/collection/CollectionShopSheet
 import { WorkshopSheet } from '@/components/collection/WorkshopSheet'
 import { DiscoveryOverlay } from '@/components/collection/DiscoveryOverlay'
 import { DecorateMode } from '@/components/room/DecorateMode'
+import { WardrobeSheet } from '@/components/character/WardrobeSheet'
+import { AvatarLab } from '@/components/character/AvatarLab'
 import { LevelUpOverlay } from '@/components/feedback/LevelUpOverlay'
 import { BattleClearOverlay } from '@/components/feedback/BattleClearOverlay'
 import { DropRevealOverlay } from '@/components/feedback/DropRevealOverlay'
@@ -47,7 +49,24 @@ import { MapScreen } from '@/screens/MapScreen'
 import { BagScreen } from '@/screens/BagScreen'
 import { MeScreen } from '@/screens/MeScreen'
 
+/**
+ * 개발용 정렬 검수판.
+ *
+ * 주소에 `#avatar-lab` 을 붙였을 때만 뜬다.
+ * 내비게이션에는 넣지 않는다 — 쓰는 사람이 실수로 들어갈 자리가 아니다.
+ */
+function useAvatarLab(): boolean {
+  const [on, setOn] = useState(() => window.location.hash === '#avatar-lab')
+  useEffect(() => {
+    const sync = () => setOn(window.location.hash === '#avatar-lab')
+    window.addEventListener('hashchange', sync)
+    return () => window.removeEventListener('hashchange', sync)
+  }, [])
+  return on
+}
+
 export default function App() {
+  const avatarLab = useAvatarLab()
   const {
     ready,
     state,
@@ -68,6 +87,9 @@ export default function App() {
     equipItem,
     unequipSlot,
     startBattle,
+    wearWardrobeItem,
+    takeOffWardrobe,
+    randomizeOutfit,
     doBattleAction,
     undoBattleActionById,
     removeBattle,
@@ -108,6 +130,7 @@ export default function App() {
   const [openCollectionShop, setOpenCollectionShop] = useState<CollectionShopDef | null>(null)
   const [workshopOpen, setWorkshopOpen] = useState(false)
   const [decorating, setDecorating] = useState(false)
+  const [wardrobeOpen, setWardrobeOpen] = useState(false)
   const [discoveries, setDiscoveries] = useState<DiscoveryResult[]>([])
   /** BAG 을 열 때 도감부터 보여줄지 */
   const [bagView, setBagView] = useState<'BAG' | 'BOOK'>('BAG')
@@ -460,6 +483,8 @@ export default function App() {
     feedback.notify(`퀘스트 값이 올랐어. 그동안 한 몫으로 ${justRebalanced} 코인 ✨`)
   }, [ready, justRebalanced, feedback])
 
+  if (avatarLab) return <AvatarLab />
+
   // 저장된 데이터를 읽기 전에 LV.1 을 잠깐 보여주면 깜빡이는 것처럼 보인다.
   if (!ready) {
     return <div className="min-h-[100dvh] bg-canvas" />
@@ -496,6 +521,7 @@ export default function App() {
             }}
             onOpenMe={() => setTab('me')}
             onDecorate={() => setDecorating(true)}
+            onOpenWardrobe={() => setWardrobeOpen(true)}
             onOpenCollection={() => {
               setBagView('BOOK')
               setTab('bag')
@@ -651,6 +677,15 @@ export default function App() {
         state={state}
         onClose={() => setWorkshopOpen(false)}
         onCraft={handleCraft}
+      />
+
+      <WardrobeSheet
+        open={wardrobeOpen}
+        wardrobe={state.wardrobe}
+        onClose={() => setWardrobeOpen(false)}
+        onWear={wearWardrobeItem}
+        onTakeOff={takeOffWardrobe}
+        onRandomize={randomizeOutfit}
       />
 
       <DecorateMode

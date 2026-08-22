@@ -4,6 +4,7 @@ import { expForDifficulty } from '@/lib/difficulty'
 import { createId } from '@/lib/id'
 import { emptyReputation } from '@/lib/city/reputation'
 import { emptyCollection } from '@/lib/collection/progress'
+import { defaultWardrobe } from '@/lib/wardrobe/state'
 import {
   STATE_VERSION,
   defaultRecommendSettings,
@@ -46,6 +47,7 @@ export function createDefaultState(): AppState {
     // 새로 시작하는 사람은 옛 표로 받은 적이 없다
     coinRebalanceGiven: true,
     claimedWeeklyGoals: [],
+    wardrobe: defaultWardrobe(),
     user: {
       name: 'Yuli',
       level: 1,

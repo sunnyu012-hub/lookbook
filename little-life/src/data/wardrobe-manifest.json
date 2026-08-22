@@ -1,0 +1,313 @@
+{
+  "base": {
+    "file": "/assets/wardrobe/base/body.webp",
+    "category": "BASE",
+    "w": 495,
+    "h": 938,
+    "scale": 1,
+    "offsetX": 0,
+    "offsetY": 0,
+    "landmarks": {
+      "width": 495,
+      "height": 938,
+      "centerX": 247,
+      "neckY": 357,
+      "shoulderY": 372,
+      "waistY": 584,
+      "feetY": 937
+    }
+  },
+  "items": {
+    "black_track_jacket": {
+      "w": 303,
+      "h": 234,
+      "scale": 1.6172,
+      "offsetX": 2.0,
+      "offsetY": 334.8,
+      "file": "/assets/wardrobe/top/black_track_jacket.webp",
+      "category": "TOP",
+      "adjusted": "세운 깃이 입을 덮었다"
+    },
+    "blue_shirt": {
+      "w": 304,
+      "h": 237,
+      "scale": 1.6118,
+      "offsetX": 2.0,
+      "offsetY": 302.7,
+      "file": "/assets/wardrobe/top/blue_shirt.webp",
+      "category": "TOP"
+    },
+    "brown_knit": {
+      "w": 301,
+      "h": 208,
+      "scale": 1.6279,
+      "offsetX": 2.0,
+      "offsetY": 324.8,
+      "file": "/assets/wardrobe/top/brown_knit.webp",
+      "category": "TOP"
+    },
+    "charcoal_tee": {
+      "w": 301,
+      "h": 214,
+      "scale": 1.6279,
+      "offsetX": 2.0,
+      "offsetY": 324.8,
+      "file": "/assets/wardrobe/top/charcoal_tee.webp",
+      "category": "TOP"
+    },
+    "cream_cardigan": {
+      "w": 305,
+      "h": 217,
+      "scale": 1.6066,
+      "offsetX": 2.0,
+      "offsetY": 322.2,
+      "file": "/assets/wardrobe/top/cream_cardigan.webp",
+      "category": "TOP"
+    },
+    "cream_tee": {
+      "w": 306,
+      "h": 211,
+      "scale": 1.6013,
+      "offsetX": 2.0,
+      "offsetY": 314.4,
+      "file": "/assets/wardrobe/top/cream_tee.webp",
+      "category": "TOP"
+    },
+    "denim_jacket": {
+      "w": 312,
+      "h": 236,
+      "scale": 1.5705,
+      "offsetX": 2.0,
+      "offsetY": 304.5,
+      "file": "/assets/wardrobe/top/denim_jacket.webp",
+      "category": "TOP"
+    },
+    "green_track_jacket": {
+      "w": 306,
+      "h": 252,
+      "scale": 1.6013,
+      "offsetX": 2.0,
+      "offsetY": 334.3,
+      "file": "/assets/wardrobe/top/green_track_jacket.webp",
+      "category": "TOP",
+      "adjusted": "세운 깃이 입을 덮었다"
+    },
+    "grey_hoodie": {
+      "w": 295,
+      "h": 240,
+      "scale": 1.661,
+      "offsetX": 2.0,
+      "offsetY": 337.0,
+      "file": "/assets/wardrobe/top/grey_hoodie.webp",
+      "category": "TOP",
+      "adjusted": "후드를 어깨로 봐서 입까지 올라왔다"
+    },
+    "grey_sweat": {
+      "w": 311,
+      "h": 214,
+      "scale": 1.5756,
+      "offsetX": 2.0,
+      "offsetY": 320.0,
+      "file": "/assets/wardrobe/top/grey_sweat.webp",
+      "category": "TOP"
+    },
+    "mountain_tee": {
+      "w": 307,
+      "h": 234,
+      "scale": 1.5961,
+      "offsetX": 2.0,
+      "offsetY": 320.9,
+      "file": "/assets/wardrobe/top/mountain_tee.webp",
+      "category": "TOP"
+    },
+    "navy_rugby": {
+      "w": 296,
+      "h": 215,
+      "scale": 1.6554,
+      "offsetX": 2.0,
+      "offsetY": 307.4,
+      "file": "/assets/wardrobe/top/navy_rugby.webp",
+      "category": "TOP"
+    },
+    "navy_stripe_tee": {
+      "w": 298,
+      "h": 201,
+      "scale": 1.6443,
+      "offsetX": 2.0,
+      "offsetY": 321.0,
+      "file": "/assets/wardrobe/top/navy_stripe_tee.webp",
+      "category": "TOP"
+    },
+    "pink_cardigan": {
+      "w": 305,
+      "h": 213,
+      "scale": 1.6066,
+      "offsetX": 2.0,
+      "offsetY": 322.2,
+      "file": "/assets/wardrobe/top/pink_cardigan.webp",
+      "category": "TOP"
+    },
+    "sage_cable_knit": {
+      "w": 306,
+      "h": 219,
+      "scale": 1.6013,
+      "offsetX": 2.0,
+      "offsetY": 325.6,
+      "file": "/assets/wardrobe/top/sage_cable_knit.webp",
+      "category": "TOP"
+    },
+    "white_shirt": {
+      "w": 311,
+      "h": 262,
+      "scale": 1.5756,
+      "offsetX": 2.0,
+      "offsetY": 297.9,
+      "file": "/assets/wardrobe/top/white_shirt.webp",
+      "category": "TOP"
+    },
+    "beige_flare_skirt": {
+      "w": 257,
+      "h": 320,
+      "scale": 1.6,
+      "offsetX": 39.8,
+      "offsetY": 435.0,
+      "file": "/assets/wardrobe/bottom/beige_flare_skirt.webp",
+      "category": "BOTTOM"
+    },
+    "beige_pants": {
+      "w": 191,
+      "h": 296,
+      "scale": 1.6,
+      "offsetX": 95.0,
+      "offsetY": 473.4,
+      "file": "/assets/wardrobe/bottom/beige_pants.webp",
+      "category": "BOTTOM"
+    },
+    "black_pleats": {
+      "w": 207,
+      "h": 275,
+      "scale": 1.6,
+      "offsetX": 83.0,
+      "offsetY": 507.0,
+      "file": "/assets/wardrobe/bottom/black_pleats.webp",
+      "category": "BOTTOM"
+    },
+    "black_shorts": {
+      "w": 194,
+      "h": 272,
+      "scale": 1.6,
+      "offsetX": 93.4,
+      "offsetY": 511.8,
+      "file": "/assets/wardrobe/bottom/black_shorts.webp",
+      "category": "BOTTOM"
+    },
+    "black_slacks": {
+      "w": 184,
+      "h": 294,
+      "scale": 1.6,
+      "offsetX": 102.2,
+      "offsetY": 476.6,
+      "file": "/assets/wardrobe/bottom/black_slacks.webp",
+      "category": "BOTTOM"
+    },
+    "blue_jeans": {
+      "w": 194,
+      "h": 290,
+      "scale": 1.6,
+      "offsetX": 92.6,
+      "offsetY": 483.0,
+      "file": "/assets/wardrobe/bottom/blue_jeans.webp",
+      "category": "BOTTOM"
+    },
+    "brown_slacks": {
+      "w": 233,
+      "h": 292,
+      "scale": 1.6,
+      "offsetX": 62.2,
+      "offsetY": 479.8,
+      "file": "/assets/wardrobe/bottom/brown_slacks.webp",
+      "category": "BOTTOM"
+    },
+    "charcoal_sweatpants": {
+      "w": 213,
+      "h": 298,
+      "scale": 1.6,
+      "offsetX": 77.4,
+      "offsetY": 470.2,
+      "file": "/assets/wardrobe/bottom/charcoal_sweatpants.webp",
+      "category": "BOTTOM"
+    },
+    "cream_overalls": {
+      "w": 183,
+      "h": 318,
+      "scale": 1.6,
+      "offsetX": 100.6,
+      "offsetY": 438.2,
+      "file": "/assets/wardrobe/bottom/cream_overalls.webp",
+      "category": "BOTTOM"
+    },
+    "cream_pleats": {
+      "w": 216,
+      "h": 272,
+      "scale": 1.6,
+      "offsetX": 71.0,
+      "offsetY": 511.8,
+      "file": "/assets/wardrobe/bottom/cream_pleats.webp",
+      "category": "BOTTOM"
+    },
+    "cream_sweatpants": {
+      "w": 220,
+      "h": 298,
+      "scale": 1.6,
+      "offsetX": 71.0,
+      "offsetY": 470.2,
+      "file": "/assets/wardrobe/bottom/cream_sweatpants.webp",
+      "category": "BOTTOM"
+    },
+    "denim_long_skirt": {
+      "w": 238,
+      "h": 321,
+      "scale": 1.6,
+      "offsetX": 57.4,
+      "offsetY": 433.4,
+      "file": "/assets/wardrobe/bottom/denim_long_skirt.webp",
+      "category": "BOTTOM"
+    },
+    "denim_shorts": {
+      "w": 191,
+      "h": 272,
+      "scale": 1.6,
+      "offsetX": 95.8,
+      "offsetY": 511.8,
+      "file": "/assets/wardrobe/bottom/denim_shorts.webp",
+      "category": "BOTTOM"
+    },
+    "khaki_cargo": {
+      "w": 227,
+      "h": 295,
+      "scale": 1.6,
+      "offsetX": 69.4,
+      "offsetY": 475.0,
+      "file": "/assets/wardrobe/bottom/khaki_cargo.webp",
+      "category": "BOTTOM"
+    },
+    "light_wide_jeans": {
+      "w": 233,
+      "h": 290,
+      "scale": 1.6,
+      "offsetX": 60.6,
+      "offsetY": 483.0,
+      "file": "/assets/wardrobe/bottom/light_wide_jeans.webp",
+      "category": "BOTTOM"
+    },
+    "pink_pleats": {
+      "w": 224,
+      "h": 313,
+      "scale": 1.6,
+      "offsetX": 68.6,
+      "offsetY": 446.2,
+      "file": "/assets/wardrobe/bottom/pink_pleats.webp",
+      "category": "BOTTOM"
+    }
+  }
+}

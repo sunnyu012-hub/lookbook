@@ -27,6 +27,7 @@ interface HomeScreenProps {
   onOpenMe: () => void
   onDecorate: () => void
   onOpenCollection: () => void
+  onOpenWardrobe: () => void
   events: CityEvent[]
 }
 
@@ -42,6 +43,7 @@ export function HomeScreen({
   onOpenMe,
   onDecorate,
   onOpenCollection,
+  onOpenWardrobe,
   events,
 }: HomeScreenProps) {
   const openQuests = useMemo(
@@ -82,8 +84,10 @@ export function HomeScreen({
         user={state.user}
         mood={shownMood}
         collection={state.collection}
+        wardrobe={state.wardrobe}
         onDecorate={onDecorate}
         onOpenCollection={onOpenCollection}
+        onOpenWardrobe={onOpenWardrobe}
         overlay={<ExpToastLayer toasts={expToasts} />}
       />
 

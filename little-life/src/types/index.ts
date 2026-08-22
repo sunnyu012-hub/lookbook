@@ -1,7 +1,9 @@
+import type { WardrobeState } from './wardrobe'
 export * from './rpg'
 export * from './city'
 export * from './library'
 export * from './collection'
+export * from './wardrobe'
 import type { CollectionState } from './collection'
 import type {
   AreaId,
@@ -187,6 +189,8 @@ export interface AppState {
   coinRebalanceGiven?: boolean
   /** 보상을 받아간 주간 목표 (`YYYY-MM-DD:목표id`). 오래된 것은 정리한다. */
   claimedWeeklyGoals: string[]
+  /** 가지고 있는 옷과 지금 입은 것 */
+  wardrobe: WardrobeState
   /** 나와 도시 사람들 사이의 기록 */
   npcs: NpcStates
   /** 지역별 평판 */

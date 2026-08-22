@@ -9,4 +9,10 @@ assets/source-sheets/*.png
 # 다만 아래 두 장은 합쳐 4MB 뿐이고, 그 그림들의 유일한 사본이라 함께 둔다.
 !assets/source-sheets/extra.png
 !assets/source-sheets/trophy.png
+# 캐릭터·의상 시트도 마찬가지. 이것 없이는 옷을 다시 뽑을 수 없다.
+!assets/source-sheets/char-base.png
+!assets/source-sheets/char-top.png
+!assets/source-sheets/char-bottom.png
+!assets/source-sheets/char-hair.png
+!assets/source-sheets/char-face.png
 assets/slices/

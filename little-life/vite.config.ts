@@ -34,6 +34,15 @@ function stampServiceWorker() {
           // 처음 보는 순간 받아서 캐시에 남으니 오프라인에서도 두 번째부터는 뜬다.
           .filter((url) => !url.startsWith('/assets/items/'))
           .filter((url) => !url.startsWith('/assets/thumbs/'))
+          // 옷도 마찬가지. 다만 늘 입고 있는 베이스와 기본 한 벌은 미리 받는다 —
+          // 이 셋이 없으면 첫 화면의 캐릭터가 비어 보인다.
+          .filter(
+            (url) =>
+              !url.startsWith('/assets/wardrobe/') ||
+              url === '/assets/wardrobe/base/body.webp' ||
+              url === '/assets/wardrobe/top/cream_tee.webp' ||
+              url === '/assets/wardrobe/bottom/blue_jeans.webp',
+          )
           .concat('/')
 
         const buildId = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14)

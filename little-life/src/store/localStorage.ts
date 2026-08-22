@@ -15,6 +15,7 @@ import { AREA_IDS, CATEGORIES, DIFFICULTIES, NPC_IDS } from '@/types'
 import { emptyCategoryStats } from '@/lib/stats'
 import type { StateRepository } from './repository'
 import { createDefaultState } from './defaultState'
+import { sanitizeWardrobe } from '@/lib/wardrobe/state'
 import {
   STATE_VERSION,
   sanitizeAreaId,
@@ -256,6 +257,7 @@ function sanitizeState(raw: unknown): AppState | null {
     welcomeGiftGiven: s.welcomeGiftGiven === true,
     coinRebalanceGiven: s.coinRebalanceGiven === true,
     claimedWeeklyGoals: sanitizeClaimedGoals(s.claimedWeeklyGoals),
+    wardrobe: sanitizeWardrobe(s.wardrobe),
     npcs: sanitizeNpcs(s.npcs),
     reputation: sanitizeReputation(s.reputation),
     usageProfiles: sanitizeUsageProfiles(s.usageProfiles),

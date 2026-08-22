@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
-import type { CollectionState, User } from '@/types'
-import { CharacterAvatar } from './CharacterAvatar'
+import type { CollectionState, User, WardrobeState } from '@/types'
+import { AvatarRenderer } from './AvatarRenderer'
 import { RoomScene } from './RoomScene'
 import { RoomCanvas } from '@/components/room/RoomCanvas'
 import { LevelBadge } from './LevelBadge'
@@ -15,22 +15,23 @@ interface CharacterRoomCardProps {
   mood: CharacterMood
   /** 지금 꾸며둔 방 */
   collection: CollectionState
+  /** 지금 입고 있는 옷 */
+  wardrobe: WardrobeState
   /** 캐릭터 위에 겹쳐 띄우는 것들 (+EXP 등) */
   overlay?: ReactNode
   onDecorate: () => void
   onOpenCollection: () => void
+  onOpenWardrobe: () => void
 }
 
 /**
- * 포즈마다 그림 비율이 달라서 자리를 따로 잡아준다.
- * 앉은 그림은 옆으로 넓고, 서 있는 그림은 세로로 길다.
+ * 캐릭터가 서는 자리.
+ *
+ * 예전에는 기분마다 그림이 달라서(앉은 그림은 옆으로 넓었다) 자리도 달랐다.
+ * 지금은 옷을 겹쳐 입히느라 한 포즈로 그리고, 기분은 움직임으로만 낸다.
+ * 그래서 자리는 하나면 된다.
  */
-const PLACEMENT: Record<CharacterMood, { width: string; bottom: string }> = {
-  idle: { width: '38%', bottom: '7%' },
-  questClear: { width: '40%', bottom: '7%' },
-  levelUp: { width: '46%', bottom: '7%' },
-  resting: { width: '56%', bottom: '9%' },
-}
+const PLACEMENT = { width: '40%', bottom: '7%' }
 
 /**
  * HOME 의 주인공 카드.
@@ -44,11 +45,12 @@ export function CharacterRoomCard({
   user,
   mood,
   collection,
+  wardrobe,
   overlay,
   onDecorate,
   onOpenCollection,
+  onOpenWardrobe,
 }: CharacterRoomCardProps) {
-  const place = PLACEMENT[mood]
   const roomId = collection.currentRoomId
   const room = findRoom(roomId)
   const placed = collection.rooms[roomId] ?? []
@@ -71,10 +73,10 @@ export function CharacterRoomCard({
 
         {/* 캐릭터는 바닥 가운데에 선다 */}
         <div
-          className="absolute left-1/2 h-[62%] -translate-x-1/2 transition-[width,bottom] duration-300 ease-out"
-          style={{ width: place.width, bottom: place.bottom }}
+          className="absolute left-1/2 h-[62%] -translate-x-1/2"
+          style={{ width: PLACEMENT.width, bottom: PLACEMENT.bottom }}
         >
-          <CharacterAvatar mood={mood} />
+          <AvatarRenderer outfit={wardrobe.outfit} mood={mood} />
         </div>
 
         {(mood === 'questClear' || mood === 'levelUp') && (
@@ -102,6 +104,17 @@ export function CharacterRoomCard({
             꾸미기
           </button>
         </div>
+
+        {/* 옷장은 캐릭터 옆에 둔다 — 방을 꾸미는 것과 옷을 갈아입는 건 다른 일이다 */}
+        <button
+          type="button"
+          onClick={onOpenWardrobe}
+          aria-label="옷장 열기"
+          className="absolute bottom-3 right-2.5 flex items-center gap-1 rounded-pill bg-surface/90 px-3 py-1.5 text-[11.5px] font-medium text-inkdim shadow-soft backdrop-blur-sm active:scale-[0.96]"
+        >
+          <span aria-hidden>🧺</span>
+          옷장
+        </button>
 
         {overlay}
       </div>
