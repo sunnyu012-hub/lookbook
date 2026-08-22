@@ -53,7 +53,7 @@ export function HomeScreen({
   return (
     <div className="animate-risein space-y-4">
       <ScreenHeader
-        title="HOME"
+        title="홈"
         trailing={
           <span className="inline-flex items-center gap-1 rounded-pill bg-surface px-3 py-1.5 ring-1 ring-line">
             <img src={EFFECT.star} alt="" aria-hidden className="h-4 w-4 object-contain" />

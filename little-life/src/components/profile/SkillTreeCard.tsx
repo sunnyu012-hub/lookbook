@@ -4,6 +4,7 @@ import { CATEGORIES } from '@/types'
 import { categoryStyle } from '@/lib/categories'
 import { CATEGORY_BADGE } from '@/lib/assets'
 import { availableSkillPoints, skillState, skillsInTree } from '@/lib/city/skills'
+import { CATEGORY_LABEL } from '@/lib/labels'
 import { cn } from '@/components/ui/cn'
 
 interface SkillTreeCardProps {
@@ -69,7 +70,7 @@ export function SkillTreeCard({ user, onUnlock }: SkillTreeCardProps) {
                 aria-hidden
                 className={cn('h-6 w-6 object-contain', !active && 'opacity-70')}
               />
-              <span className="font-game text-[10px] leading-none tracking-[0.06em]">{c}</span>
+              <span className="text-[12px] font-medium leading-none">{CATEGORY_LABEL[c]}</span>
               {owned > 0 && (
                 <span className="font-game text-[9px] leading-none opacity-70">{owned}/3</span>
               )}
@@ -151,8 +152,8 @@ function SkillNode({
       </span>
 
       {unlocked ? (
-        <span className="shrink-0 font-game text-[9px] tracking-[0.08em] text-leaf-deep">
-          LEARNED
+        <span className="shrink-0 text-[11px] font-medium text-leaf-deep">
+          배웠어
         </span>
       ) : (
         <button
@@ -169,8 +170,8 @@ function SkillNode({
           )}
         >
           <span className="font-game text-[12px] leading-none">{skill.cost}P</span>
-          <span className="mt-0.5 font-game text-[8px] tracking-[0.08em]">
-            {available ? 'LEARN' : 'LOCKED'}
+          <span className="mt-0.5 text-[10px] font-medium">
+            {available ? '배우기' : '잠김'}
           </span>
         </button>
       )}

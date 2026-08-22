@@ -53,7 +53,7 @@ export function BattleSheet({ battle, onClose, onAction, onUndo, onRemove }: Bat
       <div className="mt-5">
         {cleared ? (
           <div className="rounded-card bg-leaf-soft px-4 py-3.5 text-center">
-            <p className="font-game text-[11px] tracking-[0.14em] text-leaf-deep">CLEARED</p>
+            <p className="text-[13px] font-medium text-leaf-deep">클리어</p>
             <p className="mt-1 text-[13.5px] text-ink">끝냈어. 이건 이제 안 봐도 돼.</p>
           </div>
         ) : (
@@ -111,9 +111,9 @@ export function BattleSheet({ battle, onClose, onAction, onUndo, onRemove }: Bat
                     <button
                       type="button"
                       onClick={() => onUndo(battle.id, action.id)}
-                      className="shrink-0 rounded-pill px-2 py-1 font-game text-[9px] tracking-[0.06em] text-inkdim underline decoration-line underline-offset-2"
+                      className="shrink-0 rounded-pill px-2 py-1 text-[11px] text-inkdim underline decoration-line underline-offset-2"
                     >
-                      UNDO
+                      되돌리기
                     </button>
                   )}
                 </div>
@@ -130,8 +130,8 @@ export function BattleSheet({ battle, onClose, onAction, onUndo, onRemove }: Bat
       </div>
 
       <div className="mt-5 rounded-card bg-coral-soft/50 px-4 py-3.5">
-        <p className="font-game text-[10px] tracking-[0.14em] text-coral-deep">
-          {cleared ? 'REWARD' : 'CLEAR REWARD'}
+        <p className="text-[12px] font-medium text-coral-deep">
+          {cleared ? '받은 보상' : '다 잡으면'}
         </p>
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5">
           <span className="font-game text-[13px] text-ink">+{battle.rewardExp} EXP</span>

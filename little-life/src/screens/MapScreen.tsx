@@ -53,7 +53,7 @@ export function MapScreen({
   return (
     <div className="animate-risein">
       <ScreenHeader
-        title="MAP"
+        title="지도"
         trailing={
           <span className="inline-flex items-center gap-1 rounded-pill bg-surface px-3 py-1.5 ring-1 ring-line">
             <span className="text-[13px]">{TIME_ICON[band]}</span>
@@ -97,13 +97,13 @@ export function MapScreen({
                   <span className="flex flex-wrap items-center gap-1.5">
                     <span className="truncate text-[15px] font-semibold text-ink">{area.name}</span>
                     {isCurrent && (
-                      <span className="shrink-0 rounded-pill bg-coral px-2 py-0.5 font-game text-[9px] tracking-[0.06em] text-surface">
-                        CURRENT
+                      <span className="shrink-0 rounded-pill bg-coral px-2 py-0.5 text-[10px] font-medium text-surface">
+                        지금 여기
                       </span>
                     )}
                     {closed && (
                       <span className="shrink-0 rounded-pill bg-sunken px-2 py-0.5 text-[10px] text-inkdim">
-                        Opens at night
+                        밤에 열려
                       </span>
                     )}
                   </span>
@@ -112,7 +112,7 @@ export function MapScreen({
                     <ReputationBadge value={reputation[area.id] ?? 0} />
                     {shop && (
                       <span className="inline-flex items-center gap-0.5 rounded-pill bg-butter-soft px-2 py-0.5 font-game text-[9px] tracking-[0.06em] text-butter-deep">
-                        🛍️ SHOP
+                        🛍️ 상점
                       </span>
                     )}
                   </span>
@@ -138,7 +138,7 @@ export function MapScreen({
                       key={event.id}
                       className="mt-1 block truncate text-[11.5px] text-coral-deep"
                     >
-                      {event.icon} Today: {event.name} — {event.effectLabel}
+                      {event.icon} 오늘: {event.name} — {event.effectLabel}
                     </span>
                   ))}
 

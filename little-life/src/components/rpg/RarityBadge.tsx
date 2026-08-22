@@ -1,4 +1,5 @@
 import type { Rarity } from '@/types'
+import { RARITY_LABEL } from '@/lib/labels'
 import { cn } from '@/components/ui/cn'
 
 /**
@@ -17,13 +18,13 @@ export function RarityBadge({ rarity, className }: { rarity: Rarity; className?:
   return (
     <span
       className={cn(
-        'inline-flex h-5 items-center rounded-pill px-2 font-game text-[9px] tracking-[0.1em]',
+        'inline-flex h-5 items-center rounded-pill px-2 text-[10px] font-medium',
         style.chip,
         style.text,
         className,
       )}
     >
-      {rarity}
+      {RARITY_LABEL[rarity]}
     </span>
   )
 }

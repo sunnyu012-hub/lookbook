@@ -1,5 +1,6 @@
 import type { Category } from '@/types'
 import { categoryStyle } from '@/lib/categories'
+import { CATEGORY_LABEL } from '@/lib/labels'
 import { CATEGORY_BADGE } from '@/lib/assets'
 import { cn } from './cn'
 
@@ -21,7 +22,7 @@ export function CategoryBadge({ category, className }: CategoryBadgeProps) {
       )}
     >
       <img src={CATEGORY_BADGE[category]} alt="" aria-hidden className="h-5 w-5 object-contain" />
-      <span className="font-game text-[10px] leading-none tracking-[0.08em]">{category}</span>
+      <span className="text-[11px] font-medium leading-none">{CATEGORY_LABEL[category]}</span>
     </span>
   )
 }

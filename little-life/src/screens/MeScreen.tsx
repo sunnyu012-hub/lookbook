@@ -43,45 +43,45 @@ export function MeScreen({
 
   return (
     <div className="animate-risein">
-      <ScreenHeader title="ME" />
+      <ScreenHeader title="나" />
 
       <ProfileHeader user={user} onRename={onRename} />
 
       <section className="mt-4 grid grid-cols-4 gap-2">
-        <StatCard icon={EFFECT.star} label="Total EXP" value={user.totalExp} />
-        <StatCard icon={UI.check} label="Cleared" value={user.totalCompletedQuests} />
-        <StatCard icon={EFFECT.sparkle} label="This week" value={weekCompleted} />
+        <StatCard icon={EFFECT.star} label="총 EXP" value={user.totalExp} />
+        <StatCard icon={UI.check} label="끝낸 퀘스트" value={user.totalCompletedQuests} />
+        <StatCard icon={EFFECT.sparkle} label="이번 주" value={weekCompleted} />
         <StatCard
           iconNode={
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-butter-soft text-[15px]">
               🪙
             </span>
           }
-          label="Coins"
+          label="코인"
           value={user.coins}
         />
       </section>
 
       <section className="mt-6">
-        <SectionHeader title="Class" />
+        <SectionHeader title="직업" />
         <ClassCard classId={user.classId} onSelect={onSelectClass} />
       </section>
 
       <section className="mt-6">
-        <SectionHeader title="Stats" />
+        <SectionHeader title="능력치" />
         <StatGrid stats={user.stats} bonusLuck={gearLuck} />
       </section>
 
       <section className="mt-6">
         <SectionHeader
-          title="Equipment"
+          title="장비"
           trailing={
             <button
               type="button"
               onClick={onOpenBag}
-              className="rounded-pill bg-sunken px-2.5 py-1 font-game text-[9px] tracking-[0.08em] text-inkdim"
+              className="rounded-pill bg-sunken px-2.5 py-1 text-[11px] font-medium text-inkdim"
             >
-              OPEN BAG
+              가방 열기
             </button>
           }
         />
@@ -89,12 +89,12 @@ export function MeScreen({
       </section>
 
       <section className="mt-6">
-        <SectionHeader title="Skills" />
+        <SectionHeader title="스킬" />
         <SkillTreeCard user={user} onUnlock={onUnlockSkill} />
       </section>
 
       <section className="mt-6">
-        <SectionHeader title="Growth by Category" />
+        <SectionHeader title="분야별 성장" />
         <Card className="space-y-3.5 py-5">
           {CATEGORIES.map((category) => (
             <CategoryGrowthBar

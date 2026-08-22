@@ -36,8 +36,8 @@ export function StatGrid({ stats, bonusLuck = 0 }: StatGridProps) {
               {stats[key] + extra}
               {extra > 0 && <span className="text-[11px] text-coral-deep"> +{extra}</span>}
             </span>
-            <span className="mt-1 font-game text-[9px] tracking-[0.06em] text-inkdim">{key}</span>
-            <span className="mt-0.5 text-[10px] text-inkfaint">{STAT_META[key].label}</span>
+            <span className="mt-1 text-[12px] font-medium text-inkdim">{STAT_META[key].label}</span>
+            <span className="mt-0.5 text-[10px] text-inkfaint">{STAT_META[key].from}</span>
           </li>
         )
       })}

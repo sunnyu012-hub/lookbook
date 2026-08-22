@@ -35,7 +35,7 @@ export function RepeatSelector({ value, onChange }: RepeatSelectorProps) {
 
   return (
     <div>
-      <p className="mb-2 text-[13px] font-medium text-inkdim">Repeat</p>
+      <p className="mb-2 text-[13px] font-medium text-inkdim">반복</p>
 
       <div className="flex flex-wrap gap-2">
         {PRESETS.map((preset) => {

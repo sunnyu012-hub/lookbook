@@ -3,9 +3,9 @@ import { cn } from '@/components/ui/cn'
 export type QuestMode = 'DAILY' | 'MONSTER' | 'BOSS'
 
 const OPTIONS: Array<{ value: QuestMode; label: string; count?: number }> = [
-  { value: 'DAILY', label: 'DAILY' },
-  { value: 'MONSTER', label: 'MONSTER' },
-  { value: 'BOSS', label: 'BOSS' },
+  { value: 'DAILY', label: '오늘' },
+  { value: 'MONSTER', label: '몬스터' },
+  { value: 'BOSS', label: '보스' },
 ]
 
 interface QuestModeTabsProps {
@@ -36,7 +36,7 @@ export function QuestModeTabs({ value, onChange, activeCounts }: QuestModeTabsPr
             onClick={() => onChange(option.value)}
             className={cn(
               'inline-flex min-h-[38px] flex-1 items-center justify-center gap-1 rounded-pill',
-              'font-game text-[10px] tracking-[0.08em]',
+              'text-[13px] font-medium',
               'transition-[background-color,color] duration-200 ease-out active:scale-[0.97]',
               active ? 'bg-surface text-ink shadow-soft' : 'bg-transparent text-inkdim',
             )}

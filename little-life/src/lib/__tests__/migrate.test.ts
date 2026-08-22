@@ -17,6 +17,7 @@ import {
   withSkillPoints,
 } from '@/store/migrate'
 import { CATEGORIES } from '@/types'
+import { findBattleDef } from '@/lib/rpg/content'
 
 describe('sanitizeStats', () => {
   it('없으면 전부 1', () => {
@@ -106,7 +107,7 @@ describe('sanitizeBattles', () => {
 
   it('빠진 값은 원본 정의에서 채운다', () => {
     const [b] = sanitizeBattles([{ id: 'b2', defId: 'dish_slime' }], CATEGORIES)
-    expect(b.name).toBe('Dish Slime')
+    expect(b.name).toBe(findBattleDef('dish_slime')!.name)
     expect(b.maxHp).toBe(40)
     expect(b.rewardExp).toBeGreaterThan(0)
   })

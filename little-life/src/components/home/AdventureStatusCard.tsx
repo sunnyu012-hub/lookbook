@@ -51,7 +51,7 @@ export function AdventureStatusCard({
           onClick={onOpenBag}
           icon="🪙"
           label={user.coins.toLocaleString('ko-KR')}
-          sub="Coins"
+          sub="코인"
         />
       </div>
 
@@ -63,7 +63,7 @@ export function AdventureStatusCard({
           'transition-transform duration-150 ease-out active:scale-[0.98]',
         )}
       >
-        <span className="font-game text-[9px] tracking-[0.1em] text-inkfaint">GEAR</span>
+        <span className="text-[11px] text-inkfaint">장비</span>
         {equippedItems.length === 0 ? (
           <span className="text-[12.5px] text-inkdim">아직 아무것도 안 꼈어</span>
         ) : (

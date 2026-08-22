@@ -14,16 +14,17 @@ import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { RarityBadge, RARITY_STYLE } from '@/components/rpg/RarityBadge'
 import { CHARACTER_FACE, EFFECT } from '@/lib/assets'
+import { CATEGORY_LABEL, EQUIP_SLOT_LABEL, ITEM_TYPE_LABEL } from '@/lib/labels'
 import { cn } from '@/components/ui/cn'
 
 type BagFilter = 'ALL' | ItemType
 
 const FILTERS: Array<{ value: BagFilter; label: string }> = [
-  { value: 'ALL', label: 'ALL' },
-  { value: 'EQUIPMENT', label: 'GEAR' },
-  { value: 'CONSUMABLE', label: 'DRINK' },
-  { value: 'MATERIAL', label: 'MATERIAL' },
-  { value: 'COLLECTIBLE', label: 'COLLECT' },
+  { value: 'ALL', label: '전체' },
+  { value: 'EQUIPMENT', label: '장비' },
+  { value: 'CONSUMABLE', label: '마실 것' },
+  { value: 'MATERIAL', label: '재료' },
+  { value: 'COLLECTIBLE', label: '수집품' },
 ]
 
 interface BagScreenProps {
@@ -64,7 +65,7 @@ export function BagScreen({
   return (
     <div className="animate-risein">
       <ScreenHeader
-        title="BAG"
+        title="가방"
         trailing={
           <span className="inline-flex items-center gap-1 rounded-pill bg-surface px-3 py-1.5 ring-1 ring-line">
             <span className="text-[13px]">🪙</span>
@@ -84,7 +85,7 @@ export function BagScreen({
             aria-pressed={filter === f.value}
             onClick={() => setFilter(f.value)}
             className={cn(
-              'inline-flex h-9 items-center rounded-pill px-3.5 font-game text-[10px] tracking-[0.08em]',
+              'inline-flex h-9 items-center rounded-pill px-3.5 text-[12px] font-medium',
               'transition-transform duration-150 ease-out active:scale-[0.96]',
               filter === f.value
                 ? 'bg-coral text-surface'
@@ -98,14 +99,14 @@ export function BagScreen({
 
       {activeBuffs.length > 0 && (
         <div className="mt-4 rounded-card border border-butter/50 bg-butter-soft/50 px-4 py-3.5">
-          <p className="font-game text-[9px] tracking-[0.12em] text-butter-deep">ACTIVE</p>
+          <p className="text-[12px] font-medium text-butter-deep">지금 걸린 것</p>
           <ul className="mt-2 space-y-1">
             {activeBuffs.map((buff) => (
               <li key={buff.id} className="flex items-center gap-2 text-[13px] text-ink">
                 <span className="text-[16px] leading-none">{buff.icon}</span>
                 <span className="min-w-0 flex-1 truncate">{buff.name}</span>
                 <span className="shrink-0 font-game text-[10px] text-butter-deep">
-                  {buff.category ?? '아무'} +{buff.expPct}%
+                  {buff.category ? CATEGORY_LABEL[buff.category] : '아무'} +{buff.expPct}%
                 </span>
               </li>
             ))}
@@ -148,8 +149,8 @@ export function BagScreen({
                     <span className="mt-1.5 flex items-center gap-1">
                       <RarityBadge rarity={def.rarity} />
                       {isEquipped && (
-                        <span className="rounded-pill bg-coral px-1.5 py-0.5 font-game text-[9px] tracking-[0.06em] text-surface">
-                          EQUIPPED
+                        <span className="rounded-pill bg-coral px-1.5 py-0.5 text-[10px] font-medium text-surface">
+                          장착 중
                         </span>
                       )}
                     </span>
@@ -210,14 +211,14 @@ function ItemSheet({ def, entry, equipped, onClose, onEquip, onUnequip, onUse }:
         <h2 className="text-[19px] font-semibold text-ink">{def.name}</h2>
         <div className="mt-1.5 flex items-center justify-center gap-1.5">
           <RarityBadge rarity={def.rarity} />
-          <span className="font-game text-[10px] tracking-[0.08em] text-inkfaint">{def.type}</span>
+          <span className="text-[11px] text-inkfaint">{ITEM_TYPE_LABEL[def.type]}</span>
         </div>
         <p className="mt-3 text-[13.5px] leading-relaxed text-inkdim">{def.description}</p>
       </div>
 
       <div className="mt-5 space-y-2">
         <Row label="효과" value={def.effectLabel} highlight />
-        <Row label="슬롯" value={slot ?? '장착할 수 없음'} />
+        <Row label="슬롯" value={slot ? EQUIP_SLOT_LABEL[slot] : '장착할 수 없음'} />
         <Row label="얻은 곳" value={entry?.source ?? '—'} />
         {entry && entry.quantity > 1 && <Row label="수량" value={`${entry.quantity}개`} />}
       </div>
@@ -230,7 +231,7 @@ function ItemSheet({ def, entry, equipped, onClose, onEquip, onUnequip, onUse }:
               마시기
             </Button>
             <p className="mt-2 text-center text-[12px] text-inkfaint">
-              다음 {def.consumable.category ?? '아무'} 퀘스트 하나에 걸려. 서둘러 쓸 필요는 없어.
+              다음 {def.consumable.category ? CATEGORY_LABEL[def.consumable.category] : '아무'} 퀘스트 하나에 걸려. 서둘러 쓸 필요는 없어.
             </p>
           </>
         ) : slot === null ? (
@@ -239,12 +240,12 @@ function ItemSheet({ def, entry, equipped, onClose, onEquip, onUnequip, onUse }:
           </p>
         ) : isEquipped ? (
           <Button variant="soft" size="lg" className="w-full" onClick={() => onUnequip(slot)}>
-            Unequip
+            벗기
           </Button>
         ) : (
           <Button size="lg" className="w-full" onClick={() => onEquip(def.id)}>
             <img src={EFFECT.sparkle} alt="" aria-hidden className="h-4 w-4 object-contain" />
-            Equip
+            장착하기
           </Button>
         )}
       </div>

@@ -25,8 +25,8 @@ export function BattleClearOverlay({ banner }: { banner: BattleClearBanner | nul
       <div className="animate-pop rounded-card border border-line bg-surface px-9 py-6 text-center shadow-lift">
         <span className="block animate-bouncelg text-[52px] leading-none">{banner.icon}</span>
 
-        <p className="mt-3 font-game text-[13px] tracking-[0.18em] text-coral-deep">
-          {banner.kind === 'BOSS' ? 'BOSS CLEAR!' : 'CLEAR!'}
+        <p className="mt-3 text-[17px] font-bold text-coral-deep">
+          {banner.kind === 'BOSS' ? '보스 클리어!' : '클리어!'}
         </p>
         <p className="mt-1.5 text-[15px] font-semibold text-ink">{banner.name}</p>
 

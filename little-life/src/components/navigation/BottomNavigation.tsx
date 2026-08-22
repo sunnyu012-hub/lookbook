@@ -38,11 +38,11 @@ const ICONS: Record<TabKey, ReactNode> = {
 }
 
 const TABS: Array<{ key: TabKey; label: string }> = [
-  { key: 'home', label: 'HOME' },
-  { key: 'quest', label: 'QUEST' },
-  { key: 'map', label: 'MAP' },
-  { key: 'bag', label: 'BAG' },
-  { key: 'me', label: 'ME' },
+  { key: 'home', label: '홈' },
+  { key: 'quest', label: '퀘스트' },
+  { key: 'map', label: '지도' },
+  { key: 'bag', label: '가방' },
+  { key: 'me', label: '나' },
 ]
 
 /**
@@ -79,7 +79,7 @@ export function BottomNavigation({ active, onChange }: BottomNavigationProps) {
               >
                 {ICONS[tab.key]}
               </svg>
-              <span className="font-game text-[9px] tracking-[0.04em]">{tab.label}</span>
+              <span className="text-[10px] font-medium">{tab.label}</span>
             </button>
           )
         })}

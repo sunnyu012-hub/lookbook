@@ -66,7 +66,7 @@ export function QuestScreen({
   return (
     <div className="animate-risein">
       <ScreenHeader
-        title="QUEST"
+        title="퀘스트"
         trailing={
           <span className="inline-flex items-center gap-1 rounded-pill bg-surface px-3 py-1.5 ring-1 ring-line">
             <img src={UI.check} alt="" aria-hidden className="h-4 w-4 object-contain" />
@@ -162,7 +162,7 @@ function DailySection({
             }
             action={
               <Button size="sm" onClick={onAddQuest}>
-                Create Quest
+                퀘스트 만들기
               </Button>
             }
           />
@@ -171,7 +171,7 @@ function DailySection({
         <div className="mt-5 space-y-6">
           {active.length > 0 && (
             <section>
-              <SectionHeader title="Active" trailing={<CountPill value={active.length} />} />
+              <SectionHeader title="진행 중" trailing={<CountPill value={active.length} />} />
               <ul className="space-y-2.5">
                 {active.map((quest) => (
                   <li key={quest.id}>
@@ -192,7 +192,7 @@ function DailySection({
           {completed.length > 0 && (
             <section>
               <SectionHeader
-                title="Completed"
+                title="끝낸 것"
                 trailing={<CountPill value={completed.length} tone="leaf" />}
               />
               <ul className="space-y-2">
@@ -215,7 +215,7 @@ function DailySection({
       )}
 
       <Button variant="soft" size="md" className="mt-6 w-full" onClick={onAddQuest}>
-        <span className="text-[17px] leading-none">+</span> Add Quest
+        <span className="text-[17px] leading-none">+</span> 퀘스트 추가
       </Button>
 
       <RoutineList
@@ -254,7 +254,7 @@ function BattleSection({ kind, battles, defs, onStart, onOpen }: BattleSectionPr
     <div className="mt-1 space-y-6">
       {active.length > 0 && (
         <section>
-          <SectionHeader title="In progress" trailing={<CountPill value={active.length} />} />
+          <SectionHeader title="진행 중" trailing={<CountPill value={active.length} />} />
           <ul className="space-y-2.5">
             {active.map((battle) => (
               <li key={battle.id}>
@@ -293,7 +293,7 @@ function BattleSection({ kind, battles, defs, onStart, onOpen }: BattleSectionPr
       {cleared.length > 0 && (
         <section>
           <SectionHeader
-            title="Cleared"
+            title="끝낸 것"
             trailing={<CountPill value={cleared.length} tone="leaf" />}
           />
           <ul className="space-y-2">

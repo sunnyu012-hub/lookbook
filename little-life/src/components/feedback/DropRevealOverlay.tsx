@@ -34,9 +34,7 @@ export function DropRevealOverlay({ drops, onClose }: DropRevealOverlayProps) {
           aria-hidden
           className="mx-auto h-7 w-7 animate-sparkle object-contain"
         />
-        <p className="mt-1 font-game text-[11px] tracking-[0.14em] text-coral-deep">
-          SOMETHING DROPPED
-        </p>
+        <p className="mt-1 text-[14px] font-semibold text-coral-deep">뭔가 떨어졌어</p>
 
         <ul className="mt-4 space-y-3">
           {drops.map((drop, i) => {
@@ -63,7 +61,7 @@ export function DropRevealOverlay({ drops, onClose }: DropRevealOverlayProps) {
           })}
         </ul>
 
-        <p className="mt-4 text-[12.5px] text-inkdim">BAG 에 넣어뒀어.</p>
+        <p className="mt-4 text-[12.5px] text-inkdim">가방에 넣어뒀어.</p>
       </div>
     </div>
   )

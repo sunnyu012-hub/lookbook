@@ -1,6 +1,7 @@
 import type { Category } from '@/types'
 import { CATEGORIES } from '@/types'
 import { categoryStyle } from '@/lib/categories'
+import { CATEGORY_LABEL } from '@/lib/labels'
 import { CATEGORY_BADGE } from '@/lib/assets'
 import { cn } from '@/components/ui/cn'
 
@@ -46,7 +47,9 @@ export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
                 className={cn('h-6 w-6 object-contain', !active && 'opacity-70')}
               />
             )}
-            <span className="font-game text-[11px] leading-none tracking-[0.06em]">{option}</span>
+            <span className="text-[12px] font-medium leading-none">
+              {option === 'ALL' ? '전체' : CATEGORY_LABEL[option]}
+            </span>
           </button>
         )
       })}
