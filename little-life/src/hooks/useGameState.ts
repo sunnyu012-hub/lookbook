@@ -35,7 +35,17 @@ import { reputationGain } from '@/lib/city/reputation'
 import { shopStock } from '@/lib/city/shops'
 import { findSkill as findSkillDef, skillState } from '@/lib/city/skills'
 import { expForDifficulty as npcStepExp } from '@/lib/difficulty'
-import { grantWelcomeGift, withSkillPoints } from '@/store/migrate'
+import {
+  hideForToday,
+  questKeyOf,
+  recordAdded,
+  recordCompleted,
+  recordDismiss,
+  reverseCompleted,
+  toggleFavorite,
+  type ProfileSeed,
+} from '@/lib/library/usage'
+import { grantWelcomeGift, withSkillPoints, defaultRecommendSettings } from '@/store/migrate'
 import { createDefaultState } from '@/store/defaultState'
 import { repository } from '@/store/localStorage'
 import { applyExp, levelFromTotalExp } from '@/lib/level'
@@ -85,6 +95,17 @@ interface GameState {
   useConsumable: (itemId: string) => ActiveBuff | null
   /** 스킬을 찍는다. */
   unlockSkill: (skillId: string) => boolean
+  // ── 퀘스트 라이브러리 ──
+  /** ★ 즐겨찾기 */
+  toggleQuestFavorite: (seed: ProfileSeed) => void
+  /** 추천에서 덜 보기 */
+  dismissRecommendation: (seed: ProfileSeed) => void
+  /** 오늘만 숨기기 */
+  hideRecommendationToday: (seed: ProfileSeed) => void
+  /** 사용 패턴 기반 추천 켜고 끄기 */
+  setPersonalized: (on: boolean) => void
+  /** 추천 기록만 지운다. 퀘스트·EXP·반복·완료 기록은 그대로 둔다. */
+  resetUsageProfiles: () => void
 }
 
 export interface TalkResult {
@@ -142,6 +163,18 @@ function removeFromInventory(
   return inventory
     .map((e) => (e.itemId === itemId ? { ...e, quantity: e.quantity - 1 } : e))
     .filter((e) => e.quantity > 0)
+}
+
+/** 사용 기록에 넘길 묶음. 퀘스트 하나에서 그대로 뽑는다. */
+function seedOf(quest: Quest): ProfileSeed {
+  return {
+    questKey: questKeyOf(quest),
+    title: quest.title,
+    category: quest.category,
+    difficulty: quest.difficulty,
+    presetId: quest.sourcePresetId ?? null,
+    packId: quest.sourcePackId ?? null,
+  }
 }
 
 /** 선물하거나 써버린 물건이 슬롯에 남아 있으면 비운다. */
@@ -398,6 +431,8 @@ export function useGameState(): GameState {
             createdAt: now.toISOString(),
             completedAt: null,
             ...(routineId ? { routineId } : {}),
+            ...(draft.sourcePackId ? { sourcePackId: draft.sourcePackId } : {}),
+            ...(draft.sourcePresetId ? { sourcePresetId: draft.sourcePresetId } : {}),
           }
         : null
 
@@ -413,13 +448,21 @@ export function useGameState(): GameState {
               // 오늘 몫을 방금 만들었으니 오늘은 또 만들지 않게 찍어둔다
               lastSpawnedOn: dueToday ? todayKey(now) : null,
               paused: false,
+              ...(draft.timeOfDay ? { timeOfDay: draft.timeOfDay } : {}),
+              ...(draft.sourcePackId ? { sourcePackId: draft.sourcePackId } : {}),
+              ...(draft.sourcePresetId ? { sourcePresetId: draft.sourcePresetId } : {}),
             } satisfies Routine,
             ...prev.routines,
           ]
         : prev.routines
 
+      // 추가한 것도 학습한다 — 완료까지 안 가도 "이 사람이 쓰는 퀘스트" 다
+      const usageProfiles = quest
+        ? recordAdded(prev.usageProfiles, seedOf(quest), now)
+        : prev.usageProfiles
+
       if (quest) {
-        commit({ ...prev, quests: [quest, ...prev.quests], routines })
+        commit({ ...prev, quests: [quest, ...prev.quests], routines, usageProfiles })
       } else {
         commit({ ...prev, routines })
       }
@@ -514,6 +557,7 @@ export function useGameState(): GameState {
           [target.category]: prev.categoryStats[target.category] + reward.exp,
         },
         dailyLog: bumpDailyLog(prev, earned),
+        usageProfiles: recordCompleted(prev.usageProfiles, seedOf(target), now),
         reputation: {
           ...prev.reputation,
           [areaId]: (prev.reputation[areaId] ?? 0) + gainedReputation,
@@ -630,6 +674,12 @@ export function useGameState(): GameState {
           [target.category]: Math.max(0, prev.categoryStats[target.category] - gained.exp),
         },
         dailyLog,
+        // 되돌리기로 숫자만 불어나면 추천이 엉뚱해진다. 그때 올린 만큼만 내린다.
+        usageProfiles: reverseCompleted(
+          prev.usageProfiles,
+          questKeyOf(target),
+          target.completedAt,
+        ),
         reputation: gained.areaId
           ? {
               ...prev.reputation,
@@ -1061,6 +1111,45 @@ export function useGameState(): GameState {
     [commit],
   )
 
+  // ── 퀘스트 라이브러리 ────────────────────────────────────
+  const toggleQuestFavorite = useCallback(
+    (seed: ProfileSeed) => {
+      const prev = stateRef.current
+      commit({ ...prev, usageProfiles: toggleFavorite(prev.usageProfiles, seed) })
+    },
+    [commit],
+  )
+
+  const dismissRecommendation = useCallback(
+    (seed: ProfileSeed) => {
+      const prev = stateRef.current
+      commit({ ...prev, usageProfiles: recordDismiss(prev.usageProfiles, seed) })
+    },
+    [commit],
+  )
+
+  const hideRecommendationToday = useCallback(
+    (seed: ProfileSeed) => {
+      const prev = stateRef.current
+      commit({ ...prev, usageProfiles: hideForToday(prev.usageProfiles, seed) })
+    },
+    [commit],
+  )
+
+  const setPersonalized = useCallback(
+    (on: boolean) => {
+      const prev = stateRef.current
+      commit({ ...prev, recommendSettings: { ...prev.recommendSettings, personalized: on } })
+    },
+    [commit],
+  )
+
+  /** 추천 기록만 지운다. 퀘스트·EXP·반복·완료 기록은 손대지 않는다. */
+  const resetUsageProfiles = useCallback(() => {
+    const prev = stateRef.current
+    commit({ ...prev, usageProfiles: {}, recommendSettings: defaultRecommendSettings() })
+  }, [commit])
+
   const renameUser = useCallback(
     (name: string) => {
       const trimmed = name.trim()
@@ -1100,6 +1189,11 @@ export function useGameState(): GameState {
       buyItem,
       useConsumable,
       unlockSkill,
+      toggleQuestFavorite,
+      dismissRecommendation,
+      hideRecommendationToday,
+      setPersonalized,
+      resetUsageProfiles,
     }),
     [
       ready,
@@ -1128,6 +1222,11 @@ export function useGameState(): GameState {
       buyItem,
       useConsumable,
       unlockSkill,
+      toggleQuestFavorite,
+      dismissRecommendation,
+      hideRecommendationToday,
+      setPersonalized,
+      resetUsageProfiles,
     ],
   )
 }

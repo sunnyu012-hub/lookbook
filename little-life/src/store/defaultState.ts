@@ -3,7 +3,13 @@ import { emptyCategoryStats } from '@/lib/stats'
 import { expForDifficulty } from '@/lib/difficulty'
 import { createId } from '@/lib/id'
 import { emptyReputation } from '@/lib/city/reputation'
-import { STATE_VERSION, defaultStats, emptyEquipped, emptyNpcStates } from './migrate'
+import {
+  STATE_VERSION,
+  defaultRecommendSettings,
+  defaultStats,
+  emptyEquipped,
+  emptyNpcStates,
+} from './migrate'
 
 export { STATE_VERSION } from './migrate'
 
@@ -63,5 +69,7 @@ export function createDefaultState(): AppState {
     welcomeGiftGiven: false,
     npcs: emptyNpcStates(),
     reputation: emptyReputation(),
+    usageProfiles: {},
+    recommendSettings: defaultRecommendSettings(),
   }
 }

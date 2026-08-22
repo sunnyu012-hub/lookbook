@@ -1,5 +1,6 @@
 export * from './rpg'
 export * from './city'
+export * from './library'
 import type {
   AreaId,
   Battle,
@@ -9,6 +10,8 @@ import type {
   Stats,
 } from './rpg'
 import type { ActiveBuff, NpcId, NpcStates, Reputation } from './city'
+import type { RecommendSettings, UsageProfiles } from './library'
+import type { TimeBand } from './rpg'
 
 /**
  * Little Life 의 데이터 모델.
@@ -32,6 +35,8 @@ export type RepeatRule =
   | { kind: 'daily' }
   | { kind: 'weekdays' } // 월~금
   | { kind: 'days'; days: number[] } // 0=월 … 6=일
+  /** 요일을 정하지 않고 주 N회만 채운다 */
+  | { kind: 'timesPerWeek'; times: number }
 
 /**
  * 반복 퀘스트의 원본.
@@ -50,6 +55,14 @@ export interface Routine {
   lastSpawnedOn: string | null
   /** 잠시 쉬고 싶을 때. 지우지 않고 멈춰만 둔다. */
   paused: boolean
+  /**
+   * 하루 중 언제쯤 하는 것인지. 정확한 시각을 정하게 하지 않는다 —
+   * 알림이 아니라 "이 시간대 사람" 이라는 표시에 가깝다.
+   */
+  timeOfDay?: TimeBand | 'ANY'
+  /** 세트에서 만들었으면 어디서 왔는지 */
+  sourcePackId?: string
+  sourcePresetId?: string
 }
 
 export interface Quest {
@@ -71,6 +84,9 @@ export interface Quest {
   snoozedUntil?: string
   /** DAILY 는 내가 만든 것, NPC 는 누가 부탁한 것. 몬스터·보스는 Battle 로 따로 다룬다. */
   questType?: 'DAILY' | 'NPC'
+  /** 준비된 세트에서 왔으면 어디서 왔는지. 사용 기록을 같은 것으로 묶는 데 쓴다. */
+  sourcePackId?: string
+  sourcePresetId?: string
   /** NPC 의뢰라면 누가 부탁했는지 */
   npcId?: NpcId
   /** 여러 단계짜리 의뢰의 몇 번째인지 */
@@ -164,6 +180,12 @@ export interface AppState {
   npcs: NpcStates
   /** 지역별 평판 */
   reputation: Reputation
+  /**
+   * 퀘스트별 사용 기록. 추가 화면의 순서를 정하는 데만 쓴다.
+   * 이 기기 밖으로 나가지 않는다.
+   */
+  usageProfiles: UsageProfiles
+  recommendSettings: RecommendSettings
   // 향후 확장 예정: achievements, character, room, pets …
   //
   // 오늘의 이벤트와 상점 진열은 여기 없다.
@@ -177,6 +199,11 @@ export interface QuestDraft {
   difficulty: Difficulty
   /** 반복으로 만들 거면 규칙. 없으면 오늘 한 번짜리. */
   repeat?: RepeatRule
+  /** 준비된 세트에서 골랐으면 */
+  sourcePackId?: string
+  sourcePresetId?: string
+  /** 반복으로 만들 때의 시간대 */
+  timeOfDay?: TimeBand | 'ANY'
 }
 
 /** 퀘스트 완료 결과 — 화면에서 피드백 애니메이션을 띄우는 데 쓴다. */

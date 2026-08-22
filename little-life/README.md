@@ -32,8 +32,14 @@ npm test           # 단위 테스트 (분류기 · 반복 · 레벨 · 보상 �
 src/
 ├── types/          User, Quest, Routine, CategoryStats, DailyLog, AppState
 │   ├── rpg.ts          Area, Class, Stat, Item, Battle, Bonuses
-│   └── city.ts         NPC, Friendship, Shop, CityEvent, Skill, Reputation
+│   ├── city.ts         NPC, Friendship, Shop, CityEvent, Skill, Reputation
+│   └── library.ts      QuestPack, QuestPreset, UsageProfile, Recommendation
 ├── lib/            순수 로직 — 화면과 무관
+│   ├── library/
+│   │   ├── packs.ts      퀘스트 세트 18개   ← 문구·난이도는 전부 여기
+│   │   ├── usage.ts      쓴 기록 쌓기 · 되돌리기 · 과거 기록 채우기
+│   │   ├── recommend.ts  점수 매기고 6개 고르기
+│   │   └── search.ts     세트·기록 한 번에 찾기
 │   ├── city/
 │   │   ├── npcs.ts       도시 사람 6명 · 대사 · 의뢰 · 친밀도 단계
 │   │   ├── friendship.ts 친밀도가 오르는 규칙 (대화 · 선물)
@@ -69,11 +75,12 @@ src/
 │   ├── home/       GreetingHeader, AdventureStatusCard, TodayQuestSection,
 │   │               TodayInTheCity, CompactQuestCard, DailySummary
 │   ├── quest/      FullQuestCard, CategoryFilter, QuestCreationSheet, QuestMenu,
-│   │               QuestModeTabs
+│   │               QuestModeTabs, AddQuestHub, PackDetailSheet
 │   ├── rpg/        RarityBadge, BattleCard, BattleSheet
 │   ├── city/       CityBadges(친밀도·평판), NpcSheet, ShopSheet
 │   ├── profile/    ProfileHeader, StatCard, StatGrid, ClassCard, EquipSlotGrid,
-│   │               SkillTreeCard, CategoryGrowthBar, WeeklyInsightCard
+│   │               SkillTreeCard, RecommendSettingsCard, CategoryGrowthBar,
+│   │               WeeklyInsightCard
 │   ├── feedback/   ExpToastLayer, LevelUpOverlay, BattleClearOverlay, DropRevealOverlay
 │   ├── navigation/ BottomNavigation
 │   └── ui/         Card, Button, ProgressBar, BottomSheet, ConfirmDialog, Toast …
@@ -315,6 +322,71 @@ EXP · Coin · Stat · Drop 을 받고, 그 위에 친밀도와 평판이 얹힌
 
 ### 기존 데이터
 
-`STATE_VERSION = 4`. 없는 항목만 채우고 있는 값은 손대지 않는다.
+그때 `STATE_VERSION` 을 4 로 올렸다. 없는 항목만 채우고 있는 값은 손대지 않는다.
 없어진 스킬·아이템이 저장돼 있으면 조용히 버리고, 정의가 사라진 NPC 도 마찬가지다.
 v3 데이터를 심어서 이름·레벨·Coin·직업·장비·통계·인벤토리가 그대로 남는지 브라우저로 확인한다.
+
+## 퀘스트 라이브러리
+
+"오늘 뭐 하지" 를 매번 타이핑으로 답하게 만들면 결국 앱을 안 열게 된다.
+`＋` 를 누르면 곧장 빈 입력칸이 뜨는 대신 **새 퀘스트 허브**가 열린다 —
+찾기 / 지금 추천 / 빠른 추가 / 추천 세트 / 직접 만들기 다섯 갈래다.
+직접 만들기는 없애지 않았다. 맨 아래에 그대로 있다.
+
+여기서도 **외부 AI 는 쓰지 않는다.** 점수 계산은 전부 이 기기 안에서 끝나고,
+퀘스트 제목이 밖으로 나가는 경로 자체가 없다. 그래서 오프라인에서도 즉시 뜬다.
+
+### 세트 18개
+
+`lib/library/packs.ts` 에 아침·잠들기 전·회복·가볍게 움직이기·집 리셋·업무 시작·
+집중·퇴근 후·취미·관계·주말 리셋·돈·디지털·기운 없는 날 … 18묶음.
+세트를 열면 체크박스로 여러 개를 한 번에 고르고, **오늘만 / 루틴으로** 를 한 번만 정한다.
+다섯 개를 고른 뒤 각각 반복 설정을 하라고 하면 그게 다시 일이 된다.
+
+오늘 이미 있는 것은 체크 자체가 막히고 "오늘 이미 추가된 퀘스트야" 로 표시된다.
+
+### 쓸수록 배우는 것
+
+완료를 누를 때마다 `usageProfiles` 에 한 줄이 쌓인다 — 몇 번 넣었고 몇 번 끝냈는지,
+**무슨 요일**에 했는지, **어느 시간대**에 했는지. 과거 기록을 매번 다시 훑지 않고
+그 순간에만 더한다. 그래서 퀘스트가 몇 백 개가 돼도 허브는 즉시 열린다.
+
+추천 점수는 이렇게 더한다:
+
+```
+자주 함 + 완료율 + 최근에 함 + 이 요일에 함 + 이 시간대에 함
+        + 즐겨찾기 + 오늘 루틴 차례 − 덜 보기 누른 만큼
+```
+
+한 카테고리가 6칸을 다 먹지 않게 최대 4개까지만 넣고, 나머지는 다른 갈래로 채운다.
+기록이 5개 미만이면 시간대에 맞는 기본 추천으로 채운다 — 첫날에도 빈 화면은 안 뜬다.
+
+**추천 순서는 저장하지 않는다.** 열 때마다 다시 계산한다.
+저장해두면 자정이 지나도 어제 순서가 남고, 요일·시간대가 바뀐 걸 놓친다.
+
+**추천은 어디까지나 추천이다.** 앱이 알아서 퀘스트를 만들어 넣는 경로는 없다.
+누르는 건 늘 사용자다. 마음에 안 들면 `⋯` 에서 오늘만 숨기거나 덜 보게 할 수 있고,
+나 화면 **퀘스트 추천** 에서 통째로 끌 수도 있다.
+`추천 기록 초기화` 는 추천 순서만 처음으로 돌린다 — 퀘스트·EXP·루틴·완료 기록은 그대로다.
+
+### 되돌리기
+
+완료를 되돌리면 EXP·Coin 뿐 아니라 학습 기록도 정확히 되돌아간다.
+완료 횟수, 그 요일·시간대 칸, 최근 완료 날짜까지 함께 뺀다.
+안 그러면 완료·되돌리기를 반복해서 추천 순위를 밀어올릴 수 있다.
+
+### 루틴
+
+세트에서 고른 걸 한 번에 루틴으로 만들 수 있고, **주 3회** 같은 빈도가 생겼다.
+요일을 정하는 대신 이번 주에 몇 번 했는지를 세서 모자라면 오늘 하나 만든다.
+시간대(아침·낮·저녁·자기 전)는 **표시일 뿐 알림이 아니다.** 정한 시각에 울리지 않는다.
+
+### 기존 데이터
+
+`STATE_VERSION = 5`. `usageProfiles` 와 `recommendSettings` 만 새로 채운다.
+비어 있으면 **이미 쌓인 퀘스트 기록에서 되채운다** — 오래 쓴 사람일수록
+업데이트 직후부터 바로 자기 추천이 뜬다.
+
+기록의 열쇠는 세트에서 온 것이면 `팩:항목` 이고, 직접 쓴 것이면 공백을 지운 제목이다.
+불러올 때 이 규칙을 다시 적용해서, `물 마시기` 와 `물마시기` 처럼 같은 것이
+두 줄로 갈라져 있으면 하나로 합친다 (횟수는 더하고, 시각은 나중 것을 남긴다).

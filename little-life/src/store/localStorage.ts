@@ -24,9 +24,12 @@ import {
   sanitizeEquipped,
   sanitizeInventory,
   sanitizeNpcs,
+  sanitizeRecommendSettings,
   sanitizeReputation,
   sanitizeSkills,
   sanitizeStats,
+  sanitizeUsageProfiles,
+  backfillUsage,
   withSkillPoints,
 } from './migrate'
 
@@ -79,6 +82,8 @@ function sanitizeQuest(raw: unknown): Quest | null {
     ...(typeof q.npcId === 'string' && NPC_IDS.includes(q.npcId as NpcId)
       ? { npcId: q.npcId as NpcId }
       : {}),
+    ...(typeof q.sourcePackId === 'string' ? { sourcePackId: q.sourcePackId } : {}),
+    ...(typeof q.sourcePresetId === 'string' ? { sourcePresetId: q.sourcePresetId } : {}),
     ...(typeof q.chainId === 'string' ? { chainId: q.chainId } : {}),
     ...(typeof q.step === 'number' ? { step: numberOr(q.step, 1, 1) } : {}),
     ...(typeof q.totalSteps === 'number' ? { totalSteps: numberOr(q.totalSteps, 1, 1) } : {}),
@@ -92,6 +97,10 @@ function sanitizeRule(raw: unknown): RepeatRule | null {
 
   if (rule.kind === 'daily') return { kind: 'daily' }
   if (rule.kind === 'weekdays') return { kind: 'weekdays' }
+  if (rule.kind === 'timesPerWeek') {
+    const times = typeof rule.times === 'number' ? Math.max(1, Math.floor(rule.times)) : 0
+    return times > 0 ? { kind: 'timesPerWeek', times } : null
+  }
   if (rule.kind === 'days') {
     const days = Array.isArray(rule.days)
       ? [...new Set(rule.days.filter((d): d is number => typeof d === 'number' && d >= 0 && d <= 6))]
@@ -124,6 +133,9 @@ function sanitizeRoutine(raw: unknown): Routine | null {
         ? r.lastSpawnedOn
         : null,
     paused: r.paused === true,
+    ...(typeof r.timeOfDay === 'string' ? { timeOfDay: r.timeOfDay as never } : {}),
+    ...(typeof r.sourcePackId === 'string' ? { sourcePackId: r.sourcePackId } : {}),
+    ...(typeof r.sourcePresetId === 'string' ? { sourcePresetId: r.sourcePresetId } : {}),
   }
 }
 
@@ -192,7 +204,8 @@ function sanitizeState(raw: unknown): AppState | null {
   const user = (s.user ?? {}) as Record<string, unknown>
 
   // 스킬 포인트는 저장된 값을 믿지 않고 레벨에서 다시 계산한다 (migrate.withSkillPoints)
-  return withSkillPoints({
+  // 사용 기록이 비어 있으면 지난 퀘스트에서 만들어 채운다 (migrate.backfillUsage)
+  return backfillUsage(withSkillPoints({
     version: STATE_VERSION,
     user: {
       name: typeof user.name === 'string' && user.name.trim() ? user.name.trim() : 'Yuli',
@@ -225,7 +238,9 @@ function sanitizeState(raw: unknown): AppState | null {
     welcomeGiftGiven: s.welcomeGiftGiven === true,
     npcs: sanitizeNpcs(s.npcs),
     reputation: sanitizeReputation(s.reputation),
-  })
+    usageProfiles: sanitizeUsageProfiles(s.usageProfiles),
+    recommendSettings: sanitizeRecommendSettings(s.recommendSettings),
+  }))
 }
 
 export class LocalStorageRepository implements StateRepository {

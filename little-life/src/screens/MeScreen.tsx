@@ -8,6 +8,7 @@ import { StatGrid } from '@/components/profile/StatGrid'
 import { ClassCard } from '@/components/profile/ClassCard'
 import { EquipSlotGrid } from '@/components/profile/EquipSlotGrid'
 import { SkillTreeCard } from '@/components/profile/SkillTreeCard'
+import { RecommendSettingsCard } from '@/components/profile/RecommendSettingsCard'
 import { CategoryGrowthBar } from '@/components/profile/CategoryGrowthBar'
 import { WeeklyInsightCard } from '@/components/profile/WeeklyInsightCard'
 import { ScreenHeader, SectionHeader } from '@/components/layout/ScreenHeader'
@@ -22,6 +23,8 @@ interface MeScreenProps {
   onSelectClass: (classId: ClassId) => void
   onOpenBag: () => void
   onUnlockSkill: (skillId: string) => void
+  onTogglePersonalized: (on: boolean) => void
+  onResetUsage: () => void
 }
 
 export function MeScreen({
@@ -30,6 +33,8 @@ export function MeScreen({
   onSelectClass,
   onOpenBag,
   onUnlockSkill,
+  onTogglePersonalized,
+  onResetUsage,
 }: MeScreenProps) {
   const { user, categoryStats, dailyLog } = state
 
@@ -109,6 +114,16 @@ export function MeScreen({
 
       <section className="mt-4">
         <WeeklyInsightCard message={insight} />
+      </section>
+
+      <section className="mt-6">
+        <SectionHeader title="퀘스트 추천" />
+        <RecommendSettingsCard
+          settings={state.recommendSettings}
+          profiles={state.usageProfiles}
+          onToggle={onTogglePersonalized}
+          onReset={onResetUsage}
+        />
       </section>
 
       <p className="mt-6 text-center text-[12px] leading-relaxed text-inkfaint">
