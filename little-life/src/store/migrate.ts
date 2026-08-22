@@ -1,5 +1,8 @@
 import type {
   ActiveBuff,
+  QuestUsageProfile,
+  RecommendSettings,
+  UsageProfiles,
   AppState,
   AreaId,
   Battle,
@@ -18,6 +21,14 @@ import { NPCS, findNpc } from '@/lib/city/npcs'
 import { findSkill, availableSkillPoints } from '@/lib/city/skills'
 import { emptyNpcState } from '@/lib/city/friendship'
 import { emptyReputation } from '@/lib/city/reputation'
+import { DIFFICULTIES } from '@/types'
+import { normalizeTitle } from '@/lib/suggest'
+import {
+  backfillProfiles,
+  emptyBandCounts,
+  emptyDayCounts,
+  RECENT_DATES_KEPT,
+} from '@/lib/library/usage'
 
 /**
  * 저장된 데이터를 지금 버전으로 끌어올린다.
@@ -26,7 +37,7 @@ import { emptyReputation } from '@/lib/city/reputation'
  * 없는 항목만 기본값으로 채우고, 있는 값은 손대지 않는다.
  */
 
-export const STATE_VERSION = 4
+export const STATE_VERSION = 5
 
 export function defaultStats(): Stats {
   return STAT_KEYS.reduce((acc, key) => {
@@ -265,6 +276,134 @@ export function withSkillPoints(state: AppState): AppState {
   const points = availableSkillPoints(state.user.level, state.user.unlockedSkills)
   if (state.user.skillPoints === points) return state
   return { ...state, user: { ...state.user, skillPoints: points } }
+}
+
+// ── 사용 기록 ────────────────────────────────────────────
+
+export function defaultRecommendSettings(): RecommendSettings {
+  return { personalized: true }
+}
+
+export function sanitizeRecommendSettings(raw: unknown): RecommendSettings {
+  if (!raw || typeof raw !== 'object') return defaultRecommendSettings()
+  const s = raw as Record<string, unknown>
+  return { personalized: s.personalized !== false }
+}
+
+function countMap(raw: unknown, keys: string[]): Record<string, number> {
+  const out: Record<string, number> = {}
+  const source = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
+  for (const key of keys) out[key] = numberOr(source[key], 0)
+  return out
+}
+
+/**
+ * 저장된 사용 기록.
+ * 모양이 깨진 항목은 조용히 버린다 — 추천이 조금 덜 똑똑해질 뿐, 앱이 멈추면 안 된다.
+ */
+export function sanitizeUsageProfiles(raw: unknown): UsageProfiles {
+  if (!raw || typeof raw !== 'object') return {}
+  const source = raw as Record<string, unknown>
+  const out: UsageProfiles = {}
+
+  const bandKeys = Object.keys(emptyBandCounts())
+  const dayKeys = Object.keys(emptyDayCounts())
+
+  for (const [key, value] of Object.entries(source)) {
+    if (!value || typeof value !== 'object') continue
+    const p = value as Record<string, unknown>
+
+    const title = typeof p.title === 'string' ? p.title.trim() : ''
+    if (!key || !title) continue
+
+    // 준비된 퀘스트가 아니면 key 는 늘 다듬은 제목이어야 한다.
+    // 저장된 값이 어긋나 있으면 바로잡는다 — 안 그러면 같은 퀘스트가 둘로 갈린다.
+    const presetId = typeof p.presetId === 'string' ? p.presetId : null
+    const realKey = presetId ?? normalizeTitle(title)
+
+    const profile: QuestUsageProfile = {
+      questKey: realKey,
+      title,
+      category: CATEGORIES.includes(p.category as Category) ? (p.category as Category) : 'LIFE',
+      difficulty: DIFFICULTIES.includes(p.difficulty as never)
+        ? (p.difficulty as QuestUsageProfile['difficulty'])
+        : 'NORMAL',
+      presetId,
+      sourcePackIds: Array.isArray(p.sourcePackIds)
+        ? [...new Set(p.sourcePackIds.filter((v): v is string => typeof v === 'string'))]
+        : [],
+      totalAdded: numberOr(p.totalAdded, 0),
+      totalCompleted: numberOr(p.totalCompleted, 0),
+      lastAddedAt: typeof p.lastAddedAt === 'string' ? p.lastAddedAt : null,
+      lastCompletedAt: typeof p.lastCompletedAt === 'string' ? p.lastCompletedAt : null,
+      addedByDayOfWeek: countMap(p.addedByDayOfWeek, dayKeys),
+      addedByBand: countMap(p.addedByBand, bandKeys) as QuestUsageProfile['addedByBand'],
+      completedByDayOfWeek: countMap(p.completedByDayOfWeek, dayKeys),
+      completedByBand: countMap(p.completedByBand, bandKeys) as QuestUsageProfile['completedByBand'],
+      recentCompletionDates: Array.isArray(p.recentCompletionDates)
+        ? p.recentCompletionDates
+            .filter((d): d is string => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d))
+            .slice(0, RECENT_DATES_KEPT)
+        : [],
+      favorite: p.favorite === true,
+      dismissCount: numberOr(p.dismissCount, 0),
+      hiddenOn:
+        typeof p.hiddenOn === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(p.hiddenOn)
+          ? p.hiddenOn
+          : null,
+    }
+    const existing = out[realKey]
+    out[realKey] = existing ? mergeProfiles(existing, profile) : profile
+  }
+  return out
+}
+
+/** 같은 퀘스트로 밝혀진 두 기록을 합친다. 숫자는 더하고, 최근 값을 남긴다. */
+function mergeProfiles(a: QuestUsageProfile, b: QuestUsageProfile): QuestUsageProfile {
+  const addCounts = (x: Record<string, number>, y: Record<string, number>) => {
+    const out: Record<string, number> = { ...x }
+    for (const [k, v] of Object.entries(y)) out[k] = (out[k] ?? 0) + v
+    return out
+  }
+  const later = (x: string | null, y: string | null) =>
+    !x ? y : !y ? x : x > y ? x : y
+
+  return {
+    ...a,
+    totalAdded: a.totalAdded + b.totalAdded,
+    totalCompleted: a.totalCompleted + b.totalCompleted,
+    lastAddedAt: later(a.lastAddedAt, b.lastAddedAt),
+    lastCompletedAt: later(a.lastCompletedAt, b.lastCompletedAt),
+    addedByDayOfWeek: addCounts(a.addedByDayOfWeek, b.addedByDayOfWeek),
+    addedByBand: addCounts(a.addedByBand, b.addedByBand) as QuestUsageProfile['addedByBand'],
+    completedByDayOfWeek: addCounts(a.completedByDayOfWeek, b.completedByDayOfWeek),
+    completedByBand: addCounts(
+      a.completedByBand,
+      b.completedByBand,
+    ) as QuestUsageProfile['completedByBand'],
+    recentCompletionDates: [
+      ...new Set([...a.recentCompletionDates, ...b.recentCompletionDates]),
+    ]
+      .sort()
+      .reverse()
+      .slice(0, RECENT_DATES_KEPT),
+    sourcePackIds: [...new Set([...a.sourcePackIds, ...b.sourcePackIds])],
+    favorite: a.favorite || b.favorite,
+    dismissCount: a.dismissCount + b.dismissCount,
+    hiddenOn: later(a.hiddenOn, b.hiddenOn),
+  }
+}
+
+/**
+ * 사용 기록이 아직 없으면 지난 퀘스트에서 만들어 채운다.
+ *
+ * 업데이트하자마자 추천이 돌게 하려는 것이다.
+ * 이미 몇 달 쓴 사람에게 "처음부터 다시 배울게요" 는 말이 안 된다.
+ */
+export function backfillUsage(state: AppState): AppState {
+  if (Object.keys(state.usageProfiles).length > 0) return state
+  if (state.quests.length === 0) return state
+  return { ...state, usageProfiles: backfillProfiles(state.quests) }
 }
 
 /** 업데이트하고 처음 열었을 때 주는 선물. 한 번만 준다. */

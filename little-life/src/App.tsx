@@ -7,12 +7,15 @@ import type {
   NpcQuestChainDef,
   Quest,
   QuestDraft,
+  QuestPackDef,
   Routine,
   ShopDef,
 } from '@/types'
 import { AppShell } from '@/components/layout/AppShell'
 import { BottomNavigation, type TabKey } from '@/components/navigation/BottomNavigation'
 import { QuestCreationSheet } from '@/components/quest/QuestCreationSheet'
+import { AddQuestHub } from '@/components/quest/AddQuestHub'
+import { PackDetailSheet } from '@/components/quest/PackDetailSheet'
 import { BattleSheet } from '@/components/rpg/BattleSheet'
 import { NpcSheet } from '@/components/city/NpcSheet'
 import { ShopSheet } from '@/components/city/ShopSheet'
@@ -65,6 +68,11 @@ export default function App() {
     buyItem,
     useConsumable,
     unlockSkill,
+    toggleQuestFavorite,
+    dismissRecommendation,
+    hideRecommendationToday,
+    setPersonalized,
+    resetUsageProfiles,
   } = useGameState()
   const feedback = useFeedback()
 
@@ -75,6 +83,8 @@ export default function App() {
   const [editingQuest, setEditingQuest] = useState<Quest | null>(null)
   // id 로만 들고 있는다. 상태에서 매번 다시 찾아야 HP 가 깎이는 게 시트에 바로 보인다.
   const [openBattleId, setOpenBattleId] = useState<string | null>(null)
+  const [hubOpen, setHubOpen] = useState(false)
+  const [openPack, setOpenPack] = useState<QuestPackDef | null>(null)
   const [openNpc, setOpenNpc] = useState<NpcDef | null>(null)
   const [openShop, setOpenShop] = useState<ShopDef | null>(null)
 
@@ -142,6 +152,41 @@ export default function App() {
       feedback.notify(created ? 'Quest added ✦' : '반복만 저장했어 · 해당 요일에 생겨')
     },
     [addQuest, feedback],
+  )
+
+  /** 추천·빠른 추가·검색에서 하나 넣기 */
+  const handleQuickAdd = useCallback(
+    (draft: QuestDraft) => {
+      const created = addQuest(draft)
+      if (!created) return
+      feedback.notify('퀘스트를 넣었어 ✦', {
+        label: '실행 취소',
+        onClick: () => deleteQuest(created.id),
+      })
+    },
+    [addQuest, deleteQuest, feedback],
+  )
+
+  /** 세트에서 고른 것들을 한 번에 */
+  const handlePackAdd = useCallback(
+    (drafts: QuestDraft[]) => {
+      const made = drafts.map((d) => addQuest(d)).filter((q): q is Quest => q !== null)
+      setOpenPack(null)
+      setHubOpen(false)
+
+      const routine = drafts.some((d) => d.repeat)
+      const message = routine
+        ? `루틴 ${drafts.length}개를 만들었어 ✦`
+        : `퀘스트 ${made.length}개를 넣었어 ✦`
+
+      feedback.notify(
+        message,
+        made.length > 0
+          ? { label: '실행 취소', onClick: () => made.forEach((q) => deleteQuest(q.id)) }
+          : undefined,
+      )
+    },
+    [addQuest, deleteQuest, feedback],
   )
 
   const confirmDelete = useCallback(() => {
@@ -311,7 +356,7 @@ export default function App() {
             mood={feedback.mood}
             expToasts={feedback.expToasts}
             onComplete={handleComplete}
-            onAddQuest={() => setSheetOpen(true)}
+            onAddQuest={() => setHubOpen(true)}
             onSeeAll={() => setTab('quest')}
             onOpenMap={() => setTab('map')}
             onOpenBag={() => setTab('bag')}
@@ -329,7 +374,7 @@ export default function App() {
             onEdit={openEditor}
             onSnooze={handleSnooze}
             onUncomplete={uncompleteQuest}
-            onAddQuest={() => setSheetOpen(true)}
+            onAddQuest={() => setHubOpen(true)}
             onToggleRoutinePause={toggleRoutinePause}
             onRequestDeleteRoutine={setPendingRoutineDelete}
             onStartBattle={handleStartBattle}
@@ -366,9 +411,33 @@ export default function App() {
             onSelectClass={setClass}
             onOpenBag={() => setTab('bag')}
             onUnlockSkill={handleUnlockSkill}
+            onTogglePersonalized={setPersonalized}
+            onResetUsage={resetUsageProfiles}
           />
         )}
       </AppShell>
+
+      <AddQuestHub
+        open={hubOpen}
+        state={state}
+        onClose={() => setHubOpen(false)}
+        onAdd={handleQuickAdd}
+        onOpenPack={setOpenPack}
+        onOpenCustom={() => {
+          setHubOpen(false)
+          setSheetOpen(true)
+        }}
+        onFavorite={toggleQuestFavorite}
+        onHideToday={hideRecommendationToday}
+        onDismiss={dismissRecommendation}
+      />
+
+      <PackDetailSheet
+        pack={openPack}
+        quests={state.quests}
+        onClose={() => setOpenPack(null)}
+        onAdd={handlePackAdd}
+      />
 
       <QuestCreationSheet
         open={sheetOpen}

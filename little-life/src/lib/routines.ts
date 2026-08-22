@@ -20,7 +20,12 @@ export function weekdayIndex(date: Date): number {
 
 export const WEEKDAY_LABELS = ['월', '화', '수', '목', '금', '토', '일']
 
-/** 오늘 이 규칙에 해당하는 날인지 */
+/**
+ * 오늘 이 규칙에 해당하는 날인지.
+ *
+ * "주 N회" 는 요일이 정해져 있지 않아서 이 함수만으로는 못 정한다.
+ * 이번 주에 몇 번 만들었는지를 같이 봐야 해서 spawnDueQuests 에서 다룬다.
+ */
 export function matchesToday(rule: RepeatRule, now: Date = new Date()): boolean {
   const day = weekdayIndex(now)
 
@@ -31,6 +36,8 @@ export function matchesToday(rule: RepeatRule, now: Date = new Date()): boolean 
       return day <= 4 // 월~금
     case 'days':
       return rule.days.includes(day)
+    case 'timesPerWeek':
+      return rule.times > 0
   }
 }
 
@@ -46,12 +53,44 @@ export function describeRule(rule: RepeatRule): string {
       const sorted = [...rule.days].sort((a, b) => a - b)
       return sorted.map((d) => WEEKDAY_LABELS[d]).join('·')
     }
+    case 'timesPerWeek':
+      return `주 ${rule.times}회`
   }
 }
 
 /** 규칙이 실제로 언젠가 돌긴 하는지 (요일을 하나도 안 고른 경우 걸러내기) */
 export function isUsableRule(rule: RepeatRule): boolean {
-  return rule.kind !== 'days' || rule.days.length > 0
+  if (rule.kind === 'days') return rule.days.length > 0
+  if (rule.kind === 'timesPerWeek') return rule.times > 0
+  return true
+}
+
+/** 이번 주 월요일의 날짜 키. "주 N회" 를 셀 때 쓴다. */
+export function weekStartKey(now: Date = new Date()): string {
+  const monday = new Date(now)
+  monday.setDate(monday.getDate() - weekdayIndex(now))
+  return todayKey(monday)
+}
+
+/**
+ * "주 N회" 반복이 오늘 또 돌아야 하는지.
+ *
+ * 이번 주에 이미 N번 만들었으면 쉰다. 요일을 정해두지 않았으니
+ * 몰아서 만들지 않고 하루에 하나씩만 채운다.
+ */
+export function needsMoreThisWeek(
+  routine: Routine,
+  quests: Quest[],
+  now: Date = new Date(),
+): boolean {
+  if (routine.rule.kind !== 'timesPerWeek') return true
+
+  const weekStart = weekStartKey(now)
+  const madeThisWeek = quests.filter(
+    (q) => q.routineId === routine.id && toDayKey(q.createdAt) >= weekStart,
+  ).length
+
+  return madeThisWeek < routine.rule.times
 }
 
 export interface SpawnResult {
@@ -92,6 +131,7 @@ export function spawnDueQuests(
     if (routine.lastSpawnedOn === today) return routine
     if (!isUsableRule(routine.rule)) return routine
     if (!matchesToday(routine.rule, now)) return routine
+    if (!needsMoreThisWeek(routine, quests, now)) return routine
 
     changed = true
     const key = normalizeTitle(routine.title)
