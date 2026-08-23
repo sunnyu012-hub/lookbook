@@ -1,4 +1,5 @@
 import type {
+  DiscoveryState,
   ActiveBuff,
   QuestUsageProfile,
   RecommendSettings,
@@ -45,6 +46,9 @@ import {
 } from '@/lib/library/usage'
 import { findCollectionItem } from '@/lib/collection/catalog'
 import { emptyCollection } from '@/lib/collection/progress'
+import { emptyDiscovery } from '@/lib/discovery/derive'
+import { AUTO_COLLECTION_IDS, COMPANION_IDS, SECRET_IDS } from '@/types'
+import { findChapter } from '@/lib/discovery/stories'
 import { findRoom } from '@/lib/collection/rooms'
 
 /**
@@ -54,7 +58,7 @@ import { findRoom } from '@/lib/collection/rooms'
  * 없는 항목만 기본값으로 채우고, 있는 값은 손대지 않는다.
  */
 
-export const STATE_VERSION = 8
+export const STATE_VERSION = 9
 
 /** 구매 기록을 며칠치까지 남길지 */
 export const PURCHASE_DAYS_KEPT = 7
@@ -680,5 +684,72 @@ export function grantWelcomeGift(state: AppState, now: Date = new Date()): GiftR
       user: { ...state.user, coins: state.user.coins + WELCOME_GIFT.coins },
     },
     given: true,
+  }
+}
+
+
+/**
+ * 발견 층을 읽어들인다.
+ *
+ * 진행도는 여기 없다 — 전부 기존 기록에서 다시 센다.
+ * 그래서 이 업데이트를 켜는 순간 예전 기록이 그대로 반영되고,
+ * 따로 backfill 하는 코드가 필요 없다.
+ *
+ * 여기 있는 건 "무엇을 이미 봤는지 · 받았는지" 뿐이다.
+ */
+export function sanitizeDiscovery(raw: unknown): DiscoveryState {
+  const empty = emptyDiscovery()
+  if (!raw || typeof raw !== 'object') return empty
+  const d = raw as Record<string, unknown>
+
+  const ids = (value: unknown, ok: (id: string) => boolean): string[] =>
+    Array.isArray(value)
+      ? [...new Set(value.filter((v): v is string => typeof v === 'string' && ok(v)))]
+      : []
+
+  const isAuto = (id: string) => AUTO_COLLECTION_IDS.includes(id as never)
+  const isSecret = (id: string) => SECRET_IDS.includes(id as never)
+
+  // 동료. 없어진 아이가 저장돼 있으면 조용히 버린다.
+  const companions: DiscoveryState['companions'] = {}
+  if (d.companions && typeof d.companions === 'object') {
+    for (const [id, value] of Object.entries(d.companions as Record<string, unknown>)) {
+      if (!COMPANION_IDS.includes(id as never)) continue
+      if (!value || typeof value !== 'object') continue
+      const c = value as Record<string, unknown>
+      companions[id] = {
+        friendship: numberOr(c.friendship, 0),
+        metAt: typeof c.metAt === 'string' ? c.metAt : new Date().toISOString(),
+        lastPlayedOn: typeof c.lastPlayedOn === 'string' ? c.lastPlayedOn : null,
+      }
+    }
+  }
+
+  // 같이 다니던 아이가 없어졌으면 비운다
+  const activeId = typeof d.activeCompanionId === 'string' ? d.activeCompanionId : null
+  const activeCompanionId =
+    activeId && companions[activeId] ? (activeId as DiscoveryState['activeCompanionId']) : null
+
+  const hintLevels: Record<string, number> = {}
+  if (d.hintLevels && typeof d.hintLevels === 'object') {
+    for (const [id, level] of Object.entries(d.hintLevels as Record<string, unknown>)) {
+      if (!findCollectionItem(id)) continue
+      const n = numberOr(level, 0)
+      if (n > 0) hintLevels[id] = Math.min(3, n)
+    }
+  }
+
+  return {
+    revealedCollectionIds: ids(d.revealedCollectionIds, isAuto),
+    claimedCollectionIds: ids(d.claimedCollectionIds, isAuto),
+    foundSecretIds: ids(d.foundSecretIds, isSecret),
+    hintedSecretIds: ids(d.hintedSecretIds, isSecret),
+    readChapterIds: ids(d.readChapterIds, (id) => findChapter(id) !== null),
+    companions,
+    activeCompanionId,
+    hintLevels,
+    seenNoteKeys: Array.isArray(d.seenNoteKeys)
+      ? d.seenNoteKeys.filter((v): v is string => typeof v === 'string').slice(-200)
+      : [],
   }
 }

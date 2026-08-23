@@ -30,6 +30,7 @@ import {
   sanitizeStats,
   sanitizeUsageProfiles,
   sanitizeCollection,
+  sanitizeDiscovery,
   backfillCategoryCompleted,
   backfillUsage,
   withSkillPoints,
@@ -263,6 +264,7 @@ function sanitizeState(raw: unknown): AppState | null {
     // v5 에는 없던 항목들
     categoryCompleted: emptyCategoryStats(),
     bossClears: numberOr(s.bossClears, 0),
+    discovery: sanitizeDiscovery(raw && typeof raw === 'object' ? (raw as Record<string, unknown>).discovery : null),
     collection: sanitizeCollection(s.collection),
   }
 

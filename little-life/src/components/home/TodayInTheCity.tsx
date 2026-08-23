@@ -13,6 +13,9 @@ import {
 } from '@/lib/collection/shops'
 import { findCollectionItem } from '@/lib/collection/catalog'
 import { pendingDelivery } from '@/lib/collection/delivery'
+import { unreadChapters } from '@/lib/discovery/stories'
+import { secretViews } from '@/lib/discovery/secrets'
+import { hintedCompanions } from '@/lib/discovery/companions'
 import { isNightOpen } from '@/lib/rpg/time'
 import { withJosa } from '@/lib/labels'
 import { cn } from '@/components/ui/cn'
@@ -147,6 +150,28 @@ function buildLines(state: AppState, events: CityEvent[]): Line[] {
   // 아래로 스크롤하지 않는 날에는 카드를 못 보고 지나간다.
   if (pendingDelivery(state)) {
     lines.push({ icon: '📦', text: '문 앞에 뭐가 와 있어.' })
+  }
+
+  // 도시 사람이 하고 싶어하는 이야기. 한 명만 말한다 —
+  // 넷이 동시에 부르면 그건 알림이 아니라 밀린 일이다.
+  const chapter = unreadChapters(state)[0]
+  if (chapter) {
+    const npc = findNpc(chapter.npcId)
+    if (npc) {
+      lines.push({ icon: npc.avatar, text: `${npc.name}가 하고 싶은 이야기가 있는 것 같아.` })
+    }
+  }
+
+  // 어디선가 낌새. 아직 못 찾은 곳 하나만.
+  const secret = secretViews(state).find((v) => v.stage === 'HINTED')
+  if (secret) {
+    lines.push({ icon: '✨', text: secret.def.hint })
+  }
+
+  // 아직 못 만난 아이
+  const buddy = hintedCompanions(state)[0]
+  if (buddy) {
+    lines.push({ icon: '🐾', text: buddy.hint })
   }
 
   // 오늘만 참인 것을 먼저. 이벤트는 매일 몇 개씩 있어서 이 자리를 다 먹는다.

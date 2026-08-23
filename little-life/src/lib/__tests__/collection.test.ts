@@ -788,9 +788,9 @@ describe('저장된 수집 기록', () => {
     expect(counts.WORK).toBe(42)
   })
 
-  it('스키마 버전이 8 이다', () => {
-    expect(STATE_VERSION).toBe(8)
-    expect(createDefaultState().version).toBe(8)
+  it('스키마 버전이 9 이다', () => {
+    expect(STATE_VERSION).toBe(9)
+    expect(createDefaultState().version).toBe(9)
   })
 })
 

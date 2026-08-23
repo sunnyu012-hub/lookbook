@@ -21,6 +21,8 @@ import type {
 } from '@/types'
 import type {
   CollectionShopId,
+  CompanionId,
+  DiscoveryNote,
   DiscoveryResult,
   HomeEffectId,
   PlacedItem,
@@ -45,6 +47,16 @@ import {
   unlockedEffectIds,
 } from '@/lib/collection/progress'
 import { pendingDelivery } from '@/lib/collection/delivery'
+import { applyDiscovery } from '@/lib/discovery/derive'
+import { findChapter, isChapterUnlocked } from '@/lib/discovery/stories'
+import { findSecret } from '@/lib/discovery/secrets'
+import {
+  PLAY_FRIENDSHIP,
+  PLAY_FRIENDSHIP_FAVORITE,
+  findCompanion,
+  likesHere,
+  unlockedMemories,
+} from '@/lib/discovery/companions'
 import {
   findCollectionShop,
   isCollectionShopOpen,
@@ -154,6 +166,15 @@ interface GameState {
   visitShop: (shopId: CollectionShopId, itemIds: string[]) => void
   /** 문 앞에 온 것을 받는다. */
   claimDelivery: () => DeliveryClaim | null
+  /** 도시 사람의 이야기 한 장을 읽는다. */
+  readChapter: (chapterId: string) => ChapterResult | null
+  /** 같이 다닐 아이를 고른다. */
+  setActiveCompanion: (id: CompanionId | null) => void
+  /** 동료에게 인사한다. 하루에 한 번만 친밀도가 오른다. */
+  playWithCompanion: (id: CompanionId) => CompanionPlayResult | null
+  /** 이번에 새로 발견한 것들 (읽고 나면 비운다) */
+  discoveryNotes: DiscoveryNote[]
+  dismissDiscoveryNotes: () => void
   /** 지금 보고 있는 방에 하나 놓는다. */
   placeInRoom: (itemId: string) => PlacedItem | null
   /** 놓은 것을 옮긴다. */
@@ -177,6 +198,25 @@ export type CollectBuyResult =
       notes: string[]
     }
   | { ok: false; reason: 'NOT_ENOUGH_COINS' | 'SOLD_OUT' | 'CLOSED' | 'LOCKED' | 'UNKNOWN' }
+
+export interface ChapterResult {
+  chapterId: string
+  title: string
+  lines: string[]
+  itemId: string | null
+  isNew: boolean
+  discoveries: DiscoveryResult[]
+  /** 이 장을 읽어서 열린 것 */
+  unlockedSecretName: string | null
+}
+
+export interface CompanionPlayResult {
+  name: string
+  gained: number
+  friendship: number
+  /** 이번에 열린 기억 */
+  memoryTitle: string | null
+}
 
 export interface DeliveryClaim {
   itemId: string
@@ -415,6 +455,8 @@ export function useGameState(): GameState {
   const giftedRef = useRef(false)
   /** 밸런스 보정으로 채워준 코인. 한 번 알려주고 끝이다. */
   const rebalancedRef = useRef(0)
+  /** 이번에 새로 발견한 것들. 화면에서 읽고 나면 비운다. */
+  const [discoveryNotes, setDiscoveryNotes] = useState<DiscoveryNote[]>([])
 
   /**
    * 모든 상태 변경은 여기를 지난다. ref 를 먼저 갱신해 연속 클릭에도 최신값을 본다.
@@ -438,7 +480,16 @@ export function useGameState(): GameState {
         if (fixed.coins > 0) rebalancedRef.current = fixed.coins
         // 그동안 조건을 이미 넘긴 것들 — 평판으로 받는 물건, 완성해둔 세트, 트로피 —
         // 은 앱을 열 때 도착한다. 다음에 뭘 하기 전까지 기다리게 두지 않는다.
-        commit(applyCollectionDerived(fixed.state).state)
+        // 발견 층도 같이 본다. 조건을 전부 기존 기록에서 세기 때문에,
+        // 이 업데이트를 처음 여는 사람에게 그동안의 기록이 그대로 반영된다.
+        const withCollection = applyCollectionDerived(fixed.state).state
+        const discovered = applyDiscovery(withCollection)
+        // 발견 보상으로 도감이 늘면 그게 다시 마일스톤·세트를 완성시킬 수 있다.
+        // 한 번 더 돌려서 그 자리에서 따라오게 한다 — 안 그러면
+        // 다음에 앱을 열 때까지 기다리게 된다.
+        const chained = applyCollectionDerived(discovered.state)
+        setDiscoveryNotes(discovered.notes)
+        commit(chained.state)
         if (gift.given) giftedRef.current = true
       } else if (defaults.current) {
         // 첫 실행이면 샘플 데이터와 선물을 그 자리에서 저장해 둔다.
@@ -689,7 +740,13 @@ export function useGameState(): GameState {
 
       // 평판이 오르거나 세트가 완성되면 여기서 따라온다
       const derived = applyCollectionDerived(next, now)
-      commit(derived.state)
+      // 이번 퀘스트로 새로 열린 발견이 있으면 같이 챙긴다.
+      // 보상 계산은 위에서 이미 끝났다 — 여기서 EXP·코인을 다시 계산하지 않는다.
+      const discovered = applyDiscovery(derived.state, now)
+      // 발견 보상이 도감을 늘리면 마일스톤·세트가 따라 완성될 수 있다
+      const chained = applyCollectionDerived(discovered.state, now)
+      if (discovered.notes.length > 0) setDiscoveryNotes(discovered.notes)
+      commit(chained.state)
 
       return {
         gainedExp: reward.exp,
@@ -1481,6 +1538,143 @@ export function useGameState(): GameState {
     }
   }, [commit])
 
+
+  // ── 발견 ────────────────────────────────────────────
+
+  /**
+   * 이야기 한 장을 읽는다.
+   *
+   * 읽는 것 자체가 전부다. 퀘스트를 시키지 않는다.
+   * 읽고 나면 그 사람과 조금 더 가까워지고, 가끔 물건 하나를 준다.
+   */
+  const readChapter = useCallback(
+    (chapterId: string): ChapterResult | null => {
+      const prev = stateRef.current
+      const def = findChapter(chapterId)
+      if (!def) return null
+      if (prev.discovery.readChapterIds.includes(chapterId)) return null
+      if (!isChapterUnlocked(prev, def)) return null
+
+      const now = new Date()
+      const npc = prev.npcs[def.npcId] ?? emptyNpcState()
+
+      let next: AppState = {
+        ...prev,
+        npcs: {
+          ...prev.npcs,
+          [def.npcId]: {
+            ...npc,
+            friendship: Math.min(FRIENDSHIP_MAX, npc.friendship + def.rewardFriendship),
+          },
+        },
+        discovery: {
+          ...prev.discovery,
+          readChapterIds: [...prev.discovery.readChapterIds, chapterId],
+        },
+      }
+
+      let isNew = false
+      if (def.rewardItemId) {
+        const added = addItem(next.collection, def.rewardItemId, now)
+        isNew = added.isNew
+        next = { ...next, collection: added.collection }
+      }
+
+      // 이 장이 비밀을 여는 장이면 바로 열어준다
+      if (def.unlocksSecret && !next.discovery.foundSecretIds.includes(def.unlocksSecret)) {
+        next = {
+          ...next,
+          discovery: {
+            ...next.discovery,
+            foundSecretIds: [...next.discovery.foundSecretIds, def.unlocksSecret],
+          },
+        }
+      }
+
+      const derived = applyCollectionDerived(next, now)
+      const discovered = applyDiscovery(derived.state, now)
+      setDiscoveryNotes(discovered.notes)
+      commit(discovered.state)
+
+      return {
+        chapterId,
+        title: def.title,
+        lines: def.lines,
+        itemId: def.rewardItemId,
+        isNew,
+        discoveries: [
+          ...(isNew && def.rewardItemId
+            ? [{ itemId: def.rewardItemId, isNew: true, source: def.title }]
+            : []),
+          ...derived.discoveries,
+        ],
+        unlockedSecretName: def.unlocksSecret ? (findSecret(def.unlocksSecret)?.name ?? null) : null,
+      }
+    },
+    [commit],
+  )
+
+  /** 같이 다닐 아이를 고른다 */
+  const setActiveCompanion = useCallback(
+    (id: CompanionId | null) => {
+      const prev = stateRef.current
+      if (id !== null && prev.discovery.companions[id] === undefined) return
+      commit({ ...prev, discovery: { ...prev.discovery, activeCompanionId: id } })
+    },
+    [commit],
+  )
+
+  /**
+   * 동료에게 인사한다.
+   *
+   * 하루에 한 번만 친밀도가 오른다. 여러 번 눌러도 되지만 그때는 안 오른다 —
+   * 눌러야 이득인 버튼을 만들면 그때부터 그건 숙제다.
+   * 안 눌렀다고 줄어들지도 않는다.
+   */
+  const playWithCompanion = useCallback(
+    (id: CompanionId): CompanionPlayResult | null => {
+      const prev = stateRef.current
+      const def = findCompanion(id)
+      const state = prev.discovery.companions[id]
+      if (!def || !state) return null
+
+      const today = todayKey()
+      const before = unlockedMemories(id, state.friendship).length
+
+      if (state.lastPlayedOn === today) {
+        return { name: def.name, gained: 0, friendship: state.friendship, memoryTitle: null }
+      }
+
+      // 좋아하는 동네에 같이 있으면 조금 더
+      const gained = likesHere(def, prev.user.currentAreaId)
+        ? PLAY_FRIENDSHIP_FAVORITE
+        : PLAY_FRIENDSHIP
+      const friendship = state.friendship + gained
+
+      commit({
+        ...prev,
+        discovery: {
+          ...prev.discovery,
+          companions: {
+            ...prev.discovery.companions,
+            [id]: { ...state, friendship, lastPlayedOn: today },
+          },
+        },
+      })
+
+      const after = unlockedMemories(id, friendship)
+      return {
+        name: def.name,
+        gained,
+        friendship,
+        memoryTitle: after.length > before ? after[after.length - 1].title : null,
+      }
+    },
+    [commit],
+  )
+
+  const dismissDiscoveryNotes = useCallback(() => setDiscoveryNotes([]), [])
+
   /**
    * 지금 보고 있는 방에 하나 놓는다.
    *
@@ -1652,6 +1846,11 @@ export function useGameState(): GameState {
       toggleWishlist,
       visitShop,
       claimDelivery,
+      readChapter,
+      setActiveCompanion,
+      playWithCompanion,
+      discoveryNotes,
+      dismissDiscoveryNotes,
       placeInRoom,
       movePlaced,
       updatePlaced,
@@ -1696,6 +1895,11 @@ export function useGameState(): GameState {
       toggleWishlist,
       visitShop,
       claimDelivery,
+      readChapter,
+      setActiveCompanion,
+      playWithCompanion,
+      discoveryNotes,
+      dismissDiscoveryNotes,
       placeInRoom,
       movePlaced,
       updatePlaced,

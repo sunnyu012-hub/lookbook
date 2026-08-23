@@ -5,6 +5,7 @@ import type {
   BattleDef,
   CollectionShopDef,
   DiscoveryResult,
+  CompanionId,
   NpcDef,
   NpcQuestChainDef,
   Quest,
@@ -22,6 +23,9 @@ import { BattleSheet } from '@/components/rpg/BattleSheet'
 import { NpcSheet } from '@/components/city/NpcSheet'
 import { ShopSheet } from '@/components/city/ShopSheet'
 import { CollectionShopSheet } from '@/components/collection/CollectionShopSheet'
+import { DiscoverySheet } from '@/components/discovery/DiscoverySheet'
+import { storyProgress, unreadChapters } from '@/lib/discovery/stories'
+import { StorySheet } from '@/components/discovery/StorySheet'
 import { WorkshopSheet } from '@/components/collection/WorkshopSheet'
 import { DiscoveryOverlay } from '@/components/collection/DiscoveryOverlay'
 import { DecorateMode } from '@/components/room/DecorateMode'
@@ -87,6 +91,11 @@ export default function App() {
     toggleWishlist,
     visitShop,
     claimDelivery,
+    readChapter,
+    setActiveCompanion,
+    playWithCompanion,
+    discoveryNotes,
+    dismissDiscoveryNotes,
     placeInRoom,
     movePlaced,
     updatePlaced,
@@ -104,6 +113,8 @@ export default function App() {
   // id 로만 들고 있는다. 상태에서 매번 다시 찾아야 HP 가 깎이는 게 시트에 바로 보인다.
   const [openBattleId, setOpenBattleId] = useState<string | null>(null)
   const [hubOpen, setHubOpen] = useState(false)
+  const [discoveryOpen, setDiscoveryOpen] = useState(false)
+  const [storyNpc, setStoryNpc] = useState<NpcDef | null>(null)
   const [openPack, setOpenPack] = useState<QuestPackDef | null>(null)
   const [openNpc, setOpenNpc] = useState<NpcDef | null>(null)
   const [openShop, setOpenShop] = useState<ShopDef | null>(null)
@@ -416,6 +427,31 @@ export default function App() {
     claimed.notes.forEach((note) => feedback.notify(note))
   }, [claimDelivery, feedback, showCollected])
 
+  /** 이야기 한 장을 읽는다 */
+  const handleReadChapter = useCallback(
+    (chapterId: string) => {
+      const result = readChapter(chapterId)
+      if (!result) return
+      if (result.isNew) showCollected(result.discoveries)
+      if (result.unlockedSecretName) {
+        feedback.notify(`${result.unlockedSecretName} — 새로운 곳을 알게 됐어`)
+      }
+    },
+    [readChapter, feedback, showCollected],
+  )
+
+  /** 동료에게 인사한다 */
+  const handlePlayWithCompanion = useCallback(
+    (id: CompanionId) => {
+      const result = playWithCompanion(id)
+      if (!result) return
+      if (result.memoryTitle) feedback.notify(`${result.memoryTitle} — 기억이 하나 남았어`)
+      else if (result.gained > 0) feedback.notify(`${result.name}와 조금 더 친해졌어`)
+      else feedback.notify(`${result.name}는 오늘도 잘 있어`)
+    },
+    [playWithCompanion, feedback],
+  )
+
   const handleCraft = useCallback(
     (recipeId: string) => {
       const result = craftItem(recipeId)
@@ -525,6 +561,9 @@ export default function App() {
             onOpenMe={() => setTab('me')}
             onDecorate={() => setDecorating(true)}
             onClaimDelivery={handleClaimDelivery}
+          discoveryNotes={discoveryNotes}
+          onDismissDiscovery={dismissDiscoveryNotes}
+          onOpenDiscovery={() => setDiscoveryOpen(true)}
           onOpenCollection={() => {
               setBagView('BOOK')
               setTab('bag')
@@ -557,6 +596,7 @@ export default function App() {
             npcs={state.npcs}
             events={events}
             collection={state.collection}
+            state={state}
             onSelectArea={handleSelectArea}
             onOpenNpc={setOpenNpc}
             onOpenShop={handleOpenShopForArea}
@@ -648,6 +688,13 @@ export default function App() {
         equippedIds={equippedIds}
         events={events}
         shopOpen={openNpcShopOpen}
+        story={openNpc ? storyProgress(state, openNpc.id) : null}
+        storyReady={openNpc ? unreadChapters(state).some((c) => c.npcId === openNpc.id) : false}
+        onOpenStory={() => {
+          const npc = openNpc
+          setOpenNpc(null)
+          setStoryNpc(npc)
+        }}
         onClose={() => setOpenNpc(null)}
         onTalk={handleTalk}
         onAcceptChain={handleAcceptChain}
@@ -675,6 +722,21 @@ export default function App() {
         onBuy={handleCollectionBuy}
         onToggleWishlist={toggleWishlist}
         onVisit={handleShopVisit}
+      />
+
+      <DiscoverySheet
+        open={discoveryOpen}
+        state={state}
+        onClose={() => setDiscoveryOpen(false)}
+        onSetCompanion={setActiveCompanion}
+        onPlay={handlePlayWithCompanion}
+      />
+
+      <StorySheet
+        npc={storyNpc}
+        state={state}
+        onClose={() => setStoryNpc(null)}
+        onRead={handleReadChapter}
       />
 
       <WorkshopSheet
