@@ -12,6 +12,7 @@ import {
   todayListings,
 } from '@/lib/collection/shops'
 import { findCollectionItem } from '@/lib/collection/catalog'
+import { pendingDelivery } from '@/lib/collection/delivery'
 import { isNightOpen } from '@/lib/rpg/time'
 import { withJosa } from '@/lib/labels'
 import { cn } from '@/components/ui/cn'
@@ -30,44 +31,52 @@ interface Line {
 /**
  * 오늘만 참인 가게 소식.
  *
- * 깎아주는 것 한 줄, 오늘까지인 것 한 줄. 둘 다 없으면 아무 줄도 만들지 않는다.
- * 매일 뜨는 문장은 며칠 지나면 안 읽힌다.
+ * 가게가 여덟이고 저마다 할 말이 있어서, 다 적으면 이 카드가 가게 소식지가 된다.
+ * 그래서 제일 볼 만한 것 두 줄만 고른다.
+ *
+ * 귀한 것 → 깎아주는 것 → 오늘까지 순으로 본다.
+ * 값이 싼 건 내일도 살 수 있지만 오늘 들어온 귀한 것은 오늘뿐이다.
  */
 function shopLines(): Line[] {
-  const out: Line[] = []
+  const rare: Line[] = []
+  const sales: Line[] = []
+  const leaving: Line[] = []
 
   for (const shop of COLLECTION_SHOPS) {
     if (!isCollectionShopOpen(shop)) continue
     const listings = todayListings(shop)
 
+    // 오늘 이 가게에서 제일 귀한 것. 처음 들어온 것일 때만 말한다 —
+    // 어제도 있던 게 "들어왔어" 로 뜨면 그건 거짓말이다.
+    const find = listings.find((l) => l.rareFind && l.isNew && !l.locked)
+    if (find) {
+      const item = findCollectionItem(find.itemId)
+      if (item && (item.rarity === 'EPIC' || item.rarity === 'LEGENDARY')) {
+        rare.push({ icon: '✦', text: `${shop.name}에 ${item.nameKo} 들어왔어.` })
+      }
+    }
+
     const sale = listings.find((l) => l.wasPrice !== undefined)
-    if (sale && out.length === 0) {
+    if (sale) {
       const item = findCollectionItem(sale.itemId)
       if (item) {
-        out.push({
-          icon: shop.icon,
-          text: `${shop.name} · ${item.nameKo} 오늘 ${sale.price}코인.`,
-        })
+        sales.push({ icon: shop.icon, text: `${shop.name} · ${item.nameKo} 오늘 ${sale.price}코인.` })
       }
     }
 
     // 오늘까지인 것 중에서는 귀한 것만. 흔한 게 빠지는 건 아쉽지 않다.
-    const leaving = listings.find(
+    const going = listings.find(
       (l) => l.lastDay && !l.locked && (l.limited || findCollectionItem(l.itemId)?.rarity === 'RARE'),
     )
-    if (leaving && out.length < 2) {
-      const item = findCollectionItem(leaving.itemId)
+    if (going) {
+      const item = findCollectionItem(going.itemId)
       if (item) {
-        out.push({
-          icon: '⏳',
-          text: `${shop.name} · ${withJosa(item.nameKo, '은', '는')} 오늘까지.`,
-        })
+        leaving.push({ icon: '⏳', text: `${shop.name} · ${withJosa(item.nameKo, '은', '는')} 오늘까지.` })
       }
     }
-
-    if (out.length >= 2) break
   }
-  return out
+
+  return [...rare, ...sales, ...leaving].slice(0, 2)
 }
 
 /**
@@ -134,6 +143,12 @@ function buildLines(state: AppState, events: CityEvent[]): Line[] {
     break
   }
 
+  // 문 앞에 온 것. 홈에 카드가 따로 있지만, 여기에도 한 줄 —
+  // 아래로 스크롤하지 않는 날에는 카드를 못 보고 지나간다.
+  if (pendingDelivery(state)) {
+    lines.push({ icon: '📦', text: '문 앞에 뭐가 와 있어.' })
+  }
+
   // 오늘만 참인 것을 먼저. 이벤트는 매일 몇 개씩 있어서 이 자리를 다 먹는다.
   lines.push(...shopLines())
 
@@ -168,13 +183,18 @@ function buildLines(state: AppState, events: CityEvent[]): Line[] {
     })
   }
 
-  // 주말에만 서는 장
+  // 주말에만 서는 장. 평일에도 한 줄 두는 건 "언제 서는지" 를 묻지 않게 하려는 것이다.
   const flea = COLLECTION_SHOPS.find((s) => s.weekendOnly)
-  if (flea && isWeekend()) {
-    lines.push({ icon: '🧺', text: `오늘은 ${flea.name} 서는 날.` })
+  if (flea) {
+    lines.push(
+      isWeekend()
+        ? { icon: '🧺', text: `오늘은 ${flea.name} 서는 날.` }
+        : { icon: '🧺', text: `${flea.name} 은 이번 주말에 다시 서.` },
+    )
   }
 
-  // 밤에만 여는 곳
+  // 밤에만 여는 곳. 열렸을 때만 지금 무엇이 있는지까지 말한다 —
+  // 닫혀 있는 가게의 진열을 미리 알려주면 열릴 때까지 기다리게 된다.
   const market = SHOPS.find((s) => s.nightOnly)
   if (market) {
     const noa = findNpc('NOA')

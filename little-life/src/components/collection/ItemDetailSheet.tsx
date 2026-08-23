@@ -3,7 +3,7 @@ import { BottomSheet } from '@/components/ui/BottomSheet'
 import { Button } from '@/components/ui/Button'
 import { ItemIcon } from './ItemIcon'
 import { RarityBadge, RARITY_STYLE } from '@/components/rpg/RarityBadge'
-import { acquisitionHint, isDiscovered, ownedCount, setProgress } from '@/lib/collection/progress'
+import { acquisitionHint, isDiscovered, isSeen, ownedCount, setProgress } from '@/lib/collection/progress'
 import { findSet } from '@/lib/collection/sets'
 import { recipeForItem } from '@/lib/collection/recipes'
 import { findCollectionShop } from '@/lib/collection/shops'
@@ -41,6 +41,9 @@ export function ItemDetailSheet({
   const owned = ownedCount(collection, item.id)
   const wished = collection.wishlist.includes(item.id)
   const secret = item.hiddenUntilDiscovered === true
+  // 가게 진열대에서 본 것. 이름과 그림은 알지만 아직 내 것은 아니다.
+  const glimpsed = !found && !secret && isSeen(collection, item.id)
+  const named = found || glimpsed
   const style = RARITY_STYLE[item.rarity]
   const recipe = recipeForItem(item.id)
 
@@ -52,7 +55,7 @@ export function ItemDetailSheet({
   const hint = acquisitionHint(item, (id) => findCollectionShop(id)?.name ?? '어느 가게')
 
   return (
-    <BottomSheet open onClose={onClose} title={found ? item.nameKo : '아직 못 만난 것'}>
+    <BottomSheet open onClose={onClose} title={named ? item.nameKo : '아직 못 만난 것'}>
       <div className="flex items-start gap-3.5">
         <span
           className={cn(
@@ -61,12 +64,14 @@ export function ItemDetailSheet({
             found ? style.ring : 'ring-line',
           )}
         >
-          <ItemIcon item={item} hidden={!found} size="lg" />
+          <span className={cn(glimpsed && 'opacity-50 grayscale')}>
+            <ItemIcon item={item} hidden={!named} size="lg" />
+          </span>
         </span>
 
         <div className="min-w-0 flex-1 pt-1">
           <h2 className="text-[18px] font-semibold text-ink">
-            {found ? item.nameKo : '???'}
+            {named ? item.nameKo : '???'}
           </h2>
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             {found || !secret ? <RarityBadge rarity={item.rarity} /> : null}
@@ -78,12 +83,19 @@ export function ItemDetailSheet({
                 가진 것 {owned}개
               </span>
             )}
+            {glimpsed && (
+              <span className="rounded-pill bg-sunken px-2 py-0.5 text-[10.5px] text-inkdim">
+                진열대에서 봤어
+              </span>
+            )}
           </div>
         </div>
       </div>
 
       <p className="mt-3.5 rounded-card bg-canvas px-3.5 py-3 text-[13px] leading-relaxed text-inkdim">
-        {found ? item.description : secret ? '언제 만나게 될지는 아직 몰라.' : hint}
+        {/* 본 것은 설명까지 보여준다. 어떤 물건인지 알고 나서 사러 갈지 정하는 게
+            "본 것" 이라는 단계를 둔 이유다. 다만 도감 수에는 안 들어간다. */}
+        {found ? item.description : glimpsed ? `${item.description} — ${hint}` : secret ? '언제 만나게 될지는 아직 몰라.' : hint}
       </p>
 
       {/* 세트 */}

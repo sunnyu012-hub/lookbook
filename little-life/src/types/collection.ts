@@ -294,6 +294,8 @@ export interface CollectionShopDef {
   hagglePrices?: boolean
   /** 이 지역 평판이 이만큼은 되어야 뒷줄 물건을 보여주는 곳 */
   reputationForRare?: number
+  /** 흔한 것만 깔리는 날이 없도록, 매일 이만큼은 RARE 이상으로 채우는 곳 */
+  guaranteedRare?: number
 }
 
 /** 오늘 이 가게에 깔린 한 칸 */
@@ -310,6 +312,26 @@ export interface ShopListing {
   lastDay: boolean
   /** 오늘 깎아준 값이면 원래 값. 안 깎았으면 없다. */
   wasPrice?: number
+  /** 오늘 이 가게에 들어온 개수 */
+  stock: number
+  /** 그중 아직 남은 개수. 0 이면 품절. */
+  remaining: number
+  /** 오늘 이 가게에서 제일 귀한 한 칸인지 */
+  rareFind: boolean
+}
+
+/** 가게 위에 한 줄로 얹는 오늘의 입고 요약 */
+export interface TodaysStock {
+  /** 오늘 진열된 칸 수 */
+  total: number
+  /** 어제 없던 것 */
+  fresh: number
+  /** 찾는 물건 목록에 있던 것 */
+  wished: number
+  /** RARE 이상 */
+  rare: number
+  /** 아직 도감에 없는 것 */
+  unseen: number
 }
 
 // ── 저장되는 것 ─────────────────────────────────────────
@@ -343,8 +365,19 @@ export interface CollectionState {
   /** 방마다 걸어둔 공기. 열린 것 중에서 고른다 — 무엇이 열렸는지는 계산한다. */
   roomEffects: Record<string, HomeEffectId | null>
   currentRoomId: RoomId
-  /** `${dayKey}:${shopId}:${itemId}` → 오늘 산 개수. 하나뿐인 물건의 품절 표시에 쓴다. */
+  /** `${dayKey}:${shopId}:${itemId}` → 오늘 산 개수. 남은 재고를 여기서 뺀다. */
   purchases: Record<string, number>
+  /**
+   * itemId → 가게에서 처음 본 시각.
+   *
+   * 본 것과 가진 것은 다르다. 진열대에서 봤으면 이름과 그림은 알지만
+   * 도감의 발견 수에는 넣지 않는다 — 그건 손에 넣은 것만 센다.
+   */
+  seen: Record<string, string>
+  /** shopId → 마지막으로 들른 날. 오늘 아직 안 간 가게에 표시를 붙인다. */
+  shopVisits: Record<string, string>
+  /** 이미 받은 특별 배송 (dayKey). 두 번 주지 않으려고 남긴다. */
+  claimedDeliveries: string[]
   /** 알게 된 레시피 */
   discoveredRecipeIds: string[]
   /** 이미 받은 도감 보상 (발견 수) */
@@ -354,6 +387,15 @@ export interface CollectionState {
   /** 이미 받은 트로피 */
   earnedTrophyIds: string[]
 }
+
+/**
+ * 물건을 아는 정도.
+ *
+ * UNKNOWN  — 도감에 ??? 로 남는다
+ * SEEN     — 가게에서 봤다. 이름과 그림은 보이지만 발견 수에는 안 들어간다.
+ * DISCOVERED — 손에 넣었다. 도감에 들어간다.
+ */
+export type ItemKnowledge = 'UNKNOWN' | 'SEEN' | 'DISCOVERED'
 
 /** 처음 발견했을 때 화면에 띄울 것 */
 export interface DiscoveryResult {

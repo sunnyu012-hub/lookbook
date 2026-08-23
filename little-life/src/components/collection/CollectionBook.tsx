@@ -8,7 +8,7 @@ import { ItemDetailSheet } from './ItemDetailSheet'
 import { CATALOG, CATALOG_CATEGORIES, TROPHY_CATALOG, hasHiddenLeft } from '@/lib/collection/catalog'
 import { COLLECTION_SETS } from '@/lib/collection/sets'
 import { TROPHIES } from '@/lib/collection/trophies'
-import { collectionProgress, isDiscovered, ownedCount, setProgress } from '@/lib/collection/progress'
+import { collectionProgress, isDiscovered, isSeen, ownedCount, setProgress } from '@/lib/collection/progress'
 import { COLLECTION_CATEGORY_LABEL } from '@/lib/labels'
 import { cn } from '@/components/ui/cn'
 
@@ -124,6 +124,9 @@ export function CollectionBook({
               const found = isDiscovered(collection, item.id)
               const owned = ownedCount(collection, item.id)
               const secret = !found && item.hiddenUntilDiscovered === true
+              // 가게에서 본 것. 이름과 그림은 알지만 아직 가진 것은 아니다.
+              // 비밀 물건은 봤어도 계속 감춘다.
+              const glimpsed = !found && !secret && isSeen(collection, item.id)
 
               return (
                 <li key={item.id}>
@@ -133,11 +136,19 @@ export function CollectionBook({
                     className={cn(
                       'flex w-full flex-col items-center gap-1.5 rounded-card border px-1.5 py-3',
                       'transition-transform duration-150 ease-out active:scale-[0.97]',
-                      found ? 'border-line bg-surface' : 'border-line/60 bg-sunken/30',
+                      found
+                        ? 'border-line bg-surface'
+                        : glimpsed
+                          ? 'border-line/70 bg-sunken/10'
+                          : 'border-line/60 bg-sunken/30',
                     )}
                   >
                     <span className="relative">
-                      <ItemIcon item={item} hidden={!found} size="md" />
+                      {/* 본 것은 그림을 옅게 보여준다. 어떤 물건인지는 알되
+                          내 것이 아니라는 게 한눈에 보여야 한다. */}
+                      <span className={cn(glimpsed && 'opacity-45 grayscale')}>
+                        <ItemIcon item={item} hidden={!found && !glimpsed} size="md" />
+                      </span>
                       {owned > 1 && (
                         <span className="absolute -bottom-1 -right-1 rounded-pill bg-ink/70 px-1.5 font-game text-[9px] text-surface">
                           {owned}
@@ -150,8 +161,13 @@ export function CollectionBook({
                         found ? 'text-ink' : 'text-inkfaint',
                       )}
                     >
-                      {found ? item.nameKo : secret ? '???' : '???'}
+                      {found || glimpsed ? item.nameKo : '???'}
                     </span>
+                    {glimpsed && (
+                      <span className="font-game text-[8.5px] leading-none text-inkfaint">
+                        본 적 있음
+                      </span>
+                    )}
                     {collection.wishlist.includes(item.id) && !found && (
                       <span className="text-[10px] leading-none text-coral-deep">♥</span>
                     )}

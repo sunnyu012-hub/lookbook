@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Portal } from './Portal'
 import { useOverlay } from '@/hooks/useOverlay'
+import { cn } from './cn'
 
 interface BottomSheetProps {
   open: boolean
@@ -12,6 +13,14 @@ interface BottomSheetProps {
    */
   onBack?: () => void
   backLabel?: string
+  /**
+   * 내용이 줄어도 시트 높이를 붙잡아둔다.
+   *
+   * 시트는 아래에 붙어 있어서 내용이 짧아지면 윗변이 내려온다.
+   * 검색처럼 글자를 칠 때마다 내용이 바뀌는 화면에서는 그때마다 시트가
+   * 손가락 밑에서 움직인다. 그런 화면은 높이를 고정해두는 게 맞다.
+   */
+  fill?: boolean
   children: ReactNode
 }
 
@@ -22,6 +31,7 @@ export function BottomSheet({
   title,
   onBack,
   backLabel = '뒤로',
+  fill = false,
   children,
 }: BottomSheetProps) {
   // 스크롤 잠금·Esc·폰 뒤로 가기를 한곳에서 다룬다 (lib/overlay.ts)
@@ -44,7 +54,10 @@ export function BottomSheet({
           aria-modal="true"
           aria-label={title}
           // 키보드가 올라와도 내용이 잘리지 않게 최대 높이를 두고 안에서 스크롤한다.
-          className="relative flex max-h-[92dvh] w-full max-w-[430px] animate-sheetup flex-col rounded-t-[28px] bg-surface shadow-sheet"
+          className={cn(
+            'relative flex w-full max-w-[430px] animate-sheetup flex-col rounded-t-[28px] bg-surface shadow-sheet',
+            fill ? 'h-[92dvh]' : 'max-h-[92dvh]',
+          )}
         >
           <div className="shrink-0 px-3 pt-3">
             <div className="mx-auto h-1 w-9 rounded-pill bg-line" />
@@ -75,7 +88,15 @@ export function BottomSheet({
             </div>
           </div>
 
-          <div className="overflow-y-auto px-5 pb-[calc(20px+env(safe-area-inset-bottom))] pt-1">
+          <div
+            className={cn(
+              'overflow-y-auto px-5 pb-[calc(20px+env(safe-area-inset-bottom))] pt-1',
+              // 높이를 고정한 시트에서만 본문이 남은 자리를 채운다.
+              // 높이가 내용에 따라 정해지는 시트에 flex-1 을 주면
+              // 기준 크기가 0 이 되어 짧은 시트가 머리말만 남고 접힌다.
+              fill && 'min-h-0 flex-1',
+            )}
+          >
             {children}
           </div>
         </div>

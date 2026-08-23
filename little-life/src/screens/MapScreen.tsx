@@ -4,6 +4,7 @@ import type {
   AreaId,
   CityEvent,
   CollectionShopDef,
+  CollectionState,
   NpcDef,
   NpcStates,
   Quest,
@@ -24,6 +25,8 @@ import {
   isCollectionShopOpen,
   openingLabel,
 } from '@/lib/collection/shops'
+import { hasFreshStock } from '@/lib/collection/progress'
+import { todayKey } from '@/lib/date'
 import { isTodayQuest } from '@/lib/stats'
 import { cn } from '@/components/ui/cn'
 
@@ -33,6 +36,8 @@ interface MapScreenProps {
   reputation: Reputation
   npcs: NpcStates
   events: CityEvent[]
+  /** 오늘 어느 가게에 들렀는지 보려고 */
+  collection: CollectionState
   onSelectArea: (areaId: AreaId) => void
   onOpenNpc: (npc: NpcDef) => void
   onOpenShop: (areaId: AreaId) => void
@@ -54,6 +59,7 @@ export function MapScreen({
   reputation,
   npcs,
   events,
+  collection,
   onSelectArea,
   onOpenNpc,
   onOpenShop,
@@ -183,6 +189,7 @@ export function MapScreen({
         reputation={openArea ? (reputation[openArea.id] ?? 0) : 0}
         npcs={npcs}
         events={events}
+        collection={collection}
         onClose={() => setOpenArea(null)}
         onSelect={(id) => {
           onSelectArea(id)
@@ -219,6 +226,8 @@ interface AreaSheetProps {
   reputation: number
   npcs: NpcStates
   events: CityEvent[]
+  /** 오늘 어느 가게에 들렀는지 보려고 */
+  collection: CollectionState
   onClose: () => void
   onSelect: (id: AreaId) => void
   onOpenNpc: (npc: NpcDef) => void
@@ -236,6 +245,7 @@ function AreaSheet({
   reputation,
   npcs,
   events,
+  collection,
   onClose,
   onSelect,
   onOpenNpc,
@@ -360,6 +370,9 @@ function AreaSheet({
 
           {collectionShopsInArea(area.id).map((collectionShop) => {
             const open = isCollectionShopOpen(collectionShop)
+            // 오늘 아직 안 들른 가게. 안 갔다고 뭐라 하는 게 아니라,
+            // 어디를 보면 되는지만 알려준다.
+            const unvisited = open && hasFreshStock(collection, collectionShop.id, todayKey())
             return (
               <li key={collectionShop.id}>
                 <button
@@ -372,10 +385,25 @@ function AreaSheet({
                     'disabled:opacity-60 disabled:active:scale-100',
                   )}
                 >
-                  <span className="text-[22px] leading-none">{collectionShop.icon}</span>
+                  <span className="relative text-[22px] leading-none">
+                    {collectionShop.icon}
+                    {unvisited && (
+                      <span
+                        aria-hidden
+                        className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-coral"
+                      />
+                    )}
+                  </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[14px] font-medium text-ink">
-                      {collectionShop.name}
+                    <span className="flex items-center gap-1.5">
+                      <span className="min-w-0 truncate text-[14px] font-medium text-ink">
+                        {collectionShop.name}
+                      </span>
+                      {unvisited && (
+                        <span className="shrink-0 rounded-pill bg-coral-soft px-1.5 py-0.5 font-game text-[8.5px] text-coral-deep">
+                          NEW STOCK
+                        </span>
+                      )}
                     </span>
                     <span className="mt-0.5 block truncate text-[11.5px] text-inkdim">
                       {open ? collectionShop.description : openingLabel(collectionShop) ?? '지금은 닫혀 있어'}
