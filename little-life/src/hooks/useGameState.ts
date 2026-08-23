@@ -37,11 +37,14 @@ import {
   completedSetIds,
   discoveredCount,
   isRecipeKnown,
+  markSeen,
+  markShopVisited,
   ownedCount,
   removeItem,
   spendItems,
   unlockedEffectIds,
 } from '@/lib/collection/progress'
+import { pendingDelivery } from '@/lib/collection/delivery'
 import {
   findCollectionShop,
   isCollectionShopOpen,
@@ -147,6 +150,10 @@ interface GameState {
   craftItem: (recipeId: string) => CraftResult
   /** ♡ 찾는 물건에 넣고 뺀다. */
   toggleWishlist: (itemId: string) => void
+  /** 가게에 들어갔다. 오늘 진열을 본 것으로 적고, 새 입고 표시를 떼어낸다. */
+  visitShop: (shopId: CollectionShopId, itemIds: string[]) => void
+  /** 문 앞에 온 것을 받는다. */
+  claimDelivery: () => DeliveryClaim | null
   /** 지금 보고 있는 방에 하나 놓는다. */
   placeInRoom: (itemId: string) => PlacedItem | null
   /** 놓은 것을 옮긴다. */
@@ -170,6 +177,14 @@ export type CollectBuyResult =
       notes: string[]
     }
   | { ok: false; reason: 'NOT_ENOUGH_COINS' | 'SOLD_OUT' | 'CLOSED' | 'LOCKED' | 'UNKNOWN' }
+
+export interface DeliveryClaim {
+  itemId: string
+  isNew: boolean
+  from: string
+  discoveries: DiscoveryResult[]
+  notes: string[]
+}
 
 export type CraftResult =
   | { ok: true; itemId: string; isNew: boolean; discoveries: DiscoveryResult[]; notes: string[] }
@@ -1312,16 +1327,16 @@ export function useGameState(): GameState {
       const dayKey = todayKey()
       const listing = todayListings(shop, dayKey, {
         reputation: prev.reputation[shop.areaId] ?? 0,
+        playerLevel: prev.user.level,
+        collection: prev.collection,
       }).find((l) => l.itemId === itemId)
       if (!listing) return { ok: false, reason: 'UNKNOWN' }
       if (listing.locked) return { ok: false, reason: 'LOCKED' }
 
       const key = `${dayKey}:${shopId}:${itemId}`
       const boughtToday = prev.collection.purchases[key] ?? 0
-      if (listing.limited && boughtToday >= 1) return { ok: false, reason: 'SOLD_OUT' }
-      if (def.unique && ownedCount(prev.collection, itemId) > 0) {
-        return { ok: false, reason: 'SOLD_OUT' }
-      }
+      // 남은 개수는 진열이 이미 계산해뒀다. 여기서 또 세면 두 곳이 어긋난다.
+      if (listing.remaining <= 0) return { ok: false, reason: 'SOLD_OUT' }
       if (prev.user.coins < listing.price) return { ok: false, reason: 'NOT_ENOUGH_COINS' }
 
       const added = addItem(prev.collection, itemId, now)
@@ -1408,6 +1423,63 @@ export function useGameState(): GameState {
     },
     [commit],
   )
+
+  /**
+   * 가게에 들렀다.
+   *
+   * 오늘 진열대에 있던 것을 "본 것" 으로 적는다. 도감 수는 안 는다 —
+   * 본 것과 가진 것은 다르고, 봤다고 모은 게 되면 모으는 재미가 없다.
+   */
+  const visitShop = useCallback(
+    (shopId: CollectionShopId, itemIds: string[]) => {
+      const prev = stateRef.current
+      const dayKey = todayKey()
+
+      const seen = markSeen(prev.collection, itemIds)
+      const visited = markShopVisited(seen, shopId, dayKey)
+      if (visited === prev.collection) return
+
+      commit({ ...prev, collection: visited })
+    },
+    [commit],
+  )
+
+  /**
+   * 문 앞에 온 것을 받는다.
+   *
+   * 하루에 하나뿐이고, 받았는지는 날짜로 기억한다.
+   * 안 받고 넘긴 날은 그냥 지나간다 — 놓쳤다고 알려주지 않는다.
+   */
+  const claimDelivery = useCallback((): DeliveryClaim | null => {
+    const prev = stateRef.current
+    const dayKey = todayKey()
+    const delivery = pendingDelivery(prev, dayKey)
+    if (!delivery) return null
+
+    const now = new Date()
+    const added = addItem(prev.collection, delivery.itemId, now)
+    const claimed: AppState = {
+      ...prev,
+      collection: {
+        ...added.collection,
+        claimedDeliveries: [...added.collection.claimedDeliveries, dayKey],
+      },
+    }
+
+    const derived = applyCollectionDerived(claimed, now)
+    commit(derived.state)
+
+    return {
+      itemId: delivery.itemId,
+      isNew: added.isNew,
+      from: delivery.from,
+      discoveries: [
+        ...(added.isNew ? [{ itemId: delivery.itemId, isNew: true, source: delivery.from }] : []),
+        ...derived.discoveries,
+      ],
+      notes: derived.notes,
+    }
+  }, [commit])
 
   /**
    * 지금 보고 있는 방에 하나 놓는다.
@@ -1578,6 +1650,8 @@ export function useGameState(): GameState {
       buyCollectionItem,
       craftItem,
       toggleWishlist,
+      visitShop,
+      claimDelivery,
       placeInRoom,
       movePlaced,
       updatePlaced,
@@ -1620,6 +1694,8 @@ export function useGameState(): GameState {
       buyCollectionItem,
       craftItem,
       toggleWishlist,
+      visitShop,
+      claimDelivery,
       placeInRoom,
       movePlaced,
       updatePlaced,

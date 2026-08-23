@@ -1,5 +1,6 @@
 import type {
   Category,
+  ItemKnowledge,
   CollectionItemDef,
   CollectionSetDef,
   CollectionState,
@@ -33,6 +34,9 @@ export function emptyCollection(): CollectionState {
     roomEffects: {},
     currentRoomId: DEFAULT_ROOM_ID,
     purchases: {},
+    seen: {},
+    shopVisits: {},
+    claimedDeliveries: [],
     discoveredRecipeIds: [],
     claimedMilestones: [],
     claimedSetIds: [],
@@ -46,6 +50,61 @@ export function ownedCount(c: CollectionState, itemId: string): number {
 
 export function isDiscovered(c: CollectionState, itemId: string): boolean {
   return c.discovered[itemId] !== undefined
+}
+
+/** 가게에서 보기만 했는지 */
+export function isSeen(c: CollectionState, itemId: string): boolean {
+  return c.seen[itemId] !== undefined
+}
+
+/**
+ * 이 물건을 얼마나 아는지.
+ *
+ * 가진 것이 본 것을 덮는다 — 손에 넣었으면 그건 발견이지 목격이 아니다.
+ */
+export function knowledgeOf(c: CollectionState, itemId: string): ItemKnowledge {
+  if (isDiscovered(c, itemId)) return 'DISCOVERED'
+  if (isSeen(c, itemId)) return 'SEEN'
+  return 'UNKNOWN'
+}
+
+/**
+ * 진열대에서 본 것으로 적어둔다.
+ *
+ * 이미 발견한 것은 적지 않는다. 도감 수는 건드리지 않는다 —
+ * 보기만 한 것으로 도감이 차면 그건 모은 게 아니다.
+ */
+export function markSeen(
+  c: CollectionState,
+  itemIds: string[],
+  now: Date = new Date(),
+): CollectionState {
+  const fresh = itemIds.filter((id) => !isDiscovered(c, id) && !isSeen(c, id))
+  if (fresh.length === 0) return c
+
+  const seen = { ...c.seen }
+  for (const id of fresh) seen[id] = now.toISOString()
+  return { ...c, seen }
+}
+
+/**
+ * 이 가게에 오늘 들렀다고 적어둔다.
+ *
+ * 오늘 아직 안 간 가게에만 표시를 붙이려고 쓴다.
+ * 안 갔다고 뭐라 하지 않는다 — 표시가 없어질 뿐이다.
+ */
+export function markShopVisited(
+  c: CollectionState,
+  shopId: string,
+  dayKey: string,
+): CollectionState {
+  if (c.shopVisits[shopId] === dayKey) return c
+  return { ...c, shopVisits: { ...c.shopVisits, [shopId]: dayKey } }
+}
+
+/** 오늘 이 가게에 아직 안 갔는지 */
+export function hasFreshStock(c: CollectionState, shopId: string, dayKey: string): boolean {
+  return c.shopVisits[shopId] !== dayKey
 }
 
 /**

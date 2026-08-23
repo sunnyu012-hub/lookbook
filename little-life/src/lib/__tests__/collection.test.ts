@@ -314,10 +314,21 @@ describe('상점', () => {
 
   it('단골이 아니면 안쪽 물건은 잠겨 있다', () => {
     const vintage = COLLECTION_SHOPS.find((s) => s.reputationForRare)!
-    const stranger = todayListings(vintage, '2026-03-04', { reputation: 0 })
-    const regular = todayListings(vintage, '2026-03-04', { reputation: 999 })
+    // 평판 단계는 같게 두고 잠금만 본다. 단계가 다르면 진열 자체가 달라져서
+    // 무엇 때문에 달라졌는지 알 수 없다.
+    const stranger = todayListings(vintage, '2026-03-04', { reputation: 0, reputationLevel: 1 })
+    const regular = todayListings(vintage, '2026-03-04', { reputation: 999, reputationLevel: 1 })
+
     expect(regular.filter((l) => l.locked)).toHaveLength(0)
-    expect(stranger.length).toBe(regular.length)
+    // 물건을 숨기지는 않는다. 자리에 있고, 아직 못 살 뿐이다.
+    expect(stranger.map((l) => l.itemId)).toEqual(regular.map((l) => l.itemId))
+  })
+
+  it('자주 오면 진열이 한 칸 늘고 귀한 것이 더 나온다', () => {
+    const shop = COLLECTION_SHOPS.find((s) => s.id === 'HOME_ATELIER')!
+    const visitor = todayListings(shop, '2026-03-04', { reputationLevel: 1 })
+    const local = todayListings(shop, '2026-03-04', { reputationLevel: 3 })
+    expect(local.length).toBe(visitor.length + 1)
   })
 
   it('파는 물건에는 값이 있다', () => {
@@ -777,9 +788,9 @@ describe('저장된 수집 기록', () => {
     expect(counts.WORK).toBe(42)
   })
 
-  it('스키마 버전이 7 이다', () => {
-    expect(STATE_VERSION).toBe(7)
-    expect(createDefaultState().version).toBe(7)
+  it('스키마 버전이 8 이다', () => {
+    expect(STATE_VERSION).toBe(8)
+    expect(createDefaultState().version).toBe(8)
   })
 })
 

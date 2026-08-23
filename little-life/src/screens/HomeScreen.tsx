@@ -6,6 +6,7 @@ import { GreetingHeader } from '@/components/home/GreetingHeader'
 import { AdventureStatusCard } from '@/components/home/AdventureStatusCard'
 import { TodayInTheCity } from '@/components/home/TodayInTheCity'
 import { WeeklyGoalsCard } from '@/components/home/WeeklyGoalsCard'
+import { DeliveryCard } from '@/components/home/DeliveryCard'
 import { TodayQuestSection } from '@/components/home/TodayQuestSection'
 import { DailySummary } from '@/components/home/DailySummary'
 import { ScreenHeader } from '@/components/layout/ScreenHeader'
@@ -27,6 +28,8 @@ interface HomeScreenProps {
   onOpenMe: () => void
   onDecorate: () => void
   onOpenCollection: () => void
+  /** 문 앞에 온 것을 받는다 */
+  onClaimDelivery: () => void
   events: CityEvent[]
 }
 
@@ -42,6 +45,7 @@ export function HomeScreen({
   onOpenMe,
   onDecorate,
   onOpenCollection,
+  onClaimDelivery,
   events,
 }: HomeScreenProps) {
   const openQuests = useMemo(
@@ -100,6 +104,8 @@ export function HomeScreen({
           <span className="text-[17px] leading-none">+</span> 퀘스트 추가
         </Button>
       )}
+
+      <DeliveryCard state={state} onClaim={onClaimDelivery} />
 
       <WeeklyGoalsCard state={state} />
 

@@ -24,6 +24,7 @@ import {
   AREA_IDS,
   CATEGORIES,
   CLASS_IDS,
+  COLLECTION_SHOP_IDS,
   EQUIP_SLOTS,
   HOME_EFFECT_IDS,
   RARITIES,
@@ -53,7 +54,13 @@ import { findRoom } from '@/lib/collection/rooms'
  * 없는 항목만 기본값으로 채우고, 있는 값은 손대지 않는다.
  */
 
-export const STATE_VERSION = 7
+export const STATE_VERSION = 8
+
+/** 구매 기록을 며칠치까지 남길지 */
+export const PURCHASE_DAYS_KEPT = 7
+
+/** 받은 특별 배송을 몇 개까지 기억할지 */
+export const DELIVERIES_KEPT = 60
 
 export function defaultStats(): Stats {
   return STAT_KEYS.reduce((acc, key) => {
@@ -466,11 +473,40 @@ export function sanitizeCollection(raw: unknown): CollectionState {
     }
   }
 
+  // 구매 기록은 남은 재고를 계산하는 데만 쓴다.
+  // 오래된 날짜는 아무도 안 보므로 최근 며칠만 남기고 버린다 —
+  // 그대로 두면 몇 달이 지나 저장소에 쓸모없는 줄이 수천 개 쌓인다.
   const purchases: Record<string, number> = {}
   if (s.purchases && typeof s.purchases === 'object') {
+    const cutoff = new Date()
+    cutoff.setDate(cutoff.getDate() - PURCHASE_DAYS_KEPT)
+    const oldest = cutoff.toISOString().slice(0, 10)
+
     for (const [key, count] of Object.entries(s.purchases as Record<string, unknown>)) {
       const n = numberOr(count, 0)
-      if (n > 0) purchases[key] = n
+      if (n <= 0) continue
+      const dayKey = key.slice(0, 10)
+      if (dayKey < oldest) continue
+      purchases[key] = n
+    }
+  }
+
+  // 가게에서 본 것. 발견과 달리 도감 수에는 안 들어간다.
+  const seen: Record<string, string> = {}
+  if (s.seen && typeof s.seen === 'object') {
+    for (const [id, at] of Object.entries(s.seen as Record<string, unknown>)) {
+      if (!findCollectionItem(id)) continue
+      // 이미 손에 넣은 것은 본 것으로 남길 필요가 없다
+      if (discovered[id]) continue
+      seen[id] = typeof at === 'string' ? at : new Date().toISOString()
+    }
+  }
+
+  const shopVisits: Record<string, string> = {}
+  if (s.shopVisits && typeof s.shopVisits === 'object') {
+    for (const [shopId, at] of Object.entries(s.shopVisits as Record<string, unknown>)) {
+      if (!COLLECTION_SHOP_IDS.includes(shopId as never)) continue
+      if (typeof at === 'string') shopVisits[shopId] = at
     }
   }
 
@@ -496,6 +532,13 @@ export function sanitizeCollection(raw: unknown): CollectionState {
     rooms,
     currentRoomId: findRoom(s.currentRoomId as string) ? (s.currentRoomId as RoomId) : 'MY_ROOM',
     purchases,
+    seen,
+    shopVisits,
+    claimedDeliveries: Array.isArray(s.claimedDeliveries)
+      ? [...new Set(s.claimedDeliveries.filter((v): v is string => typeof v === 'string'))].slice(
+          -DELIVERIES_KEPT,
+        )
+      : [],
     discoveredRecipeIds: Array.isArray(s.discoveredRecipeIds)
       ? [...new Set(s.discoveredRecipeIds.filter((v): v is string => typeof v === 'string'))]
       : [],

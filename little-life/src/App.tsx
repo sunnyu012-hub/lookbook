@@ -85,6 +85,8 @@ export default function App() {
     buyCollectionItem,
     craftItem,
     toggleWishlist,
+    visitShop,
+    claimDelivery,
     placeInRoom,
     movePlaced,
     updatePlaced,
@@ -388,6 +390,32 @@ export default function App() {
     [openCollectionShop, buyCollectionItem, feedback, showCollected],
   )
 
+  /** 가게에 들어갔다고 적어둔다. 조용히 지나간다 — 알림을 띄울 일이 아니다. */
+  const handleShopVisit = useCallback(
+    (itemIds: string[]) => {
+      if (!openCollectionShop) return
+      visitShop(openCollectionShop.id, itemIds)
+    },
+    [openCollectionShop, visitShop],
+  )
+
+  /**
+   * 문 앞에 온 것을 받는다.
+   *
+   * 안 받고 넘겨도 뭐라 하지 않는다. 다음 날이면 그냥 없어진다.
+   */
+  const handleClaimDelivery = useCallback(() => {
+    const claimed = claimDelivery()
+    if (!claimed) return
+
+    if (claimed.isNew) showCollected(claimed.discoveries)
+    else {
+      const item = findCollectionItem(claimed.itemId)
+      feedback.notify(`${item?.nameKo ?? '무언가'} 받았어`)
+    }
+    claimed.notes.forEach((note) => feedback.notify(note))
+  }, [claimDelivery, feedback, showCollected])
+
   const handleCraft = useCallback(
     (recipeId: string) => {
       const result = craftItem(recipeId)
@@ -496,7 +524,8 @@ export default function App() {
             }}
             onOpenMe={() => setTab('me')}
             onDecorate={() => setDecorating(true)}
-            onOpenCollection={() => {
+            onClaimDelivery={handleClaimDelivery}
+          onOpenCollection={() => {
               setBagView('BOOK')
               setTab('bag')
             }}
@@ -527,6 +556,7 @@ export default function App() {
             reputation={state.reputation}
             npcs={state.npcs}
             events={events}
+            collection={state.collection}
             onSelectArea={handleSelectArea}
             onOpenNpc={setOpenNpc}
             onOpenShop={handleOpenShopForArea}
@@ -644,6 +674,7 @@ export default function App() {
         onClose={() => setOpenCollectionShop(null)}
         onBuy={handleCollectionBuy}
         onToggleWishlist={toggleWishlist}
+        onVisit={handleShopVisit}
       />
 
       <WorkshopSheet
