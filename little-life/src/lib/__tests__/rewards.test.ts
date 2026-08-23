@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { EquippedItems, Rarity } from '@/types'
+import type { Difficulty, EquippedItems, Rarity } from '@/types'
+import { CATALOG } from '@/lib/collection/catalog'
 import { EQUIP_SLOTS } from '@/types'
 import {
   BASE_DROP_CHANCE,
@@ -25,11 +26,11 @@ const bare = { classId: null, equipped: equipped(), areaId: 'HOME_BASE' as const
 describe('calculateQuestReward — 기본', () => {
   it('아무 보너스가 없으면 난이도 기본값 그대로', () => {
     const r = calculateQuestReward({ ...bare, areaId: 'CAFE_STREET', category: 'BODY', difficulty: 'NORMAL' })
-    expect(r).toMatchObject({ baseExp: 20, baseCoins: 10, exp: 20, coins: 10 })
+    expect(r).toMatchObject({ baseExp: 20, baseCoins: 30, exp: 20, coins: 30 })
   })
 
   it('난이도별 Coin 은 5 / 10 / 20', () => {
-    expect(DIFFICULTY_COINS).toEqual({ EASY: 5, NORMAL: 10, HARD: 20 })
+    expect(DIFFICULTY_COINS).toEqual({ EASY: 15, NORMAL: 30, HARD: 60 })
   })
 
   it('퀘스트에 굳혀둔 EXP 가 있으면 그걸 쓴다', () => {
@@ -52,7 +53,7 @@ describe('calculateQuestReward — 지역 버프', () => {
   it('Training Zone 의 BODY 보상은 EXP 와 Coin 둘 다 오른다', () => {
     const r = calculateQuestReward({ ...bare, areaId: 'TRAINING_ZONE', category: 'BODY', difficulty: 'NORMAL' })
     expect(r.exp).toBe(23) // 20 * 1.15
-    expect(r.coins).toBe(12) // 10 * 1.15 → 11.5 → 12
+    expect(r.coins).toBe(35) // 30 * 1.15 → 34.5 → 35
   })
 })
 
@@ -95,7 +96,7 @@ describe('calculateQuestReward — 직업', () => {
 
   it('Explorer 는 Coin 만 오른다', () => {
     const r = calculateQuestReward({ ...bare, classId: 'EXPLORER', category: 'WORK', difficulty: 'NORMAL' })
-    expect(r.coins).toBe(11)
+    expect(r.coins).toBe(33)
     expect(r.exp).toBe(20)
   })
 })
@@ -218,5 +219,47 @@ describe('content 무결성', () => {
     })
     // 직업 3 + 장비 3 + 지역 5
     expect(b.expPctByCategory.LIFE).toBe(11)
+  })
+})
+
+describe('벌이와 물건값', () => {
+  /**
+   * 숫자를 조금씩 만지다 보면 어느새 아무것도 못 사는 상태가 된다.
+   * 실제로 그랬다 — 제일 싼 러그가 나흘치였다.
+   * 그래서 "하루치를 하면 뭘 살 수 있나" 를 여기에 못박아둔다.
+   */
+  const day = (n: number, d: Difficulty) => DIFFICULTY_COINS[d] * n
+  /** 보통 하루: 보통 둘 + 쉬운 것 하나 */
+  const A_DAY = day(2, 'NORMAL') + day(1, 'EASY')
+
+  const priced = CATALOG.filter((i) => i.price !== undefined && i.price > 0)
+  const cheapest = Math.min(...priced.map((i) => i.price!))
+  const median = [...priced.map((i) => i.price!)].sort((a, b) => a - b)[
+    Math.floor(priced.length / 2)
+  ]
+
+  it('하루치를 하면 방에 놓을 것 하나는 산다', () => {
+    const placeable = priced.filter((i) => i.placement === 'PLACEABLE')
+    const affordable = placeable.filter((i) => i.price! <= A_DAY)
+    expect(affordable.length).toBeGreaterThan(10)
+  })
+
+  it('제일 싼 것은 하루 안에 산다', () => {
+    expect(cheapest).toBeLessThanOrEqual(A_DAY)
+  })
+
+  it('중간값짜리는 사흘 안에 산다', () => {
+    expect(median).toBeLessThanOrEqual(A_DAY * 3)
+  })
+
+  it('제일 비싼 것도 한 달은 넘지 않는다', () => {
+    const priciest = Math.max(...priced.map((i) => i.price!))
+    expect(priciest / A_DAY).toBeLessThan(30)
+  })
+
+  it('그래도 하루에 다 살 수 있으면 안 된다', () => {
+    // 모으는 재미가 남아 있어야 한다
+    const inADay = priced.filter((i) => i.price! <= A_DAY).length
+    expect(inADay).toBeLessThan(priced.length / 2)
   })
 })

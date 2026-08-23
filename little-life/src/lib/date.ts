@@ -28,6 +28,11 @@ export function startOfWeek(now: Date = new Date()): Date {
   return d
 }
 
+/** 그 주 월요일의 날짜 키. 주 단위로 고정되는 것들의 씨앗이다. */
+export function weekKey(now: Date = new Date()): string {
+  return toDayKey(startOfWeek(now))
+}
+
 /** 이번 주에 해당하는 날짜 키들. dailyLog 를 훑을 때 쓴다. */
 export function weekDayKeys(now: Date = new Date()): string[] {
   const start = startOfWeek(now)

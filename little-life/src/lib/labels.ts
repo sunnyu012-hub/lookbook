@@ -101,3 +101,18 @@ export const REPUTATION_SHORT: Record<ReputationLevel, string> = {
   FAVORITE: '반가운 얼굴',
   CITY_LEGEND: '이 동네의 전설',
 }
+
+/**
+ * 조사 붙이기.
+ *
+ * "낮잠용 플로어 체어 은(는)" 처럼 괄호를 그대로 두면 기계가 쓴 티가 난다.
+ * 한글 마지막 글자에 받침이 있는지만 보면 되고, 물건 이름은 전부 한글이라
+ * 이 정도면 충분하다. 한글이 아닌 글자로 끝나면 받침 없는 쪽을 쓴다.
+ */
+export function withJosa(word: string, withBatchim: string, withoutBatchim: string): string {
+  const last = word.trim().slice(-1)
+  const code = last.charCodeAt(0)
+  const isHangul = code >= 0xac00 && code <= 0xd7a3
+  if (!isHangul) return `${word}${withoutBatchim}`
+  return `${word}${(code - 0xac00) % 28 > 0 ? withBatchim : withoutBatchim}`
+}

@@ -183,6 +183,10 @@ export interface AppState {
   dailyLog: DailyLog
   /** Welcome Gift 를 이미 줬는지. 두 번 주지 않으려고 둔다. */
   welcomeGiftGiven: boolean
+  /** 벌이를 세 배로 올릴 때 지난 몫을 한 번 채워줬는지 */
+  coinRebalanceGiven?: boolean
+  /** 보상을 받아간 주간 목표 (`YYYY-MM-DD:목표id`). 오래된 것은 정리한다. */
+  claimedWeeklyGoals: string[]
   /** 나와 도시 사람들 사이의 기록 */
   npcs: NpcStates
   /** 지역별 평판 */

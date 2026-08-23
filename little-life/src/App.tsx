@@ -52,6 +52,7 @@ export default function App() {
     ready,
     state,
     justGifted,
+    justRebalanced,
     addQuest,
     completeQuest,
     uncompleteQuest,
@@ -449,6 +450,15 @@ export default function App() {
     giftNotified.current = true
     feedback.notify(WELCOME_GIFT.message)
   }, [ready, justGifted, feedback])
+
+  // 벌이를 올리면서 지난 몫을 채워준 것도 한 번만 알려준다.
+  // 코인이 갑자기 늘어난 걸 말없이 두면 버그처럼 보인다.
+  const rebalanceNotified = useRef(false)
+  useEffect(() => {
+    if (!ready || justRebalanced <= 0 || rebalanceNotified.current) return
+    rebalanceNotified.current = true
+    feedback.notify(`퀘스트 값이 올랐어. 그동안 한 몫으로 ${justRebalanced} 코인 ✨`)
+  }, [ready, justRebalanced, feedback])
 
   // 저장된 데이터를 읽기 전에 LV.1 을 잠깐 보여주면 깜빡이는 것처럼 보인다.
   if (!ready) {

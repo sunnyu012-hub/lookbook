@@ -172,7 +172,9 @@ export function todayListings(
 
   const count = pickCount(shop.minCount, shop.maxCount, `${dayKey}:${shop.id}:count`)
   const picked = pickSome(shop.catalog, count, `${dayKey}:${shop.id}`)
-  const yesterday = yesterdayIds(shop, dayKey)
+  const yesterday = idsOn(shop, dayKey, -1)
+  const tomorrow = idsOn(shop, dayKey, 1)
+  const onSale = saleIds(shop, picked, dayKey)
 
   const listings: ShopListing[] = []
   for (const itemId of picked) {
@@ -184,26 +186,60 @@ export function todayListings(
       (item.rarity === 'EPIC' || item.rarity === 'LEGENDARY') &&
       (options.reputation ?? 0) < shop.reputationForRare
 
+    const base = shop.hagglePrices ? hagglePrice(item.price, itemId, dayKey) : item.price
+    const sale = onSale.has(itemId)
+    const price = sale ? Math.max(10, Math.round((base * (1 - SALE_OFF)) / 5) * 5) : base
+
     listings.push({
       itemId,
-      price: shop.hagglePrices ? hagglePrice(item.price, itemId, dayKey) : item.price,
+      price,
       isNew: !yesterday.has(itemId),
       // 귀한 건 하나씩만 들어온다
       limited: item.unique || item.rarity === 'EPIC' || item.rarity === 'LEGENDARY',
       locked,
+      lastDay: !tomorrow.has(itemId),
+      ...(sale ? { wasPrice: base } : {}),
     })
   }
   return listings
 }
 
-/** 어제 뭐가 깔려 있었는지 — 오늘 NEW 를 표시하려고 한 번 더 굴린다 */
-function yesterdayIds(shop: CollectionShopDef, dayKey: string): Set<string> {
+/**
+ * 다른 날 이 가게에 뭐가 깔려 있(었)는지.
+ *
+ * 진열은 날짜만 알면 나오는 값이라 하루 앞뒤로 한 번 더 굴리면 된다.
+ * 어제 것과 견주면 "오늘 들어온 것", 내일 것과 견주면 "오늘까지" 가 나온다.
+ * 저장할 필요가 없다는 게 이 방식의 전부다.
+ */
+function idsOn(shop: CollectionShopDef, dayKey: string, offsetDays: number): Set<string> {
   const date = new Date(`${dayKey}T00:00:00`)
-  date.setDate(date.getDate() - 1)
-  const prevKey = date.toISOString().slice(0, 10)
+  date.setDate(date.getDate() + offsetDays)
+  const key = date.toISOString().slice(0, 10)
 
-  const count = pickCount(shop.minCount, shop.maxCount, `${prevKey}:${shop.id}:count`)
-  return new Set(pickSome(shop.catalog, count, `${prevKey}:${shop.id}`))
+  const count = pickCount(shop.minCount, shop.maxCount, `${key}:${shop.id}:count`)
+  return new Set(pickSome(shop.catalog, count, `${key}:${shop.id}`))
+}
+
+/** 오늘 깎아주는 비율 */
+const SALE_OFF = 0.25
+
+/**
+ * 오늘 깎아주는 물건.
+ *
+ * 가게마다 하루 한둘. 매일 다 깎아주면 그건 그냥 원래 값이고,
+ * 아무것도 안 깎으면 굳이 매일 들여다볼 이유가 없다.
+ *
+ * 귀한 것은 안 깎는다 — EPIC 하나가 25% 빠지면 그날 하루가 다른 날 열흘이 된다.
+ */
+function saleIds(shop: CollectionShopDef, picked: string[], dayKey: string): Set<string> {
+  const cheap = picked.filter((id) => {
+    const item = findCollectionItem(id)
+    return item && item.rarity !== 'EPIC' && item.rarity !== 'LEGENDARY'
+  })
+  if (cheap.length === 0) return new Set()
+
+  const howMany = pickCount(1, 2, `${dayKey}:${shop.id}:saleCount`)
+  return new Set(pickSome(cheap, Math.min(howMany, cheap.length), `${dayKey}:${shop.id}:sale`))
 }
 
 /** 오늘 이 물건을 파는 가게 (위시리스트 알림에 쓴다) */

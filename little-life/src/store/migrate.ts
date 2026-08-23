@@ -53,7 +53,7 @@ import { findRoom } from '@/lib/collection/rooms'
  * 없는 항목만 기본값으로 채우고, 있는 값은 손대지 않는다.
  */
 
-export const STATE_VERSION = 6
+export const STATE_VERSION = 7
 
 export function defaultStats(): Stats {
   return STAT_KEYS.reduce((acc, key) => {
@@ -569,6 +569,42 @@ export const WELCOME_GIFT = {
 export interface GiftResult {
   state: AppState
   given: boolean
+}
+
+/**
+ * 벌이를 세 배로 올리기 전에 한 퀘스트들의 몫.
+ *
+ * 옛 표(5/10/20)로 받은 사람은 새 표(15/30/60)와 차이만큼 덜 받았다.
+ * 보통 난이도 기준 차이가 20 이라 퀘스트 하나당 20 으로 잡는다.
+ * 난이도별로 정확히 되짚으려면 지운 퀘스트까지 알아야 하는데 그건 알 수 없다.
+ */
+export const COIN_REBALANCE_PER_QUEST = 20
+
+export interface RebalanceResult {
+  state: AppState
+  coins: number
+}
+
+/**
+ * 밸런스를 고치기 전에 쌓아둔 몫을 한 번 채워준다.
+ *
+ * coinRebalanceGiven 플래그로 막는다. 두 번 열어도 두 번 주지 않는다.
+ * 한 번도 안 한 사람에게는 줄 것이 없으니 조용히 넘어간다.
+ */
+export function grantCoinRebalance(state: AppState): RebalanceResult {
+  if (state.coinRebalanceGiven) return { state, coins: 0 }
+
+  const done = Math.max(0, state.user.totalCompletedQuests)
+  const coins = done * COIN_REBALANCE_PER_QUEST
+
+  return {
+    state: {
+      ...state,
+      coinRebalanceGiven: true,
+      user: { ...state.user, coins: state.user.coins + coins },
+    },
+    coins,
+  }
 }
 
 /**
