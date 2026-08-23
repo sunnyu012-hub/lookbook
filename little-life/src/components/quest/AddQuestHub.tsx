@@ -25,9 +25,10 @@ import { cn } from '@/components/ui/cn'
 /**
  * 새 퀘스트를 고르는 자리.
  *
- * 이 화면의 목표 하나 — 타이핑하지 않게 하는 것.
- * 위에서부터 "지금 추천 → 자주 쓰는 것 → 세트 → 직접 만들기" 순으로 두어서,
- * 자주 하는 일일수록 손이 덜 가게 했다.
+ * 처음에는 "지금 추천 → 자주 쓰는 것 → 세트 → 직접 만들기" 순이었다.
+ * 타이핑이 제일 손이 많이 가니까 맨 아래에 둔 것인데, 쓰다 보니 반대였다 —
+ * 적을 것이 이미 정해져 있을 때가 대부분이라 매번 아래까지 내려가야 했다.
+ * 그래서 직접 만들기를 맨 위로 올렸다. 검색 중에도 자리를 지킨다.
  *
  * 추천은 어디까지나 추천이다. 여기서 퀘스트가 저절로 만들어지는 일은 없다.
  */
@@ -101,12 +102,20 @@ export function AddQuestHub({
   }
 
   return (
-    <BottomSheet open onClose={onClose} title="새 퀘스트">
+    <BottomSheet open onClose={onClose} title="새 퀘스트" fill>
       <h2 className="text-[20px] font-semibold text-ink">새 퀘스트</h2>
       <p className="mt-1 text-[13px] text-inkdim">오늘의 모험에 뭘 추가할까?</p>
 
-      {/* 검색 */}
-      <div className="mt-4">
+      {/* 적을 것이 정해져 있으면 여기서 바로 끝난다. 검색 중에도 그대로 둔다 —
+          찾다가 없으면 그 자리에서 적을 수 있어야 한다. */}
+      <Button variant="soft" size="lg" className="mt-4 w-full" onClick={onOpenCustom}>
+        ✏️ 직접 만들기
+      </Button>
+
+      {/* 검색.
+          글자를 칠 때마다 아래 내용이 바뀌니까 입력칸은 위에 붙여둔다.
+          안 붙여두면 결과가 줄어들 때 입력칸이 같이 올라가버린다. */}
+      <div className="sticky top-0 z-10 -mx-5 mt-4 bg-surface px-5 pb-2 pt-1">
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -118,21 +127,22 @@ export function AddQuestHub({
             'focus:ring-coral',
           )}
         />
-        {!searching && (
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {SEARCH_KEYWORDS.map((word) => (
-              <button
-                key={word}
-                type="button"
-                onClick={() => setQuery(word)}
-                className="rounded-pill bg-surface px-3 py-1.5 text-[12px] text-inkdim ring-1 ring-inset ring-line"
-              >
-                {word}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
+
+      {!searching && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {SEARCH_KEYWORDS.map((word) => (
+            <button
+              key={word}
+              type="button"
+              onClick={() => setQuery(word)}
+              className="rounded-pill bg-surface px-3 py-1.5 text-[12px] text-inkdim ring-1 ring-inset ring-line"
+            >
+              {word}
+            </button>
+          ))}
+        </div>
+      )}
 
       {searching ? (
         <SearchResults results={results} onAdd={addFrom} onOpenPack={onOpenPack} />
@@ -246,11 +256,7 @@ export function AddQuestHub({
             </ul>
           </section>
 
-          <Button variant="soft" size="lg" className="mt-6 w-full" onClick={onOpenCustom}>
-            ✏️ 직접 만들기
-          </Button>
-
-          <p className="mt-3 text-center text-[11.5px] leading-relaxed text-inkfaint">
+          <p className="mt-6 text-center text-[11.5px] leading-relaxed text-inkfaint">
             퀘스트 사용 기록은 이 기기에서 추천 순서를 정하는 데만 써.
           </p>
         </>
@@ -383,7 +389,7 @@ function SearchResults({
     return (
       <div className="mt-6 rounded-card border border-dashed border-line px-4 py-7 text-center">
         <p className="text-[14px] text-ink">찾는 게 없네.</p>
-        <p className="mt-1 text-[12.5px] text-inkfaint">직접 만들어도 돼.</p>
+        <p className="mt-1 text-[12.5px] text-inkfaint">위에서 직접 만들어도 돼.</p>
       </div>
     )
   }
