@@ -89,6 +89,8 @@ export type RecommendReason =
   | 'FREQUENT'
   | 'RECENT'
   | 'PACK'
+  /** 예전에 안 해본 것 · 오래 안 한 것 */
+  | 'FRESH'
 
 export interface Recommendation {
   questKey: string

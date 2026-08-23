@@ -272,6 +272,83 @@ export const QUEST_PACKS: QuestPackDef[] = [
       { id: 'low_one_done', title: '오늘 하나만 완료하기', category: 'MIND', difficulty: 'EASY' },
     ],
   },
+
+  // ── 하고 싶은 것 ────────────────────────────────────────
+  //
+  // 위쪽 세트는 대부분 챙겨야 하는 것들이다. 그것만 있으면 목록이 전부 할 일이 되고,
+  // "딱히 하고 싶은 것도 없어" 라는 말에 앱이 내밀 게 없다.
+  // 놀이 5개 · 마음 6개뿐이던 걸 여기서 늘린다.
+  {
+    id: 'go_outside',
+    name: '밖에 나가기',
+    icon: '🚶',
+    description: '멀리 안 가도 된다. 문밖까지만 가도 오늘은 나간 거다.',
+    bands: ['MORNING', 'DAY', 'EVENING'],
+    items: [
+      { id: 'shoes_on', title: '신발 신고 문밖까지', category: 'BODY', difficulty: 'EASY' },
+      { id: 'one_stop', title: '한 정거장 걸어보기', category: 'BODY', difficulty: 'NORMAL' },
+      { id: 'new_way', title: '안 가본 길로 돌아오기', category: 'PLAY', difficulty: 'EASY' },
+      { id: 'look_up', title: '하늘 한 번 보기', category: 'MIND', difficulty: 'EASY' },
+      { id: 'buy_outside', title: '밖에서 뭐 하나 사 먹기', category: 'PLAY', difficulty: 'EASY' },
+      { id: 'sit_bench', title: '벤치에 앉아 있다 오기', category: 'MIND', difficulty: 'EASY' },
+    ],
+  },
+  {
+    id: 'alone_fun',
+    name: '혼자 노는 시간',
+    icon: '🎧',
+    description: '남는 시간에 하는 게 아니라, 이걸 하려고 시간을 비우는 것.',
+    items: [
+      { id: 'watch_one', title: '보고 싶었던 것 한 편', category: 'PLAY', difficulty: 'EASY' },
+      { id: 'new_song', title: '안 듣던 노래 틀어보기', category: 'PLAY', difficulty: 'EASY' },
+      { id: 'one_game', title: '게임 한 판', category: 'PLAY', difficulty: 'EASY' },
+      { id: 'keep_reading', title: '읽다 만 것 이어 읽기', category: 'PLAY', difficulty: 'EASY' },
+      { id: 'lie_around', title: '아무것도 안 하고 누워 있기', category: 'MIND', difficulty: 'EASY' },
+      { id: 'hour_of_it', title: '좋아하는 걸로 한 시간', category: 'PLAY', difficulty: 'NORMAL' },
+    ],
+  },
+  {
+    id: 'make_something',
+    name: '손으로 만들기',
+    icon: '✂️',
+    description: '잘 만들 필요는 없다. 만드는 동안이 목적이다.',
+    items: [
+      { id: 'decide_make', title: '뭘 만들지 정하기', category: 'PLAY', difficulty: 'EASY' },
+      { id: 'lay_out', title: '재료 꺼내놓기', category: 'PLAY', difficulty: 'EASY' },
+      { id: 'make_30', title: '30분 만들어보기', category: 'PLAY', difficulty: 'NORMAL' },
+      { id: 'photo_it', title: '사진으로 남기기', category: 'PLAY', difficulty: 'EASY' },
+      { id: 'three_lines', title: '오늘 있었던 일 세 줄', category: 'MIND', difficulty: 'EASY' },
+      { id: 'leave_unfinished', title: '잘 안 된 것도 그냥 두기', category: 'MIND', difficulty: 'EASY' },
+    ],
+  },
+  {
+    id: 'treat_myself',
+    name: '나를 위한 작은 것',
+    icon: '🍰',
+    description: '큰 거 말고. 오늘 하루가 조금 나아지는 정도로.',
+    items: [
+      { id: 'buy_favorite', title: '좋아하는 거 하나 사 먹기', category: 'PLAY', difficulty: 'EASY' },
+      { id: 'order_it', title: '미뤄둔 거 하나 시켜보기', category: 'PLAY', difficulty: 'EASY' },
+      { id: 'change_light', title: '향이나 조명 바꿔보기', category: 'MIND', difficulty: 'EASY' },
+      { id: 'long_shower', title: '오래 씻기', category: 'LIFE', difficulty: 'EASY' },
+      { id: 'wear_good', title: '좋아하는 옷 입고 나가기', category: 'PLAY', difficulty: 'EASY' },
+      { id: 'well_done', title: '나한테 잘했다고 하기', category: 'HEART', difficulty: 'EASY' },
+    ],
+  },
+  {
+    id: 'see_people',
+    name: '사람 만나기',
+    icon: '🫂',
+    description: '연락은 먼저 하는 쪽이 손해가 아니다.',
+    items: [
+      { id: 'ask_meet', title: '만나자고 먼저 말 꺼내기', category: 'HEART', difficulty: 'NORMAL' },
+      { id: 'set_date', title: '날짜 정하기', category: 'HEART', difficulty: 'EASY' },
+      { id: 'leave_note', title: '안부 남기기', category: 'HEART', difficulty: 'EASY' },
+      { id: 'send_photo', title: '같이 찍은 사진 보내주기', category: 'HEART', difficulty: 'EASY' },
+      { id: 'thank_out_loud', title: '고맙다고 말하기', category: 'HEART', difficulty: 'EASY' },
+      { id: 'think_of_someone', title: '오래 못 본 사람 떠올려보기', category: 'HEART', difficulty: 'EASY' },
+    ],
+  },
 ]
 
 /** preset id 는 팩 안에서만 고유해서, 전체에서는 팩 id 를 앞에 붙여 쓴다. */
