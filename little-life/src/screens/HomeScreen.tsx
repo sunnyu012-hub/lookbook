@@ -9,6 +9,7 @@ import { WeeklyGoalsCard } from '@/components/home/WeeklyGoalsCard'
 import { DeliveryCard } from '@/components/home/DeliveryCard'
 import { DiscoveryCards } from '@/components/discovery/DiscoveryCards'
 import { activeCompanion } from '@/lib/discovery/companions'
+import { CompanionArt } from '@/components/discovery/CompanionArt'
 import { TodayQuestSection } from '@/components/home/TodayQuestSection'
 import { DailySummary } from '@/components/home/DailySummary'
 import { ScreenHeader } from '@/components/layout/ScreenHeader'
@@ -128,7 +129,12 @@ export function HomeScreen({
         onClick={onOpenDiscovery}
         className="flex w-full items-center gap-2.5 rounded-card border border-line bg-surface px-3.5 py-2.5 text-left transition-transform duration-150 ease-out active:scale-[0.98]"
       >
-        <span className="text-[20px] leading-none">{buddy ? buddy.avatar : '✦'}</span>
+        {buddy ? (
+          // 같이 다니는 중이니까 걷는 자세로 둔다
+          <CompanionArt def={buddy} pose="walk" className="h-9 w-9 shrink-0" />
+        ) : (
+          <span className="w-9 shrink-0 text-center text-[20px] leading-none">✦</span>
+        )}
         <span className="min-w-0 flex-1 truncate text-[12.5px] text-inkdim">
           {buddy ? `${buddy.name}와 같이 다니는 중` : '발견한 것 보기'}
         </span>

@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import type { AppState, CompanionId } from '@/types'
+import type { AppState, CompanionId, CompanionMemoryDef } from '@/types'
 import { BottomSheet } from '@/components/ui/BottomSheet'
 import { ItemIcon } from '@/components/collection/ItemIcon'
 import { autoCollectionViews } from '@/lib/discovery/collections'
 import { familiarityLine, secretItems, secretViews } from '@/lib/discovery/secrets'
 import { companionViews, memoriesOf } from '@/lib/discovery/companions'
+import { CompanionArt } from './CompanionArt'
 import { cn } from '@/components/ui/cn'
 
 interface DiscoverySheetProps {
@@ -214,8 +215,8 @@ function Friends({
       {met.map(({ def, state: c, active, memories }) => (
         <li key={def.id} className="rounded-card border border-line bg-surface px-3.5 py-3">
           <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-card bg-canvas text-[22px]">
-              {def.avatar}
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-card bg-canvas text-[22px]">
+              <CompanionArt def={def} className="h-12 w-12" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-1.5">
@@ -250,10 +251,12 @@ function Friends({
             </button>
           )}
 
-          {/* 같이 지내다 남은 것 */}
-          {memoriesOf(def.id).length > 0 && (
+          {/* 같이 지내다 남은 것.
+              잠긴 건 바로 다음 하나만 보여준다 — 세 줄씩 회색으로 쌓아두면
+              그건 기억이 아니라 체크리스트다. */}
+          {visibleMemories(def.id, memories).length > 0 && (
             <ul className="mt-2.5 space-y-1.5">
-              {memoriesOf(def.id).map((m) => {
+              {visibleMemories(def.id, memories).map((m) => {
                 const open = memories.some((x) => x.id === m.id)
                 return (
                   <li
@@ -281,4 +284,15 @@ function Friends({
       ))}
     </ul>
   )
+}
+
+/**
+ * 화면에 올릴 기억들.
+ *
+ * 열린 것은 다 보여주고, 잠긴 것은 바로 다음 하나까지만.
+ */
+function visibleMemories(id: CompanionId, unlocked: CompanionMemoryDef[]) {
+  const all = memoriesOf(id)
+  const nextLocked = all.find((m) => !unlocked.some((u) => u.id === m.id))
+  return all.filter((m) => unlocked.some((u) => u.id === m.id) || m.id === nextLocked?.id)
 }

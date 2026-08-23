@@ -176,13 +176,12 @@ export interface CompanionDef {
   /**
    * 이모지 한 글자.
    *
-   * 도시 사람들도 이모지 한 글자로 서 있다 (npcs.ts 의 avatar).
-   * 같은 자리에 있는 것들끼리 결이 달라지지 않게 여기서도 같은 방식을 쓴다.
-   * 나중에 그림이 생기면 assetKey 를 얹으면 된다.
+   * 그림이 안 뜨는 동안 자리를 지킨다. 도시 사람들도 이모지 한 글자로
+   * 서 있어서 (npcs.ts 의 avatar) 나란히 뒀을 때 결이 어긋나지 않는다.
    */
   avatar: string
-  /** 그림이 준비되면 여기에 (지금은 없다) */
-  assetKey?: string
+  /** 그림 폴더 이름. 자세별 파일이 그 안에 있다. */
+  art: string
   /** 이 동네를 좋아한다 — 같이 가면 친해진다 */
   favoriteAreas: AreaId[]
   meeting: CompanionMeeting

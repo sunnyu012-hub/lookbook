@@ -25,14 +25,20 @@ import { conditionProgress } from './secrets'
  *
  * ── 그림 ────────────────────────────────────────────
  *
- * 지금은 이모지 한 글자로 서 있다. 도시 사람들도 그렇게 서 있어서
- * (npcs.ts 의 avatar) 나란히 뒀을 때 결이 어긋나지 않는다.
- * 그림이 생기면 assetKey 를 얹으면 되고, 코드는 안 바꿔도 된다.
+ * 자세가 여덟 개씩 있다 (public/assets/companions/<art>/<자세>.webp).
+ * 화면에서 쓰는 건 idle 과 walk 두 개다 — 나머지는 나중에 쓸 자리가 생기면 쓴다.
+ *
+ * 자세 이름은 줄마다 실제 그림을 보고 붙였다. 고양이 다섯 번째는
+ * 자는 게 아니라 기지개라서 stretch 고, 자는 건 여섯 번째다.
+ * (scripts/extract-companions.py)
+ *
+ * 이모지는 그림이 안 뜨는 동안 자리를 지킨다.
  */
 
 export const COMPANIONS: CompanionDef[] = [
   {
     id: 'BORI',
+    art: 'bori',
     name: '보리',
     species: '강아지',
     personality: '누가 오면 제일 먼저 안다.',
@@ -45,6 +51,7 @@ export const COMPANIONS: CompanionDef[] = [
   },
   {
     id: 'MOCHI',
+    art: 'mochi',
     name: '모찌',
     species: '고양이',
     personality: '부르면 오긴 오는데 천천히 온다.',
@@ -57,6 +64,7 @@ export const COMPANIONS: CompanionDef[] = [
   },
   {
     id: 'BEAN',
+    art: 'bean',
     name: '콩',
     species: '작은 새',
     personality: '뭐든 일단 가까이 와서 본다.',
@@ -69,6 +77,7 @@ export const COMPANIONS: CompanionDef[] = [
   },
   {
     id: 'LUNA',
+    art: 'luna',
     name: '루나',
     species: '모르겠다',
     personality: '밤에만 보인다. 낮에는 어디 있는지 모른다.',
@@ -253,6 +262,19 @@ export function activeCompanion(state: AppState): CompanionDef | null {
 export function likesHere(def: CompanionDef, areaId: string): boolean {
   return def.favoriteAreas.includes(areaId as (typeof AREA_IDS)[number])
 }
+
+/**
+ * 동료 그림 한 장.
+ *
+ * idle 은 어디에나 있고, walk 는 같이 다닐 때 쓴다.
+ * 없는 자세를 부르면 idle 로 돌아간다 — 줄마다 있는 자세가 조금씩 다르다.
+ */
+export function companionArt(def: CompanionDef, pose: CompanionPose = 'idle'): string {
+  return `/assets/companions/${def.art}/${pose}.webp`
+}
+
+/** 어느 동료에게나 있는 자세 */
+export type CompanionPose = 'idle' | 'walk' | 'sleep' | 'back'
 
 /** 인사할 때 오르는 친밀도 */
 export const PLAY_FRIENDSHIP = 2

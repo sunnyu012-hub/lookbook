@@ -24,6 +24,7 @@ import {
 import {
   COMPANIONS,
   COMPANION_MEMORIES,
+  companionArt,
   meetingProgress,
   memoriesOf,
   unlockedMemories,
@@ -405,6 +406,23 @@ describe('동료', () => {
       expect(memoriesOf(def.id).length, def.id).toBeGreaterThanOrEqual(3)
     }
     expect(COMPANION_MEMORIES.length).toBe(new Set(COMPANION_MEMORIES.map((m) => m.id)).size)
+  })
+
+  it('그림이 네 마리 다 있다', () => {
+    for (const def of COMPANIONS) {
+      expect(def.art, def.id).toBeTruthy()
+      expect(companionArt(def), def.id).toBe(`/assets/companions/${def.art}/idle.webp`)
+      expect(companionArt(def, 'walk'), def.id).toBe(`/assets/companions/${def.art}/walk.webp`)
+    }
+  })
+
+  it('그림 폴더 이름이 겹치지 않는다', () => {
+    const arts = COMPANIONS.map((c) => c.art)
+    expect(new Set(arts).size).toBe(arts.length)
+  })
+
+  it('그림이 안 떠도 자리를 지킬 이모지가 있다', () => {
+    for (const def of COMPANIONS) expect(def.avatar.length, def.id).toBeGreaterThan(0)
   })
 
   it('배고픔·병듦 같은 건 아예 없다', () => {

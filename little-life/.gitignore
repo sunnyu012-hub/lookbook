@@ -9,4 +9,5 @@ assets/source-sheets/*.png
 # 다만 아래 두 장은 합쳐 4MB 뿐이고, 그 그림들의 유일한 사본이라 함께 둔다.
 !assets/source-sheets/extra.png
 !assets/source-sheets/trophy.png
+!assets/source-sheets/companions.png
 assets/slices/
