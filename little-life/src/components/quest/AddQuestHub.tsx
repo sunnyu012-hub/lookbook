@@ -154,7 +154,7 @@ export function AddQuestHub({
               title="✨ 지금 추천"
               hint={
                 personalized
-                  ? '최근 플레이 기록을 바탕으로 골랐어.'
+                  ? '자주 하던 것 몇 개랑, 아직 안 해본 것 몇 개.'
                   : '아직 취향을 알아가는 중이야 ✨'
               }
             />

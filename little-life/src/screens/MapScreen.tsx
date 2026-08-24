@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import type {
+  AppState,
   AreaDef,
   AreaId,
   CityEvent,
@@ -26,6 +27,7 @@ import {
   openingLabel,
 } from '@/lib/collection/shops'
 import { hasFreshStock } from '@/lib/collection/progress'
+import { secretsInArea } from '@/lib/discovery/secrets'
 import { todayKey } from '@/lib/date'
 import { isTodayQuest } from '@/lib/stats'
 import { cn } from '@/components/ui/cn'
@@ -38,6 +40,8 @@ interface MapScreenProps {
   events: CityEvent[]
   /** 오늘 어느 가게에 들렀는지 보려고 */
   collection: CollectionState
+  /** 비밀 장소가 보이는지 판단하려고 */
+  state: AppState
   onSelectArea: (areaId: AreaId) => void
   onOpenNpc: (npc: NpcDef) => void
   onOpenShop: (areaId: AreaId) => void
@@ -60,6 +64,7 @@ export function MapScreen({
   npcs,
   events,
   collection,
+  state,
   onSelectArea,
   onOpenNpc,
   onOpenShop,
@@ -190,6 +195,7 @@ export function MapScreen({
         npcs={npcs}
         events={events}
         collection={collection}
+        state={state}
         onClose={() => setOpenArea(null)}
         onSelect={(id) => {
           onSelectArea(id)
@@ -228,6 +234,8 @@ interface AreaSheetProps {
   events: CityEvent[]
   /** 오늘 어느 가게에 들렀는지 보려고 */
   collection: CollectionState
+  /** 이 동네에서 뭔가 보이는지 (비밀 장소) */
+  state: AppState
   onClose: () => void
   onSelect: (id: AreaId) => void
   onOpenNpc: (npc: NpcDef) => void
@@ -246,6 +254,7 @@ function AreaSheet({
   npcs,
   events,
   collection,
+  state,
   onClose,
   onSelect,
   onOpenNpc,
@@ -413,6 +422,33 @@ function AreaSheet({
               </li>
             )
           })}
+
+          {/* 이 동네에서 뭔가 보이면. 안 보이면 아무 줄도 안 만든다 —
+              모든 동네에 늘 표시가 뜨면 그 표시에 뜻이 없어진다. */}
+          {secretsInArea(state, area.id).map((v) => (
+            <li key={v.def.id}>
+              <div
+                className={cn(
+                  'flex w-full items-center gap-3 rounded-card px-3.5 py-3',
+                  v.stage === 'FOUND'
+                    ? 'border border-lavender-deep/25 bg-lavender-soft/40'
+                    : 'border border-dashed border-line bg-canvas',
+                )}
+              >
+                <span className={cn('text-[22px] leading-none', v.stage !== 'FOUND' && 'opacity-45')}>
+                  {v.stage === 'FOUND' ? v.def.icon : '✨'}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[14px] font-medium text-ink">
+                    {v.stage === 'FOUND' ? v.def.name : '뭔가 더 있는 것 같다'}
+                  </span>
+                  <span className="mt-0.5 block text-[11.5px] leading-snug text-inkdim">
+                    {v.stage === 'FOUND' ? v.def.description : v.def.hint}
+                  </span>
+                </span>
+              </div>
+            </li>
+          ))}
 
           {/* 작업실은 집에만 있다 */}
           {area.id === 'HOME_BASE' && (

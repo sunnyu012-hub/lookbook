@@ -3,10 +3,10 @@ import { BottomSheet } from '@/components/ui/BottomSheet'
 import { Button } from '@/components/ui/Button'
 import { ItemIcon } from './ItemIcon'
 import { RarityBadge, RARITY_STYLE } from '@/components/rpg/RarityBadge'
-import { acquisitionHint, isDiscovered, isSeen, ownedCount, setProgress } from '@/lib/collection/progress'
+import { isDiscovered, isSeen, ownedCount, setProgress } from '@/lib/collection/progress'
 import { findSet } from '@/lib/collection/sets'
 import { recipeForItem } from '@/lib/collection/recipes'
-import { findCollectionShop } from '@/lib/collection/shops'
+import { hintFor } from '@/lib/discovery/hints'
 import { findCollectionItem } from '@/lib/collection/catalog'
 import { COLLECTION_CATEGORY_LABEL } from '@/lib/labels'
 import { cn } from '@/components/ui/cn'
@@ -52,7 +52,9 @@ export function ItemDetailSheet({
     .filter((p) => p.itemId === item.id).length
   const canPlace = found && item.placeable && item.hasPlaceableAsset && placedCount < owned
 
-  const hint = acquisitionHint(item, (id) => findCollectionShop(id)?.name ?? '어느 가게')
+  // 힌트에는 단계가 있다. 처음에는 분위기만, 알아갈수록 또렷해진다.
+  // 비밀 물건은 끝까지 흐릿하게 남는다 (lib/discovery/hints.ts)
+  const hint = hintFor(state, item).text
 
   return (
     <BottomSheet open onClose={onClose} title={named ? item.nameKo : '아직 못 만난 것'}>
@@ -95,7 +97,7 @@ export function ItemDetailSheet({
       <p className="mt-3.5 rounded-card bg-canvas px-3.5 py-3 text-[13px] leading-relaxed text-inkdim">
         {/* 본 것은 설명까지 보여준다. 어떤 물건인지 알고 나서 사러 갈지 정하는 게
             "본 것" 이라는 단계를 둔 이유다. 다만 도감 수에는 안 들어간다. */}
-        {found ? item.description : glimpsed ? `${item.description} — ${hint}` : secret ? '언제 만나게 될지는 아직 몰라.' : hint}
+        {found ? item.description : glimpsed ? `${item.description} — ${hint}` : hint}
       </p>
 
       {/* 세트 */}

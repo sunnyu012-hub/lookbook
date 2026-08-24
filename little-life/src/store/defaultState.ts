@@ -4,6 +4,7 @@ import { expForDifficulty } from '@/lib/difficulty'
 import { createId } from '@/lib/id'
 import { emptyReputation } from '@/lib/city/reputation'
 import { emptyCollection } from '@/lib/collection/progress'
+import { emptyDiscovery } from '@/lib/discovery/derive'
 import {
   STATE_VERSION,
   defaultRecommendSettings,
@@ -78,5 +79,6 @@ export function createDefaultState(): AppState {
     categoryCompleted: emptyCategoryStats(),
     bossClears: 0,
     collection: emptyCollection(),
+    discovery: emptyDiscovery(),
   }
 }

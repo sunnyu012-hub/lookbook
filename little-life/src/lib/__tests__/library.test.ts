@@ -53,9 +53,9 @@ const quest = (over: Partial<Quest> = {}): Quest => ({
 
 // ── 세트 ────────────────────────────────────────────────
 describe('퀘스트 세트', () => {
-  it('18개가 있고 id 가 겹치지 않는다', () => {
-    expect(QUEST_PACKS).toHaveLength(18)
-    expect(new Set(QUEST_PACKS.map((p) => p.id)).size).toBe(18)
+  it('23개가 있고 id 가 겹치지 않는다', () => {
+    expect(QUEST_PACKS).toHaveLength(23)
+    expect(new Set(QUEST_PACKS.map((p) => p.id)).size).toBe(23)
   })
 
   it('모든 세트가 항목을 가지고 있다', () => {

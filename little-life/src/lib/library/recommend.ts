@@ -1,6 +1,7 @@
 import type {
   Category,
   Quest,
+  QuestPackDef,
   QuestUsageProfile,
   Recommendation,
   RecommendReason,
@@ -13,6 +14,7 @@ import { timeBand } from '@/lib/rpg/time'
 import { isUsableRule, matchesToday, weekdayIndex } from '@/lib/routines'
 import { normalizeTitle } from '@/lib/suggest'
 import { ALL_PRESETS, QUEST_PACKS } from './packs'
+import { FRESH_SLOTS, pickFresh } from './fresh'
 import { questKeyOf } from './usage'
 
 /**
@@ -177,6 +179,7 @@ export const REASON_LABEL: Record<RecommendReason, string> = {
   FREQUENT: '💫 자주 하는 것',
   RECENT: '🔥 요즘 자주',
   PACK: '✨ 지금 어울려',
+  FRESH: '🌱 새로 해볼까',
 }
 
 // ── 추천 만들기 ─────────────────────────────────────────
@@ -239,11 +242,29 @@ export function recommendQuests(input: RecommendInput): Recommendation[] {
 
   scored.sort((a, b) => b.score - a.score || a.title.localeCompare(b.title))
 
-  const picked = diversify(scored, count)
+  /**
+   * 새것에 내줄 칸.
+   *
+   * 예전에 한 것이 여섯 칸을 다 채울 만큼 있을 때만 자리를 뗀다.
+   * 아직 기록이 적으면 어차피 아래에서 준비된 퀘스트로 채워지니 뗄 이유가 없다.
+   */
+  const freshWanted = scored.length >= count ? Math.min(FRESH_SLOTS, count - 1) : 0
+  const picked = diversify(scored, count - freshWanted)
+
+  // 여기서 한 칸은 반드시 처음 보는 것이 된다.
+  // 이걸 안 하면 기록이 예닐곱 개만 쌓여도 추천이 영원히 같은 것만 돈다.
+  const already = new Set(picked.map((r) => r.questKey))
+  if (freshWanted > 0) {
+    const skip = new Set([...already, ...taken])
+    for (const fresh of pickFresh(profilesFor(input, personalized), ctx, skip, freshWanted)) {
+      if (taken.has(normalizeTitle(fresh.title))) continue
+      picked.push(fresh)
+      already.add(fresh.questKey)
+    }
+  }
 
   // 모자라면 지금 시간대에 어울리는 준비된 퀘스트로 채운다 (첫 사용자 포함)
   if (picked.length < count) {
-    const already = new Set(picked.map((r) => r.questKey))
     for (const entry of coldStartEntries(ctx)) {
       if (picked.length >= count) break
       if (taken.has(entry.key) || already.has(entry.key)) continue
@@ -265,6 +286,16 @@ export function recommendQuests(input: RecommendInput): Recommendation[] {
   }
 
   return picked
+}
+
+/**
+ * 새것을 고를 때 참고할 기록.
+ *
+ * 개인화를 꺼둔 사람에게도 새것은 준다 — 끈 것은 "내 기록으로 순서를 정하는 것" 이지
+ * "새로운 걸 보여주지 마" 가 아니다. 다만 그때는 기록을 안 본다.
+ */
+function profilesFor(input: RecommendInput, personalized: boolean): UsageProfiles {
+  return personalized ? input.profiles : {}
 }
 
 /** 한 분야가 다 차지하지 않게 살짝만 섞는다. 억지로 만들지는 않는다. */
@@ -331,26 +362,49 @@ export function dueRoutineKeys(
   return keys
 }
 
-/** 지금 시간대·요일에 어울리는 세트의 항목들 */
+/** 지금 시간대·요일에 딱 걸리는 세트인지 */
+function fitsNow(pack: QuestPackDef, ctx: RecommendContext): boolean {
+  if (pack.weekend === true) return ctx.weekend
+  return pack.bands?.includes(ctx.band) ?? false
+}
+
+/**
+ * 아무 때나 해도 되는 세트인지.
+ *
+ * 시간대도 주말도 안 적힌 세트가 그렇다. "언제든" 이라는 뜻이지 "절대 안 됨" 이 아니다.
+ */
+function anytime(pack: QuestPackDef): boolean {
+  return pack.bands === undefined && pack.weekend !== true
+}
+
+/**
+ * 지금 시간대·요일에 어울리는 세트의 항목들.
+ *
+ * 점수에 +4 를 붙일 때 쓴다. 여기는 좁게 봐야 한다 —
+ * 전부 어울린다고 하면 어울린다는 말에 뜻이 없어진다.
+ */
 export function fittingPackKeys(ctx: RecommendContext): Set<string> {
-  const keys = new Set<string>()
-  for (const entry of coldStartEntries(ctx)) keys.add(entry.key)
-  return keys
+  const ids = new Set(QUEST_PACKS.filter((p) => fitsNow(p, ctx)).map((p) => p.id))
+  return new Set(ALL_PRESETS.filter((e) => ids.has(e.pack.id)).map((e) => e.key))
 }
 
 /**
  * 기록이 없을 때 채워 넣는 것들.
- * 지금 시간대에 맞는 세트를 먼저, 주말이면 주말 세트도 같이 본다.
+ *
+ * 지금 시간대에 걸린 세트를 앞에, 아무 때나 되는 세트를 뒤에 둔다.
+ *
+ * 예전에는 시간대에 안 걸리면 아예 뺐다. 그런데 시간대가 안 적힌 세트가 열한 개
+ * (준비된 퀘스트 112개 중 65개) 라서, 그것들이 추천에 **한 번도** 안 나왔다.
+ * 밤에는 112개 중 7개만 후보였다. 그게 "퀘스트가 다 비슷비슷하다" 의 절반이었다.
  */
 export function coldStartEntries(ctx: RecommendContext) {
-  const fitting = QUEST_PACKS.filter(
-    (pack) =>
-      (pack.bands?.includes(ctx.band) ?? false) || (ctx.weekend && pack.weekend === true),
+  const fitting = QUEST_PACKS.filter((p) => fitsNow(p, ctx)).map((p) => p.id)
+  const rest = QUEST_PACKS.filter((p) => anytime(p)).map((p) => p.id)
+  const order = new Map([...fitting, ...rest].map((id, i) => [id, i]))
+
+  return ALL_PRESETS.filter((e) => order.has(e.pack.id)).sort(
+    (a, b) => order.get(a.pack.id)! - order.get(b.pack.id)!,
   )
-  // 시간대에 걸린 세트가 없으면 늘 무난한 것으로
-  const packs = fitting.length > 0 ? fitting : QUEST_PACKS.filter((p) => p.id === 'wellness')
-  const ids = new Set(packs.map((p) => p.id))
-  return ALL_PRESETS.filter((e) => ids.has(e.pack.id))
 }
 
 /** 개인화가 돌기 시작했는지 — 화면 문구를 고르는 데 쓴다 */

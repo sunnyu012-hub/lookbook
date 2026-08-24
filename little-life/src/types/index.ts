@@ -2,7 +2,9 @@ export * from './rpg'
 export * from './city'
 export * from './library'
 export * from './collection'
+export * from './discovery'
 import type { CollectionState } from './collection'
+import type { DiscoveryState } from './discovery'
 import type {
   AreaId,
   Battle,
@@ -209,7 +211,12 @@ export interface AppState {
   bossClears: number
   /** 발견한 것, 가진 것, 방에 놓은 것 */
   collection: CollectionState
-  // 향후 확장 예정: achievements, character, pets …
+  /**
+   * 발견 층 — 자동 컬렉션 · 비밀 장소 · NPC 이야기 · 동료 · 도감 힌트.
+   * 진행도는 여기 없다. 전부 위의 기록에서 센다.
+   */
+  discovery: DiscoveryState
+  // 향후 확장 예정: achievements, character …
   //
   // 오늘의 이벤트와 상점 진열은 여기 없다.
   // 날짜에서 그대로 계산하기 때문에 저장할 게 없고, 자정이 지나면 알아서 바뀐다.

@@ -37,6 +37,11 @@ interface NpcSheetProps {
   onAcceptChain: (chain: NpcQuestChainDef) => void
   onGift: (itemId: string) => void
   onOpenShop: () => void
+  /** 이 사람 이야기를 몇 장까지 읽었는지 */
+  story: { read: number; total: number } | null
+  /** 지금 읽을 수 있는 장이 있는지 */
+  storyReady: boolean
+  onOpenStory: () => void
 }
 
 /**
@@ -58,6 +63,9 @@ export function NpcSheet({
   onAcceptChain,
   onGift,
   onOpenShop,
+  story,
+  storyReady,
+  onOpenStory,
 }: NpcSheetProps) {
   const [tab, setTab] = useState<Tab>('TALK')
   // 시트를 여는 동안에는 같은 말을 유지한다. 리렌더마다 대사가 바뀌면 산만하다.
@@ -90,6 +98,33 @@ export function NpcSheet({
       <div className="mt-4">
         <FriendshipMeter friendship={npcState.friendship} />
       </div>
+
+      {/* 이야기. 친밀도 숫자만 오르면 그건 게이지지 관계가 아니다. */}
+      {story && story.total > 0 && (
+        <button
+          type="button"
+          onClick={onOpenStory}
+          className={cn(
+            'mt-3 flex w-full items-center gap-2.5 rounded-card px-3.5 py-3 text-left',
+            'transition-transform duration-150 ease-out active:scale-[0.98]',
+            storyReady
+              ? 'border border-lavender-deep/25 bg-lavender-soft/50'
+              : 'border border-line bg-surface',
+          )}
+        >
+          <span className="text-[17px] leading-none">💬</span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[13.5px] font-medium text-ink">{npc.name}의 이야기</span>
+            <span className="mt-0.5 block text-[11.5px] text-inkdim">
+              {storyReady ? '하고 싶은 이야기가 있는 것 같다.' : `${story.read} / ${story.total}`}
+            </span>
+          </span>
+          <span aria-hidden className="shrink-0 font-game text-[12px] tracking-widest text-lavender-deep">
+            {'■'.repeat(story.read)}
+            {'□'.repeat(Math.max(0, story.total - story.read))}
+          </span>
+        </button>
+      )}
 
       <div className="mt-4 flex gap-1 rounded-pill bg-sunken p-1" role="tablist" aria-label="NPC 메뉴">
         {(

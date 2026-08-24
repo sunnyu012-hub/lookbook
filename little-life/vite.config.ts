@@ -34,6 +34,15 @@ function stampServiceWorker() {
           // 처음 보는 순간 받아서 캐시에 남으니 오프라인에서도 두 번째부터는 뜬다.
           .filter((url) => !url.startsWith('/assets/items/'))
           .filter((url) => !url.startsWith('/assets/thumbs/'))
+          // 동료 그림도 서른두 장이라 다 받지는 않는다.
+          // 다만 늘 서 있는 자세 두 개는 미리 받는다 — 이 둘이 없으면
+          // 홈 화면과 발견함에서 자리가 비어 보인다.
+          .filter(
+            (url) =>
+              !url.startsWith('/assets/companions/') ||
+              url.endsWith('/idle.webp') ||
+              url.endsWith('/walk.webp'),
+          )
           .concat('/')
 
         const buildId = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14)
