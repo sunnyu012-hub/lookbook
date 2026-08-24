@@ -62,6 +62,8 @@ export interface SyncApi {
   signOut: () => Promise<void>
   syncNow: () => Promise<void>
   resolveConflict: (keep: 'LOCAL' | 'REMOTE') => Promise<void>
+  /** 파일에서 가져온 기록을 이 기기에 앉힌다. 앉히기 전에 사본을 남긴다. */
+  applyImport: (next: AppState) => void
   restoreBackup: () => void
   dismissBackup: () => void
   dismissError: () => void
@@ -115,9 +117,11 @@ export function useSync({ state, ready, onReplace }: Options): SyncApi {
   }, [])
 
   useEffect(() => {
+    // 사본은 클라우드를 안 쓰는 사람에게도 생긴다 (파일에서 가져오기).
+    // 그래서 이건 설정 여부와 상관없이 읽는다.
+    setBackup(readBackup())
     if (!configured) return
     syncFromLocal()
-    setBackup(readBackup())
   }, [configured, syncFromLocal])
 
   // ── 로그인 상태 따라가기 ─────────────────────────────
@@ -605,6 +609,23 @@ export function useSync({ state, ready, onReplace }: Options): SyncApi {
    * 잠시 뒤 클라우드로 올라간다. 되돌렸는데 다음에 열면 또 덮여 있는
    * 일이 없어야 한다.
    */
+  /**
+   * 파일에서 가져온 것을 앉힌다.
+   *
+   * 받아오기(adopt)와 다른 점 하나 — 이건 이 기기가 스스로 한 일이라
+   * 클라우드에 올라가야 한다. 그래서 "바뀐 것" 으로 표시한다.
+   * 로그인을 안 했으면 표시만 남고 아무 일도 안 일어난다.
+   */
+  const applyImport = useCallback(
+    (next: AppState) => {
+      const saved = saveBackup(stateRef.current, 'IMPORT')
+      setBackup(saved ? readBackup() : null)
+      onReplace(next)
+      patchSyncLocal({ dirty: true, syncedHash: null })
+    },
+    [onReplace],
+  )
+
   const restoreBackup = useCallback(() => {
     const saved = readBackup()
     if (!saved) return
@@ -641,6 +662,7 @@ export function useSync({ state, ready, onReplace }: Options): SyncApi {
     signOut,
     syncNow,
     resolveConflict,
+    applyImport,
     restoreBackup,
     dismissBackup,
     dismissError,

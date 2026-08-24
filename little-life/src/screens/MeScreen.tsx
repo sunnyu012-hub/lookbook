@@ -10,6 +10,8 @@ import { EquipSlotGrid } from '@/components/profile/EquipSlotGrid'
 import { SkillTreeCard } from '@/components/profile/SkillTreeCard'
 import { RecommendSettingsCard } from '@/components/profile/RecommendSettingsCard'
 import { SyncCard } from '@/components/sync/SyncCard'
+import { TransferCard } from '@/components/sync/TransferCard'
+import { BackupNotice } from '@/components/sync/BackupNotice'
 import { CategoryGrowthBar } from '@/components/profile/CategoryGrowthBar'
 import { WeeklyInsightCard } from '@/components/profile/WeeklyInsightCard'
 import { ScreenHeader, SectionHeader } from '@/components/layout/ScreenHeader'
@@ -133,12 +135,20 @@ export function MeScreen({
         />
       </section>
 
-      {sync.configured && (
-        <section className="mt-6">
-          <SectionHeader title="백업" />
-          <SyncCard sync={sync} onOpenConflict={onOpenConflict} />
-        </section>
-      )}
+      {/* 클라우드는 설정해둔 사람만, 파일은 누구나.
+          되돌리기 안내는 둘 중 어느 쪽으로 덮였든 같은 자리에 뜬다. */}
+      <section className="mt-6">
+        <SectionHeader title="백업" />
+        <div className="space-y-3">
+          {sync.configured && <SyncCard sync={sync} onOpenConflict={onOpenConflict} />}
+          <TransferCard state={state} onApply={sync.applyImport} />
+          <BackupNotice
+            backup={sync.backup}
+            onRestore={sync.restoreBackup}
+            onDismiss={sync.dismissBackup}
+          />
+        </div>
+      </section>
 
       <p className="mt-6 text-center text-[12px] leading-relaxed text-inkfaint">
         쉬어간 날도 모험의 일부야.

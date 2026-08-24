@@ -14,7 +14,7 @@ import type { AppState } from '@/types'
 
 const KEY = 'little-life-backup-v1'
 
-export type BackupReason = 'PULL' | 'CONFLICT_REMOTE'
+export type BackupReason = 'PULL' | 'CONFLICT_REMOTE' | 'IMPORT'
 
 export interface LocalBackup {
   savedAt: string
@@ -25,6 +25,7 @@ export interface LocalBackup {
 const REASON_LABEL: Record<BackupReason, string> = {
   PULL: '클라우드 것을 받아오기 전',
   CONFLICT_REMOTE: '클라우드 쪽을 고르기 전',
+  IMPORT: '파일에서 가져오기 전',
 }
 
 export function reasonLabel(reason: BackupReason): string {

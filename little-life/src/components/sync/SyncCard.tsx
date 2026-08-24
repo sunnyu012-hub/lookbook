@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Card } from '@/components/ui/Card'
 import { cn } from '@/components/ui/cn'
 import { sinceLabel } from '@/lib/sync/format'
-import { reasonLabel } from '@/lib/sync/backup'
 import type { SyncApi } from '@/hooks/useSync'
 import { SignInSheet } from './SignInSheet'
 import { PasswordSheet } from './PasswordSheet'
@@ -111,32 +110,6 @@ export function SyncCard({ sync, onOpenConflict }: SyncCardProps) {
               로그인하고 백업하기
             </button>
           </>
-        )}
-
-        {/* 덮어쓰기 전 사본. 잘못 골랐어도 되돌릴 수 있다는 걸 눈에 보이게 둔다. */}
-        {sync.backup && (
-          <div className="rounded-btn border border-dashed border-line px-3.5 py-3">
-            <p className="text-[12px] leading-relaxed text-inkdim">
-              {reasonLabel(sync.backup.reason)} 기록이 한 벌 남아 있어 (
-              {sinceLabel(sync.backup.savedAt)}).
-            </p>
-            <div className="mt-2 flex gap-2">
-              <button
-                type="button"
-                onClick={sync.restoreBackup}
-                className="flex-1 rounded-btn bg-sunken py-2 text-[12px] font-medium text-ink active:scale-[0.97]"
-              >
-                되돌리기
-              </button>
-              <button
-                type="button"
-                onClick={sync.dismissBackup}
-                className="rounded-btn px-3 py-2 text-[12px] text-inkfaint active:scale-[0.97]"
-              >
-                지우기
-              </button>
-            </div>
-          </div>
         )}
       </Card>
 
