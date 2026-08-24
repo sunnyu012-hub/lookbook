@@ -217,7 +217,14 @@ function sanitizeDailyLog(raw: unknown): DailyLog {
   return log
 }
 
-function sanitizeState(raw: unknown): AppState | null {
+/**
+ * 저장된 JSON 하나를 지금 판본의 상태로 끌어올린다.
+ *
+ * 클라우드에서 받아온 것도 반드시 여기를 지난다 — 다른 기기가
+ * 예전 판본으로 올려뒀을 수 있고, 그건 로컬에 예전 저장이 남아 있는 것과
+ * 똑같은 상황이다. 들어오는 문을 하나로 두면 판올림 코드가 한 벌로 끝난다.
+ */
+export function sanitizeState(raw: unknown): AppState | null {
   if (!raw || typeof raw !== 'object') return null
   const s = raw as Record<string, unknown>
   const user = (s.user ?? {}) as Record<string, unknown>

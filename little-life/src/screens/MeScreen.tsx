@@ -9,6 +9,7 @@ import { ClassCard } from '@/components/profile/ClassCard'
 import { EquipSlotGrid } from '@/components/profile/EquipSlotGrid'
 import { SkillTreeCard } from '@/components/profile/SkillTreeCard'
 import { RecommendSettingsCard } from '@/components/profile/RecommendSettingsCard'
+import { SyncCard } from '@/components/sync/SyncCard'
 import { CategoryGrowthBar } from '@/components/profile/CategoryGrowthBar'
 import { WeeklyInsightCard } from '@/components/profile/WeeklyInsightCard'
 import { ScreenHeader, SectionHeader } from '@/components/layout/ScreenHeader'
@@ -16,6 +17,7 @@ import { weekCompletedCount } from '@/lib/stats'
 import { weeklyInsight } from '@/lib/insights'
 import { calculateEquipmentBonus } from '@/lib/rpg/rewards'
 import { EFFECT, UI } from '@/lib/assets'
+import type { SyncApi } from '@/hooks/useSync'
 
 interface MeScreenProps {
   state: AppState
@@ -25,6 +27,9 @@ interface MeScreenProps {
   onUnlockSkill: (skillId: string) => void
   onTogglePersonalized: (on: boolean) => void
   onResetUsage: () => void
+  /** 클라우드 백업. 환경변수가 없으면 configured 가 false 라 칸 자체가 안 나온다. */
+  sync: SyncApi
+  onOpenConflict: () => void
 }
 
 export function MeScreen({
@@ -35,6 +40,8 @@ export function MeScreen({
   onUnlockSkill,
   onTogglePersonalized,
   onResetUsage,
+  sync,
+  onOpenConflict,
 }: MeScreenProps) {
   const { user, categoryStats, dailyLog } = state
 
@@ -125,6 +132,13 @@ export function MeScreen({
           onReset={onResetUsage}
         />
       </section>
+
+      {sync.configured && (
+        <section className="mt-6">
+          <SectionHeader title="백업" />
+          <SyncCard sync={sync} onOpenConflict={onOpenConflict} />
+        </section>
+      )}
 
       <p className="mt-6 text-center text-[12px] leading-relaxed text-inkfaint">
         쉬어간 날도 모험의 일부야.

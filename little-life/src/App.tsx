@@ -26,6 +26,7 @@ import { CollectionShopSheet } from '@/components/collection/CollectionShopSheet
 import { DiscoverySheet } from '@/components/discovery/DiscoverySheet'
 import { storyProgress, unreadChapters } from '@/lib/discovery/stories'
 import { StorySheet } from '@/components/discovery/StorySheet'
+import { ConflictSheet } from '@/components/sync/ConflictSheet'
 import { WorkshopSheet } from '@/components/collection/WorkshopSheet'
 import { DiscoveryOverlay } from '@/components/collection/DiscoveryOverlay'
 import { DecorateMode } from '@/components/room/DecorateMode'
@@ -35,6 +36,7 @@ import { DropRevealOverlay } from '@/components/feedback/DropRevealOverlay'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Toast } from '@/components/ui/Toast'
 import { useGameState } from '@/hooks/useGameState'
+import { useSync } from '@/hooks/useSync'
 import { useFeedback } from '@/hooks/useFeedback'
 import { WELCOME_GIFT } from '@/store/migrate'
 import { findArea } from '@/lib/rpg/content'
@@ -102,8 +104,12 @@ export default function App() {
     removePlaced,
     setCurrentRoom,
     setRoomEffect,
+    replaceState,
   } = useGameState()
   const feedback = useFeedback()
+
+  // 클라우드 백업. 환경변수가 없으면 아무것도 하지 않고 화면에도 안 나온다.
+  const sync = useSync({ state, ready, onReplace: replaceState })
 
   const [tab, setTab] = useState<TabKey>('home')
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -114,6 +120,12 @@ export default function App() {
   const [openBattleId, setOpenBattleId] = useState<string | null>(null)
   const [hubOpen, setHubOpen] = useState(false)
   const [discoveryOpen, setDiscoveryOpen] = useState(false)
+  const [conflictOpen, setConflictOpen] = useState(false)
+  // 갈라진 걸 알아챘으면 한 번은 띄운다. 설정 화면에만 두면
+  // 백업이 멈춰 있는 걸 모른 채로 며칠이 지난다.
+  useEffect(() => {
+    if (sync.status === 'CONFLICT') setConflictOpen(true)
+  }, [sync.status])
   const [storyNpc, setStoryNpc] = useState<NpcDef | null>(null)
   const [openPack, setOpenPack] = useState<QuestPackDef | null>(null)
   const [openNpc, setOpenNpc] = useState<NpcDef | null>(null)
@@ -629,6 +641,8 @@ export default function App() {
             onUnlockSkill={handleUnlockSkill}
             onTogglePersonalized={setPersonalized}
             onResetUsage={resetUsageProfiles}
+            sync={sync}
+            onOpenConflict={() => setConflictOpen(true)}
           />
         )}
       </AppShell>
@@ -786,6 +800,16 @@ export default function App() {
         confirmLabel="지우기"
         onConfirm={confirmRoutineDelete}
         onCancel={() => setPendingRoutineDelete(null)}
+      />
+
+      <ConflictSheet
+        open={conflictOpen && sync.status === 'CONFLICT'}
+        conflict={sync.conflict}
+        onClose={() => setConflictOpen(false)}
+        onKeep={(keep) => {
+          setConflictOpen(false)
+          void sync.resolveConflict(keep)
+        }}
       />
 
       <BattleClearOverlay banner={feedback.battleClear} />

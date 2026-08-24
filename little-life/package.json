@@ -20,6 +20,7 @@
     "assets:index": "vite-node scripts/build-asset-index.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.112.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
