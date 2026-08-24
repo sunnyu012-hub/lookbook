@@ -57,7 +57,10 @@
   nav button:hover{color:var(--ink)}
   nav button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
   nav button b{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);margin-left:5px}
-  .top .right{margin-left:auto;display:flex;gap:6px}
+  .top .right{margin-left:auto;display:flex;gap:6px;align-items:center}
+  .wsbadge{font-size:11.5px;font-weight:800;letter-spacing:.04em;padding:3px 9px;border-radius:999px;
+    background:var(--accent-soft);color:var(--accent);vertical-align:3px;margin-left:2px}
+  .wsbadge.personal{background:var(--warn-soft);color:var(--warn)}
   .ghost{
     font:500 13px "Gothic A1",sans-serif;color:var(--ink-2);background:var(--surface);
     border:1px solid var(--line);border-radius:9px;padding:8px 13px;cursor:pointer;
@@ -249,9 +252,10 @@
 
 <div class="wrap">
   <div class="top">
-    <h1>블로그 작업대</h1>
+    <h1>블로그 작업대 <span class="wsbadge" id="wsBadge"></span></h1>
     <nav id="nav"></nav>
     <div class="right">
+      <a class="ghost" id="wsSwitch" href="#" style="text-decoration:none;line-height:1;display:inline-flex;align-items:center"></a>
       <button class="ghost" id="cfgBtn" type="button">연결 설정</button>
       <button class="ghost" id="bkBtn" type="button">백업 · 복원</button>
     </div>
@@ -400,7 +404,11 @@ const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
 
 /* ── 저장소 ── */
-const SYNCED=['bc.posts','bc.ideas','bc.presets','bc.blogs','bc.ranks'];
+// 업무(기본)와 개인(?ws=personal)을 같은 파일에서 별도 작업 공간으로 쓴다.
+// 저장소 접두어가 다르므로 데이터도 동기화 슬롯도 완전히 분리된다.
+const WS=/^(personal|yuring)$/i.test(new URLSearchParams(location.search).get('ws')||'')?'personal':'work';
+const P=WS==='personal'?'bcy.':'bc.';
+const SYNCED=['posts','ideas','presets','blogs','ranks'].map(k=>P+k);
 let applyingRemote=false;   // 서버 내용을 받아 넣는 동안에는 되쏘지 않는다
 const DB={
   get(k,d){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}},
@@ -417,22 +425,25 @@ const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const TODAY=iso(new Date());
 
 /* ── 채널 = 기준 설정 ── */
-const PRESETS={
+const ALL_PRESETS={
   '협회 브블':{kwMin:5,kwMax:6,lenMin:1450,lenMax:1600,ban:'가장,상담,무료,제일',cap:6,watch:'자격,자격증,속기,속기사'},
   '개인블 페니':{kwMin:5,kwMax:6,lenMin:1500,lenMax:1600,ban:'제일,가장,상담,추천',cap:6,watch:'속기,속기사,다시,제가,시작'},
   '드리밍':{kwMin:5,kwMax:6,lenMin:1400,lenMax:1700,ban:'제일,가장,상담,무료',cap:6,watch:'취업,자격증,속기'},
   '유링':{kwMin:4,kwMax:6,lenMin:1400,lenMax:1800,ban:'가장,제일',cap:6,watch:''}
 };
+const WS_CHANNELS={work:['협회 브블','개인블 페니','드리밍'],personal:['유링']};
+const PRESETS={};
+WS_CHANNELS[WS].forEach(n=>{PRESETS[n]=ALL_PRESETS[n]});
 const FIELDS=['kw','kwMin','kwMax','lenMin','lenMax','ban','cap','watch'];
 const SAVED=FIELDS.filter(f=>f!=='kw');   // 메인키워드는 글마다 달라서 제외
 // 블로그 주소는 기본 채널에도 넣을 수 있어야 하므로 프리셋이 아니라 채널명 → 주소 맵으로 따로 둔다
 const PALETTE=['#2f6fb0','#b8557d','#7a5cc4','#a8701c','#2a8a72','#a4483c','#4b7a2c','#8a5ab0'];
 
-let mine=DB.get('bc.presets',{});
-let blogs=DB.get('bc.blogs',{});
-let posts=DB.get('bc.posts',[]);
-let ideas=DB.get('bc.ideas',[]);
-let ranks=DB.get('bc.ranks',{});   // 키워드별 순위 이력
+let mine=DB.get(P+'presets',{});
+let blogs=DB.get(P+'blogs',{});
+let posts=DB.get(P+'posts',[]);
+let ideas=DB.get(P+'ideas',[]);
+let ranks=DB.get(P+'ranks',{});   // 키워드별 순위 이력
 let editingId=null, activeCh=null, selDate=null;
 let cur=new Date(); cur.setDate(1);
 
@@ -514,7 +525,7 @@ function run(){
 
   dupCheck(kw);
   const cfg={};FIELDS.forEach(f=>cfg[f]=$('#'+f).value);
-  DB.set('bc.settings',cfg);
+  DB.set(P+'settings',cfg);
 }
 
 // 같은 키워드로 이미 쓴 글이 있으면 알린다 (중복 발행 방지)
@@ -533,7 +544,7 @@ function dupCheck(kw){
 /* ── 기준 설정(채널) 탭 ── */
 function apply(p){Object.keys(p).forEach(k=>{if($('#'+k))$('#'+k).value=p[k]});run()}
 function msg(el,t){$(el).textContent=t}
-function storePresets(next){ if(!DB.set('bc.presets',next))return false; mine=next; return true }
+function storePresets(next){ if(!DB.set(P+'presets',next))return false; mine=next; return true }
 
 function tabs(){
   $('#tabs').innerHTML=channels().map(n=>{
@@ -548,7 +559,7 @@ function setChannel(n){ activeCh=n; tabs(); apply(cfgOf(n)); $('#blogUrl').value
 const blogOf=ch=>String(blogs[ch]||'').trim();
 $('#blogUrl').addEventListener('input',e=>{
   blogs[activeCh]=e.target.value.trim();
-  DB.set('bc.blogs',blogs);
+  DB.set(P+'blogs',blogs);
 });
 
 $('#tabs').onclick=e=>{
@@ -591,7 +602,7 @@ $('#psave').onclick=()=>{
 };
 
 /* ── 원고 보관함 ── */
-function savePosts(){ return DB.set('bc.posts',posts) }
+function savePosts(){ return DB.set(P+'posts',posts) }
 
 // 편집 중인 글이 무엇인지 항상 화면에 보이게 한다 (안 보이면 다른 글을 덮어쓰게 된다)
 function setEditing(id){
@@ -627,7 +638,7 @@ $('#save').onclick=()=>{
   const i=posts.findIndex(p=>p.id===rec.id);
   const next=posts.slice();
   if(i<0) next.unshift(rec); else next[i]=rec;
-  if(!DB.set('bc.posts',next)){msg('#saveMsg','저장 실패: 브라우저 저장소를 쓸 수 없습니다.');return}
+  if(!DB.set(P+'posts',next)){msg('#saveMsg','저장 실패: 브라우저 저장소를 쓸 수 없습니다.');return}
   posts=next; setEditing(rec.id);
   msg('#saveMsg',(i<0?'보관함에 새로 저장했습니다.':'기존 글을 수정했습니다.')+' ('+rec.len+'자)');
   renderAll();
@@ -820,7 +831,7 @@ $('#kwLook').onclick=async()=>{
 };
 
 /* ── 키워드 보드 ── */
-function saveIdeas(){ return DB.set('bc.ideas',ideas) }
+function saveIdeas(){ return DB.set(P+'ideas',ideas) }
 $('#iadd').onclick=()=>{
   const kw=$('#ikw').value.trim(); if(!kw){$('#ikw').focus();return}
   ideas.unshift({id:uid(),kw,ch:$('#ich').value,done:false});
@@ -970,7 +981,7 @@ async function lookupTrend(list){
       done++;
     }catch(e){ err=e.message; break }
   }
-  DB.set('bc.ranks',ranks); renderTrend();
+  DB.set(P+'ranks',ranks); renderTrend();
   // 실패를 '완료'로 덮어쓰지 않는다
   msg(err?('실패: '+err+(done?' ('+done+'개는 저장됨)':''))
         :('완료 · '+done+'개'+(kept?' · 직접 적은 '+kept+'개는 유지':'')+' · '+nowHM()));
@@ -986,7 +997,7 @@ $('#trendTbl').addEventListener('change',e=>{
   const rec={d:TODAY,r:v,m:1};
   if(h.length&&h[h.length-1].d===TODAY) h[h.length-1]=rec; else h.push(rec);
   ranks[k]=h.slice(-30);
-  DB.set('bc.ranks',ranks); renderTrend();
+  DB.set(P+'ranks',ranks); renderTrend();
   $('#trendMsg').textContent='"'+row.kw+'" → '+(v?v+'위':'100위 밖')+' 로 적어 두었습니다.';
 });
 $('#trendAll').onclick=()=>lookupTrend(writtenList());
@@ -1029,7 +1040,7 @@ function applyData(d,quiet){
   blogs=d.blogs&&typeof d.blogs==='object'?d.blogs:{};
   ranks=d.ranks&&typeof d.ranks==='object'?d.ranks:{};
   applyingRemote=!!quiet;
-  savePosts(); saveIdeas(); DB.set('bc.presets',mine); DB.set('bc.blogs',blogs); DB.set('bc.ranks',ranks);
+  savePosts(); saveIdeas(); DB.set(P+'presets',mine); DB.set(P+'blogs',blogs); DB.set(P+'ranks',ranks);
   applyingRemote=false;
   setEditing(null); tabs(); fillChannelSelects(); $('#blogUrl').value=blogOf(activeCh); renderAll();
 }
@@ -1045,8 +1056,8 @@ $('#bkRestore').onclick=()=>{
 };
 
 /* ── 서버 동기화 (Cloudflare Worker + KV) ── */
-const syncKey=()=>DB.get('bc.syncKey','').trim();
-const syncVer=()=>+DB.get('bc.syncVer',0)||0;
+const syncKey=()=>DB.get(P+'syncKey','').trim();
+const syncVer=()=>+DB.get(P+'syncVer',0)||0;
 const syncOn=()=>!!(proxyUrl()&&syncKey());
 function smsg(t,cls){ $('#syncMsg').innerHTML=cls?'<b class="'+cls+'">'+esc(t)+'</b>':esc(t) }
 
@@ -1067,7 +1078,7 @@ async function pull(){
   const j=await syncCall('GET');
   if(j.version>syncVer()&&j.data){
     applyData(j.data,true);
-    DB.set('bc.syncVer',j.version);
+    DB.set(P+'syncVer',j.version);
     smsg('서버 내용을 받았습니다 · 버전 '+j.version,'ok');
   }else if(j.version===0&&posts.length+ideas.length>0){
     await push(true);   // 서버가 비어 있으면 지금 것을 올린다
@@ -1081,11 +1092,11 @@ async function push(silent){
   const j=await syncCall('PUT',{version:syncVer(),data:snapshot()});
   if(j.conflict){
     const take=confirm('다른 기기에서 먼저 저장했습니다. [확인] 서버 내용을 가져옵니다(지금 화면의 변경은 사라집니다) / [취소] 내 내용으로 덮어씁니다');
-    if(take){ applyData(j.data,true); DB.set('bc.syncVer',j.version); smsg('서버 내용으로 맞췄습니다 · 버전 '+j.version,'warn'); }
-    else { DB.set('bc.syncVer',j.version); await push(silent); }
+    if(take){ applyData(j.data,true); DB.set(P+'syncVer',j.version); smsg('서버 내용으로 맞췄습니다 · 버전 '+j.version,'warn'); }
+    else { DB.set(P+'syncVer',j.version); await push(silent); }
     return;
   }
-  DB.set('bc.syncVer',j.version);
+  DB.set(P+'syncVer',j.version);
   if(!silent) smsg('저장됨 · 버전 '+j.version+' · '+nowHM(),'ok');
   else smsg('동기화됨 · 버전 '+j.version+' · '+nowHM(),'ok');
 }
@@ -1106,11 +1117,11 @@ function newSyncKey(){
 }
 $('#syncNew').onclick=()=>{
   const k=newSyncKey();
-  $('#syncKey').value=k; DB.set('bc.syncKey',k); DB.set('bc.syncVer',0);
+  $('#syncKey').value=k; DB.set(P+'syncKey',k); DB.set(P+'syncVer',0);
   smsg('새 키를 만들었습니다. 같이 쓸 분에게 이 키를 전달하세요.','ok');
 };
 $('#syncKey').addEventListener('input',e=>{
-  DB.set('bc.syncKey',e.target.value.trim()); DB.set('bc.syncVer',0);
+  DB.set(P+'syncKey',e.target.value.trim()); DB.set(P+'syncVer',0);
   smsg(e.target.value.trim()?'키를 저장했습니다. “지금 동기화”를 누르세요.':'동기화 꺼짐 — 이 브라우저에만 저장됩니다.');
 });
 $('#syncNow').onclick=()=>{
@@ -1126,7 +1137,7 @@ const VIEWS=[['check','검사기'],['archive','보관함'],['cal','캘린더'],[
 function show(v){
   VIEWS.forEach(([k])=>$('#v-'+k).classList.toggle('hide',k!==v));
   $$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
-  DB.set('bc.view',v);
+  DB.set(P+'view',v);
   if(v==='archive')renderArchive();
   if(v==='cal')renderCal();
   if(v==='trend')renderTrend();
@@ -1151,8 +1162,8 @@ function renderAll(){
 }
 
 /* ── 시작 ── */
-const savedCfg=DB.get('bc.settings',null);
-activeCh=DB.get('bc.channel',null);
+const savedCfg=DB.get(P+'settings',null);
+activeCh=DB.get(P+'channel',null);
 if(!cfgOf(activeCh)) activeCh=Object.keys(PRESETS)[0];
 tabs();
 apply(savedCfg||cfgOf(activeCh));
@@ -1160,12 +1171,22 @@ $('#blogUrl').value=blogOf(activeCh);
 $('#pdate').value=TODAY;
 setEditing(null);
 renderNav(); fillChannelSelects();
-show(DB.get('bc.view','check'));
+show(DB.get(P+'view','check'));
+// 어느 작업 공간인지 항상 눈에 보이게 (화면이 같아 헷갈리기 쉽다)
+(function(){
+  const work=WS==='work';
+  $('#wsBadge').textContent=work?'업무':'개인';
+  $('#wsBadge').className='wsbadge'+(work?'':' personal');
+  const sw=$('#wsSwitch');
+  sw.textContent=work?'개인 작업대 →':'업무 작업대 →';
+  sw.href=location.pathname+(work?'?ws=personal':'');
+  document.title='블로그 작업대 · '+(work?'업무':'개인');
+})();
 $('#syncKey').value=syncKey();
 smsg(syncOn()?'동기화 준비됨 · 버전 '+syncVer():(syncKey()?'프록시 주소가 없습니다.':'동기화 꺼짐 — 이 브라우저에만 저장됩니다.'));
 if(syncOn()) pull().catch(e=>smsg(e.message,'bad'));
 FIELDS.concat('txt').forEach(f=>$('#'+f).addEventListener('input',run));
-$('#tabs').addEventListener('click',()=>DB.set('bc.channel',activeCh));
+$('#tabs').addEventListener('click',()=>DB.set(P+'channel',activeCh));
 run();
 
 /* ── self-check ── */
