@@ -37,6 +37,8 @@ export function TagInspector({ tags, onChange }: Props) {
   const [picking, setPicking] = useState(false)
   const [detail, setDetail] = useState(false)
   const [selected, setSelected] = useState<string | null>(null)
+  /** 한 번이라도 고쳤으면 가벼운 안내 한 줄. "학습 완료!" 같은 건 하지 않는다 */
+  const [touched, setTouched] = useState(false)
 
   const shown = activeTags(tags)
   const hidden = tags.length - shown.length
@@ -123,11 +125,13 @@ export function TagInspector({ tags, onChange }: Props) {
                 haptic()
                 onChange(verifyTag(tags, selected))
                 setSelected(null)
+                setTouched(true)
               }}
               onReject={() => {
                 haptic()
                 onChange(rejectTag(tags, selected))
                 setSelected(null)
+                setTouched(true)
               }}
               onUndo={() => {
                 haptic()
@@ -136,12 +140,19 @@ export function TagInspector({ tags, onChange }: Props) {
             />
           )}
 
+          {touched && (
+            <p className="text-[11.5px] leading-relaxed text-inkfaint">
+              이 수정은 다음 분석에도 참고할게요.
+            </p>
+          )}
+
           {picking ? (
             <TagSearch
               onPick={(tagId) => {
                 haptic()
                 onChange(addUserTag(tags, tagId))
                 setPicking(false)
+                setTouched(true)
               }}
               onCancel={() => setPicking(false)}
             />
@@ -194,6 +205,11 @@ function LifeTagChip({
       )}
     >
       {tag.userVerified && !tag.userRejected && <span aria-hidden>✓</span>}
+      {tag.source === 'rule' && !tag.userRejected && (
+        <span aria-hidden title="내 표현에서 배운 규칙">
+          ✎
+        </span>
+      )}
       <span className="max-w-[12ch] truncate">{def?.displayName ?? tag.tagId}</span>
       {when && <span className="text-[10px] opacity-70">· {when}</span>}
     </button>
@@ -223,6 +239,11 @@ function TagActions({
         <b>{def?.displayName ?? tag.tagId}</b>
         {tag.matchedText && (
           <span className="text-inkdim"> — “{tag.matchedText}” 때문에 붙었어요</span>
+        )}
+        {tag.source === 'rule' && (
+          <span className="mt-1 block text-[11.5px] text-skydeep">
+            전에 고쳐 주신 걸 보고 배운 거예요.
+          </span>
         )}
       </p>
 

@@ -11,6 +11,7 @@ import { HomePage } from '@/pages/HomePage'
 import { LifePage, type LifeTab } from '@/pages/LifePage'
 import { MePage } from '@/pages/MePage'
 import { SettingsPage } from '@/pages/SettingsPage'
+import { LearningPage } from '@/pages/LearningPage'
 import { ArchivePage } from '@/pages/ArchivePage'
 import { NightPage } from '@/pages/NightPage'
 import { QuickLogPage } from '@/pages/QuickLogPage'
@@ -35,6 +36,7 @@ import { usePreferences } from '@/hooks/usePreferences'
 import { useQuestLegacy } from '@/hooks/useQuestLegacy'
 import { useQuickLogs } from '@/hooks/useQuickLogs'
 import { useMyTags } from '@/hooks/useMyTags'
+import { useLearning } from '@/hooks/useLearning'
 import { useSession } from '@/hooks/useSession'
 import { levelFromXp } from '@/lib/level'
 import { XP_RULES, xpBreakdown } from '@/lib/xp'
@@ -68,7 +70,16 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   /** 전체 화면으로 덮는 화면들 */
   const [overlay, setOverlay] = useState<
-    'night' | 'quicklog' | 'collection' | 'manual' | 'tree' | 'rhythm' | 'weekly' | 'balance' | null
+    | 'night'
+    | 'quicklog'
+    | 'collection'
+    | 'manual'
+    | 'tree'
+    | 'rhythm'
+    | 'weekly'
+    | 'balance'
+    | 'learning'
+    | null
   >(null)
   const [result, setResult] = useState<'start' | 'complete' | null>(null)
   const [editingDate, setEditingDate] = useState<string>(todayKey())
@@ -88,7 +99,13 @@ export default function App() {
   const weeklyStore = useWeeklyResets(auth.state)
   // 내가 만든 태그 이름을 자동 태깅이 참고한다 — 그래서 myTagStore 가 먼저다
   const myTagStore = useMyTags(auth.state)
-  const quickLogStore = useQuickLogs(auth.state, myTagStore.names)
+  // 개인 규칙은 built-in 위에 덮는 겹이다. 여기서 나는 오류는 태깅을 막지 않는다
+  const learningStore = useLearning(auth.state)
+  const quickLogStore = useQuickLogs(auth.state, myTagStore.names, {
+    rules: learningStore.active,
+    memories: learningStore.memories,
+    learn: learningStore.learn,
+  })
 
   const todayTags = tagStore.tagsFor(todayKey())
 
@@ -451,6 +468,8 @@ export default function App() {
           memories={eventStore.events.map((e) => ({ date: e.date, title: e.title }))}
           onClose={() => setOverlay(null)}
         />
+      ) : overlay === 'learning' ? (
+        <LearningPage store={learningStore} onClose={() => setOverlay(null)} />
       ) : overlay === 'manual' ? (
         <ManualPage chapters={manualChapters} onClose={() => setOverlay(null)} />
       ) : overlay === 'tree' ? (
@@ -632,6 +651,8 @@ export default function App() {
               onOpenSettings={() => setSettingsOpen(true)}
               onOpenCollection={() => setOverlay('collection')}
               onOpenManual={() => setOverlay('manual')}
+              learningStore={learningStore}
+              onOpenLearning={() => setOverlay('learning')}
               balance={balance}
               onOpenBalance={() => setOverlay('balance')}
               tree={lifeTree}

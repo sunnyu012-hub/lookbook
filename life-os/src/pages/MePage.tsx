@@ -8,6 +8,8 @@ import { EnergyBar } from '@/components/pixel/EnergyBar'
 import { LineChart } from '@/components/pixel/LineChart'
 import { LevelCard } from '@/components/pixel/LevelCard'
 import { ManualPreview } from './ManualPage'
+import { LearningPreview } from './LearningPage'
+import type { LearningStore } from '@/hooks/useLearning'
 import { loggingStreak } from '@/lib/xp'
 import { todayKey } from '@/lib/date'
 import { buildInsights } from '@/lib/insights'
@@ -66,6 +68,8 @@ interface Props {
   onOpenSettings: () => void
   onOpenCollection: () => void
   onOpenManual: () => void
+  learningStore: LearningStore
+  onOpenLearning: () => void
   badgesEarned: number
   badgesTotal: number
   manualChapters: import('@/lib/manual').Chapter[]
@@ -99,6 +103,8 @@ export function MePage({
   onOpenSettings,
   onOpenCollection,
   onOpenManual,
+  learningStore,
+  onOpenLearning,
   badgesEarned,
   badgesTotal,
   manualChapters,
@@ -270,6 +276,10 @@ export function MePage({
       </button>
 
       <ManualPreview chapters={manualChapters} onOpen={onOpenManual} />
+
+      <PixelPanel>
+        <LearningPreview store={learningStore} onOpen={onOpenLearning} />
+      </PixelPanel>
 
       <PixelPanel title="XP sources" icon={icons.xp}>
         <ul className="space-y-1.5">

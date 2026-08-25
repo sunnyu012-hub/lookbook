@@ -11,7 +11,8 @@
  * 실패하면 태그 없이 그냥 저장한다 (lib/os2/tagging/apply.ts).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { QuickLog, QuickLogInput } from '@/lib/os2/types'
+import type { AppliedLifeTag, QuickLog, QuickLogInput } from '@/lib/os2/types'
+import type { ExactMemory, PersonalRule } from '@/lib/os2/learning/types'
 import { quickLogRepository } from '@/lib/repositories/quickLog'
 import { myTagRepository } from '@/lib/repositories/myTag'
 import {
@@ -40,7 +41,23 @@ export interface SaveResult {
   photoWarning: string | null
 }
 
-export function useQuickLogs(authState: AuthState = 'local', myTagNames: readonly string[] = []) {
+export interface PersonalOverlay {
+  rules?: readonly PersonalRule[]
+  memories?: readonly ExactMemory[]
+  /** 태그를 고쳤을 때 학습으로 넘기는 자리. 실패해도 저장에는 영향이 없다 */
+  learn?: (
+    log: QuickLog,
+    before: readonly AppliedLifeTag[],
+    after: readonly AppliedLifeTag[],
+    myTagNames: readonly string[],
+  ) => void | Promise<void>
+}
+
+export function useQuickLogs(
+  authState: AuthState = 'local',
+  myTagNames: readonly string[] = [],
+  overlay: PersonalOverlay = {},
+) {
   const [logs, setLogs] = useState<QuickLog[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -93,7 +110,10 @@ export function useQuickLogs(authState: AuthState = 'local', myTagNames: readonl
       try {
         // 사진 경로에 로그 id 가 들어가므로 id 를 먼저 정한다
         const id = newId()
-        const log = await quickLogRepository.create(withTags(input, { myTagNames }), id)
+        const log = await quickLogRepository.create(
+          withTags(input, { myTagNames, rules: overlay.rules, memories: overlay.memories }),
+          id,
+        )
 
         // 태그 사용 횟수는 곁다리다. 실패해도 저장은 이미 끝났다
         void myTagRepository.touch(input.myTagIds ?? []).catch(() => undefined)
@@ -117,7 +137,7 @@ export function useQuickLogs(authState: AuthState = 'local', myTagNames: readonl
         saving.current = false
       }
     },
-    [putPhoto, myTagNames],
+    [putPhoto, myTagNames, overlay.rules, overlay.memories],
   )
 
   const updateLog = useCallback(
@@ -133,7 +153,12 @@ export function useQuickLogs(authState: AuthState = 'local', myTagNames: readonl
         const previous = logs.find((l) => l.id === id)?.lifeTags
         const log = await quickLogRepository.update(
           id,
-          withTags(input, { myTagNames, previous }),
+          withTags(input, {
+            myTagNames,
+            previous,
+            rules: overlay.rules,
+            memories: overlay.memories,
+          }),
         )
         void myTagRepository.touch(input.myTagIds ?? []).catch(() => undefined)
 
@@ -156,13 +181,14 @@ export function useQuickLogs(authState: AuthState = 'local', myTagNames: readonl
         saving.current = false
       }
     },
-    [putPhoto, myTagNames, logs],
+    [putPhoto, myTagNames, logs, overlay.rules, overlay.memories],
   )
 
   /** Inspector 에서 태그만 고칠 때 — 본문·사진은 건드리지 않는다 */
   const saveLifeTags = useCallback(
     async (id: string, lifeTags: QuickLog['lifeTags'], stamp?: BackfillStamp) => {
       const next = lifeTags ?? []
+      const before = logs.find((l) => l.id === id)
       // 화면을 먼저 바꾸고 저장한다. 태그 하나 누를 때마다 기다리게 하지 않는다
       setLogs((prev) =>
         prev.map((l) =>
@@ -176,6 +202,12 @@ export function useQuickLogs(authState: AuthState = 'local', myTagNames: readonl
             : l,
         ),
       )
+      // 사용자가 손댄 것이면 학습으로 넘긴다. 백필처럼 시스템이 바꾼 것은 넘기지 않는다
+      if (!stamp && before) {
+        void Promise.resolve(overlay.learn?.(before, before.lifeTags ?? [], next, myTagNames))
+          .catch(() => undefined)
+      }
+
       try {
         await quickLogRepository.setLifeTags(id, next, stamp)
       } catch (e) {
@@ -183,7 +215,7 @@ export function useQuickLogs(authState: AuthState = 'local', myTagNames: readonl
         refresh()
       }
     },
-    [refresh],
+    [refresh, logs, myTagNames, overlay],
   )
 
   /**
@@ -197,9 +229,11 @@ export function useQuickLogs(authState: AuthState = 'local', myTagNames: readonl
     (options: { limit?: number; onProgress?: (done: number, total: number) => void } = {}) =>
       runBackfill(logs, (id, tags, stamp) => saveLifeTags(id, tags, stamp), {
         myTagNames,
+        rules: overlay.rules,
+        memories: overlay.memories,
         ...options,
       }),
-    [logs, myTagNames, saveLifeTags],
+    [logs, myTagNames, saveLifeTags, overlay.rules, overlay.memories],
   )
 
   /**
@@ -216,10 +250,13 @@ export function useQuickLogs(authState: AuthState = 'local', myTagNames: readonl
       if (!log || !isPending(log)) return
       retried.current.add(id)
 
-      const next = retagOne(log, myTagNames)
+      const next = retagOne(log, myTagNames, {
+        rules: overlay.rules,
+        memories: overlay.memories,
+      })
       void saveLifeTags(id, next ?? log.lifeTags ?? [], CURRENT_STAMP)
     },
-    [logs, myTagNames, saveLifeTags],
+    [logs, myTagNames, saveLifeTags, overlay.rules, overlay.memories],
   )
 
   const removeLog = useCallback(async (id: string) => {

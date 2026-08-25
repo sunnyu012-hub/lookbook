@@ -72,6 +72,11 @@ const AFTER = [
   '하나도 못',
   '전혀 안',
   '잘 안',
+  '안 했',
+  '안했',
+  '안 함',
+  '못 했',
+  '못했',
 ]
 
 export interface NegationHit {

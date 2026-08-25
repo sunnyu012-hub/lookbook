@@ -17,7 +17,9 @@ export const OUTCOME_TAGS = defineTags('outcome', [
   },
   { key: 'learned', displayName: '배움', keywords: ['배웠', '알게 됐', '깨달'] },
   { key: 'solved', displayName: '해결함', parentId: 'outcome:success', keywords: ['해결했', '풀렸', '고쳤'], defaultConfidence: 0.85 },
-  { key: 'achievement', displayName: '해냄', parentId: 'outcome:success', keywords: ['해냈', '달성', '성취'], phrases: ['원트', '완등'], defaultConfidence: 0.85 },
+  // '원트' 는 여기 없다. 클라이밍에서는 성취지만 "촬영 원트로 끝남" 에서는 아니다 —
+  // 사람마다 뜻이 다른 말은 built-in 이 아니라 개인 규칙이 배울 몫이다 (Phase 4).
+  { key: 'achievement', displayName: '해냄', parentId: 'outcome:success', keywords: ['해냈', '달성', '성취'], phrases: ['완등'], defaultConfidence: 0.85 },
   { key: 'milestone', displayName: '이정표', keywords: ['처음으로 성공', '드디어 됐'] },
   { key: 'stuck', displayName: '진전 없음', keywords: ['제자리', '진전 없'] },
   { key: 'mistake', displayName: '실수', keywords: ['실수', '잘못했'] },

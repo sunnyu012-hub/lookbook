@@ -14,9 +14,16 @@
  * 태그 하나 붙이려다 기록을 못 읽게 되는 일이 있어서는 안 된다.
  */
 import type { AppliedLifeTag, QuickLog } from '../types'
+import type { ExactMemory, PersonalRule } from '../learning/types'
 import { TAGGING_RULE_VERSION } from './engine'
 import { TAXONOMY_VERSION } from '../versions'
 import { isDecided, needsRetag, retag } from './apply'
+
+/** 개인 규칙 겹 — 백필에도 똑같이 얹는다 */
+export interface OverlayOptions {
+  rules?: readonly PersonalRule[]
+  memories?: readonly ExactMemory[]
+}
 
 /** 몰아서 돌릴 때 한 번에 처리할 개수. 사이사이 화면이 숨 쉴 틈을 준다 */
 export const BATCH_SIZE = 20
@@ -53,6 +60,7 @@ export const pendingLogs = (logs: readonly QuickLog[]): QuickLog[] => logs.filte
 export function retagOne(
   log: QuickLog,
   myTagNames: readonly string[] = [],
+  overlay: OverlayOptions = {},
 ): AppliedLifeTag[] | null {
   try {
     const previous = log.lifeTags ?? []
@@ -62,7 +70,7 @@ export function retagOne(
         text: log.text,
         energy: log.energy,
       },
-      { myTagNames, previous },
+      { myTagNames, previous, rules: overlay.rules, memories: overlay.memories },
     ).lifeTags
 
     return sameTags(previous, next) ? null : next
@@ -92,7 +100,7 @@ export interface BackfillResult {
 
 const EMPTY: BackfillResult = { updated: 0, unchanged: 0, failed: 0 }
 
-export interface BackfillOptions {
+export interface BackfillOptions extends OverlayOptions {
   myTagNames?: readonly string[]
   /** 한 번에 여기까지만. 나머지는 다음에 누르면 이어서 한다 */
   limit?: number
@@ -124,7 +132,10 @@ export async function runBackfill(
   for (const [index, log] of targets.entries()) {
     if (options.shouldStop?.()) break
 
-    const next = retagOne(log, options.myTagNames)
+    const next = retagOne(log, options.myTagNames, {
+      rules: options.rules,
+      memories: options.memories,
+    })
 
     try {
       // 결과가 같아도 판 번호는 찍는다. 안 찍으면 다음에 또 같은 일을 한다

@@ -57,6 +57,12 @@ export interface TaggingInput {
   energy?: number | null
   /** 사용자가 만든 태그 이름들. 여기 걸린 말은 LIFE TAG 로 가져가지 않는다 */
   myTagNames?: readonly string[]
+  /**
+   * 이 기록에 실제로 달린 My Tag id 들.
+   * built-in 엔진은 쓰지 않는다 — 개인 규칙이 "클라이밍 문맥에서만" 을 확인할 때 쓴다.
+   * 이름 목록은 사전 전체라서 이 기록에 무엇이 달렸는지 알려 주지 못한다.
+   */
+  myTagIds?: readonly string[]
 }
 
 export interface TaggingResult {

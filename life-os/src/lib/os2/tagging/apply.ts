@@ -12,6 +12,8 @@
 import type { AppliedLifeTag, QuickLogInput } from '../types'
 import { TAGGING_RULE_VERSION, analyze } from './engine'
 import { TAXONOMY_VERSION } from '../versions'
+import type { ExactMemory, PersonalRule } from '../learning/types'
+import { analyzeWithPersonal } from '../learning/apply'
 
 export interface TagStamp {
   lifeTags: AppliedLifeTag[]
@@ -24,10 +26,15 @@ export interface TagStamp {
 export const isDecided = (tag: AppliedLifeTag) =>
   Boolean(tag.userVerified || tag.userRejected || tag.source === 'user')
 
-export function retag(
-  input: QuickLogInput,
-  options: { myTagNames?: readonly string[]; previous?: readonly AppliedLifeTag[] } = {},
-): TagStamp {
+export interface RetagOptions {
+  myTagNames?: readonly string[]
+  previous?: readonly AppliedLifeTag[]
+  /** 개인 규칙 겹 — 없으면 built-in 만 돈다 */
+  rules?: readonly PersonalRule[]
+  memories?: readonly ExactMemory[]
+}
+
+export function retag(input: QuickLogInput, options: RetagOptions = {}): TagStamp {
   const decided = (options.previous ?? []).filter(isDecided)
   const taggedAt = new Date().toISOString()
 
@@ -39,12 +46,23 @@ export function retag(
   }
 
   try {
-    const result = analyze({
+    const taggingInput = {
       text: input.text ?? '',
       mood: input.mood,
       energy: input.energy ?? null,
       myTagNames: options.myTagNames ?? [],
-    })
+      myTagIds: input.myTagIds ?? [],
+    }
+
+    // 개인 규칙이 있으면 그 겹까지 얹는다. 없으면 built-in 그대로다
+    const hasOverlay = Boolean(options.rules?.length || options.memories?.length)
+    const result = hasOverlay
+      ? analyzeWithPersonal(taggingInput, {
+          rules: options.rules,
+          memories: options.memories,
+          previous: decided,
+        })
+      : analyze(taggingInput)
 
     const decidedIds = new Set(decided.map((t) => t.tagId))
     const fresh = result.tags.filter((t) => !decidedIds.has(t.tagId))
@@ -57,10 +75,7 @@ export function retag(
 }
 
 /** 저장 직전 입력에 태그를 얹는다 */
-export function withTags(
-  input: QuickLogInput,
-  options: { myTagNames?: readonly string[]; previous?: readonly AppliedLifeTag[] } = {},
-): QuickLogInput {
+export function withTags(input: QuickLogInput, options: RetagOptions = {}): QuickLogInput {
   const stamp = retag(input, options)
   return {
     ...input,
