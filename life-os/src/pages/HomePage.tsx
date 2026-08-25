@@ -10,6 +10,10 @@ import { EffectsView } from '@/components/home/EffectsView'
 import { MyLife, buildLifeModules, type LifeSection } from '@/components/home/MyLife'
 import { EventSheet } from '@/components/home/EventSheet'
 import { CapacityCard } from '@/components/home/CapacityCard'
+import { QuickLogEntry } from '@/components/quicklog/QuickLogEntry'
+import { TodayFlow } from '@/components/quicklog/TodayFlow'
+import type { QuickLog, QuickLogInput } from '@/lib/os2/types'
+import type { MyTagStore } from '@/hooks/useMyTags'
 import type { Capacity } from '@/lib/wellness/capacity'
 import type { RecoveryCurve } from '@/lib/analytics/recoveryCurve'
 import { pixelDate, todayKey } from '@/lib/date'
@@ -49,6 +53,11 @@ interface Props {
   /** 일요일 저녁에만 슬쩍 뜬다 */
   weeklyDue: boolean
   onOpenWeekly: () => void
+  /** 오늘 남긴 순간들 */
+  todayLogs: QuickLog[]
+  tagStore: MyTagStore
+  onSaveQuickLog: (input: QuickLogInput, photo: File | null) => Promise<void>
+  onOpenQuickLog: (log: QuickLog) => void
 }
 
 /**
@@ -78,6 +87,10 @@ export function HomePage({
   onOpenRhythm,
   weeklyDue,
   onOpenWeekly,
+  todayLogs,
+  tagStore,
+  onSaveQuickLog,
+  onOpenQuickLog,
 }: Props) {
   /**
    * Quest 가 사라지면서 기본 탭을 STATUS 로 되돌린다.
@@ -153,6 +166,15 @@ export function HomePage({
       ) : (
         <>
           <TodayHUD today={today} streak={streak} onStartCheckin={onStartCheckin} />
+
+          {/*
+            Quick Log 는 방 바로 아래에 둔다.
+            앱을 열자마자 "지금 기분" 을 누를 수 있어야 하기 때문이다.
+            방과 HUD 는 그대로 위에 남는다 — Life OS 의 얼굴이라 아래로 밀지 않는다.
+          */}
+          <QuickLogEntry tagStore={tagStore} onSave={onSaveQuickLog} />
+
+          <TodayFlow logs={todayLogs} tagStore={tagStore} onOpen={onOpenQuickLog} />
 
           <CapacityCard capacity={capacity} curve={curve} onOpenCurve={onOpenRhythm} />
 

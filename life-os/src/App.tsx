@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { TabKey } from '@/types'
+import type { QuickLogInput } from '@/lib/os2/types'
 import { AppShell } from '@/components/layout/AppShell'
 import { AuthGate } from '@/components/AuthGate'
 import { DevTools } from '@/components/DevTools'
@@ -12,6 +13,7 @@ import { MePage } from '@/pages/MePage'
 import { SettingsPage } from '@/pages/SettingsPage'
 import { ArchivePage } from '@/pages/ArchivePage'
 import { NightPage } from '@/pages/NightPage'
+import { QuickLogPage } from '@/pages/QuickLogPage'
 import { LifeTreePage } from '@/pages/LifeTreePage'
 import { LifeBalanceDetail } from '@/pages/LifeBalancePage'
 import { RhythmPage } from '@/pages/RhythmPage'
@@ -31,6 +33,8 @@ import {
 } from '@/hooks/useLifeData'
 import { usePreferences } from '@/hooks/usePreferences'
 import { useQuestLegacy } from '@/hooks/useQuestLegacy'
+import { useQuickLogs } from '@/hooks/useQuickLogs'
+import { useMyTags } from '@/hooks/useMyTags'
 import { useSession } from '@/hooks/useSession'
 import { levelFromXp } from '@/lib/level'
 import { XP_RULES, xpBreakdown } from '@/lib/xp'
@@ -64,10 +68,12 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   /** 전체 화면으로 덮는 화면들 */
   const [overlay, setOverlay] = useState<
-    'night' | 'collection' | 'manual' | 'tree' | 'rhythm' | 'weekly' | 'balance' | null
+    'night' | 'quicklog' | 'collection' | 'manual' | 'tree' | 'rhythm' | 'weekly' | 'balance' | null
   >(null)
   const [result, setResult] = useState<'start' | 'complete' | null>(null)
   const [editingDate, setEditingDate] = useState<string>(todayKey())
+  /** 상세로 열어 둔 Quick Log */
+  const [openLog, setOpenLog] = useState<string | null>(null)
   const [toast, setToast] = useState<ToastState | null>(null)
 
   const auth = useSession()
@@ -80,6 +86,8 @@ export default function App() {
   const nightStore = useNights(auth.state)
   const tagStore = useEventTags(auth.state)
   const weeklyStore = useWeeklyResets(auth.state)
+  const quickLogStore = useQuickLogs(auth.state)
+  const myTagStore = useMyTags(auth.state)
 
   const todayTags = tagStore.tagsFor(todayKey())
 
@@ -357,6 +365,27 @@ export default function App() {
   }
 
   const existing = store.byDate.get(editingDate) ?? null
+  const openedLog = useMemo(
+    () => quickLogStore.logs.find((l) => l.id === openLog) ?? null,
+    [quickLogStore.logs, openLog],
+  )
+
+  /**
+   * Quick Log 저장.
+   * 사진만 실패한 경우에도 기록은 이미 저장돼 있다 — 그럴 때만 한 줄 덧붙인다.
+   */
+  const saveQuickLog = useCallback(
+    async (input: QuickLogInput, photo: File | null) => {
+      const result = await quickLogStore.createLog(input, photo)
+      if (!result) return
+      setToast({
+        title: '기록했어요 ✦',
+        detail: result.photoWarning ?? undefined,
+      })
+    },
+    [quickLogStore],
+  )
+
   /** 오늘까지 며칠째인지 — 오늘 기록이 없으면 다음 날짜로 센다 */
   const dayNumber = store.checkins.length + (store.today ? 0 : 1)
 
@@ -392,6 +421,25 @@ export default function App() {
           onDone={() => {
             setOverlay(null)
             setResult('complete')
+          }}
+        />
+      ) : overlay === 'quicklog' && openedLog ? (
+        <QuickLogPage
+          log={openedLog}
+          tagStore={myTagStore}
+          onSave={async (input, photo) => {
+            const result = await quickLogStore.updateLog(openedLog.id, input, photo)
+            if (result?.photoWarning) setToast({ title: '기록했어요 ✦', detail: result.photoWarning })
+          }}
+          onRemove={async () => {
+            await quickLogStore.removeLog(openedLog.id)
+            setOpenLog(null)
+            setOverlay(null)
+            setToast({ title: 'Deleted', detail: '기록을 지웠어요.' })
+          }}
+          onClose={() => {
+            setOpenLog(null)
+            setOverlay(null)
           }}
         />
       ) : overlay === 'collection' ? (
@@ -480,6 +528,13 @@ export default function App() {
               onOpenRhythm={() => setOverlay('rhythm')}
               weeklyDue={weeklyDue}
               onOpenWeekly={() => setOverlay('weekly')}
+              todayLogs={quickLogStore.todayLogs}
+              tagStore={myTagStore}
+              onSaveQuickLog={saveQuickLog}
+              onOpenQuickLog={(log) => {
+                setOpenLog(log.id)
+                setOverlay('quicklog')
+              }}
             />
           )}
 
@@ -540,6 +595,11 @@ export default function App() {
               weeklyResets={weeklyStore.resets}
               insights={insights}
               prefs={prefStore.prefs}
+              quickLogsFor={quickLogStore.logsFor}
+              onOpenQuickLog={(log) => {
+                setOpenLog(log.id)
+                setOverlay('quicklog')
+              }}
               onEdit={openCheckin}
               onAddEvent={eventStore.save}
               onRemoveEvent={eventStore.remove}
