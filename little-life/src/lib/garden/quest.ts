@@ -1,6 +1,6 @@
 import type { AppState, Category, CropDef, Difficulty, GardenPlot } from '@/types'
-import { GARDEN_DEW_ITEM_ID, PLANTABLE_CROPS } from './crops'
-import { MAX_PLOTS, isGardenUnlocked, plotView, shiftReady } from './derive'
+import { GARDEN_DEW_ITEM_ID, PLANTABLE_CROPS, RARE_CROPS } from './crops'
+import { MAX_PLOTS, isGardenUnlocked, isRareFound, plotView, shiftReady } from './derive'
 
 /**
  * 퀘스트와 정원 사이.
@@ -82,7 +82,29 @@ export interface SeedDropOptions {
   difficulty: Difficulty
   /** 보스를 넘었을 때 */
   boss?: boolean
+  /** 밤에 끝냈는지. 밤에만 다시 나오는 씨앗이 있다. */
+  night?: boolean
   rng?: () => number
+}
+
+/**
+ * 찾아낸 희귀 씨앗이 다시 나올 기회.
+ *
+ * 한 번 주고 끝내지 않는다 — 한 번 심으면 다시는 못 보는 작물은
+ * 발견이 아니라 박제다. 확률은 낮지만 없지는 않다.
+ */
+function rollRareSeed(
+  state: AppState,
+  night: boolean,
+  rng: () => number,
+): string | null {
+  for (const crop of RARE_CROPS) {
+    if (!crop.discovery) continue
+    if (!isRareFound(state, crop)) continue
+    if (crop.discovery.nightOnly && !night) continue
+    if (rng() * 100 < crop.discovery.reseedChance) return crop.seedItemId
+  }
+  return null
 }
 
 /**
@@ -94,7 +116,7 @@ export interface SeedDropOptions {
 export function rollGardenDrops(state: AppState, options: SeedDropOptions): string[] {
   if (!isGardenUnlocked(state)) return []
 
-  const { category, difficulty, boss = false, rng = Math.random } = options
+  const { category, difficulty, boss = false, night = false, rng = Math.random } = options
   const out: string[] = []
 
   const chance = boss ? SEED_CHANCE_BOSS : SEED_CHANCE[difficulty]
@@ -104,6 +126,10 @@ export function rollGardenDrops(state: AppState, options: SeedDropOptions): stri
   }
 
   if (rng() * 100 < DEW_CHANCE) out.push(GARDEN_DEW_ITEM_ID)
+
+  // 이미 찾아낸 희귀 씨앗은 아주 가끔 다시 나온다
+  const rare = rollRareSeed(state, night, rng)
+  if (rare) out.push(rare)
 
   return out
 }

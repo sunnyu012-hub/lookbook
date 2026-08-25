@@ -2,6 +2,8 @@ import type {
   AppState,
   Category,
   CropDef,
+  CropVariant,
+  RareCondition,
   CropId,
   GardenPlot,
   GardenPlotView,
@@ -17,7 +19,9 @@ import {
   CROPS,
   GARDEN_DEW_ITEM_ID,
   GARDEN_DEW_SECONDS,
+  RARE_CROPS,
   findCrop,
+  findVariant,
 } from './crops'
 
 /**
@@ -72,6 +76,7 @@ export function emptyGarden(): GardenState {
     plots: emptyPlots(),
     harvestedCropCounts: {},
     plantedCount: 0,
+    rareSeedsGiven: [],
   }
 }
 
@@ -169,6 +174,131 @@ export function applyGardenUnlock(
     state: { ...state, garden: { ...state.garden, unlockedAt: now.toISOString() } },
     opened: true,
   }
+}
+
+// ── 희귀 작물 ───────────────────────────────────────────
+
+/** 조건 하나에 지금 얼마나 왔는지 (0~1) */
+export function rareProgress(state: AppState, c: RareCondition): number {
+  switch (c.kind) {
+    case 'GARDEN_LEVEL':
+      return Math.min(1, gardenLevel(gardenXp(state.garden)) / c.level)
+    case 'CROPS_DISCOVERED':
+      return Math.min(1, discoveredCropIds(state.garden).length / c.count)
+    case 'CROP_HARVESTED':
+      return Math.min(1, (state.garden.harvestedCropCounts[c.cropId] ?? 0) / c.count)
+    case 'NIGHT_QUESTS':
+      // 자동 컬렉션이 밤 퀘스트를 세는 것과 같은 자리를 본다
+      return Math.min(1, nightQuests(state) / c.count)
+    case 'RECIPES_COOKED': {
+      const kinds = Object.values(state.kitchen.cookedRecipeCounts).filter((n) => n > 0).length
+      return Math.min(1, kinds / c.count)
+    }
+  }
+}
+
+/** 밤에 끝낸 퀘스트 수 */
+export function nightQuests(state: AppState): number {
+  return Object.values(state.usageProfiles).reduce(
+    (sum, p) => sum + (p.completedByBand.NIGHT ?? 0),
+    0,
+  )
+}
+
+/**
+ * 이 희귀 작물을 찾았는지.
+ *
+ * 저장하지 않는다 — 조건에서 매번 다시 센다.
+ * 정원을 아직 못 찾았으면 아무것도 안 열린다.
+ */
+export function isRareFound(state: AppState, crop: CropDef): boolean {
+  if (!crop.discovery) return false
+  if (!isGardenUnlocked(state)) return false
+  // 이미 거둬본 적이 있으면 무슨 일이 있어도 찾은 것으로 둔다
+  if ((state.garden.harvestedCropCounts[crop.id] ?? 0) > 0) return true
+  return crop.discovery.conditions.every((c) => rareProgress(state, c) >= 1)
+}
+
+/** 지금 심을 수 있는 것 — 처음부터 도는 것 + 찾아낸 희귀한 것 */
+export function plantableCrops(state: AppState): CropDef[] {
+  return CROPS.filter((c) => c.seedAvailable || isRareFound(state, c))
+}
+
+/**
+ * 조건을 채웠는데 아직 첫 씨앗을 안 준 것.
+ *
+ * 준 적이 있는지만 저장한다 (rareSeedsGiven). 두 번 줄 수가 없다.
+ */
+export function pendingRareSeeds(state: AppState): CropDef[] {
+  return RARE_CROPS.filter(
+    (c) => isRareFound(state, c) && !state.garden.rareSeedsGiven.includes(c.id),
+  )
+}
+
+export interface RareGrant {
+  state: AppState
+  /** 이번에 처음 만난 것들 */
+  found: CropDef[]
+}
+
+/** 조건을 채운 희귀 작물의 첫 씨앗을 손에 쥐어준다 */
+export function applyRareSeeds(state: AppState, now: Date = new Date()): RareGrant {
+  const found = pendingRareSeeds(state)
+  if (found.length === 0) return { state, found: [] }
+
+  let collection = state.collection
+  for (const crop of found) {
+    collection = addItem(collection, crop.seedItemId, now).collection
+  }
+
+  return {
+    state: {
+      ...state,
+      collection,
+      garden: {
+        ...state.garden,
+        rareSeedsGiven: [...state.garden.rareSeedsGiven, ...found.map((c) => c.id)],
+      },
+    },
+    found,
+  }
+}
+
+// ── 섞여 나오는 것 ──────────────────────────────────────
+
+/** 지금 이 작물을 거둘 때 다른 게 섞여 나올 확률 (%) */
+export function variantChance(state: AppState, variant: CropVariant): number {
+  const harvested = state.garden.harvestedCropCounts[variant.baseCropId] ?? 0
+  let chance = variant.chance
+  if (gardenLevel(gardenXp(state.garden)) >= variant.levelBonus.level) {
+    chance += variant.levelBonus.add
+  }
+  if (harvested >= variant.harvestBonus.count) chance += variant.harvestBonus.add
+  return chance
+}
+
+/**
+ * 자비 — 이만큼 거뒀는데도 못 봤으면 다음엔 반드시.
+ *
+ * 이 판정도 저장하지 않는다. 거둔 기록 두 개를 견주면 그대로 나온다.
+ */
+export function variantGuaranteed(state: AppState, variant: CropVariant): boolean {
+  const base = state.garden.harvestedCropCounts[variant.baseCropId] ?? 0
+  const found = state.garden.harvestedCropCounts[variant.cropId] ?? 0
+  return found === 0 && base >= variant.pityAt
+}
+
+export function rollVariant(
+  state: AppState,
+  baseCropId: string,
+  rng: () => number = Math.random,
+): CropDef | null {
+  const variant = findVariant(baseCropId)
+  if (!variant) return null
+  if (!variantGuaranteed(state, variant) && rng() * 100 >= variantChance(state, variant)) {
+    return null
+  }
+  return findCrop(variant.cropId)
 }
 
 // ── 밭 ──────────────────────────────────────────────────
@@ -320,7 +450,16 @@ export function plantSeed(
 // ── 거두기 ──────────────────────────────────────────────
 
 export type HarvestResult =
-  | { ok: true; crop: CropDef; count: number; isNew: boolean; leveledUp: number | null }
+  | {
+      ok: true
+      crop: CropDef
+      count: number
+      isNew: boolean
+      leveledUp: number | null
+      /** 이번에 섞여 나온 것 (황금 딸기처럼). 없으면 null. */
+      variant: CropDef | null
+      variantIsNew: boolean
+    }
   | { ok: false; reason: 'EMPTY' | 'NOT_READY' | 'UNKNOWN' }
 
 /**
@@ -354,20 +493,39 @@ export function harvestPlot(
     if (added.isNew) isNew = true
   }
 
+  // 아주 가끔 다른 게 섞여 나온다. 씨앗을 따로 심는 게 아니라 여기서 나온다.
+  const variant = rollVariant(state, crop.id, rng)
+  let variantIsNew = false
+  const counts: Record<string, number> = {
+    ...state.garden.harvestedCropCounts,
+    [crop.id]: (state.garden.harvestedCropCounts[crop.id] ?? 0) + 1,
+  }
+  if (variant) {
+    const added = addItem(collection, variant.harvestItemId, now)
+    collection = added.collection
+    variantIsNew = added.isNew
+    counts[variant.id] = (counts[variant.id] ?? 0) + 1
+  }
+
   const before = gardenLevel(gardenXp(state.garden))
   const garden: GardenState = {
     ...state.garden,
     plots: state.garden.plots.map((p, i) => (i === plotIndex ? { id: p.id } : p)),
-    harvestedCropCounts: {
-      ...state.garden.harvestedCropCounts,
-      [crop.id]: (state.garden.harvestedCropCounts[crop.id] ?? 0) + 1,
-    },
+    harvestedCropCounts: counts,
   }
   const after = gardenLevel(gardenXp(garden))
 
   return {
     state: { ...state, collection, garden },
-    result: { ok: true, crop, count, isNew, leveledUp: after > before ? after : null },
+    result: {
+      ok: true,
+      crop,
+      count,
+      isNew,
+      leveledUp: after > before ? after : null,
+      variant,
+      variantIsNew,
+    },
   }
 }
 

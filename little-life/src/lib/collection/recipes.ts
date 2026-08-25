@@ -1,4 +1,5 @@
 import type { RecipeDef } from '@/types'
+import { WORKSHOP_COMING, WORKSHOP_RECIPES } from './workshop'
 
 /**
  * 만들기.
@@ -10,7 +11,7 @@ import type { RecipeDef } from '@/types'
  * 모든 레시피를 처음부터 보여주지 않는다 (§40).
  * 아직 모르는 건 ??? 로 남고, 살다 보면 하나씩 알게 된다.
  */
-export const RECIPES: RecipeDef[] = [
+const BASE_RECIPES: RecipeDef[] = [
   // ── 처음부터 아는 것 ──
   {
     id: 'sprout_jar',
@@ -304,6 +305,14 @@ export const RECIPES: RecipeDef[] = [
     unlockHint: 'Sage Day 를 완성하면',
   },
 ]
+
+/**
+ * 만들 수 있는 것 전부.
+ *
+ * 정원 쪽 레시피를 따로 두지 않고 같은 목록에 넣는다 —
+ * 작업실이 두 개가 되면 어느 쪽에서 만드는지부터 헷갈린다.
+ */
+export const RECIPES: RecipeDef[] = [...BASE_RECIPES, ...WORKSHOP_RECIPES, WORKSHOP_COMING]
 
 export function findRecipe(id: string): RecipeDef | null {
   return RECIPES.find((r) => r.id === id) ?? null

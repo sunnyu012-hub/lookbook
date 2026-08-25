@@ -78,4 +78,43 @@ export const GARDEN_DEW: CollectionItemDef = {
   acquisitionSources: [{ kind: 'QUEST', category: null }],
 }
 
-export const GARDEN_ITEMS: CollectionItemDef[] = [...SEED_ITEMS, ...CROP_ITEMS, GARDEN_DEW]
+/**
+ * 정원 세트를 모으면 방에 남는 것들.
+ *
+ * 능력치는 하나도 안 붙는다 — 트로피 · 부엌 물건과 같은 규칙이다.
+ */
+function decor(id: string, nameKo: string, icon: string, description: string): CollectionItemDef {
+  return {
+    id,
+    nameKo,
+    icon,
+    category: 'OUTDOOR',
+    subcategory: '정원',
+    rarity: 'EPIC',
+    description,
+    hasPlaceableAsset: true,
+    placeable: true,
+    footprint: { width: 14, height: 15 },
+    acquisitionSources: [{ kind: 'SET', setId: 'garden' }],
+    collectionSetIds: [],
+    tags: ['정원'],
+    stackable: false,
+    unique: true,
+  }
+}
+
+export const GARDEN_DECOR: CollectionItemDef[] = [
+  decor('g_strawberry_planter', '딸기 화분', '🍓', '창가에 두면 아침에 제일 먼저 눈에 띈다.'),
+  decor('g_strawberry_sign', '딸기밭 표지판', '🪧', '누가 봐도 여기가 딸기밭이라는 뜻.'),
+  decor('g_herb_rack', '허브 건조대', '🌿', '지나갈 때마다 향이 한 번씩 난다.'),
+  decor('g_harvest_basket', '수확 바구니', '🧺', '가을에 한 번 가득 찼던 적이 있다.'),
+  decor('g_autumn_table', '가을 정원 테이블', '🍂', '해가 짧아지면 여기 앉는 시간이 는다.'),
+  decor('g_moon_arch', '달빛 정원 아치', '🌙', '밤에만 아치 아래가 조금 밝다.'),
+]
+
+export const GARDEN_ITEMS: CollectionItemDef[] = [
+  ...SEED_ITEMS,
+  ...CROP_ITEMS,
+  GARDEN_DEW,
+  ...GARDEN_DECOR,
+]

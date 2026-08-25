@@ -48,6 +48,7 @@ import { findCollectionItem } from '@/lib/collection/catalog'
 import { applyCollectionDerived } from '@/lib/collection/derive'
 import { rollBossDrop, rollCollectDrops } from '@/lib/collection/drops'
 import { findRecipe } from '@/lib/collection/recipes'
+import { timeBand } from '@/lib/rpg/time'
 import {
   addItem,
   canCraft,
@@ -774,6 +775,8 @@ export function useGameState(): GameState {
       const gardenDropped = rollGardenDrops(prev, {
         category: target.category,
         difficulty: target.difficulty,
+        // 밤에만 다시 나오는 씨앗이 있다 (별빛꽃 · 달빛허브)
+        night: timeBand(now) === 'NIGHT',
       })
       const gardenDrops: Array<{ itemId: string; wasNew: boolean }> = []
       for (const itemId of gardenDropped) {

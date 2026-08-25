@@ -845,6 +845,16 @@ export function sanitizeGarden(raw: unknown): GardenState {
     plots: plots.slice(0, MAX_PLOTS),
     harvestedCropCounts,
     plantedCount: Math.max(0, Math.floor(numberOr(g.plantedCount, 0))),
+    // 첫 씨앗을 이미 준 희귀 작물. 없어진 작물이 적혀 있으면 조용히 버린다.
+    rareSeedsGiven: Array.isArray(g.rareSeedsGiven)
+      ? [
+          ...new Set(
+            g.rareSeedsGiven.filter(
+              (v): v is string => typeof v === 'string' && findCrop(v) !== null,
+            ),
+          ),
+        ]
+      : [],
   }
 }
 

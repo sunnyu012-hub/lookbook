@@ -1,6 +1,15 @@
 import type { AppState, DiscoveryResult } from '@/types'
 import { isNightOpen } from '@/lib/rpg/time'
-import { addItem, discoveredCount, completedSetIds, newMilestones, newTrophies, unclaimedSets } from './progress'
+import {
+  addItem,
+  discoveredCount,
+  completedSetIds,
+  newMilestones,
+  newTrophies,
+  partialKey,
+  unclaimedPartials,
+  unclaimedSets,
+} from './progress'
 import { claimableGoals, goalKey } from '@/lib/goals'
 import { pendingGrants } from './grants'
 import { findCollectionItem } from './catalog'
@@ -78,6 +87,36 @@ export function applyCollectionDerived(
 
       current = { ...current, collection, user: { ...current.user, coins } }
       notes.push(`${set.name} 완성 ✦`)
+      changed = true
+    }
+
+    // 2-b. 중간까지 온 세트의 몫
+    for (const set of unclaimedPartials(current.collection)) {
+      let collection = {
+        ...current.collection,
+        claimedSetIds: [...current.collection.claimedSetIds, partialKey(set.id)],
+      }
+      let coins = current.user.coins
+
+      for (const reward of set.partialRewards ?? []) {
+        if (reward.kind === 'COIN') coins += reward.amount
+        if (reward.kind === 'ITEM') {
+          const added = addItem(collection, reward.itemId, now)
+          collection = added.collection
+          if (added.isNew) {
+            discoveries.push({ itemId: reward.itemId, isNew: true, source: `${set.name}` })
+          }
+        }
+        if (reward.kind === 'RECIPE' && !collection.discoveredRecipeIds.includes(reward.recipeId)) {
+          collection = {
+            ...collection,
+            discoveredRecipeIds: [...collection.discoveredRecipeIds, reward.recipeId],
+          }
+        }
+      }
+
+      current = { ...current, collection, user: { ...current.user, coins } }
+      notes.push(`${set.name} — 여기까지 온 몫`)
       changed = true
     }
 

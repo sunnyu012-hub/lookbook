@@ -1,5 +1,6 @@
 import type {
   Category,
+  CraftStage,
   ItemKnowledge,
   CollectionItemDef,
   CollectionSetDef,
@@ -251,6 +252,24 @@ export function unclaimedSets(c: CollectionState): CollectionSetDef[] {
   )
 }
 
+/**
+ * 중간까지 왔는데 아직 그 몫을 안 받은 세트.
+ *
+ * 완성 보상과 따로 센다. `${id}:partial` 로 적어둬서
+ * 저장 구조를 새로 늘리지 않았다.
+ */
+export function unclaimedPartials(c: CollectionState): CollectionSetDef[] {
+  return COLLECTION_SETS.filter((s) => {
+    if (s.partialAt === undefined || !s.partialRewards) return false
+    if (c.claimedSetIds.includes(partialKey(s.id))) return false
+    return setProgress(s, c).have >= s.partialAt
+  })
+}
+
+export function partialKey(setId: string): string {
+  return `${setId}:partial`
+}
+
 /** 지금 방에 걸 수 있는 공기 */
 export function unlockedEffectIds(c: CollectionState): HomeEffectId[] {
   const done = new Set(completedSetIds(c))
@@ -281,6 +300,10 @@ export function unlockedTitles(c: CollectionState): string[] {
 // ── 레시피 ──────────────────────────────────────────────
 
 export interface RecipeContext {
+  /** 정원에서 무엇을 몇 번 거뒀는지 */
+  harvestedCropCounts?: Record<string, number>
+  /** 서로 다른 요리를 몇 가지 만들어봤는지 */
+  cookedKinds?: number
   level: number
   discoveredCount: number
   completedSetIds: string[]
@@ -289,25 +312,61 @@ export interface RecipeContext {
   discoveredRecipeIds: string[]
 }
 
-export function isRecipeKnown(recipe: RecipeDef, ctx: RecipeContext): boolean {
-  if (ctx.discoveredRecipeIds.includes(recipe.id)) return true
+/**
+ * 조건에 지금 얼마나 왔는지 (0~1).
+ *
+ * 알거나 모르거나로만 두면 낌새를 흘릴 수가 없다.
+ * 예전부터 있던 조건은 0 아니면 1 로 나온다 — 그건 그대로다.
+ */
+export function recipeProgress(recipe: RecipeDef, ctx: RecipeContext): number {
+  if (ctx.discoveredRecipeIds.includes(recipe.id)) return 1
 
   switch (recipe.unlock.kind) {
     case 'DEFAULT':
-      return true
+      return 1
     case 'LEVEL':
-      return ctx.level >= recipe.unlock.level
+      return Math.min(1, ctx.level / recipe.unlock.level)
     case 'COLLECTION':
-      return ctx.discoveredCount >= recipe.unlock.count
+      return Math.min(1, ctx.discoveredCount / recipe.unlock.count)
     case 'SET':
-      return ctx.completedSetIds.includes(recipe.unlock.setId)
+      return ctx.completedSetIds.includes(recipe.unlock.setId) ? 1 : 0
     case 'NPC':
-      return (ctx.friendship[recipe.unlock.npcId as NpcId] ?? 0) >= recipe.unlock.friendship
+      return Math.min(
+        1,
+        (ctx.friendship[recipe.unlock.npcId as NpcId] ?? 0) / recipe.unlock.friendship,
+      )
+    case 'CROP_HARVESTED':
+      return Math.min(
+        1,
+        (ctx.harvestedCropCounts?.[recipe.unlock.cropId] ?? 0) / recipe.unlock.count,
+      )
+    case 'RECIPES_COOKED':
+      return Math.min(1, (ctx.cookedKinds ?? 0) / recipe.unlock.count)
     case 'SECRET':
-      return false
+    case 'COMING_SOON':
+      return 0
     default:
-      return false
+      return 0
   }
+}
+
+export function isRecipeKnown(recipe: RecipeDef, ctx: RecipeContext): boolean {
+  if (recipe.unlock.kind === 'COMING_SOON') return false
+  return recipeProgress(recipe, ctx) >= 1
+}
+
+/**
+ * 이 레시피가 어디까지 왔는지.
+ *
+ * 낌새(hintAt)를 안 적은 레시피는 낌새 단계가 없다 —
+ * 예전부터 있던 것들은 알거나 모르거나 둘 중 하나다.
+ */
+export function craftStage(recipe: RecipeDef, ctx: RecipeContext): CraftStage {
+  if (recipe.unlock.kind === 'COMING_SOON') return 'COMING_SOON'
+  const progress = recipeProgress(recipe, ctx)
+  if (progress >= 1) return 'KNOWN'
+  if (recipe.hintAt !== undefined && progress >= recipe.hintAt) return 'HINTED'
+  return 'UNKNOWN'
 }
 
 export function knownRecipes(ctx: RecipeContext): RecipeDef[] {
