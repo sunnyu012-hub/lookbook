@@ -1,5 +1,5 @@
 import type { AppState, CharacterSkin, SkinId } from '@/types'
-import { SKINS, findSkin, newlyUnlocked } from './skins'
+import { SKINS, conditionsMet, findSkin, newlyUnlocked, skinPrice } from './skins'
 
 /**
  * 조건을 채운 모습을 손에 넣어준다.
@@ -39,7 +39,10 @@ export function applySkinUnlocks(state: AppState): SkinUnlockResult {
 
 export type BuySkinResult =
   | { ok: true; skin: CharacterSkin; price: number }
-  | { ok: false; reason: 'NOT_FOR_SALE' | 'ALREADY_OWNED' | 'NOT_ENOUGH_COINS' | 'UNKNOWN' }
+  | {
+      ok: false
+      reason: 'NOT_FOR_SALE' | 'NOT_YET' | 'ALREADY_OWNED' | 'NOT_ENOUGH_COINS' | 'UNKNOWN'
+    }
 
 /**
  * 코인으로 하나 데려온다.
@@ -50,12 +53,18 @@ export type BuySkinResult =
 export function buySkin(state: AppState, id: string): { state: AppState; result: BuySkinResult } {
   const def = findSkin(id)
   if (!def) return { state, result: { ok: false, reason: 'UNKNOWN' } }
-  if (def.unlock.kind !== 'SHOP') return { state, result: { ok: false, reason: 'NOT_FOR_SALE' } }
+
+  const price = skinPrice(def)
+  if (price === null) return { state, result: { ok: false, reason: 'NOT_FOR_SALE' } }
   if (state.user.ownedSkinIds.includes(def.id)) {
     return { state, result: { ok: false, reason: 'ALREADY_OWNED' } }
   }
+  // 값이 붙어 있어도 조건을 먼저 채워야 한다.
+  // June 이 안쪽에서 꺼내주는 옷은 아무한테나 꺼내주지 않는다.
+  if (!conditionsMet(state, def.unlock)) {
+    return { state, result: { ok: false, reason: 'NOT_YET' } }
+  }
 
-  const price = def.unlock.price
   if (state.user.coins < price) {
     return { state, result: { ok: false, reason: 'NOT_ENOUGH_COINS' } }
   }
@@ -83,6 +92,19 @@ export function wearSkin(state: AppState, id: string): AppState {
   if (!state.user.ownedSkinIds.includes(id as SkinId)) return state
   if (state.user.selectedSkinId === id) return state
   return { ...state, user: { ...state.user, selectedSkinId: id as SkinId } }
+}
+
+/**
+ * 개발용 — 전부 지급.
+ *
+ * 조건을 하나하나 채워보지 않고도 스물넷을 화면에서 확인하려고 둔다.
+ * 화면 어디에도 부르는 길이 없다 (?dev=skins 갤러리에서만).
+ */
+export function grantAllSkins(state: AppState): AppState {
+  return {
+    ...state,
+    user: { ...state.user, ownedSkinIds: SKINS.map((s) => s.id) },
+  }
 }
 
 /** 도감에 보여줄 진행률 */

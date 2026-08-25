@@ -10,6 +10,10 @@ assets/source-sheets/*.png
 !assets/source-sheets/extra.png
 !assets/source-sheets/trophy.png
 !assets/source-sheets/companions.png
+# 2차 캐릭터 모습 시트 세 장 (합쳐 4.3MB). 열두 모습의 유일한 사본이라 함께 둔다.
+!assets/source-sheets/skins2-sweet.png
+!assets/source-sheets/skins2-rock.png
+!assets/source-sheets/skins2-idol.png
 assets/slices/
 
 # 환경변수 (.env.example 만 저장소에 둔다)

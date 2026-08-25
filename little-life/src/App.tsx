@@ -111,6 +111,7 @@ export default function App() {
     markGuideSeen,
     selectSkin,
     buySkin,
+    devGrantAllSkins,
     newSkins,
     dismissNewSkins,
     replaceState,
@@ -576,7 +577,9 @@ export default function App() {
     return <div className="min-h-[100dvh] bg-canvas" />
   }
 
-  if (devGallery) return <SkinGallery state={state} />
+  if (devGallery) {
+    return <SkinGallery state={state} onGrantAll={devGrantAllSkins} onWear={selectSkin} />
+  }
 
   return (
     <>

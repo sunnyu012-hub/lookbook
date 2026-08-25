@@ -5,7 +5,7 @@ import { BottomSheet } from '@/components/ui/BottomSheet'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/components/ui/cn'
 import { SKIN_CATEGORY_LABEL, ownedSkinCount, skinViews, skinsInCategory } from '@/lib/character/skins'
-import { SKINS } from '@/lib/character/skins'
+import { SKINS, skinPrice } from '@/lib/character/skins'
 import type { BuySkinResult } from '@/lib/character/derive'
 import { CharacterSkinRenderer } from './CharacterSkinRenderer'
 import { SkinCard } from './SkinCard'
@@ -55,12 +55,13 @@ export function MyLookSheet({ open, state, onClose, onSelect, onBuy }: MyLookShe
       return
     }
 
-    if (view.def.unlock.kind === 'SHOP') {
+    // 조건을 다 채운 유료 모습은 눌러서 바로 데려온다
+    if (view.forSale) {
       const result = onBuy(view.def.id)
       if (result.ok) {
-        setNote(`${result.skin.name}를 데려왔어. 눌러서 입어봐.`)
+        setNote(`${result.skin.name}를 데려왔어. 한 번 더 누르면 입어봐.`)
       } else if (result.reason === 'NOT_ENOUGH_COINS') {
-        setNote(`코인이 조금 모자라. ${view.def.unlock.price} 코인이 필요해.`)
+        setNote(`코인이 조금 모자라. ${skinPrice(view.def) ?? 0} 코인이 필요해.`)
       }
       return
     }
@@ -128,11 +129,9 @@ export function MyLookSheet({ open, state, onClose, onSelect, onBuy }: MyLookShe
 
           {/* 살 수 있는 게 있으면 값을 여기서 한 번에 알려준다.
               칸마다 가격을 박아두면 목록이 가게처럼 보인다. */}
-          {shown.some((v) => !v.owned && v.def.unlock.kind === 'SHOP') && (
+          {shown.some((v) => v.forSale) && (
             <p className="mt-3 text-center text-[11.5px] leading-relaxed text-inkfaint">
-              자물쇠가 달린 것 중에는 코인으로 데려올 수 있는 것도 있어.
-              <br />
-              눌러보면 알려줄게. 지금 가진 코인 {state.user.coins}
+              🪙 가 붙은 건 눌러서 데려올 수 있어. 지금 가진 코인 {state.user.coins}
             </p>
           )}
 

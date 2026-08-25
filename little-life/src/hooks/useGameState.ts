@@ -50,7 +50,7 @@ import {
 } from '@/lib/collection/progress'
 import { pendingDelivery } from '@/lib/collection/delivery'
 import { applyDiscovery } from '@/lib/discovery/derive'
-import { applySkinUnlocks, buySkin as buySkinIn, wearSkin } from '@/lib/character/derive'
+import { applySkinUnlocks, buySkin as buySkinIn, grantAllSkins, wearSkin } from '@/lib/character/derive'
 import { findChapter, isChapterUnlocked } from '@/lib/discovery/stories'
 import { findSecret } from '@/lib/discovery/secrets'
 import {
@@ -196,6 +196,8 @@ interface GameState {
   selectSkin: (id: string) => void
   /** 코인으로 하나 데려온다 */
   buySkin: (id: string) => BuySkinResult
+  /** 개발용 — 모습을 전부 지급한다 (?dev=skins 갤러리에서만 부른다) */
+  devGrantAllSkins: () => void
   /** 이번에 새로 얻은 모습들 (알려주고 나면 비운다) */
   newSkins: CharacterSkin[]
   dismissNewSkins: () => void
@@ -1867,6 +1869,10 @@ export function useGameState(): GameState {
     [commit],
   )
 
+  const devGrantAllSkins = useCallback(() => {
+    commit(grantAllSkins(stateRef.current))
+  }, [commit])
+
   const dismissNewSkins = useCallback(() => setNewSkins([]), [])
 
   /**
@@ -1951,6 +1957,7 @@ export function useGameState(): GameState {
       markGuideSeen,
       selectSkin,
       buySkin,
+      devGrantAllSkins,
       newSkins,
       dismissNewSkins,
       replaceState,
@@ -2006,6 +2013,7 @@ export function useGameState(): GameState {
       markGuideSeen,
       selectSkin,
       buySkin,
+      devGrantAllSkins,
       newSkins,
       dismissNewSkins,
       replaceState,

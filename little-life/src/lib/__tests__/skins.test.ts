@@ -7,14 +7,18 @@ import { sanitizeOwnedSkins, sanitizeSelectedSkin } from '@/store/migrate'
 import {
   DEFAULT_SKIN_ID,
   SKINS,
+  conditionProgress,
   defaultOwnedSkinIds,
   findSkin,
   newlyUnlocked,
   ownedSkinCount,
   skinArt,
+  skinPrice,
   skinProgress,
   skinViews,
 } from '@/lib/character/skins'
+import { discoveredInGroup, groupSize, itemIdsInGroup } from '@/lib/character/groups'
+import { SKIN_ITEM_GROUPS } from '@/types'
 import { applySkinUnlocks, buySkin, skinCollectionProgress, wearSkin } from '@/lib/character/derive'
 import { exportText, parseImport } from '@/lib/sync/file'
 import { emptyProfile } from '@/lib/library/usage'
@@ -45,6 +49,44 @@ describe('열두 모습', () => {
     }
   })
 
+  it('스물넷이다 — 1차 열둘 + 2차 열둘', () => {
+    expect(SKINS.length).toBe(24)
+  })
+
+  it('2차 열둘이 다 들어 있고 전부 특별 분류다', () => {
+    const pack2 = [
+      'strawberry_bonbon', 'milky_ballet', 'toy_candy_pop', 'angel_picnic',
+      'soft_rock_chic', 'pink_punk', 'vintage_band_girl', 'midnight_leather',
+      'pink_idol_stage', 'navy_star_idol', 'white_encore', 'aurora_pop',
+    ]
+    for (const id of pack2) {
+      const skin = findSkin(id)
+      expect(skin).not.toBeNull()
+      expect(skin?.category).toBe('SPECIAL')
+      expect(skin?.sortOrder).toBeGreaterThan(12)
+    }
+  })
+
+  it('1차 열둘을 지우거나 덮어쓰지 않았다', () => {
+    const pack1 = [
+      'basic_day', 'cozy_home', 'weekend_casual', 'cafe_work',
+      'climbing_day', 'creative_day', 'rainy_day', 'night_owl',
+      'date_day', 'spring_picnic', 'winter_cozy', 'moon_alley',
+    ]
+    for (const id of pack1) {
+      const skin = findSkin(id)
+      expect(skin).not.toBeNull()
+      expect(skin!.sortOrder).toBeLessThanOrEqual(12)
+    }
+  })
+
+  it('얻는 순간의 말이 붙어 있다', () => {
+    for (const skin of SKINS) {
+      if (skin.unlock.kind === 'DEFAULT') continue
+      expect(skin.dialogue?.line1.trim().length ?? 0).toBeGreaterThan(0)
+    }
+  })
+
   it('처음부터 가진 건 기본 모습 하나뿐이다', () => {
     expect(defaultOwnedSkinIds()).toEqual([DEFAULT_SKIN_ID])
   })
@@ -65,6 +107,30 @@ describe('열두 모습', () => {
   it('기본 모습만 자세 그림이 따로 있다', () => {
     const withPoses = SKINS.filter((s) => s.poses !== undefined).map((s) => s.id)
     expect(withPoses).toEqual([DEFAULT_SKIN_ID])
+  })
+})
+
+describe('물건 묶음', () => {
+  it('묶음이 비어 있지 않다 — 비면 조건이 영원히 안 채워진다', () => {
+    for (const group of SKIN_ITEM_GROUPS) {
+      expect(groupSize(group)).toBeGreaterThan(0)
+    }
+  })
+
+  it('조건에 쓰는 개수만큼은 실제로 있다', () => {
+    expect(groupSize('SWEET')).toBeGreaterThanOrEqual(3)
+    expect(groupSize('SOFT')).toBeGreaterThanOrEqual(5)
+    expect(groupSize('FLOWER')).toBeGreaterThanOrEqual(8)
+    expect(groupSize('STAR')).toBeGreaterThanOrEqual(5)
+    expect(groupSize('MUSIC')).toBeGreaterThanOrEqual(3)
+    expect(groupSize('TREASURE')).toBeGreaterThanOrEqual(10)
+  })
+
+  it('발견한 것만 센다', () => {
+    const some = [...itemIdsInGroup('STAR')].slice(0, 3)
+    const discovered = Object.fromEntries(some.map((id) => [id, '2026-01-01T00:00:00.000Z']))
+    expect(discoveredInGroup(discovered, 'STAR')).toBe(3)
+    expect(discoveredInGroup({}, 'STAR')).toBe(0)
   })
 })
 
@@ -135,9 +201,42 @@ describe('조건은 이미 있는 기록에서 센다', () => {
     expect(skinProgress(found, moon.unlock)).toBe(1)
   })
 
-  it('가게에서 파는 건 "가는 중" 이 없다', () => {
+  it('조건 없이 값만 붙은 건 처음부터 살 수 있다', () => {
     const weekend = findSkin('weekend_casual')!
-    expect(skinProgress(createDefaultState(), weekend.unlock)).toBe(0)
+    expect(skinPrice(weekend)).toBe(400)
+    const view = skinViews(createDefaultState()).find((v) => v.def.id === 'weekend_casual')!
+    expect(view.forSale).toBe(true)
+    expect(view.owned).toBe(false)
+  })
+
+  it('조건이 남은 유료 모습은 아직 못 산다', () => {
+    const state = withUser({ coins: 99999 })
+    const view = skinViews(state).find((v) => v.def.id === 'soft_rock_chic')!
+    expect(view.forSale).toBe(false)
+
+    const { result } = buySkin(state, 'soft_rock_chic')
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.reason).toBe('NOT_YET')
+  })
+
+  it('조건 여럿은 제일 덜 온 것으로 본다 — 평균이면 75% 라고 해놓고 안 열린다', () => {
+    const start = createDefaultState()
+    const angel = findSkin('angel_picnic')!
+    // 꽃은 채우고 식물 분류는 비워둔다
+    const half: AppState = {
+      ...start,
+      collection: {
+        ...start.collection,
+        discovered: Object.fromEntries(
+          [...itemIdsInGroup('FLOWER')].slice(0, 8).map((id) => [id, '2026-01-01T00:00:00.000Z']),
+        ),
+      },
+    }
+    const flower = conditionProgress(half, { kind: 'COLLECTION_GROUP', group: 'FLOWER', count: 8 })
+    expect(flower).toBe(1)
+    // 그래도 전체는 1 이 아니다 (PLANT 분류 조건이 아직 덜 찼을 수 있다)
+    expect(skinProgress(half, angel.unlock)).toBeLessThanOrEqual(1)
+    expect(skinProgress(start, angel.unlock)).toBe(0)
   })
 })
 

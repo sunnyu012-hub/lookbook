@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react'
 import type { AppState } from '@/types'
-import { SKINS, skinArt, skinProgress } from '@/lib/character/skins'
+import { SKINS, skinArt, skinPrice, skinProgress } from '@/lib/character/skins'
 import { CharacterSkinRenderer } from './CharacterSkinRenderer'
 
 interface SkinGalleryProps {
   state: AppState
+  /** 조건을 하나하나 채워보지 않고 스물넷을 다 보려고 */
+  onGrantAll: () => void
+  /** 눌러서 그 자리에서 입어본다 */
+  onWear: (id: string) => void
 }
 
 interface Measured {
@@ -22,7 +26,7 @@ interface Measured {
  *
  * 바닥에 그은 선이 기준이다. 열두 발끝이 그 선에 닿아 있어야 한다.
  */
-export function SkinGallery({ state }: SkinGalleryProps) {
+export function SkinGallery({ state, onGrantAll, onWear }: SkinGalleryProps) {
   const [sizes, setSizes] = useState<Record<string, Measured>>({})
 
   useEffect(() => {
@@ -53,17 +57,37 @@ export function SkinGallery({ state }: SkinGalleryProps) {
     <div className="min-h-dvh bg-canvas px-4 py-6">
       <h1 className="text-[18px] font-bold text-ink">Skin Gallery (dev)</h1>
       <p className="mt-1 text-[12px] text-inkdim">
-        {SKINS.length}장 · 그림 없음 {missing.length}장 · 바닥 선에 발끝이 닿아야 한다
+        {SKINS.length}장 · 그림 없음 {missing.length}장 · 가진 것 {state.user.ownedSkinIds.length}장
+        <br />
+        바닥 선에 발끝이 닿아야 한다
       </p>
+
+      <div className="mt-3 flex gap-2">
+        <button
+          type="button"
+          onClick={onGrantAll}
+          className="rounded-btn bg-sunken px-3 py-2 text-[12px] font-medium text-ink"
+        >
+          전부 지급
+        </button>
+        <span className="rounded-btn bg-canvas px-3 py-2 text-[12px] text-inkdim">
+          지금 입은 것 {state.user.selectedSkinId}
+        </span>
+      </div>
 
       <div className="-mx-4 mt-5 overflow-x-auto px-4">
         <div className="flex w-max items-end gap-3 border-b-2 border-dashed border-coral pb-0">
           {SKINS.map((skin) => (
-            <div key={skin.id} className="w-[104px]">
+            <button
+              key={skin.id}
+              type="button"
+              onClick={() => onWear(skin.id)}
+              className="w-[104px]"
+            >
               <div className="flex h-[168px] items-end justify-center">
                 <CharacterSkinRenderer skinId={skin.id} animated={false} />
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </div>
@@ -88,7 +112,17 @@ export function SkinGallery({ state }: SkinGalleryProps) {
                   : '그림 없음 → 기본으로 대체'
                 : '재는 중…'}
               {'  '}
-              진행 {Math.round(skinProgress(state, skin.unlock) * 100)}%
+              {skin.unlockType} · 진행 {Math.round(skinProgress(state, skin.unlock) * 100)}%
+              {skinPrice(skin) !== null && ` · 🪙 ${skinPrice(skin)}`}
+              {skin.dialogue && (
+                <>
+                  <br />
+                  <span className="text-inkfaint">
+                    “{skin.dialogue.line1}
+                    {skin.dialogue.line2 ? ` / ${skin.dialogue.line2}` : ''}”
+                  </span>
+                </>
+              )}
             </li>
           )
         })}

@@ -1,6 +1,7 @@
 import type { SkinView } from '@/types'
 import { RARITY_STYLE } from '@/components/rpg/RarityBadge'
 import { RARITY_LABEL } from '@/lib/labels'
+import { skinPrice } from '@/lib/character/skins'
 import { CharacterSkinRenderer } from './CharacterSkinRenderer'
 import { cn } from '@/components/ui/cn'
 
@@ -20,7 +21,8 @@ interface SkinCardProps {
  *            얻기 전에 뭐가 있는지 다 알면 찾을 일이 없다.
  */
 export function SkinCard({ view, onSelect }: SkinCardProps) {
-  const { def, owned, active, hidden } = view
+  const { def, owned, active, hidden, forSale } = view
+  const price = skinPrice(def)
   const rarity = RARITY_STYLE[def.rarity]
 
   return (
@@ -75,8 +77,18 @@ export function SkinCard({ view, onSelect }: SkinCardProps) {
         </span>
       )}
 
+      {/* 조건을 다 채워서 이제 코인만 있으면 되는 것은 값을 보여준다.
+          아직 조건이 남은 것은 자물쇠만 — 값부터 보여주면 사면 되는 줄 안다. */}
       {!owned && !active && (
-        <span className="absolute right-1.5 top-1.5 text-[12px] leading-none text-inkfaint">🔒</span>
+        forSale && price !== null ? (
+          <span className="absolute right-1 top-1 rounded-pill bg-butter-soft px-1.5 py-0.5 font-game text-[9px] text-butter-deep">
+            🪙 {price}
+          </span>
+        ) : (
+          <span className="absolute right-1.5 top-1.5 text-[12px] leading-none text-inkfaint">
+            🔒
+          </span>
+        )
       )}
     </button>
   )

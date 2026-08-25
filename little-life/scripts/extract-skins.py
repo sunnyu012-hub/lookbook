@@ -2,18 +2,28 @@
 
     npm run assets:skins
 
-    assets/source-sheets/skins-1.png   베이직 · 코지 홈 · 카페 워크 · 클라이밍
-    assets/source-sheets/skins-2.png   레이니 · 위켄드 · 데이트 · 크리에이티브
-    assets/source-sheets/skins-3.png   나이트 아울 · 스프링 피크닉 · 윈터 코지 · 문 앨리
+    assets/source-sheets/skins-1.png       베이직 · 코지 홈 · 카페 워크 · 클라이밍
+    assets/source-sheets/skins-2.png       레이니 · 위켄드 · 데이트 · 크리에이티브
+    assets/source-sheets/skins-3.png       나이트 아울 · 스프링 피크닉 · 윈터 코지 · 문 앨리
+    assets/source-sheets/skins2-sweet.png  스트로베리 봉봉 · 밀키 발레 · 토이 캔디 팝 · 엔젤 피크닉
+    assets/source-sheets/skins2-rock.png   소프트 락 시크 · 핑크 펑크 · 빈티지 밴드 걸 · 미드나이트 레더
+    assets/source-sheets/skins2-idol.png   핑크 아이돌 · 네이비 스타 · 화이트 앙코르 · 오로라 팝
 
     → public/assets/characters/<스킨id>.webp
 
 ── 이 스크립트가 실제로 푸는 문제 ──────────────────────
 
-하나. 시트 배경이 흰색이다 (동료 시트는 투명이었다).
-      전체를 밝기로 자르면 크림색 후드와 흰 양말까지 같이 사라진다.
-      그래서 "가장자리와 이어진 흰색" 만 지운다 — 옷 안쪽의 흰색은
+하나. 시트마다 배경이 다르다. 1차 세 장은 흰 배경이고 2차 세 장은 투명이다.
+      투명한 건 alpha 를 그대로 쓰면 되고, 흰 배경은 지워야 한다.
+      이때 전체를 밝기로 자르면 크림색 후드와 흰 양말까지 같이 사라지니까
+      "가장자리와 이어진 흰색" 만 지운다 — 옷 안쪽의 흰색은
       캐릭터 윤곽선에 둘러싸여 있어서 가장자리와 이어지지 않는다.
+      어느 쪽인지는 파일을 보고 알아서 정한다.
+
+넷. 시트마다 그림 크기가 다르다. 1차는 1130px, 2차는 1254px 짜리다.
+     그대로 자르면 2차 캐릭터만 화면에서 커진다. 그래서 시트마다
+     네 명의 키 중앙값을 재서 같은 키가 되게 맞춘다 — 중앙값이라
+     우산 하나가 솟아 있어도 흔들리지 않는다.
 
 둘. 열두 장의 키가 제각각이다. 우산은 머리 위로 솟고, 문 앨리는 머리카락이 길다.
      잘라낸 그대로 화면에서 같은 높이로 그리면, 우산 쓴 모습만 몸이 작아진다.
@@ -38,10 +48,19 @@ OUT = os.path.join(ROOT, "public/assets/characters")
 
 # 시트마다 왼쪽위 · 오른쪽위 · 왼쪽아래 · 오른쪽아래 순서
 LAYOUT = [
+    # 1차 — 일상
     ("skins-1.png", ["basic_day", "cozy_home", "cafe_work", "climbing_day"]),
     ("skins-2.png", ["rainy_day", "weekend_casual", "date_day", "creative_day"]),
     ("skins-3.png", ["night_owl", "spring_picnic", "winter_cozy", "moon_alley"]),
+    # 2차 — 달콤 · 락 · 무대
+    ("skins2-sweet.png", ["strawberry_bonbon", "milky_ballet", "toy_candy_pop", "angel_picnic"]),
+    ("skins2-rock.png", ["soft_rock_chic", "pink_punk", "vintage_band_girl", "midnight_leather"]),
+    ("skins2-idol.png", ["pink_idol_stage", "navy_star_idol", "white_encore", "aurora_pop"]),
 ]
+
+# 시트마다 네 명의 키 중앙값을 이 높이에 맞춘다.
+# 시트 해상도가 달라도 화면에서 같은 크기로 서게 하는 기준이다.
+TARGET_BODY = 470
 
 # 내보낼 캔버스의 긴 변. 홈에서는 150px 남짓으로 보이지만
 # 미리보기와 고해상도 화면을 생각해 넉넉히 둔다.
@@ -53,6 +72,25 @@ WHITE = 236
 
 # 윤곽선 바깥의 반투명한 테두리를 부드럽게 만드는 구간
 EDGE_DARK = 205
+
+
+def sheet_alpha(image):
+    """이 시트의 alpha. 투명 배경이면 그대로, 흰 배경이면 지워서 만든다.
+
+    투명한지 아닌지는 네 변을 보고 판단한다. 시트 가장자리에 그림이 닿아
+    있는 경우는 없어서, 테두리가 비어 있으면 투명 배경이라고 봐도 된다.
+    """
+    rgba = np.asarray(image.convert("RGBA"))
+    alpha = rgba[..., 3]
+    edge = max(
+        int(alpha[0].max()),
+        int(alpha[-1].max()),
+        int(alpha[:, 0].max()),
+        int(alpha[:, -1].max()),
+    )
+    if edge < 24:
+        return alpha.copy(), "투명"
+    return cut_background(image.convert("RGB")), "흰 배경"
 
 
 def cut_background(rgb):
@@ -120,15 +158,16 @@ def main():
         return 0
 
     os.makedirs(OUT, exist_ok=True)
-    pieces = []  # (skin_id, RGBA 배열, 상자, 발 가운데)
+    pieces = []  # (skin_id, 잘라낸 그림, 그림 안에서 발이 선 가로 위치)
 
     for name, ids in found:
         path = os.path.join(SHEETS, name)
-        image = Image.open(path).convert("RGB")
-        alpha = cut_background(image)
-        rgb = np.asarray(image)
+        image = Image.open(path)
+        alpha, how = sheet_alpha(image)
+        rgb = np.asarray(image.convert("RGB"))
         h, w = alpha.shape
 
+        cut = []
         for (y0, y1, x0, x1), skin_id in zip(quadrants(h, w), ids):
             part_alpha = alpha[y0:y1, x0:x1]
             box = content_box(part_alpha)
@@ -139,7 +178,27 @@ def main():
             by0, by1, bx0, bx1 = box
             center = foot_center(part_alpha, by0, by1, bx0, bx1)
             rgba = np.dstack([rgb[y0:y1, x0:x1], part_alpha])
-            pieces.append((skin_id, rgba, box, center))
+            cut.append((skin_id, rgba, box, center))
+
+        if not cut:
+            continue
+
+        # 시트 안에서 키 중앙값을 재서 같은 키로 맞춘다.
+        # 우산이나 등불 하나가 솟아 있어도 중앙값은 안 흔들린다.
+        heights = sorted(b[1] - b[0] for _, _, b, _ in cut)
+        middle = (heights[len(heights) // 2] + heights[(len(heights) - 1) // 2]) / 2
+        ratio = TARGET_BODY / middle if middle > 0 else 1.0
+        print(f"{name} · {how} · 키 중앙값 {middle:.0f} → 배율 {ratio:.3f}")
+
+        for skin_id, rgba, box, center in cut:
+            by0, by1, bx0, bx1 = box
+            crop = Image.fromarray(rgba[by0:by1, bx0:bx1], "RGBA")
+            if abs(ratio - 1.0) > 0.005:
+                crop = crop.resize(
+                    (max(1, round(crop.width * ratio)), max(1, round(crop.height * ratio))),
+                    Image.LANCZOS,
+                )
+            pieces.append((skin_id, crop, (center - bx0) * ratio))
 
     if not pieces:
         print("잘라낼 것이 없습니다.")
@@ -148,33 +207,32 @@ def main():
     # ── 열둘을 같은 캔버스에 올린다 ────────────────────
     # 발끝을 같은 줄에, 서 있는 자리를 같은 세로선에 둔다.
     # 그래야 화면에서 같은 크기로 그렸을 때 몸 크기가 저절로 맞는다.
-    left = max(int(c - b[2]) for _, _, b, c in pieces)
-    right = max(int(b[3] - c) for _, _, b, c in pieces)
-    tall = max(b[1] - b[0] for _, _, b, _ in pieces)
+    left = max(round(anchor) for _, _, anchor in pieces)
+    right = max(crop.width - round(anchor) for _, crop, anchor in pieces)
+    tall = max(crop.height for _, crop, _ in pieces)
 
     pad = 12
     canvas_w = left + right + pad * 2
     canvas_h = tall + pad * 2
     scale = min(1.0, MAX_SIDE / max(canvas_w, canvas_h))
 
-    print(f"캔버스 {canvas_w}x{canvas_h} · 배율 {scale:.3f}")
+    print(f"\n캔버스 {canvas_w}x{canvas_h} · 마무리 배율 {scale:.3f}")
 
-    for skin_id, rgba, (by0, by1, bx0, bx1), center in pieces:
-        crop = Image.fromarray(rgba[by0:by1, bx0:bx1], "RGBA")
+    for skin_id, crop, anchor in pieces:
         canvas = Image.new("RGBA", (canvas_w, canvas_h), (0, 0, 0, 0))
         # 발끝을 아래 여백 위에, 서 있는 자리를 가운데에
-        x = pad + left - int(round(center - bx0))
+        x = pad + left - round(anchor)
         y = canvas_h - pad - crop.height
         canvas.paste(crop, (x, y), crop)
 
         if scale < 1.0:
-            size = (int(round(canvas_w * scale)), int(round(canvas_h * scale)))
+            size = (round(canvas_w * scale), round(canvas_h * scale))
             canvas = canvas.resize(size, Image.LANCZOS)
 
         out = os.path.join(OUT, f"{skin_id}.webp")
         canvas.save(out, "WEBP", quality=92, method=6)
         kb = os.path.getsize(out) / 1024
-        print(f"  {skin_id:16s} {crop.width:4d}x{crop.height:4d} → {kb:6.1f}KB")
+        print(f"  {skin_id:18s} {crop.width:4d}x{crop.height:4d} → {kb:6.1f}KB")
 
     print(f"\n{len(pieces)}장 저장: {OUT}")
     return 0

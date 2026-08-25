@@ -60,7 +60,19 @@ export function NewSkinOverlay({ skins, onWear, onClose }: NewSkinOverlayProps) 
             </span>
           </div>
 
-          <p className="mt-1.5 text-[12.5px] leading-relaxed text-inkdim">{skin.description}</p>
+          {/* 얻는 순간의 말. 없으면 그냥 설명을 쓴다. */}
+          {skin.dialogue ? (
+            <div className="mt-2 rounded-btn bg-canvas px-3.5 py-2.5">
+              <p className="text-[12.5px] leading-relaxed text-inkdim">{skin.dialogue.line1}</p>
+              {skin.dialogue.line2 && (
+                <p className="mt-1 text-[12.5px] leading-relaxed text-inkdim">
+                  {skin.dialogue.line2}
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="mt-1.5 text-[12.5px] leading-relaxed text-inkdim">{skin.description}</p>
+          )}
 
           {skins.length > 1 && (
             <p className="mt-2 text-[11px] text-inkfaint">이번에 {skins.length}가지가 생겼어</p>
