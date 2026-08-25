@@ -31,8 +31,13 @@ export function SkinCard({ view, onSelect }: SkinCardProps) {
       onClick={onSelect}
       aria-pressed={active}
       className={cn(
-        'relative flex flex-col items-center rounded-card border px-2 pb-2.5 pt-2 transition-colors duration-200 active:scale-[0.97]',
-        active ? 'border-2 border-coral bg-coral-soft/35' : 'border-line bg-surface',
+        // w-full 이 없으면 버튼이 글자 길이만큼만 늘어난다. 칸(grid cell)은 똑같은데
+        // 안의 버튼만 제각각이 되고, 이름이 길면 칸 밖으로 삐져나온다.
+        // 버튼은 기본 width 가 auto 라 내용에 맞춰 줄어드는 게 맞는 동작이다 —
+        // 여기서는 칸을 채워야 하니 명시한다.
+        'relative flex h-full w-full flex-col items-center rounded-card border px-2 pb-2.5 pt-2 transition-colors duration-200 active:scale-[0.97]',
+        // 고를 때 테두리를 두껍게 하면 그 칸만 2px 커진다. 색과 ring 으로만 표시한다.
+        active ? 'border-coral bg-coral-soft/35 ring-1 ring-coral' : 'border-line bg-surface',
       )}
     >
       <span
@@ -57,7 +62,10 @@ export function SkinCard({ view, onSelect }: SkinCardProps) {
         )}
       </span>
 
-      <span className="mt-1.5 w-full truncate text-center text-[12px] font-medium text-ink">
+      {/* 이름 길이가 제각각이라 높이를 두 줄로 고정한다.
+          한 줄로 자르면 "크리에이티브 데이" 가 "크리에이티브 데…" 가 되고,
+          내용에 맡기면 두 줄짜리 칸만 아래로 길어진다. */}
+      <span className="mt-1.5 line-clamp-2 h-[32px] w-full text-center text-[11.5px] font-medium leading-[16px] text-ink">
         {hidden ? '???' : def.name}
       </span>
 
