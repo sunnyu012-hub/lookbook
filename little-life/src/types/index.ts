@@ -4,6 +4,7 @@ export * from './library'
 export * from './collection'
 export * from './discovery'
 export * from './skins'
+export * from './garden'
 import type { CollectionState } from './collection'
 import type { DiscoveryState } from './discovery'
 import type {
@@ -18,6 +19,7 @@ import type { ActiveBuff, NpcId, NpcStates, Reputation } from './city'
 import type { RecommendSettings, UsageProfiles } from './library'
 import type { TimeBand } from './rpg'
 import type { SkinId } from './skins'
+import type { GardenState } from './garden'
 
 /**
  * Little Life 의 데이터 모델.
@@ -126,6 +128,12 @@ export interface QuestReward {
    * 그게 처음 본 것이었는지까지 적어둬야 되돌릴 때 도감도 정확히 돌아간다.
    */
   collectDrops?: Array<{ itemId: string; wasNew: boolean }>
+  /** 이때 쌓인 모험 에너지. 넘쳐서 버려진 몫은 빼고 실제로 오른 만큼만 적는다. */
+  adventureEnergy?: number
+  /** 이때 나온 씨앗·이슬 */
+  gardenDrops?: Array<{ itemId: string; wasNew: boolean }>
+  /** 이때 앞당겨준 밭들. 되돌리면 그대로 도로 민다. */
+  growthBonus?: Array<{ plotId: string; plantedAt: string; seconds: number }>
 }
 
 export interface User {
@@ -162,6 +170,17 @@ export interface User {
   selectedSkinId: SkinId
   /** 지금까지 얻은 모습들 */
   ownedSkinIds: SkinId[]
+  /**
+   * 모험 에너지.
+   *
+   * 퀘스트를 끝내면 조금씩 쌓인다. 지금은 쓰는 곳이 없다 —
+   * 앞으로 들어올 광산·던전 같은 곁가지를 위한 자리다.
+   *
+   * 퀘스트에도, 캐릭터 성장에도, 정원이 자라는 데도 필요하지 않다.
+   * 0이어도 오늘 할 수 있는 일은 하나도 줄지 않는다.
+   */
+  adventureEnergy: number
+  maxAdventureEnergy: number
 }
 
 /** 카테고리별 누적 EXP. 퀘스트에서 계산하지 않고 따로 쌓는다 — 아래 주석 참고. */
@@ -233,6 +252,13 @@ export interface AppState {
    * "본 적 있는지" 를 적어두는 것이지 "마지막으로 본 때" 가 아니다.
    */
   guideSeenAt: string | null
+  /**
+   * 작은 정원.
+   *
+   * 레벨 · 경험치 · 밭 개수 · 발견한 작물은 여기 없다.
+   * 전부 "무엇을 몇 번 거뒀는지" 에서 계산한다 (lib/garden/derive.ts).
+   */
+  garden: GardenState
   // 향후 확장 예정: achievements, character …
   //
   // 오늘의 이벤트와 상점 진열은 여기 없다.
@@ -275,4 +301,8 @@ export interface CompleteResult {
   gainedSkillPoints: number
   /** 이번에 나온 재료·수집품. 처음 본 것은 따로 연출한다. */
   collected: import('./collection').DiscoveryResult[]
+  /** 이번에 쌓인 모험 에너지 */
+  gainedEnergy: number
+  /** 이번에 정원 밭을 몇 초나 앞당겼는지. 0 이면 앞당길 게 없었다는 뜻. */
+  growthBonusSeconds: number
 }

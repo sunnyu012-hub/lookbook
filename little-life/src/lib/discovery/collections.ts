@@ -1,6 +1,7 @@
 import type { AppState, AutoCollectionDef, AutoCollectionView } from '@/types'
 import { AREA_IDS } from '@/types'
 import { isWeekend } from '@/lib/collection/shops'
+import { discoveredCropIds, gardenLevel, gardenXp, harvestedTotal } from '@/lib/garden/derive'
 
 /**
  * 앱이 나중에 알아보는 것들.
@@ -122,6 +123,40 @@ export const AUTO_COLLECTIONS: AutoCollectionDef[] = [
     rewardItemId: 'picnic_mat',
     hiddenUntilTriggered: true,
   },
+  {
+    id: 'GREEN_THUMB',
+    name: '손이 초록인 사람',
+    description: '심어둔 것을 잊지 않고 거두러 갔다.',
+    icon: '🌿',
+    condition: { kind: 'CROPS_HARVESTED' },
+    target: 20,
+    revealAt: 3,
+    rewardItemId: 'herb_pot',
+    hiddenUntilTriggered: true,
+  },
+  {
+    id: 'LITTLE_FARMER',
+    name: '여러 가지를 심어본 사람',
+    description: '한 가지만 심지는 않았다.',
+    icon: '🧺',
+    condition: { kind: 'CROPS_DISCOVERED' },
+    target: 5,
+    revealAt: 2,
+    // 귀한 씨앗 하나. 라벤더는 일곱 시간짜리라 아무 데서나 나오지 않는다.
+    rewardItemId: 'seed_lavender',
+    hiddenUntilTriggered: true,
+  },
+  {
+    id: 'GARDEN_KEEPER',
+    name: '정원을 돌본 사람',
+    description: '비어 있던 자리가 이제 정원이라 불릴 만해졌다.',
+    icon: '🌷',
+    condition: { kind: 'GARDEN_LEVEL' },
+    target: 3,
+    revealAt: 2,
+    rewardItemId: 'lavender_pot',
+    hiddenUntilTriggered: true,
+  },
 ]
 
 export function findAutoCollection(id: string): AutoCollectionDef | null {
@@ -158,6 +193,16 @@ export function autoProgress(state: AppState, def: AutoCollectionDef): number {
 
     case 'FRIENDSHIP_TOTAL':
       return Object.values(state.npcs).reduce((sum, n) => sum + n.friendship, 0)
+
+    // 정원 쪽도 저장된 값이 아니라 거둔 기록에서 센다
+    case 'CROPS_HARVESTED':
+      return harvestedTotal(state.garden)
+
+    case 'CROPS_DISCOVERED':
+      return discoveredCropIds(state.garden).length
+
+    case 'GARDEN_LEVEL':
+      return state.garden.unlockedAt ? gardenLevel(gardenXp(state.garden)) : 0
   }
 }
 

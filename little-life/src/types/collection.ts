@@ -103,6 +103,8 @@ export type AcquisitionSource =
   | { kind: 'REPUTATION'; areaId: AreaId; level: number }
   | { kind: 'MILESTONE'; count: number }
   | { kind: 'TROPHY' }
+  /** 작은 정원에서 거둔다 */
+  | { kind: 'GARDEN' }
   | { kind: 'SECRET'; hint: string | null }
 
 // ── 아이템 ──────────────────────────────────────────────
@@ -263,6 +265,8 @@ export type TrophyCondition =
   | { kind: 'BOSS_CLEARS'; count: number }
   | { kind: 'COLLECTION'; count: number }
   | { kind: 'SET_COMPLETE'; setId: string }
+  /** 정원이 이만큼 넓어지면 */
+  | { kind: 'GARDEN_LEVEL'; level: number }
 
 export interface TrophyDef {
   id: string

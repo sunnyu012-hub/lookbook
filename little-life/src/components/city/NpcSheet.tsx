@@ -42,6 +42,8 @@ interface NpcSheetProps {
   /** 지금 읽을 수 있는 장이 있는지 */
   storyReady: boolean
   onOpenStory: () => void
+  /** 정원이 어디까지 열렸는지. 못 찾았으면 0 — 그 얘기는 아예 안 꺼낸다. */
+  gardenLevel?: number
 }
 
 /**
@@ -65,6 +67,7 @@ export function NpcSheet({
   onOpenShop,
   story,
   storyReady,
+  gardenLevel = 0,
   onOpenStory,
 }: NpcSheetProps) {
   const [tab, setTab] = useState<Tab>('TALK')
@@ -74,8 +77,8 @@ export function NpcSheet({
   const line = useMemo(() => {
     if (!npc) return ''
     void dialogueSeed
-    return pickDialogue(npc, npcState.friendship, timeBand(), events)
-  }, [npc, npcState.friendship, events, dialogueSeed])
+    return pickDialogue(npc, npcState.friendship, timeBand(), events, gardenLevel)
+  }, [npc, npcState.friendship, events, dialogueSeed, gardenLevel])
 
   if (!npc) return null
 

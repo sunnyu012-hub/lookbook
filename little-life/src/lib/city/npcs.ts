@@ -84,6 +84,12 @@ export const NPCS: NpcDef[] = [
       { text: '같이 걸을래? 말 안 해도 돼.', minLevel: 'FRIEND' },
       { text: '네가 오면 나도 하루 시작한 것 같아.', minLevel: 'SPECIAL_BOND' },
       { text: '오늘 빛이 좋다. 사진이라도 찍어둘 걸.', eventId: 'golden_hour' },
+      {
+        text: '거기 오래 비어 있던 곳인데. 네가 가끔 들러주면 다시 예뻐질지도 모르겠다.',
+        minGardenLevel: 1,
+      },
+      { text: '생각보다 꽤 잘 자라고 있네.', minGardenLevel: 2 },
+      { text: '이제 진짜 네 정원 같아.', minGardenLevel: 3 },
     ],
     chains: [
       {

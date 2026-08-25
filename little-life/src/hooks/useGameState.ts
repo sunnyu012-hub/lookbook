@@ -20,6 +20,8 @@ import type {
   ShopDef,
 } from '@/types'
 import type { BuySkinResult } from '@/lib/character/derive'
+import type { HarvestResult, PlantResult } from '@/lib/garden/derive'
+import type { DevGardenAction } from '@/lib/garden/dev'
 import type {
   CharacterSkin,
   CollectionShopId,
@@ -51,6 +53,24 @@ import {
 import { pendingDelivery } from '@/lib/collection/delivery'
 import { applyDiscovery } from '@/lib/discovery/derive'
 import { applySkinUnlocks, buySkin as buySkinIn, grantAllSkins, wearSkin } from '@/lib/character/derive'
+import {
+  harvestPlot as harvestPlotIn,
+  isGardenUnlocked,
+  plantSeed as plantSeedIn,
+  useDew as useDewIn,
+} from '@/lib/garden/derive'
+import { applyDevGarden } from '@/lib/garden/dev'
+import { FIRST_SEEDS } from '@/lib/garden/crops'
+import {
+  ENERGY_BOSS,
+  ENERGY_BY_DIFFICULTY,
+  GROWTH_BONUS_BOSS,
+  GROWTH_BONUS_SECONDS,
+  applyGrowthBonus,
+  gainEnergy,
+  revertGrowthBonus,
+  rollGardenDrops,
+} from '@/lib/garden/quest'
 import { findChapter, isChapterUnlocked } from '@/lib/discovery/stories'
 import { findSecret } from '@/lib/discovery/secrets'
 import {
@@ -201,6 +221,22 @@ interface GameState {
   /** 이번에 새로 얻은 모습들 (알려주고 나면 비운다) */
   newSkins: CharacterSkin[]
   dismissNewSkins: () => void
+  // ── 작은 정원 ──
+  /**
+   * 정원에 처음 들어간다.
+   *
+   * 처음이면 첫 안내를 봤다고 적고 딸기 씨앗 두 개를 준다.
+   * 적는 것과 주는 것이 한 번에 일어나서 두 번 받을 수가 없다.
+   */
+  enterGarden: () => void
+  /** 빈 밭에 씨앗 하나를 심는다 */
+  plantSeed: (plotIndex: number, cropId: string) => PlantResult
+  /** 다 자란 것을 거둔다 */
+  harvestPlot: (plotIndex: number) => HarvestResult
+  /** 이슬 한 방울로 한 칸을 앞당긴다 */
+  useDew: (plotIndex: number) => boolean
+  /** 개발용 (?dev=garden 에서만 부른다) */
+  devGarden: (action: DevGardenAction) => void
   // ── 클라우드 백업 ──
   /**
    * 상태 전체를 다른 것으로 갈아 끼운다.
@@ -709,6 +745,28 @@ export function useGameState(): GameState {
         collected.push({ itemId, isNew: added.isNew, source: `${target.title} 완료` })
       }
 
+      // 정원을 찾은 사람에게만, 위의 굴림과는 따로 씨앗을 굴린다.
+      // 기존 재료 풀에 섞지 않는 이유는 lib/collection/catalog.ts 의 주석에 있다.
+      const gardenDropped = rollGardenDrops(prev, {
+        category: target.category,
+        difficulty: target.difficulty,
+      })
+      const gardenDrops: Array<{ itemId: string; wasNew: boolean }> = []
+      for (const itemId of gardenDropped) {
+        const added = addItem(collection, itemId, now)
+        collection = added.collection
+        gardenDrops.push({ itemId, wasNew: added.isNew })
+        collected.push({ itemId, isNew: added.isNew, source: `${target.title} 완료` })
+      }
+
+      // 모험 에너지. 한도를 넘으면 넘치는 만큼은 버린다 —
+      // 실제로 오른 만큼만 적어둬야 되돌릴 때 그만큼만 빠진다.
+      const gainedEnergy = gainEnergy(
+        prev.user.adventureEnergy,
+        ENERGY_BY_DIFFICULTY[target.difficulty],
+        prev.user.maxAdventureEnergy,
+      )
+
       let next: AppState = {
         ...prev,
         user: {
@@ -720,6 +778,7 @@ export function useGameState(): GameState {
           coins: prev.user.coins + reward.coins,
           stats: { ...prev.user.stats, [statKey]: prev.user.stats[statKey] + 1 },
           activeBuffs: withBuffUsed,
+          adventureEnergy: prev.user.adventureEnergy + gainedEnergy,
         },
         quests: prev.quests.map((q) =>
           q.id === id
@@ -737,6 +796,8 @@ export function useGameState(): GameState {
                   ...(npc ? { npcId: npc.id, friendship: gainedFriendship } : {}),
                   ...(buff ? { usedBuff: buff } : {}),
                   ...(collectDrops.length > 0 ? { collectDrops } : {}),
+                  ...(gardenDrops.length > 0 ? { gardenDrops } : {}),
+                  ...(gainedEnergy > 0 ? { adventureEnergy: gainedEnergy } : {}),
                 },
               }
             : q,
@@ -769,6 +830,20 @@ export function useGameState(): GameState {
 
       const gainedSkillPoints = outcome.level - prev.user.level
 
+      // 정원에서 자라는 중인 것들이 조금 앞당겨진다. 어디까지나 덤이다 —
+      // 퀘스트를 안 해도 작물은 제 시간에 다 자란다.
+      const bonusSeconds = GROWTH_BONUS_SECONDS[target.difficulty]
+      const grown = applyGrowthBonus(next, bonusSeconds, now)
+      next = grown.state
+      if (grown.applied.length > 0) {
+        next = {
+          ...next,
+          quests: next.quests.map((q) =>
+            q.id === id && q.reward ? { ...q, reward: { ...q.reward, growthBonus: grown.applied } } : q,
+          ),
+        }
+      }
+
       // 평판이 오르거나 세트가 완성되면 여기서 따라온다
       const derived = applyCollectionDerived(next, now)
       // 이번 퀘스트로 새로 열린 발견이 있으면 같이 챙긴다.
@@ -798,6 +873,8 @@ export function useGameState(): GameState {
         usedBuffName: buff?.name ?? null,
         gainedSkillPoints,
         collected: [...collected, ...derived.discoveries],
+        gainedEnergy,
+        growthBonusSeconds: grown.applied.length > 0 ? bonusSeconds : 0,
       }
     },
     [commit],
@@ -856,9 +933,16 @@ export function useGameState(): GameState {
       for (const drop of gained.collectDrops ?? []) {
         collection = removeItem(collection, drop.itemId, drop.wasNew)
       }
+      // 그때 나온 씨앗과 이슬도 마찬가지다
+      for (const drop of gained.gardenDrops ?? []) {
+        collection = removeItem(collection, drop.itemId, drop.wasNew)
+      }
+
+      // 앞당겨줬던 밭은 도로 민다. 그 사이 거두고 다시 심은 칸은 건너뛴다.
+      const pushedBack = revertGrowthBonus(prev, gained.growthBonus ?? [])
 
       commit({
-        ...prev,
+        ...pushedBack,
         collection,
         categoryCompleted: {
           ...prev.categoryCompleted,
@@ -879,6 +963,8 @@ export function useGameState(): GameState {
             : prev.user.stats,
           // 마셨던 건 다시 살려낸다 — 아직 안 쓴 셈이 되니까
           activeBuffs: restoreBuff(prev.user.activeBuffs, gained.usedBuff),
+          // 그때 실제로 오른 만큼만 뺀다. 넘쳐서 버려졌던 몫은 애초에 안 적혀 있다.
+          adventureEnergy: Math.max(0, prev.user.adventureEnergy - (gained.adventureEnergy ?? 0)),
         },
         quests: prev.quests
           .filter((q) => q.id !== openedNext?.id)
@@ -1138,18 +1224,37 @@ export function useGameState(): GameState {
         }
       }
 
+      // 보스를 넘으면 씨앗도 반쯤 확률로 나온다. 몬스터는 기존 드롭만.
+      const isBoss = battle.kind === 'BOSS'
+      for (const itemId of rollGardenDrops(prev, {
+        category: battle.category,
+        difficulty: 'HARD',
+        boss: isBoss,
+      })) {
+        const added = addItem(collection, itemId, now)
+        collection = added.collection
+        collected.push({ itemId, isNew: added.isNew, source: `${battle.name} 클리어` })
+      }
+
       const cleared: AppState = {
         ...prev,
         battles,
         inventory,
         collection,
-        bossClears: prev.bossClears + (battle.kind === 'BOSS' ? 1 : 0),
+        bossClears: prev.bossClears + (isBoss ? 1 : 0),
         user: {
           ...prev.user,
           level: outcome.level,
           currentExp: outcome.currentExp,
           totalExp: prev.user.totalExp + battle.rewardExp,
           coins: prev.user.coins + battle.rewardCoins,
+          adventureEnergy:
+            prev.user.adventureEnergy +
+            gainEnergy(
+              prev.user.adventureEnergy,
+              isBoss ? ENERGY_BOSS : ENERGY_BY_DIFFICULTY.NORMAL,
+              prev.user.maxAdventureEnergy,
+            ),
         },
         categoryStats: {
           ...prev.categoryStats,
@@ -1157,7 +1262,10 @@ export function useGameState(): GameState {
         },
       }
 
-      const derived = applyCollectionDerived(cleared, now)
+      // 큰 걸 하나 넘었으면 정원의 것들도 그만큼 앞당겨진다
+      const grown = applyGrowthBonus(cleared, isBoss ? GROWTH_BONUS_BOSS : GROWTH_BONUS_SECONDS.HARD, now)
+
+      const derived = applyCollectionDerived(grown.state, now)
       commit(derived.state)
 
       return {
@@ -1875,6 +1983,80 @@ export function useGameState(): GameState {
 
   const dismissNewSkins = useCallback(() => setNewSkins([]), [])
 
+  // ── 작은 정원 ───────────────────────────────────────────
+
+  /**
+   * 처음 들어갔을 때만 씨앗 두 개를 준다.
+   *
+   * tutorialSeenAt 하나로 막는다. 적는 것과 주는 것이 같은 갱신 안에서
+   * 일어나서, 빠르게 두 번 눌러도 두 번 받을 수가 없다.
+   */
+  const enterGarden = useCallback(() => {
+    const prev = stateRef.current
+    if (!isGardenUnlocked(prev) || prev.garden.tutorialSeenAt !== null) return
+
+    const now = new Date()
+    let collection = prev.collection
+    for (let i = 0; i < FIRST_SEEDS.count; i += 1) {
+      collection = addItem(collection, FIRST_SEEDS.itemId, now).collection
+    }
+
+    commit({
+      ...prev,
+      collection,
+      garden: { ...prev.garden, tutorialSeenAt: now.toISOString() },
+    })
+  }, [commit])
+
+  const plantSeed = useCallback(
+    (plotIndex: number, cropId: string): PlantResult => {
+      const { state: next, result } = plantSeedIn(stateRef.current, plotIndex, cropId)
+      if (result.ok) commit(next)
+      return result
+    },
+    [commit],
+  )
+
+  /**
+   * 거둔다.
+   *
+   * 거두면 도감이 늘고, 도감이 늘면 마일스톤·세트가 따라 완성될 수 있다.
+   * 그래서 기존 사슬을 한 번 태운다 — 보상 계산을 여기서 다시 하지 않는다.
+   */
+  const harvestPlot = useCallback(
+    (plotIndex: number): HarvestResult => {
+      const prev = stateRef.current
+      const now = new Date()
+      const { state: harvested, result } = harvestPlotIn(prev, plotIndex, now)
+      if (!result.ok) return result
+
+      const derived = applyCollectionDerived(harvested, now)
+      const discovered = applyDiscovery(derived.state, now)
+      const skinned = applySkinUnlocks(discovered.state)
+      if (discovered.notes.length > 0) setDiscoveryNotes(discovered.notes)
+      if (skinned.unlocked.length > 0) setNewSkins(skinned.unlocked)
+      commit(skinned.state)
+      return result
+    },
+    [commit],
+  )
+
+  const useDew = useCallback(
+    (plotIndex: number): boolean => {
+      const { state: next, result } = useDewIn(stateRef.current, plotIndex)
+      if (result.ok) commit(next)
+      return result.ok
+    },
+    [commit],
+  )
+
+  const devGarden = useCallback(
+    (action: DevGardenAction) => {
+      commit(applyDevGarden(stateRef.current, action))
+    },
+    [commit],
+  )
+
   /**
    * 처음 안내를 다 봤다.
    *
@@ -1958,6 +2140,11 @@ export function useGameState(): GameState {
       selectSkin,
       buySkin,
       devGrantAllSkins,
+      enterGarden,
+      plantSeed,
+      harvestPlot,
+      useDew,
+      devGarden,
       newSkins,
       dismissNewSkins,
       replaceState,
@@ -2014,6 +2201,11 @@ export function useGameState(): GameState {
       selectSkin,
       buySkin,
       devGrantAllSkins,
+      enterGarden,
+      plantSeed,
+      harvestPlot,
+      useDew,
+      devGarden,
       newSkins,
       dismissNewSkins,
       replaceState,
