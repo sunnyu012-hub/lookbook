@@ -14,18 +14,19 @@ export const TAG_CATEGORIES: TagCategory[] = [
   { id: 'body', displayName: 'Body', ko: '몸', description: '몸의 감각 · 통증 · 컨디션', sortOrder: 4 },
   { id: 'activity', displayName: 'Activity', ko: '활동', description: '무엇을 했는가', sortOrder: 5 },
   { id: 'work', displayName: 'Work', ko: '일', description: '업무의 종류와 결', sortOrder: 6 },
-  { id: 'creativity', displayName: 'Creativity', ko: '창작', description: '만들고 짓는 일', sortOrder: 7 },
+  { id: 'sport', displayName: 'Sport', ko: '운동', description: '어떤 운동을 했는가', sortOrder: 19 },
+  { id: 'creative', displayName: 'Creativity', ko: '창작', description: '만들고 짓는 일', sortOrder: 7 },
   { id: 'social', displayName: 'Social', ko: '사회적 맥락', description: '혼자인지 함께인지, 어떤 자리인지', sortOrder: 8 },
   { id: 'relationship', displayName: 'Relationship', ko: '관계', description: '누구와 있었는가', sortOrder: 9 },
   { id: 'place', displayName: 'Place', ko: '장소', description: '어디에 있었는가', sortOrder: 10 },
   { id: 'environment', displayName: 'Environment', ko: '환경', description: '시끄러운지 조용한지, 붐비는지', sortOrder: 11 },
   { id: 'food', displayName: 'Food', ko: '먹은 것', description: '식사 · 카페인 · 수분', sortOrder: 12 },
   { id: 'recovery', displayName: 'Recovery', ko: '회복', description: '쉼 · 잠 · 늘어짐', sortOrder: 13 },
-  { id: 'achievement', displayName: 'Achievement', ko: '해냄', description: '완료 · 돌파 · 성취', sortOrder: 14 },
+  { id: 'outcome', displayName: 'Outcome', ko: '해냄', description: '완료 · 돌파 · 성취 · 잘 안 된 것', sortOrder: 14 },
   { id: 'stressor', displayName: 'Stressor', ko: '부담', description: '마감 · 갈등 · 예상 못 한 일', sortOrder: 15 },
   { id: 'novelty', displayName: 'Novelty', ko: '새로움', description: '처음 해보는 것 · 새 장소', sortOrder: 16 },
   { id: 'agency', displayName: 'Agency', ko: '주도권', description: '내가 고른 일인가 떠맡은 일인가', sortOrder: 17 },
-  { id: 'temporal', displayName: 'Temporal', ko: '시간', description: '시간대 · 요일 · 계절 같은 시간 맥락', sortOrder: 18 },
+  { id: 'time', displayName: 'Temporal', ko: '시간', description: '시간대 · 요일 같은 시간 맥락 — 저장하지 않고 분석할 때 만든다', sortOrder: 18 },
 ]
 
 export const CATEGORY_BY_ID: Record<string, TagCategory> = Object.fromEntries(

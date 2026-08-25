@@ -31,11 +31,11 @@ describe('Life OS 2.0 — 버전', () => {
 })
 
 describe('Life OS 2.0 — 태그 카테고리', () => {
-  it('계획서의 18개 카테고리가 전부 있다', () => {
+  it('사전이 쓰는 카테고리가 전부 있다', () => {
     const want = [
-      'emotion', 'mental', 'energy', 'body', 'activity', 'work', 'creativity',
+      'emotion', 'mental', 'energy', 'body', 'activity', 'work', 'sport', 'creative',
       'social', 'relationship', 'place', 'environment', 'food', 'recovery',
-      'achievement', 'stressor', 'novelty', 'agency', 'temporal',
+      'outcome', 'stressor', 'novelty', 'agency', 'time',
     ]
     for (const id of want) expect(isKnownCategory(id)).toBe(true)
     expect(TAG_CATEGORIES).toHaveLength(want.length)

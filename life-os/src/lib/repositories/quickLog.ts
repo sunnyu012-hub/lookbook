@@ -32,6 +32,9 @@ interface QuickLogRow {
   date: string
   day_of_week: number
   day_part: string
+  tagged_rule_version: number | null
+  tagged_taxonomy_version: number | null
+  tagged_at: string | null
   schema_version: number
   created_at: string
   updated_at: string
@@ -52,6 +55,9 @@ const rowTo = (r: QuickLogRow): QuickLog => ({
   date: r.date,
   dayOfWeek: r.day_of_week as DayOfWeek,
   dayPart: r.day_part as DayPart,
+  taggedRuleVersion: num(r.tagged_rule_version),
+  taggedTaxonomyVersion: num(r.tagged_taxonomy_version),
+  taggedAt: r.tagged_at,
   schemaVersion: r.schema_version ?? SCHEMA_VERSION,
   createdAt: r.created_at,
   updatedAt: r.updated_at,
@@ -76,6 +82,9 @@ function toRow(input: QuickLogInput, userId: string, id: string, loggedAt: strin
     photo_path: input.photoPath ?? null,
     my_tag_ids: input.myTagIds ?? [],
     life_tags: input.lifeTags ?? [],
+    tagged_rule_version: input.taggedRuleVersion ?? null,
+    tagged_taxonomy_version: input.taggedTaxonomyVersion ?? null,
+    tagged_at: input.taggedAt ?? null,
     logged_at: loggedAt,
     date: derived.date,
     day_of_week: derived.dayOfWeek,
@@ -240,6 +249,55 @@ export const quickLogRepository = {
     const { error } = await supabase
       .from(QUICK_LOGS_TABLE)
       .delete()
+      .eq('user_id', userId)
+      .eq('id', id)
+
+    if (error) throw new Error(error.message)
+  },
+
+  /**
+   * 붙은 LIFE TAG 만 바꾼다.
+   *
+   * 기록 전체를 다시 저장하지 않는 이유:
+   * Inspector 에서 "이 태그 아니에요" 를 누르는 동안 본문이나 사진을 건드릴 이유가 없다.
+   * 행 전체를 덮어쓰면 그 사이에 다른 곳에서 바뀐 값을 되돌려 버릴 수 있다.
+   */
+  async setLifeTags(
+    id: string,
+    lifeTags: AppliedLifeTag[],
+    meta?: { ruleVersion: number; taxonomyVersion: number },
+  ): Promise<void> {
+    const taggedAt = nowIso()
+
+    if (!supabase) {
+      const items = local.all()
+      local.write(
+        items.map((l) =>
+          l.id === id
+            ? {
+                ...l,
+                lifeTags,
+                taggedAt,
+                taggedRuleVersion: meta?.ruleVersion ?? l.taggedRuleVersion ?? null,
+                taggedTaxonomyVersion: meta?.taxonomyVersion ?? l.taggedTaxonomyVersion ?? null,
+                updatedAt: taggedAt,
+              }
+            : l,
+        ),
+      )
+      return
+    }
+
+    const userId = await currentUserId()
+    const patch: Record<string, unknown> = { life_tags: lifeTags, tagged_at: taggedAt }
+    if (meta) {
+      patch.tagged_rule_version = meta.ruleVersion
+      patch.tagged_taxonomy_version = meta.taxonomyVersion
+    }
+
+    const { error } = await supabase
+      .from(QUICK_LOGS_TABLE)
+      .update(patch)
       .eq('user_id', userId)
       .eq('id', id)
 

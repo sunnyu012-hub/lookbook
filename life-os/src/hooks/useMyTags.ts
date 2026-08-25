@@ -34,6 +34,12 @@ export function useMyTags(authState: AuthState = 'local') {
   const byId = useMemo(() => new Map(tags.map((t) => [t.id, t])), [tags])
 
   /**
+   * 자동 태깅이 참고할 이름들.
+   * 내가 만든 태그 이름이 본문에 나오면 그건 내 태그다 — 사전 태그가 가로채면 안 된다.
+   */
+  const names = useMemo(() => active.map((t) => t.name), [active])
+
+  /**
    * 합쳐진 태그를 따라간다. 과거 기록의 태그 id 는 안 고치고
    * 읽을 때만 옮겨 준다 — 기록을 나중에 뜯어고치지 않기 위해서다.
    */
@@ -105,6 +111,7 @@ export function useMyTags(authState: AuthState = 'local') {
   return {
     tags,
     active,
+    names,
     favorites,
     recent,
     loading,

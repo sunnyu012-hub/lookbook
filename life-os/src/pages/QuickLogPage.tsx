@@ -4,10 +4,11 @@
  * App.tsx 의 overlay 방식을 그대로 쓴다 — 라우터를 새로 넣지 않는다.
  */
 import { useState } from 'react'
-import type { QuickLog, QuickLogInput } from '@/lib/os2/types'
+import type { AppliedLifeTag, QuickLog, QuickLogInput } from '@/lib/os2/types'
 import type { MyTagStore } from '@/hooks/useMyTags'
 import { MOOD_BY_VALUE } from '@/components/quicklog/MoodPicker'
 import { QuickLogComposer } from '@/components/quicklog/QuickLogComposer'
+import { TagInspector } from '@/components/quicklog/TagInspector'
 import { timeOf } from '@/components/quicklog/TodayFlow'
 import { usePhotoUrl } from '@/hooks/usePhotoUrl'
 import { PixelPanel } from '@/components/pixel/PixelPanel'
@@ -18,11 +19,13 @@ interface Props {
   log: QuickLog
   tagStore: MyTagStore
   onSave: (input: QuickLogInput, photo: File | null) => Promise<void>
+  /** 태그만 고칠 때 — 본문·사진은 건드리지 않는다 */
+  onSaveTags: (tags: AppliedLifeTag[]) => void
   onRemove: () => Promise<void>
   onClose: () => void
 }
 
-export function QuickLogPage({ log, tagStore, onSave, onRemove, onClose }: Props) {
+export function QuickLogPage({ log, tagStore, onSave, onSaveTags, onRemove, onClose }: Props) {
   const [editing, setEditing] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -45,7 +48,8 @@ export function QuickLogPage({ log, tagStore, onSave, onRemove, onClose }: Props
           type="button"
           onClick={onClose}
           aria-label="돌아가기"
-          className="press h-8 w-8 rounded-px3 border-[1.5px] border-border bg-ivory font-pixel text-[12px] shadow-hard"
+          // 보이는 크기는 그대로 두고 손가락이 닿는 범위만 44px 로 넓힌다
+          className="press relative h-8 w-8 rounded-px3 border-[1.5px] border-border bg-ivory font-pixel text-[12px] shadow-hard before:absolute before:-inset-2 before:content-['']"
         >
           ‹
         </button>
@@ -102,8 +106,10 @@ export function QuickLogPage({ log, tagStore, onSave, onRemove, onClose }: Props
             />
           )}
 
+          <TagInspector tags={log.lifeTags ?? []} onChange={onSaveTags} />
+
           {tags.length > 0 && (
-            <PixelPanel title="Tags">
+            <PixelPanel title="My tags">
               <div className="flex flex-wrap gap-1.5">
                 {tags.map((tag) => (
                   <span
@@ -124,7 +130,7 @@ export function QuickLogPage({ log, tagStore, onSave, onRemove, onClose }: Props
                 haptic()
                 setEditing(true)
               }}
-              className="press flex-1 rounded-px4 border-[1.5px] border-pinkdeep bg-pink py-3 font-pixel text-[11px] uppercase text-white shadow-hard"
+              className="press min-h-[44px] flex-1 rounded-px4 border-[1.5px] border-pinkdeep bg-pink py-3 font-pixel text-[11px] uppercase text-white shadow-hard"
             >
               고치기
             </button>
@@ -134,7 +140,7 @@ export function QuickLogPage({ log, tagStore, onSave, onRemove, onClose }: Props
                 haptic()
                 setConfirming(true)
               }}
-              className="press rounded-px4 border-[1.5px] border-border bg-ivory px-4 py-3 font-pixel text-[11px] uppercase text-inkdim"
+              className="press min-h-[44px] rounded-px4 border-[1.5px] border-border bg-ivory px-4 py-3 font-pixel text-[11px] uppercase text-inkdim"
             >
               지우기
             </button>

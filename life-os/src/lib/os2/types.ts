@@ -49,6 +49,15 @@ export interface QuickLogInput {
 
   /** 사용자가 시각을 직접 고칠 수 있게 열어 둔다. 없으면 저장 시각 */
   loggedAt?: string
+
+  /**
+   * 자동 태깅을 어느 판으로 돌렸는지.
+   * 태그가 하나도 안 붙은 기록도 "돌리긴 했다" 를 남겨야 다시 돌릴지 판단할 수 있다.
+   * null / undefined 는 아직 안 돌렸다는 뜻이다.
+   */
+  taggedRuleVersion?: number | null
+  taggedTaxonomyVersion?: number | null
+  taggedAt?: string | null
 }
 
 export interface QuickLog extends QuickLogInput, Versioned {
@@ -99,7 +108,10 @@ export interface MyTag extends MyTagInput, Versioned {
 /** 태그가 어디서 붙었는지 — 사용자 교정이 언제나 가장 세다 */
 export type TagSource = 'user' | 'rule' | 'keyword' | 'ai' | 'derived'
 
-/** 사전에 정의된 태그 한 개 */
+/**
+ * 사전에 정의된 태그 한 개.
+ * 실제 정의는 lib/os2/taxonomy/ 아래에 카테고리별로 나눠 둔다.
+ */
 export interface LifeTagDef {
   /** 'emotion:joy' 같은 전체 키 */
   id: string
@@ -107,14 +119,50 @@ export interface LifeTagDef {
   subcategoryId?: string | null
   /** 카테고리 안에서의 키 ('joy') */
   key: string
+  /** 화면에 나가는 이름 — 한국어. 영문 key 를 그대로 보여 주지 않는다 */
   displayName: string
   description?: string | null
+  /** 더 넓은 뜻의 상위 태그 */
+  parentId?: string | null
+
   /** 같은 뜻으로 쓰이는 말들 — 자동 태깅이 참고한다 */
   aliases?: string[]
+  /** 이 낱말이 보이면 후보가 된다 */
+  keywords?: string[]
+  /** 통째로 맞으면 keyword 보다 세게 본다 */
+  phrases?: string[]
+
+  /** 이 말이 같이 있으면 붙이지 않는다 */
+  negativeKeywords?: string[]
+  /** 이 태그들이 같이 있을 때만 붙인다 */
+  contextRequired?: string[]
+  /** 이 태그들이 있으면 붙이지 않는다 */
+  contextExcluded?: string[]
+
+  source: 'builtin'
+  /** keyword 로 맞았을 때의 기본 점수 */
+  defaultConfidence: number
+
+  ruleHints?: {
+    /** 부정어에 뒤집히는가 ("안 피곤해") */
+    negationSensitive?: boolean
+    /** 미래·가정이면 실제 사건으로 세지 않는가 */
+    futureSensitive?: boolean
+    personSensitive?: boolean
+    placeSensitive?: boolean
+  }
   taxonomyVersion: number
 }
 
 /** 어떤 기록에 실제로 붙은 태그 */
+/**
+ * 이 태그가 "지금 일어난 일" 인지 아닌지.
+ *
+ * "내일 클라이밍 갈 거야" 를 실제 운동 기록으로 세면 통계가 통째로 틀어진다.
+ * 그래서 붙이긴 하되 언제 이야기인지를 같이 남긴다. 분석은 present 만 센다.
+ */
+export type TemporalContext = 'present' | 'past' | 'future' | 'hypothetical'
+
 export interface AppliedLifeTag {
   tagId: string
   source: TagSource
@@ -125,6 +173,16 @@ export interface AppliedLifeTag {
   /** 사용자가 "아니에요" 한 것 — 지우지 않고 남겨서 학습에 쓴다 */
   userRejected?: boolean
   appliedAt: string
+
+  /** 없으면 present 로 본다 */
+  temporalContext?: TemporalContext
+  /** 어느 글자가 이 태그를 불렀는지 — "왜 붙었어요?" 에 그대로 보여 준다 */
+  matchedText?: string
+  /** 어떤 규칙이 붙였는지 (emotion_joy_001 같은 것) */
+  ruleId?: string
+  /** 어느 판 사전·규칙으로 붙었는지 — 나중에 다시 돌릴지 판단한다 */
+  taxonomyVersion?: number
+  ruleVersion?: number
 }
 
 // ─────────────────────────────────────────────

@@ -6,6 +6,9 @@
  *   2. 사진이 있으면 그 다음에 올린다
  *   3. 사진이 실패해도 기록은 이미 저장돼 있다
  * 사진 때문에 "지금 기분" 이 날아가면 안 된다. 기록이 항상 사진보다 우선이다.
+ *
+ * 자동 태깅도 같은 자리에 있다. 붙이는 건 저장 직전이고,
+ * 실패하면 태그 없이 그냥 저장한다 (lib/os2/tagging/apply.ts).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { QuickLog, QuickLogInput } from '@/lib/os2/types'
@@ -18,6 +21,7 @@ import {
   removePhoto,
   uploadPhoto,
 } from '@/lib/os2/photo'
+import { withTags } from '@/lib/os2/tagging'
 import { newId } from '@/lib/repositories/base'
 import { todayKey } from '@/lib/date'
 import type { AuthState } from './useSession'
@@ -28,7 +32,7 @@ export interface SaveResult {
   photoWarning: string | null
 }
 
-export function useQuickLogs(authState: AuthState = 'local') {
+export function useQuickLogs(authState: AuthState = 'local', myTagNames: readonly string[] = []) {
   const [logs, setLogs] = useState<QuickLog[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -81,7 +85,7 @@ export function useQuickLogs(authState: AuthState = 'local') {
       try {
         // 사진 경로에 로그 id 가 들어가므로 id 를 먼저 정한다
         const id = newId()
-        const log = await quickLogRepository.create(input, id)
+        const log = await quickLogRepository.create(withTags(input, { myTagNames }), id)
 
         // 태그 사용 횟수는 곁다리다. 실패해도 저장은 이미 끝났다
         void myTagRepository.touch(input.myTagIds ?? []).catch(() => undefined)
@@ -105,7 +109,7 @@ export function useQuickLogs(authState: AuthState = 'local') {
         saving.current = false
       }
     },
-    [putPhoto],
+    [putPhoto, myTagNames],
   )
 
   const updateLog = useCallback(
@@ -118,7 +122,11 @@ export function useQuickLogs(authState: AuthState = 'local') {
       saving.current = true
 
       try {
-        const log = await quickLogRepository.update(id, input)
+        const previous = logs.find((l) => l.id === id)?.lifeTags
+        const log = await quickLogRepository.update(
+          id,
+          withTags(input, { myTagNames, previous }),
+        )
         void myTagRepository.touch(input.myTagIds ?? []).catch(() => undefined)
 
         let saved = log
@@ -140,7 +148,23 @@ export function useQuickLogs(authState: AuthState = 'local') {
         saving.current = false
       }
     },
-    [putPhoto],
+    [putPhoto, myTagNames, logs],
+  )
+
+  /** Inspector 에서 태그만 고칠 때 — 본문·사진은 건드리지 않는다 */
+  const saveLifeTags = useCallback(
+    async (id: string, lifeTags: QuickLog['lifeTags']) => {
+      const next = lifeTags ?? []
+      // 화면을 먼저 바꾸고 저장한다. 태그 하나 누를 때마다 기다리게 하지 않는다
+      setLogs((prev) => prev.map((l) => (l.id === id ? { ...l, lifeTags: next } : l)))
+      try {
+        await quickLogRepository.setLifeTags(id, next)
+      } catch (e) {
+        setError(e instanceof Error ? e.message : '태그를 저장하지 못했어요.')
+        refresh()
+      }
+    },
+    [refresh],
   )
 
   const removeLog = useCallback(async (id: string) => {
@@ -175,6 +199,7 @@ export function useQuickLogs(authState: AuthState = 'local') {
     error,
     createLog,
     updateLog,
+    saveLifeTags,
     removeLog,
     refresh,
   }

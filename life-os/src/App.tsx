@@ -86,8 +86,9 @@ export default function App() {
   const nightStore = useNights(auth.state)
   const tagStore = useEventTags(auth.state)
   const weeklyStore = useWeeklyResets(auth.state)
-  const quickLogStore = useQuickLogs(auth.state)
+  // 내가 만든 태그 이름을 자동 태깅이 참고한다 — 그래서 myTagStore 가 먼저다
   const myTagStore = useMyTags(auth.state)
+  const quickLogStore = useQuickLogs(auth.state, myTagStore.names)
 
   const todayTags = tagStore.tagsFor(todayKey())
 
@@ -431,6 +432,7 @@ export default function App() {
             const result = await quickLogStore.updateLog(openedLog.id, input, photo)
             if (result?.photoWarning) setToast({ title: '기록했어요 ✦', detail: result.photoWarning })
           }}
+          onSaveTags={(lifeTags) => void quickLogStore.saveLifeTags(openedLog.id, lifeTags)}
           onRemove={async () => {
             await quickLogStore.removeLog(openedLog.id)
             setOpenLog(null)
