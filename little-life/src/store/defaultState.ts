@@ -7,6 +7,7 @@ import { emptyCollection } from '@/lib/collection/progress'
 import { emptyDiscovery } from '@/lib/discovery/derive'
 import { DEFAULT_SKIN_ID, defaultOwnedSkinIds } from '@/lib/character/skins'
 import { emptyGarden } from '@/lib/garden/derive'
+import { emptyKitchen } from '@/lib/kitchen/derive'
 import { MAX_ADVENTURE_ENERGY } from '@/lib/garden/quest'
 import {
   STATE_VERSION,
@@ -89,5 +90,6 @@ export function createDefaultState(): AppState {
     discovery: emptyDiscovery(),
     guideSeenAt: null,
     garden: emptyGarden(),
+    kitchen: emptyKitchen(),
   }
 }

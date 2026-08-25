@@ -2,6 +2,7 @@ import type {
   DiscoveryState,
   GardenPlot,
   GardenState,
+  KitchenState,
   ActiveBuff,
   QuestUsageProfile,
   RecommendSettings,
@@ -54,6 +55,8 @@ import { DEFAULT_SKIN_ID, defaultOwnedSkinIds } from '@/lib/character/skins'
 import { MAX_PLOTS, emptyGarden, emptyPlots } from '@/lib/garden/derive'
 import { MAX_ADVENTURE_ENERGY } from '@/lib/garden/quest'
 import { findCrop } from '@/lib/garden/crops'
+import { emptyKitchen } from '@/lib/kitchen/derive'
+import { findKitchenRecipe } from '@/lib/kitchen/recipes'
 import { AUTO_COLLECTION_IDS, COMPANION_IDS, SECRET_IDS, SKIN_IDS } from '@/types'
 import { findChapter } from '@/lib/discovery/stories'
 import { findRoom } from '@/lib/collection/rooms'
@@ -65,7 +68,7 @@ import { findRoom } from '@/lib/collection/rooms'
  * 없는 항목만 기본값으로 채우고, 있는 값은 손대지 않는다.
  */
 
-export const STATE_VERSION = 12
+export const STATE_VERSION = 13
 
 /** 구매 기록을 며칠치까지 남길지 */
 export const PURCHASE_DAYS_KEPT = 7
@@ -854,4 +857,48 @@ export function sanitizeGarden(raw: unknown): GardenState {
  */
 export function sanitizeEnergy(raw: unknown): number {
   return Math.max(0, Math.min(MAX_ADVENTURE_ENERGY, Math.floor(numberOr(raw, 0))))
+}
+
+
+/**
+ * 작은 부엌을 읽어들인다.
+ *
+ * 무엇을 알고 있는지는 여기 없다. 정원 기록에서 다시 센다 —
+ * 그래서 조건을 나중에 손봐도 어긋나지 않고, 이 업데이트를 처음 켜는
+ * 사람에게 그동안 거둔 것이 그대로 반영된다.
+ *
+ * 만든 횟수는 절대 지우지 않는다. 한 번 만들어본 요리는
+ * 무슨 일이 있어도 계속 아는 것으로 남아야 한다.
+ */
+export function sanitizeKitchen(raw: unknown): KitchenState {
+  const empty = emptyKitchen()
+  if (!raw || typeof raw !== 'object') return empty
+  const k = raw as Record<string, unknown>
+
+  const cookedRecipeCounts: Record<string, number> = {}
+  if (k.cookedRecipeCounts && typeof k.cookedRecipeCounts === 'object') {
+    for (const [id, count] of Object.entries(k.cookedRecipeCounts as Record<string, unknown>)) {
+      // 없어진 레시피가 저장돼 있으면 조용히 버린다
+      if (!findKitchenRecipe(id)) continue
+      const n = Math.floor(numberOr(count, 0))
+      if (n > 0) cookedRecipeCounts[id] = n
+    }
+  }
+
+  const favoriteRecipeIds = Array.isArray(k.favoriteRecipeIds)
+    ? [
+        ...new Set(
+          k.favoriteRecipeIds.filter(
+            (v): v is string => typeof v === 'string' && findKitchenRecipe(v) !== null,
+          ),
+        ),
+      ]
+    : []
+
+  return {
+    unlockedAt: typeof k.unlockedAt === 'string' ? k.unlockedAt : null,
+    tutorialSeenAt: typeof k.tutorialSeenAt === 'string' ? k.tutorialSeenAt : null,
+    cookedRecipeCounts,
+    favoriteRecipeIds,
+  }
 }

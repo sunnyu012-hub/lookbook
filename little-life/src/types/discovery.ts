@@ -210,6 +210,13 @@ export interface CompanionMemoryDef {
   atFriendship: number
   title: string
   text: string
+  /**
+   * 이 요리를 만들어본 적이 있어야 열린다.
+   *
+   * 동료에게 사람 음식을 먹이는 게 아니다 — 그건 현실에서 위험한 이야기라
+   * 게임에 넣지 않는다. "그날 같이 있었다" 는 기록일 뿐이다.
+   */
+  needsRecipeId?: string
 }
 
 /** 저장되는 동료 기록 */
@@ -245,7 +252,13 @@ export interface ItemHint {
 // ── 발견함 ──────────────────────────────────────────────
 
 /** 알려줄 것 한 줄 */
-export type DiscoveryKind = 'AUTO_COLLECTION' | 'SECRET' | 'STORY' | 'COMPANION' | 'GARDEN'
+export type DiscoveryKind =
+  | 'AUTO_COLLECTION'
+  | 'SECRET'
+  | 'STORY'
+  | 'COMPANION'
+  | 'GARDEN'
+  | 'KITCHEN'
 
 export interface DiscoveryNote {
   /** 같은 것을 두 번 알리지 않으려고 쓰는 열쇠 */

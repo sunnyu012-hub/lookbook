@@ -112,9 +112,9 @@ describe('예전 기록이 그대로 반영된다', () => {
     expect(back).toEqual(emptyDiscovery())
   })
 
-  it('스키마 버전이 12 이다', () => {
-    expect(STATE_VERSION).toBe(12)
-    expect(createDefaultState().version).toBe(12)
+  it('스키마 버전이 13 이다', () => {
+    expect(STATE_VERSION).toBe(13)
+    expect(createDefaultState().version).toBe(13)
   })
 })
 
@@ -398,7 +398,14 @@ describe('동료', () => {
     const id = 'BORI' as const
     expect(unlockedMemories(id, 0)).toHaveLength(0)
     expect(unlockedMemories(id, 5).length).toBeGreaterThan(0)
-    expect(unlockedMemories(id, 30).length).toBe(memoriesOf(id).length)
+
+    // 요리가 걸린 기억은 친해지는 것만으로는 안 열린다
+    const needsCooking = memoriesOf(id).filter((m) => m.needsRecipeId)
+    expect(unlockedMemories(id, 30).length).toBe(memoriesOf(id).length - needsCooking.length)
+
+    // 만들어본 적이 있으면 그때 열린다
+    const cooked = needsCooking.map((m) => m.needsRecipeId!)
+    expect(unlockedMemories(id, 30, cooked).length).toBe(memoriesOf(id).length)
   })
 
   it('아이마다 기억이 몇 개씩 있다', () => {

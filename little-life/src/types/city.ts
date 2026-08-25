@@ -33,6 +33,9 @@ export type GiftTag =
   | 'sport'
   | 'moon'
   | 'cozy'
+  /** 부엌에서 나온 것들. 기존 물건에는 붙지 않는다 — 순수하게 더하기만 한다. */
+  | 'sweet'
+  | 'tea'
 
 export interface NpcDialogue {
   /** 아무 때나 나오는 말 */

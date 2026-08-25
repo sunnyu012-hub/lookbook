@@ -16,7 +16,7 @@ export const NPCS: NpcDef[] = [
     role: '카페 주인',
     description: '작은 카페를 혼자 꾸려가는 사람. 말수는 적지만 잘 본다.',
     avatar: '☕',
-    likes: ['coffee', 'book'],
+    likes: ['coffee', 'book', 'sweet'],
     shopId: 'MINA_CAFE',
     dialogues: [
       { text: '어서 와. 오늘은 창가 자리가 비었어.' },
@@ -130,7 +130,7 @@ export const NPCS: NpcDef[] = [
     role: '작업실 주인',
     description: '작업실 겸 가게를 쓰는 사람. 늘 뭔가 만들고 있다.',
     avatar: '🎨',
-    likes: ['art', 'collectible'],
+    likes: ['art', 'collectible', 'sweet'],
     shopId: null,
     dialogues: [
       { text: '이거 봐, 어제 만든 건데 아직 마음에 안 들어.' },
@@ -241,7 +241,7 @@ export const NPCS: NpcDef[] = [
     role: '밤을 걷는 사람',
     description: '밤에만 보이는 사람. 어디 사는지는 아무도 모른다.',
     avatar: '🌙',
-    likes: ['moon', 'book'],
+    likes: ['moon', 'book', 'tea'],
     shopId: 'NIGHT_MARKET',
     nightOnly: true,
     dialogues: [
