@@ -6,6 +6,7 @@ import { GreetingHeader } from '@/components/home/GreetingHeader'
 import { AdventureStatusCard } from '@/components/home/AdventureStatusCard'
 import { TodayInTheCity } from '@/components/home/TodayInTheCity'
 import { readyCount } from '@/lib/garden/derive'
+import { isKitchenUnlocked } from '@/lib/kitchen/derive'
 import { WeeklyGoalsCard } from '@/components/home/WeeklyGoalsCard'
 import { DeliveryCard } from '@/components/home/DeliveryCard'
 import { DiscoveryCards } from '@/components/discovery/DiscoveryCards'
@@ -41,6 +42,8 @@ interface HomeScreenProps {
   onOpenDiscovery: () => void
   /** 정원에 거둘 게 있을 때 그리로 */
   onOpenGarden: () => void
+  /** 방 안의 작은 부엌 */
+  onOpenKitchen: () => void
   events: CityEvent[]
 }
 
@@ -62,6 +65,7 @@ export function HomeScreen({
   onDismissDiscovery,
   onOpenDiscovery,
   onOpenGarden,
+  onOpenKitchen,
   events,
 }: HomeScreenProps) {
   const buddy = activeCompanion(state)
@@ -106,6 +110,7 @@ export function HomeScreen({
         notes={discoveryNotes}
         onDismiss={onDismissDiscovery}
         onOpenGarden={onOpenGarden}
+        onOpenKitchen={onOpenKitchen}
       />
 
       <CharacterRoomCard
@@ -115,6 +120,8 @@ export function HomeScreen({
         onDecorate={onDecorate}
         onOpenCollection={onOpenCollection}
         onOpenLook={onOpenLook}
+        kitchenOpen={isKitchenUnlocked(state)}
+        onOpenKitchen={onOpenKitchen}
         overlay={<ExpToastLayer toasts={expToasts} />}
       />
 

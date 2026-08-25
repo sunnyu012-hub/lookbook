@@ -187,6 +187,40 @@ export const COMPANION_MEMORIES: CompanionMemoryDef[] = [
     title: '낮에 한 번 본 것 같은 날',
     text: '분명 봤다고 생각했는데 다시 보니 없었다.',
   },
+  // ── 부엌이 생기고 나서의 기억 ──
+  // 동료에게 사람 음식을 먹이지 않는다. 같이 있었던 날의 기록일 뿐이다.
+  {
+    id: 'BORI_PICNIC',
+    companionId: 'BORI',
+    atFriendship: 10,
+    title: '첫 번째 작은 피크닉',
+    text: '도시락을 펼치자 옆에 앉아서 한참 냄새만 맡았다. 결국 아무것도 안 먹었다.',
+    needsRecipeId: 'picnic_lunchbox',
+  },
+  {
+    id: 'MOCHI_MILK',
+    companionId: 'MOCHI',
+    atFriendship: 8,
+    title: '분홍색이 궁금한 고양이',
+    text: '컵 앞에 앉아 한참을 들여다봤다. 마시지는 않고 그냥 보기만 했다.',
+    needsRecipeId: 'strawberry_milk',
+  },
+  {
+    id: 'LUNA_TEA',
+    companionId: 'LUNA',
+    atFriendship: 12,
+    title: '향이 조용한 밤',
+    text: '차를 우리는 동안 창틀에 앉아 있었다. 김이 올라가는 쪽만 보고 있었다.',
+    needsRecipeId: 'lavender_tea',
+  },
+  {
+    id: 'BEAN_KITCHEN',
+    companionId: 'BEAN',
+    atFriendship: 8,
+    title: '부엌 구경',
+    text: '뭘 하는지 보겠다는 듯이 조리대 끝에 자리를 잡았다. 방해는 안 했다.',
+    needsRecipeId: 'herb_potato_soup',
+  },
 ]
 
 /** 이 아이를 만날 조건에 지금 얼마나 왔는지 (0~1) */
@@ -212,6 +246,7 @@ export function hasMet(state: AppState, id: CompanionId): boolean {
 }
 
 export function companionViews(state: AppState): CompanionView[] {
+  const cooked = Object.keys(state.kitchen.cookedRecipeCounts)
   return COMPANIONS.map((def) => {
     const companionState = state.discovery.companions[def.id] ?? null
     return {
@@ -219,14 +254,26 @@ export function companionViews(state: AppState): CompanionView[] {
       state: companionState,
       met: companionState !== null,
       active: state.discovery.activeCompanionId === def.id,
-      memories: companionState ? unlockedMemories(def.id, companionState.friendship) : [],
+      memories: companionState
+        ? unlockedMemories(def.id, companionState.friendship, cooked)
+        : [],
     }
   })
 }
 
 /** 이만큼 친해져서 열린 기억들 */
-export function unlockedMemories(id: CompanionId, friendship: number): CompanionMemoryDef[] {
-  return COMPANION_MEMORIES.filter((m) => m.companionId === id && friendship >= m.atFriendship)
+export function unlockedMemories(
+  id: CompanionId,
+  friendship: number,
+  cookedRecipeIds: string[] = [],
+): CompanionMemoryDef[] {
+  return COMPANION_MEMORIES.filter((m) => {
+    if (m.companionId !== id) return false
+    if (friendship < m.atFriendship) return false
+    // 요리가 걸린 기억은 그걸 만들어본 적이 있어야 열린다
+    if (m.needsRecipeId && !cookedRecipeIds.includes(m.needsRecipeId)) return false
+    return true
+  })
 }
 
 /** 이 아이의 기억 전부 (잠긴 것 포함) */

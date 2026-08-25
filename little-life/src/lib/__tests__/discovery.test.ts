@@ -112,18 +112,18 @@ describe('예전 기록이 그대로 반영된다', () => {
     expect(back).toEqual(emptyDiscovery())
   })
 
-  it('스키마 버전이 12 이다', () => {
-    expect(STATE_VERSION).toBe(12)
-    expect(createDefaultState().version).toBe(12)
+  it('스키마 버전이 13 이다', () => {
+    expect(STATE_VERSION).toBe(13)
+    expect(createDefaultState().version).toBe(13)
   })
 })
 
 // ── B. 진행도가 는다 ────────────────────────────────────
 
 describe('자동 컬렉션', () => {
-  it('열한 가지가 있고 id 가 겹치지 않는다', () => {
-    expect(AUTO_COLLECTIONS).toHaveLength(11)
-    expect(new Set(AUTO_COLLECTIONS.map((c) => c.id)).size).toBe(11)
+  it('열네 가지가 있고 id 가 겹치지 않는다', () => {
+    expect(AUTO_COLLECTIONS).toHaveLength(14)
+    expect(new Set(AUTO_COLLECTIONS.map((c) => c.id)).size).toBe(14)
     for (const c of AUTO_COLLECTIONS) expect(AUTO_COLLECTION_IDS).toContain(c.id)
   })
 
@@ -398,7 +398,14 @@ describe('동료', () => {
     const id = 'BORI' as const
     expect(unlockedMemories(id, 0)).toHaveLength(0)
     expect(unlockedMemories(id, 5).length).toBeGreaterThan(0)
-    expect(unlockedMemories(id, 30).length).toBe(memoriesOf(id).length)
+
+    // 요리가 걸린 기억은 친해지는 것만으로는 안 열린다
+    const needsCooking = memoriesOf(id).filter((m) => m.needsRecipeId)
+    expect(unlockedMemories(id, 30).length).toBe(memoriesOf(id).length - needsCooking.length)
+
+    // 만들어본 적이 있으면 그때 열린다
+    const cooked = needsCooking.map((m) => m.needsRecipeId!)
+    expect(unlockedMemories(id, 30, cooked).length).toBe(memoriesOf(id).length)
   })
 
   it('아이마다 기억이 몇 개씩 있다', () => {

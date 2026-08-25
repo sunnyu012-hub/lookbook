@@ -22,6 +22,17 @@ import type {
 import type { BuySkinResult } from '@/lib/character/derive'
 import type { HarvestResult, PlantResult } from '@/lib/garden/derive'
 import type { DevGardenAction } from '@/lib/garden/dev'
+import type { CookResult } from '@/lib/kitchen/derive'
+import type { DevKitchenAction } from '@/lib/kitchen/dev'
+import {
+  cookRecipe as cookRecipeIn,
+  isKitchenUnlocked,
+  toggleFavorite as toggleFavoriteIn,
+} from '@/lib/kitchen/derive'
+import { applyDevKitchen } from '@/lib/kitchen/dev'
+import { foodGiftLines } from '@/lib/kitchen/gifts'
+import { findKitchenRecipe as findKitchenRecipeById, recipeForFood } from '@/lib/kitchen/recipes'
+
 import type {
   CharacterSkin,
   CollectionShopId,
@@ -94,7 +105,7 @@ import {
 } from '@/lib/rpg/rewards'
 import { applyBattleAction, clearRarities, createBattle, undoBattleAction } from '@/lib/rpg/battle'
 import { activeEvents } from '@/lib/city/events'
-import { emptyNpcState, giftGain, talkGain } from '@/lib/city/friendship'
+import { emptyNpcState, giftGainForTags, talkGain } from '@/lib/city/friendship'
 import { FRIENDSHIP_MAX, findNpc, friendshipLevel } from '@/lib/city/npcs'
 import { reputationGain } from '@/lib/city/reputation'
 import { shopStock } from '@/lib/city/shops'
@@ -237,6 +248,17 @@ interface GameState {
   useDew: (plotIndex: number) => boolean
   /** 개발용 (?dev=garden 에서만 부른다) */
   devGarden: (action: DevGardenAction) => void
+  // ── 작은 부엌 ──
+  /** 부엌에 처음 들어간 것을 적어둔다 */
+  enterKitchen: () => void
+  /** 요리한다. 재료가 빠지고 음식이 손에 들어온다. */
+  cookRecipe: (recipeId: string) => CookResult
+  /** 만든 음식을 먹는다. 아주 작은 보너스가 다음 퀘스트 하나에 붙는다. */
+  eatFood: (recipeId: string) => ActiveBuff | null
+  /** 하트. 보너스는 없다 — 목록 맨 위로 올라올 뿐이다. */
+  toggleRecipeFavorite: (recipeId: string) => void
+  /** 개발용 (?dev=kitchen 에서만 부른다) */
+  devKitchen: (action: DevKitchenAction) => void
   // ── 클라우드 백업 ──
   /**
    * 상태 전체를 다른 것으로 갈아 끼운다.
@@ -302,6 +324,8 @@ export interface GiftResult {
   gained: number
   friendship: number
   liked: boolean
+  /** 만든 음식을 줬을 때 그 사람이 하는 말. 없으면 빈 배열. */
+  lines?: string[]
   leveledUp: boolean
 }
 
@@ -1333,21 +1357,40 @@ export function useGameState(): GameState {
     (npcId: NpcId, itemId: string): GiftResult | null => {
       const prev = stateRef.current
       const npc = findNpc(npcId)
+      if (!npc) return null
+
+      // 가방 물건인지, 부엌에서 만든 음식인지.
+      // 친밀도가 오르는 식은 둘 다 하나뿐이다 (giftGainForTags).
       const item = findItem(itemId)
-      if (!npc || !item) return null
-      if (!prev.inventory.some((e) => e.itemId === itemId)) return null
+      const food = recipeForFood(itemId)
+      const tags = item ? (item.giftTags ?? []) : (food?.giftTags ?? [])
+
+      if (item) {
+        if (!prev.inventory.some((e) => e.itemId === itemId)) return null
+      } else if (food) {
+        if (ownedCount(prev.collection, itemId) < 1) return null
+      } else {
+        return null
+      }
 
       const bonuses = collectBonuses(bonusSources(prev))
-      const gained = giftGain(npc, item, bonuses)
-      const liked = (item.giftTags ?? []).some((tag) => npc.likes.includes(tag))
+      const gained = giftGainForTags(npc, tags, bonuses)
+      const liked = tags.some((tag) => npc.likes.includes(tag))
 
       const npcState: NpcState = prev.npcs[npcId] ?? emptyNpcState()
       const friendship = Math.min(FRIENDSHIP_MAX, npcState.friendship + gained)
 
+      // 음식은 도감에서 하나 빠진다. 발견 기록은 지우지 않는다 —
+      // 줘버렸다고 만들어본 적이 없어지는 건 아니다.
+      const collection = food
+        ? (spendItems(prev.collection, [{ itemId, count: 1 }]) ?? prev.collection)
+        : prev.collection
+
       commit({
         ...prev,
+        collection,
         // 준 물건은 손에서 떠난다. 장착 중이었으면 슬롯도 비운다.
-        inventory: removeFromInventory(prev.inventory, itemId),
+        inventory: item ? removeFromInventory(prev.inventory, itemId) : prev.inventory,
         user: { ...prev.user, equippedItems: unequipIfGone(prev.user.equippedItems, itemId) },
         npcs: { ...prev.npcs, [npcId]: { ...npcState, friendship } },
       })
@@ -1357,6 +1400,7 @@ export function useGameState(): GameState {
         friendship,
         liked,
         leveledUp: crossedFriendshipLevel(npcState.friendship, friendship),
+        lines: food ? foodGiftLines(npcId, food.id) : [],
       }
     },
     [commit],
@@ -1782,7 +1826,9 @@ export function useGameState(): GameState {
       if (!def || !state) return null
 
       const today = todayKey()
-      const before = unlockedMemories(id, state.friendship).length
+      // 요리가 걸린 기억도 같이 본다 — 만들어본 게 있으면 그날 열릴 수 있다
+      const cooked = Object.keys(prev.kitchen.cookedRecipeCounts)
+      const before = unlockedMemories(id, state.friendship, cooked).length
 
       if (state.lastPlayedOn === today) {
         return { name: def.name, gained: 0, friendship: state.friendship, memoryTitle: null }
@@ -1805,7 +1851,7 @@ export function useGameState(): GameState {
         },
       })
 
-      const after = unlockedMemories(id, friendship)
+      const after = unlockedMemories(id, friendship, cooked)
       return {
         name: def.name,
         gained,
@@ -2057,6 +2103,93 @@ export function useGameState(): GameState {
     [commit],
   )
 
+  // ── 작은 부엌 ───────────────────────────────────────────
+
+  const enterKitchen = useCallback(() => {
+    const prev = stateRef.current
+    if (!isKitchenUnlocked(prev) || prev.kitchen.tutorialSeenAt !== null) return
+    commit({
+      ...prev,
+      kitchen: { ...prev.kitchen, tutorialSeenAt: new Date().toISOString() },
+    })
+  }, [commit])
+
+  /**
+   * 요리한다.
+   *
+   * 만들기 자체는 작은 작업실과 같은 길이다 (재료를 빼고 결과를 넣는다).
+   * 만든 음식이 도감을 늘리면 마일스톤·세트가 따라 완성될 수 있어서
+   * 기존 사슬을 한 번 태운다 — 여기서 보상을 새로 계산하지 않는다.
+   */
+  const cookRecipe = useCallback(
+    (recipeId: string): CookResult => {
+      const prev = stateRef.current
+      const now = new Date()
+      const { state: cooked, result } = cookRecipeIn(prev, recipeId, now)
+      if (!result.ok) return result
+
+      const derived = applyCollectionDerived(cooked, now)
+      const discovered = applyDiscovery(derived.state, now)
+      const skinned = applySkinUnlocks(discovered.state)
+      if (discovered.notes.length > 0) setDiscoveryNotes(discovered.notes)
+      if (skinned.unlocked.length > 0) setNewSkins(skinned.unlocked)
+      commit(skinned.state)
+      return result
+    },
+    [commit],
+  )
+
+  /**
+   * 먹는다.
+   *
+   * 마시는 것과 같은 얼개를 그대로 쓴다 (ActiveBuff). 보상 계산은
+   * 이미 그 버프를 볼 줄 알아서 여기서 손댈 게 없다.
+   */
+  const eatFood = useCallback(
+    (recipeId: string): ActiveBuff | null => {
+      const prev = stateRef.current
+      const def = findKitchenRecipeById(recipeId)
+      if (!def?.buff) return null
+      if (ownedCount(prev.collection, def.outputItemId) < 1) return null
+
+      const spent = spendItems(prev.collection, [{ itemId: def.outputItemId, count: 1 }])
+      if (!spent) return null
+
+      const buff: ActiveBuff = {
+        id: createId(),
+        itemId: def.outputItemId,
+        name: def.name,
+        icon: def.icon,
+        category: def.buff.category,
+        expPct: def.buff.expPct,
+        uses: 1,
+        startedAt: new Date().toISOString(),
+      }
+
+      commit({
+        ...prev,
+        collection: spent,
+        user: { ...prev.user, activeBuffs: [...prev.user.activeBuffs, buff] },
+      })
+      return buff
+    },
+    [commit],
+  )
+
+  const toggleRecipeFavorite = useCallback(
+    (recipeId: string) => {
+      commit(toggleFavoriteIn(stateRef.current, recipeId))
+    },
+    [commit],
+  )
+
+  const devKitchen = useCallback(
+    (action: DevKitchenAction) => {
+      commit(applyDevKitchen(stateRef.current, action))
+    },
+    [commit],
+  )
+
   /**
    * 처음 안내를 다 봤다.
    *
@@ -2145,6 +2278,11 @@ export function useGameState(): GameState {
       harvestPlot,
       useDew,
       devGarden,
+      enterKitchen,
+      cookRecipe,
+      eatFood,
+      toggleRecipeFavorite,
+      devKitchen,
       newSkins,
       dismissNewSkins,
       replaceState,
@@ -2206,6 +2344,11 @@ export function useGameState(): GameState {
       harvestPlot,
       useDew,
       devGarden,
+      enterKitchen,
+      cookRecipe,
+      eatFood,
+      toggleRecipeFavorite,
+      devKitchen,
       newSkins,
       dismissNewSkins,
       replaceState,

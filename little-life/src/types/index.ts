@@ -5,6 +5,7 @@ export * from './collection'
 export * from './discovery'
 export * from './skins'
 export * from './garden'
+export * from './kitchen'
 import type { CollectionState } from './collection'
 import type { DiscoveryState } from './discovery'
 import type {
@@ -20,6 +21,7 @@ import type { RecommendSettings, UsageProfiles } from './library'
 import type { TimeBand } from './rpg'
 import type { SkinId } from './skins'
 import type { GardenState } from './garden'
+import type { KitchenState } from './kitchen'
 
 /**
  * Little Life 의 데이터 모델.
@@ -259,6 +261,13 @@ export interface AppState {
    * 전부 "무엇을 몇 번 거뒀는지" 에서 계산한다 (lib/garden/derive.ts).
    */
   garden: GardenState
+  /**
+   * 작은 부엌.
+   *
+   * 무엇을 알고 있는지는 여기 없다. 정원 기록에서 매번 다시 센다
+   * (lib/kitchen/derive.ts). 저장하는 건 만든 횟수와 하트뿐이다.
+   */
+  kitchen: KitchenState
   // 향후 확장 예정: achievements, character …
   //
   // 오늘의 이벤트와 상점 진열은 여기 없다.

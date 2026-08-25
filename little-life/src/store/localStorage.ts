@@ -36,6 +36,7 @@ import {
   sanitizeSelectedSkin,
   sanitizeGarden,
   sanitizeEnergy,
+  sanitizeKitchen,
   backfillCategoryCompleted,
   backfillUsage,
   withSkillPoints,
@@ -292,6 +293,8 @@ export function sanitizeState(raw: unknown): AppState | null {
     guideSeenAt: typeof s.guideSeenAt === 'string' ? s.guideSeenAt : null,
     // v11 에는 없던 항목. 없으면 아직 못 찾은 정원으로 본다.
     garden: sanitizeGarden(s.garden),
+    // v12 에는 없던 항목. 없으면 아직 못 연 부엌으로 본다.
+    kitchen: sanitizeKitchen(s.kitchen),
   }
 
   // 분야별 완료 수는 저장돼 있으면 그대로 쓰고, 없으면 남아 있는 퀘스트에서 센다
