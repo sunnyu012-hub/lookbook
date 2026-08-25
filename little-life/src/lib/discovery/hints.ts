@@ -135,6 +135,10 @@ export function hintFor(state: AppState, item: CollectionItemDef): ItemHint {
       if (level === 1) return { level, text: '오래 쌓이면 생기는 것.' }
       return { level, text: '현실에서 충분히 쌓이면 받아.' }
 
+    case 'GARDEN':
+      if (level === 1) return { level, text: '심어두면 언젠가.' }
+      return { level, text: '작은 정원에서 거둘 수 있어.' }
+
     case 'SECRET':
       return { level: 1, text: source.hint ?? '언제 만나게 될지는 아직.' }
 

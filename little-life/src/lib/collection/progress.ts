@@ -413,6 +413,8 @@ export function acquisitionHint(item: CollectionItemDef, shopName: (id: string) 
       return '어떤 세트를 완성하면.'
     case 'TROPHY':
       return '현실에서 충분히 쌓이면.'
+    case 'GARDEN':
+      return '작은 정원에서 거둘 수 있어.'
     case 'SECRET':
       return first.hint ?? '언제 만나게 될지는 아직.'
     default:

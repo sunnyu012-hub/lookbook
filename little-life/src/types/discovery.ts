@@ -236,7 +236,7 @@ export interface ItemHint {
 // ── 발견함 ──────────────────────────────────────────────
 
 /** 알려줄 것 한 줄 */
-export type DiscoveryKind = 'AUTO_COLLECTION' | 'SECRET' | 'STORY' | 'COMPANION'
+export type DiscoveryKind = 'AUTO_COLLECTION' | 'SECRET' | 'STORY' | 'COMPANION' | 'GARDEN'
 
 export interface DiscoveryNote {
   /** 같은 것을 두 번 알리지 않으려고 쓰는 열쇠 */

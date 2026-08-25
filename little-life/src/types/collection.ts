@@ -103,6 +103,8 @@ export type AcquisitionSource =
   | { kind: 'REPUTATION'; areaId: AreaId; level: number }
   | { kind: 'MILESTONE'; count: number }
   | { kind: 'TROPHY' }
+  /** 작은 정원에서 거둔다 */
+  | { kind: 'GARDEN' }
   | { kind: 'SECRET'; hint: string | null }
 
 // ── 아이템 ──────────────────────────────────────────────

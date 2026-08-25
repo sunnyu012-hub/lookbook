@@ -6,6 +6,8 @@ import { emptyReputation } from '@/lib/city/reputation'
 import { emptyCollection } from '@/lib/collection/progress'
 import { emptyDiscovery } from '@/lib/discovery/derive'
 import { DEFAULT_SKIN_ID, defaultOwnedSkinIds } from '@/lib/character/skins'
+import { emptyGarden } from '@/lib/garden/derive'
+import { MAX_ADVENTURE_ENERGY } from '@/lib/garden/quest'
 import {
   STATE_VERSION,
   defaultRecommendSettings,
@@ -64,6 +66,8 @@ export function createDefaultState(): AppState {
       activeBuffs: [],
       selectedSkinId: DEFAULT_SKIN_ID,
       ownedSkinIds: defaultOwnedSkinIds(),
+      adventureEnergy: 0,
+      maxAdventureEnergy: MAX_ADVENTURE_ENERGY,
     },
     // 목록에 적어둔 순서대로 보이도록 생성 시각을 1ms 씩 어긋나게 준다.
     quests: SAMPLE_QUESTS.map((draft, i) =>
@@ -84,5 +88,6 @@ export function createDefaultState(): AppState {
     collection: emptyCollection(),
     discovery: emptyDiscovery(),
     guideSeenAt: null,
+    garden: emptyGarden(),
   }
 }
