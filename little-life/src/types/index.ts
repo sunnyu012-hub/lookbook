@@ -216,6 +216,13 @@ export interface AppState {
    * 진행도는 여기 없다. 전부 위의 기록에서 센다.
    */
   discovery: DiscoveryState
+  /**
+   * 처음 안내를 언제 다 봤는지. 안 봤으면 null.
+   *
+   * 두 번 띄우지 않으려고 둔다. 설정에서 다시 열어도 이 값은 안 바뀐다 —
+   * "본 적 있는지" 를 적어두는 것이지 "마지막으로 본 때" 가 아니다.
+   */
+  guideSeenAt: string | null
   // 향후 확장 예정: achievements, character …
   //
   // 오늘의 이벤트와 상점 진열은 여기 없다.

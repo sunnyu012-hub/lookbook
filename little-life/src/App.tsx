@@ -27,6 +27,7 @@ import { DiscoverySheet } from '@/components/discovery/DiscoverySheet'
 import { storyProgress, unreadChapters } from '@/lib/discovery/stories'
 import { StorySheet } from '@/components/discovery/StorySheet'
 import { ConflictSheet } from '@/components/sync/ConflictSheet'
+import { GuideSheet } from '@/components/guide/GuideSheet'
 import { WorkshopSheet } from '@/components/collection/WorkshopSheet'
 import { DiscoveryOverlay } from '@/components/collection/DiscoveryOverlay'
 import { DecorateMode } from '@/components/room/DecorateMode'
@@ -104,6 +105,7 @@ export default function App() {
     removePlaced,
     setCurrentRoom,
     setRoomEffect,
+    markGuideSeen,
     replaceState,
   } = useGameState()
   const feedback = useFeedback()
@@ -121,6 +123,24 @@ export default function App() {
   const [hubOpen, setHubOpen] = useState(false)
   const [discoveryOpen, setDiscoveryOpen] = useState(false)
   const [conflictOpen, setConflictOpen] = useState(false)
+  const [guideOpen, setGuideOpen] = useState(false)
+
+  /**
+   * 처음 여는 사람에게 한 번.
+   *
+   * 동료도 비밀 장소도 "조건을 채우면 알아서 나타나는" 구조라, 그런 게
+   * 있다는 걸 아무도 말해주지 않으면 발견이 아니라 그냥 없는 것이 된다.
+   * 닫으면 본 것으로 치고 다시 조르지 않는다.
+   */
+  useEffect(() => {
+    if (!ready || state.guideSeenAt) return
+    setGuideOpen(true)
+  }, [ready, state.guideSeenAt])
+
+  const closeGuide = useCallback(() => {
+    setGuideOpen(false)
+    markGuideSeen()
+  }, [markGuideSeen])
   // 갈라진 걸 알아챘으면 한 번은 띄운다. 설정 화면에만 두면
   // 백업이 멈춰 있는 걸 모른 채로 며칠이 지난다.
   useEffect(() => {
@@ -643,6 +663,7 @@ export default function App() {
             onResetUsage={resetUsageProfiles}
             sync={sync}
             onOpenConflict={() => setConflictOpen(true)}
+            onOpenGuide={() => setGuideOpen(true)}
           />
         )}
       </AppShell>
@@ -800,6 +821,13 @@ export default function App() {
         confirmLabel="지우기"
         onConfirm={confirmRoutineDelete}
         onCancel={() => setPendingRoutineDelete(null)}
+      />
+
+      <GuideSheet
+        open={guideOpen}
+        state={state}
+        firstRun={!state.guideSeenAt}
+        onClose={closeGuide}
       />
 
       <ConflictSheet

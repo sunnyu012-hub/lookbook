@@ -80,5 +80,6 @@ export function createDefaultState(): AppState {
     bossClears: 0,
     collection: emptyCollection(),
     discovery: emptyDiscovery(),
+    guideSeenAt: null,
   }
 }

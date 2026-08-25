@@ -273,6 +273,9 @@ export function sanitizeState(raw: unknown): AppState | null {
     bossClears: numberOr(s.bossClears, 0),
     discovery: sanitizeDiscovery(raw && typeof raw === 'object' ? (raw as Record<string, unknown>).discovery : null),
     collection: sanitizeCollection(s.collection),
+    // 예전 저장에는 없던 항목. 없으면 아직 안 본 것으로 본다 —
+    // 업데이트하고 처음 열 때 한 번 보여주려는 것이라 그게 맞다.
+    guideSeenAt: typeof s.guideSeenAt === 'string' ? s.guideSeenAt : null,
   }
 
   // 분야별 완료 수는 저장돼 있으면 그대로 쓰고, 없으면 남아 있는 퀘스트에서 센다
