@@ -43,6 +43,10 @@ function stampServiceWorker() {
               url.endsWith('/idle.webp') ||
               url.endsWith('/walk.webp'),
           )
+          // 클라우드 백업 라이브러리는 백업을 켠 사람만 받는다.
+          // 첫 실행에 미리 받아두면 안 쓰는 사람에게까지 짐이 된다.
+          // (쓰기 시작하면 그때 받아서 캐시에 남는다)
+          .filter((url) => !url.startsWith('/assets/supabase-'))
           .concat('/')
 
         const buildId = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14)
@@ -65,6 +69,22 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+    },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        /**
+         * 백업 라이브러리를 이름이 정해진 덩어리로 뺀다.
+         *
+         * 이름이 정해져 있어야 서비스 워커의 미리받기 목록에서 걸러낼 수 있다.
+         * (해시만 붙어 있으면 어느 게 그건지 빌드할 때 알 수 없다)
+         */
+        manualChunks(id) {
+          if (id.includes('@supabase')) return 'supabase'
+          return undefined
+        },
+      },
     },
   },
   server: {

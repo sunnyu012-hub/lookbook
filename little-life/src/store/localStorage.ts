@@ -217,7 +217,14 @@ function sanitizeDailyLog(raw: unknown): DailyLog {
   return log
 }
 
-function sanitizeState(raw: unknown): AppState | null {
+/**
+ * 저장된 JSON 하나를 지금 판본의 상태로 끌어올린다.
+ *
+ * 클라우드에서 받아온 것도 반드시 여기를 지난다 — 다른 기기가
+ * 예전 판본으로 올려뒀을 수 있고, 그건 로컬에 예전 저장이 남아 있는 것과
+ * 똑같은 상황이다. 들어오는 문을 하나로 두면 판올림 코드가 한 벌로 끝난다.
+ */
+export function sanitizeState(raw: unknown): AppState | null {
   if (!raw || typeof raw !== 'object') return null
   const s = raw as Record<string, unknown>
   const user = (s.user ?? {}) as Record<string, unknown>
@@ -266,6 +273,9 @@ function sanitizeState(raw: unknown): AppState | null {
     bossClears: numberOr(s.bossClears, 0),
     discovery: sanitizeDiscovery(raw && typeof raw === 'object' ? (raw as Record<string, unknown>).discovery : null),
     collection: sanitizeCollection(s.collection),
+    // 예전 저장에는 없던 항목. 없으면 아직 안 본 것으로 본다 —
+    // 업데이트하고 처음 열 때 한 번 보여주려는 것이라 그게 맞다.
+    guideSeenAt: typeof s.guideSeenAt === 'string' ? s.guideSeenAt : null,
   }
 
   // 분야별 완료 수는 저장돼 있으면 그대로 쓰고, 없으면 남아 있는 퀘스트에서 센다

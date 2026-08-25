@@ -9,6 +9,9 @@ import { ClassCard } from '@/components/profile/ClassCard'
 import { EquipSlotGrid } from '@/components/profile/EquipSlotGrid'
 import { SkillTreeCard } from '@/components/profile/SkillTreeCard'
 import { RecommendSettingsCard } from '@/components/profile/RecommendSettingsCard'
+import { SyncCard } from '@/components/sync/SyncCard'
+import { TransferCard } from '@/components/sync/TransferCard'
+import { BackupNotice } from '@/components/sync/BackupNotice'
 import { CategoryGrowthBar } from '@/components/profile/CategoryGrowthBar'
 import { WeeklyInsightCard } from '@/components/profile/WeeklyInsightCard'
 import { ScreenHeader, SectionHeader } from '@/components/layout/ScreenHeader'
@@ -16,6 +19,7 @@ import { weekCompletedCount } from '@/lib/stats'
 import { weeklyInsight } from '@/lib/insights'
 import { calculateEquipmentBonus } from '@/lib/rpg/rewards'
 import { EFFECT, UI } from '@/lib/assets'
+import type { SyncApi } from '@/hooks/useSync'
 
 interface MeScreenProps {
   state: AppState
@@ -25,6 +29,10 @@ interface MeScreenProps {
   onUnlockSkill: (skillId: string) => void
   onTogglePersonalized: (on: boolean) => void
   onResetUsage: () => void
+  /** 클라우드 백업. 환경변수가 없으면 configured 가 false 라 칸 자체가 안 나온다. */
+  sync: SyncApi
+  onOpenConflict: () => void
+  onOpenGuide: () => void
 }
 
 export function MeScreen({
@@ -35,6 +43,9 @@ export function MeScreen({
   onUnlockSkill,
   onTogglePersonalized,
   onResetUsage,
+  sync,
+  onOpenConflict,
+  onOpenGuide,
 }: MeScreenProps) {
   const { user, categoryStats, dailyLog } = state
 
@@ -124,6 +135,41 @@ export function MeScreen({
           onToggle={onTogglePersonalized}
           onReset={onResetUsage}
         />
+      </section>
+
+      <section className="mt-6">
+        <SectionHeader title="앱 사용법" />
+        <button
+          type="button"
+          onClick={onOpenGuide}
+          className="flex w-full items-center gap-3 rounded-card border border-line/70 bg-surface px-5 py-4 text-left shadow-soft active:scale-[0.99]"
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-lavender-soft text-[16px]">
+            📖
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[14px] font-medium text-ink">처음 안내 다시 보기</span>
+            <span className="mt-0.5 block truncate text-[12px] text-inkdim">
+              퀘스트 · 도시 · 도감 · 방 · 동료 · 발견
+            </span>
+          </span>
+          <span className="shrink-0 text-[11px] text-inkfaint">›</span>
+        </button>
+      </section>
+
+      {/* 클라우드는 설정해둔 사람만, 파일은 누구나.
+          되돌리기 안내는 둘 중 어느 쪽으로 덮였든 같은 자리에 뜬다. */}
+      <section className="mt-6">
+        <SectionHeader title="백업" />
+        <div className="space-y-3">
+          {sync.configured && <SyncCard sync={sync} onOpenConflict={onOpenConflict} />}
+          <TransferCard state={state} onApply={sync.applyImport} />
+          <BackupNotice
+            backup={sync.backup}
+            onRestore={sync.restoreBackup}
+            onDismiss={sync.dismissBackup}
+          />
+        </div>
       </section>
 
       <p className="mt-6 text-center text-[12px] leading-relaxed text-inkfaint">

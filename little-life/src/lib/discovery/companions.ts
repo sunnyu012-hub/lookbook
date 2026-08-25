@@ -7,7 +7,10 @@ import type {
   CompanionView,
 } from '@/types'
 import { AREA_IDS } from '@/types'
-import { conditionProgress } from './secrets'
+import { findArea } from '@/lib/rpg/content'
+import { CATEGORY_LABEL } from '@/lib/labels'
+import { conditionProgress, findSecret } from './secrets'
+import { findChapter } from './stories'
 
 /**
  * 같이 지내는 작은 것들.
@@ -231,6 +234,25 @@ export function memoriesOf(id: CompanionId): CompanionMemoryDef[] {
   return COMPANION_MEMORIES.filter((m) => m.companionId === id).sort(
     (a, b) => a.atFriendship - b.atFriendship,
   )
+}
+
+/**
+ * 이 아이를 어떻게 만나는지 한 줄로.
+ *
+ * 안내 화면에서 쓴다. 조건을 손으로 다시 적지 않고 여기서 만들어낸다 —
+ * 적어두면 조건을 바꿨을 때 안내만 옛말이 되고, 그건 없는 것보다 나쁘다.
+ */
+export function meetingLabel(m: CompanionMeeting): string {
+  switch (m.kind) {
+    case 'AREA_ACTIVITY':
+      return `${findArea(m.areaId).name}에서 평판 ${m.count}`
+    case 'CATEGORY_QUESTS':
+      return `${CATEGORY_LABEL[m.category]} 퀘스트 ${m.count}개`
+    case 'SECRET':
+      return `${findSecret(m.secretId)?.name ?? '어딘가'} 찾기`
+    case 'STORY':
+      return `${findChapter(m.chapterId)?.title ?? '어떤 이야기'} 읽기`
+  }
 }
 
 /** 지금 만날 수 있게 된 아이들 (아직 안 만난) */

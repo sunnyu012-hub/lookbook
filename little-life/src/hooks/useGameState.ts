@@ -186,6 +186,17 @@ interface GameState {
   setCurrentRoom: (roomId: RoomId) => void
   /** 지금 방에 걸어둘 공기를 고른다. 세트를 완성해 열린 것 중에서만. */
   setRoomEffect: (effectId: HomeEffectId | null) => void
+  /** 처음 안내를 다 봤다고 적어둔다. 두 번 뜨지 않게. */
+  markGuideSeen: () => void
+  // ── 클라우드 백업 ──
+  /**
+   * 상태 전체를 다른 것으로 갈아 끼운다.
+   *
+   * 클라우드에서 받아온 것을 앉힐 때만 쓴다. 부르는 쪽(useSync)은
+   * 그 전에 반드시 이 기기에 사본을 남긴다 — 여기서는 그걸 확인하지 않는다.
+   * 게임 안의 어떤 버튼도 이걸 부르지 않는다.
+   */
+  replaceState: (next: AppState) => void
 }
 
 export type CollectBuyResult =
@@ -1806,6 +1817,34 @@ export function useGameState(): GameState {
     [commit],
   )
 
+  /**
+   * 처음 안내를 다 봤다.
+   *
+   * 이미 적혀 있으면 덮어쓰지 않는다. 설정에서 다시 열어봤다고 해서
+   * 날짜가 오늘로 밀리면, 이게 "본 적 있는지" 가 아니라
+   * "마지막으로 본 때" 가 돼버린다.
+   */
+  const markGuideSeen = useCallback(() => {
+    const prev = stateRef.current
+    if (prev.guideSeenAt) return
+    commit({ ...prev, guideSeenAt: new Date().toISOString() })
+  }, [commit])
+
+  /**
+   * 상태를 통째로 갈아 끼운다 (클라우드에서 받아올 때만).
+   *
+   * 여기서 보상 계산을 다시 돌리지 않는다. 받아온 건 다른 기기가
+   * 이미 계산을 마친 결과라서, 여기서 한 번 더 돌리면 같은 것을
+   * 두 번 주게 된다. 조건이 새로 채워진 게 있으면 다음에 앱을 열 때
+   * 원래 있던 자리(load effect)에서 한 번에 따라온다.
+   */
+  const replaceState = useCallback(
+    (next: AppState) => {
+      commit(next)
+    },
+    [commit],
+  )
+
   return useMemo(
     () => ({
       ready,
@@ -1857,6 +1896,8 @@ export function useGameState(): GameState {
       removePlaced,
       setCurrentRoom,
       setRoomEffect,
+      markGuideSeen,
+      replaceState,
     }),
     [
       ready,
@@ -1906,6 +1947,8 @@ export function useGameState(): GameState {
       removePlaced,
       setCurrentRoom,
       setRoomEffect,
+      markGuideSeen,
+      replaceState,
     ],
   )
 }

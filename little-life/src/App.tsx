@@ -26,6 +26,8 @@ import { CollectionShopSheet } from '@/components/collection/CollectionShopSheet
 import { DiscoverySheet } from '@/components/discovery/DiscoverySheet'
 import { storyProgress, unreadChapters } from '@/lib/discovery/stories'
 import { StorySheet } from '@/components/discovery/StorySheet'
+import { ConflictSheet } from '@/components/sync/ConflictSheet'
+import { GuideSheet } from '@/components/guide/GuideSheet'
 import { WorkshopSheet } from '@/components/collection/WorkshopSheet'
 import { DiscoveryOverlay } from '@/components/collection/DiscoveryOverlay'
 import { DecorateMode } from '@/components/room/DecorateMode'
@@ -35,6 +37,7 @@ import { DropRevealOverlay } from '@/components/feedback/DropRevealOverlay'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Toast } from '@/components/ui/Toast'
 import { useGameState } from '@/hooks/useGameState'
+import { useSync } from '@/hooks/useSync'
 import { useFeedback } from '@/hooks/useFeedback'
 import { WELCOME_GIFT } from '@/store/migrate'
 import { findArea } from '@/lib/rpg/content'
@@ -102,8 +105,13 @@ export default function App() {
     removePlaced,
     setCurrentRoom,
     setRoomEffect,
+    markGuideSeen,
+    replaceState,
   } = useGameState()
   const feedback = useFeedback()
+
+  // 클라우드 백업. 환경변수가 없으면 아무것도 하지 않고 화면에도 안 나온다.
+  const sync = useSync({ state, ready, onReplace: replaceState })
 
   const [tab, setTab] = useState<TabKey>('home')
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -114,6 +122,30 @@ export default function App() {
   const [openBattleId, setOpenBattleId] = useState<string | null>(null)
   const [hubOpen, setHubOpen] = useState(false)
   const [discoveryOpen, setDiscoveryOpen] = useState(false)
+  const [conflictOpen, setConflictOpen] = useState(false)
+  const [guideOpen, setGuideOpen] = useState(false)
+
+  /**
+   * 처음 여는 사람에게 한 번.
+   *
+   * 동료도 비밀 장소도 "조건을 채우면 알아서 나타나는" 구조라, 그런 게
+   * 있다는 걸 아무도 말해주지 않으면 발견이 아니라 그냥 없는 것이 된다.
+   * 닫으면 본 것으로 치고 다시 조르지 않는다.
+   */
+  useEffect(() => {
+    if (!ready || state.guideSeenAt) return
+    setGuideOpen(true)
+  }, [ready, state.guideSeenAt])
+
+  const closeGuide = useCallback(() => {
+    setGuideOpen(false)
+    markGuideSeen()
+  }, [markGuideSeen])
+  // 갈라진 걸 알아챘으면 한 번은 띄운다. 설정 화면에만 두면
+  // 백업이 멈춰 있는 걸 모른 채로 며칠이 지난다.
+  useEffect(() => {
+    if (sync.status === 'CONFLICT') setConflictOpen(true)
+  }, [sync.status])
   const [storyNpc, setStoryNpc] = useState<NpcDef | null>(null)
   const [openPack, setOpenPack] = useState<QuestPackDef | null>(null)
   const [openNpc, setOpenNpc] = useState<NpcDef | null>(null)
@@ -629,6 +661,9 @@ export default function App() {
             onUnlockSkill={handleUnlockSkill}
             onTogglePersonalized={setPersonalized}
             onResetUsage={resetUsageProfiles}
+            sync={sync}
+            onOpenConflict={() => setConflictOpen(true)}
+            onOpenGuide={() => setGuideOpen(true)}
           />
         )}
       </AppShell>
@@ -786,6 +821,23 @@ export default function App() {
         confirmLabel="지우기"
         onConfirm={confirmRoutineDelete}
         onCancel={() => setPendingRoutineDelete(null)}
+      />
+
+      <GuideSheet
+        open={guideOpen}
+        state={state}
+        firstRun={!state.guideSeenAt}
+        onClose={closeGuide}
+      />
+
+      <ConflictSheet
+        open={conflictOpen && sync.status === 'CONFLICT'}
+        conflict={sync.conflict}
+        onClose={() => setConflictOpen(false)}
+        onKeep={(keep) => {
+          setConflictOpen(false)
+          void sync.resolveConflict(keep)
+        }}
       />
 
       <BattleClearOverlay banner={feedback.battleClear} />

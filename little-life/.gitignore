@@ -11,3 +11,8 @@ assets/source-sheets/*.png
 !assets/source-sheets/trophy.png
 !assets/source-sheets/companions.png
 assets/slices/
+
+# 환경변수 (.env.example 만 저장소에 둔다)
+.env
+.env.local
+.env.*.local
