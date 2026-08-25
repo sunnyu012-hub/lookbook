@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import type { CollectionState, User } from '@/types'
-import { CharacterAvatar } from './CharacterAvatar'
+import { CharacterSkinRenderer } from './CharacterSkinRenderer'
 import { RoomScene } from './RoomScene'
 import { RoomCanvas } from '@/components/room/RoomCanvas'
 import { LevelBadge } from './LevelBadge'
@@ -9,6 +9,7 @@ import type { CharacterMood } from './types'
 import { titleForLevel } from '@/lib/titles'
 import { findRoom } from '@/lib/collection/rooms'
 import { EFFECT } from '@/lib/assets'
+import { findSkin, hasPose } from '@/lib/character/skins'
 
 interface CharacterRoomCardProps {
   user: User
@@ -19,11 +20,15 @@ interface CharacterRoomCardProps {
   overlay?: ReactNode
   onDecorate: () => void
   onOpenCollection: () => void
+  /** 내 모습 고르기 */
+  onOpenLook: () => void
 }
 
 /**
- * 포즈마다 그림 비율이 달라서 자리를 따로 잡아준다.
+ * 자세마다 그림 비율이 달라서 자리를 따로 잡아준다.
  * 앉은 그림은 옆으로 넓고, 서 있는 그림은 세로로 길다.
+ *
+ * 자세 그림이 따로 없는 모습(대부분)은 늘 서 있는 한 장이라 idle 자리를 쓴다.
  */
 const PLACEMENT: Record<CharacterMood, { width: string; bottom: string }> = {
   idle: { width: '38%', bottom: '7%' },
@@ -47,8 +52,13 @@ export function CharacterRoomCard({
   overlay,
   onDecorate,
   onOpenCollection,
+  onOpenLook,
 }: CharacterRoomCardProps) {
-  const place = PLACEMENT[mood]
+  const skin = findSkin(user.selectedSkinId)
+  // 이 자세의 그림이 실제로 따로 있을 때만 그 자세의 자리를 쓴다.
+  // 없으면 서 있는 그림이 나오는데, 앉은 자세 자리에 세우면 너무 커진다.
+  const pose = skin && hasPose(skin, mood) ? mood : 'idle'
+  const place = PLACEMENT[pose]
   const roomId = collection.currentRoomId
   const room = findRoom(roomId)
   const placed = collection.rooms[roomId] ?? []
@@ -66,7 +76,7 @@ export function CharacterRoomCard({
             <RoomCanvas room={room} placed={placed} effect={effect} className="h-full w-full" />
           </div>
         ) : (
-          <RoomScene hideBeanbag={mood === 'resting'} />
+          <RoomScene hideBeanbag={pose === 'resting'} />
         )}
 
         {/* 캐릭터는 바닥 가운데에 선다 */}
@@ -74,7 +84,7 @@ export function CharacterRoomCard({
           className="absolute left-1/2 h-[62%] -translate-x-1/2 transition-[width,bottom] duration-300 ease-out"
           style={{ width: place.width, bottom: place.bottom }}
         >
-          <CharacterAvatar mood={mood} />
+          <CharacterSkinRenderer skinId={user.selectedSkinId} mood={mood} />
         </div>
 
         {(mood === 'questClear' || mood === 'levelUp') && (
@@ -87,6 +97,13 @@ export function CharacterRoomCard({
         )}
 
         <div className="absolute right-2.5 top-2.5 flex gap-1.5">
+          <button
+            type="button"
+            onClick={onOpenLook}
+            className="rounded-pill bg-surface/90 px-3 py-1.5 text-[11.5px] font-medium text-inkdim shadow-soft backdrop-blur-sm active:scale-[0.96]"
+          >
+            모습
+          </button>
           <button
             type="button"
             onClick={onOpenCollection}

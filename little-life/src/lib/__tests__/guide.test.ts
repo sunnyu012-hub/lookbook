@@ -18,10 +18,16 @@ const PUBLIC = path.resolve(__dirname, '../../../public')
  */
 
 describe('안내 장들', () => {
-  it('여덟 장이고 이름이 겹치지 않는다', () => {
+  it('아홉 장이고 이름이 겹치지 않는다', () => {
     const ids = GUIDE_PAGES.map((p) => p.id)
-    expect(ids.length).toBe(8)
+    expect(ids.length).toBe(9)
     expect(new Set(ids).size).toBe(ids.length)
+  })
+
+  it('모습 이야기가 들어 있다', () => {
+    const page = GUIDE_PAGES.find((p) => p.extra === 'SKINS')
+    expect(page).toBeDefined()
+    expect(page?.where).toContain('모습')
   })
 
   it('장마다 제목과 설명이 있다', () => {

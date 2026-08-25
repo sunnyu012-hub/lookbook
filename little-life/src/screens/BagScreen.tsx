@@ -42,6 +42,7 @@ interface BagScreenProps {
   onToggleWishlist: (itemId: string) => void
   onPlace: (itemId: string) => void
   onOpenWorkshop: () => void
+  onOpenLook: () => void
   /** 처음 열 때 도감부터 보여줄지 */
   initialView?: BagView
 }
@@ -60,6 +61,7 @@ export function BagScreen({
   onToggleWishlist,
   onPlace,
   onOpenWorkshop,
+  onOpenLook,
   initialView = 'BAG',
 }: BagScreenProps) {
   const [view, setView] = useState<BagView>(initialView)
@@ -124,6 +126,7 @@ export function BagScreen({
           onToggleWishlist={onToggleWishlist}
           onPlace={onPlace}
           onOpenWorkshop={onOpenWorkshop}
+          onOpenLook={onOpenLook}
         />
       ) : (
       <>

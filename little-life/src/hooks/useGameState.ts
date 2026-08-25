@@ -19,7 +19,9 @@ import type {
   Routine,
   ShopDef,
 } from '@/types'
+import type { BuySkinResult } from '@/lib/character/derive'
 import type {
+  CharacterSkin,
   CollectionShopId,
   CompanionId,
   DiscoveryNote,
@@ -48,6 +50,7 @@ import {
 } from '@/lib/collection/progress'
 import { pendingDelivery } from '@/lib/collection/delivery'
 import { applyDiscovery } from '@/lib/discovery/derive'
+import { applySkinUnlocks, buySkin as buySkinIn, wearSkin } from '@/lib/character/derive'
 import { findChapter, isChapterUnlocked } from '@/lib/discovery/stories'
 import { findSecret } from '@/lib/discovery/secrets'
 import {
@@ -188,6 +191,14 @@ interface GameState {
   setRoomEffect: (effectId: HomeEffectId | null) => void
   /** 처음 안내를 다 봤다고 적어둔다. 두 번 뜨지 않게. */
   markGuideSeen: () => void
+  // ── 캐릭터 모습 ──
+  /** 가진 모습 중 하나를 입는다. 누르는 즉시 바뀌고 즉시 저장된다. */
+  selectSkin: (id: string) => void
+  /** 코인으로 하나 데려온다 */
+  buySkin: (id: string) => BuySkinResult
+  /** 이번에 새로 얻은 모습들 (알려주고 나면 비운다) */
+  newSkins: CharacterSkin[]
+  dismissNewSkins: () => void
   // ── 클라우드 백업 ──
   /**
    * 상태 전체를 다른 것으로 갈아 끼운다.
@@ -468,6 +479,8 @@ export function useGameState(): GameState {
   const rebalancedRef = useRef(0)
   /** 이번에 새로 발견한 것들. 화면에서 읽고 나면 비운다. */
   const [discoveryNotes, setDiscoveryNotes] = useState<DiscoveryNote[]>([])
+  /** 이번에 새로 얻은 캐릭터 모습. 한 번 보여주고 비운다. */
+  const [newSkins, setNewSkins] = useState<CharacterSkin[]>([])
 
   /**
    * 모든 상태 변경은 여기를 지난다. ref 를 먼저 갱신해 연속 클릭에도 최신값을 본다.
@@ -499,8 +512,13 @@ export function useGameState(): GameState {
         // 한 번 더 돌려서 그 자리에서 따라오게 한다 — 안 그러면
         // 다음에 앱을 열 때까지 기다리게 된다.
         const chained = applyCollectionDerived(discovered.state)
+        // 캐릭터 모습도 조건을 기존 기록에서 세기 때문에, 이 업데이트를
+        // 처음 여는 사람에게 그동안의 기록만큼이 그대로 들어온다.
+        // 여기서는 목록에 더하기만 한다 — 입히지는 않는다.
+        const skinned = applySkinUnlocks(chained.state)
         setDiscoveryNotes(discovered.notes)
-        commit(chained.state)
+        if (skinned.unlocked.length > 0) setNewSkins(skinned.unlocked)
+        commit(skinned.state)
         if (gift.given) giftedRef.current = true
       } else if (defaults.current) {
         // 첫 실행이면 샘플 데이터와 선물을 그 자리에서 저장해 둔다.
@@ -756,8 +774,12 @@ export function useGameState(): GameState {
       const discovered = applyDiscovery(derived.state, now)
       // 발견 보상이 도감을 늘리면 마일스톤·세트가 따라 완성될 수 있다
       const chained = applyCollectionDerived(discovered.state, now)
+      // 이번 퀘스트로 조건을 채운 모습이 있으면 같이 챙긴다.
+      // 모습에는 EXP·코인이 없어서 보상 계산에 끼어들지 않는다.
+      const skinned = applySkinUnlocks(chained.state)
       if (discovered.notes.length > 0) setDiscoveryNotes(discovered.notes)
-      commit(chained.state)
+      if (skinned.unlocked.length > 0) setNewSkins(skinned.unlocked)
+      commit(skinned.state)
 
       return {
         gainedExp: reward.exp,
@@ -1817,6 +1839,36 @@ export function useGameState(): GameState {
     [commit],
   )
 
+  // ── 캐릭터 모습 ──────────────────────────────────────
+
+  /**
+   * 입는다.
+   *
+   * 고르기 → 적용 → 저장 같은 단계를 두지 않는다. 누르면 그 자리에서 바뀌고,
+   * 상태가 바뀌면 저장은 알아서 따라온다.
+   */
+  const selectSkin = useCallback(
+    (id: string) => {
+      const prev = stateRef.current
+      const next = wearSkin(prev, id)
+      if (next === prev) return
+      commit(next)
+    },
+    [commit],
+  )
+
+  const buySkin = useCallback(
+    (id: string): BuySkinResult => {
+      const prev = stateRef.current
+      const { state: next, result } = buySkinIn(prev, id)
+      if (result.ok) commit(next)
+      return result
+    },
+    [commit],
+  )
+
+  const dismissNewSkins = useCallback(() => setNewSkins([]), [])
+
   /**
    * 처음 안내를 다 봤다.
    *
@@ -1897,6 +1949,10 @@ export function useGameState(): GameState {
       setCurrentRoom,
       setRoomEffect,
       markGuideSeen,
+      selectSkin,
+      buySkin,
+      newSkins,
+      dismissNewSkins,
       replaceState,
     }),
     [
@@ -1948,6 +2004,10 @@ export function useGameState(): GameState {
       setCurrentRoom,
       setRoomEffect,
       markGuideSeen,
+      selectSkin,
+      buySkin,
+      newSkins,
+      dismissNewSkins,
       replaceState,
     ],
   )

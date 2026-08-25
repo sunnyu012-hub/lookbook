@@ -31,6 +31,7 @@ interface HomeScreenProps {
   onOpenMe: () => void
   onDecorate: () => void
   onOpenCollection: () => void
+  onOpenLook: () => void
   /** 문 앞에 온 것을 받는다 */
   onClaimDelivery: () => void
   /** 이번에 새로 발견한 것 */
@@ -52,6 +53,7 @@ export function HomeScreen({
   onOpenMe,
   onDecorate,
   onOpenCollection,
+  onOpenLook,
   onClaimDelivery,
   discoveryNotes,
   onDismissDiscovery,
@@ -103,6 +105,7 @@ export function HomeScreen({
         collection={state.collection}
         onDecorate={onDecorate}
         onOpenCollection={onOpenCollection}
+        onOpenLook={onOpenLook}
         overlay={<ExpToastLayer toasts={expToasts} />}
       />
 

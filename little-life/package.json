@@ -14,6 +14,7 @@
     "test": "vitest run",
     "assets:extract": "python3 scripts/extract-assets.py",
     "assets:companions": "python3 scripts/extract-companions.py",
+    "assets:skins": "python3 scripts/extract-skins.py",
     "assets:manifest": "vite-node scripts/build-asset-manifest.ts",
     "assets:thumbs": "python3 scripts/build-thumbs.py",
     "assets:audit": "vite-node scripts/audit-assets.ts",

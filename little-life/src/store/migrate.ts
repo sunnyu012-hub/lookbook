@@ -19,6 +19,7 @@ import type {
   Rarity,
   Reputation,
   RoomId,
+  SkinId,
   Stats,
 } from '@/types'
 import {
@@ -47,7 +48,8 @@ import {
 import { findCollectionItem } from '@/lib/collection/catalog'
 import { emptyCollection } from '@/lib/collection/progress'
 import { emptyDiscovery } from '@/lib/discovery/derive'
-import { AUTO_COLLECTION_IDS, COMPANION_IDS, SECRET_IDS } from '@/types'
+import { DEFAULT_SKIN_ID, defaultOwnedSkinIds } from '@/lib/character/skins'
+import { AUTO_COLLECTION_IDS, COMPANION_IDS, SECRET_IDS, SKIN_IDS } from '@/types'
 import { findChapter } from '@/lib/discovery/stories'
 import { findRoom } from '@/lib/collection/rooms'
 
@@ -58,7 +60,7 @@ import { findRoom } from '@/lib/collection/rooms'
  * 없는 항목만 기본값으로 채우고, 있는 값은 손대지 않는다.
  */
 
-export const STATE_VERSION = 10
+export const STATE_VERSION = 11
 
 /** 구매 기록을 며칠치까지 남길지 */
 export const PURCHASE_DAYS_KEPT = 7
@@ -687,6 +689,34 @@ export function grantWelcomeGift(state: AppState, now: Date = new Date()): GiftR
   }
 }
 
+
+/**
+ * 얻어둔 캐릭터 모습.
+ *
+ * 모르는 id 는 버린다 (모습 이름을 바꿨을 수 있다).
+ * 기본 모습은 늘 들어 있다 — 저장된 목록이 비었거나 깨져 있어도
+ * 입을 게 하나도 없는 상태가 되면 안 된다.
+ */
+export function sanitizeOwnedSkins(raw: unknown): SkinId[] {
+  const known = new Set<string>(SKIN_IDS)
+  const saved = Array.isArray(raw)
+    ? raw.filter((v): v is SkinId => typeof v === 'string' && known.has(v))
+    : []
+
+  return [...new Set<SkinId>([...defaultOwnedSkinIds(), ...saved])]
+}
+
+/**
+ * 지금 입고 있는 모습.
+ *
+ * 안 가진 것이나 모르는 것이 저장돼 있으면 기본으로 돌린다.
+ * 그림이 없어서 빈 자리가 뜨는 것보다는 기본 모습이 서 있는 게 낫다.
+ */
+export function sanitizeSelectedSkin(raw: unknown, ownedRaw: unknown): SkinId {
+  const owned = sanitizeOwnedSkins(ownedRaw)
+  if (typeof raw === 'string' && owned.includes(raw as SkinId)) return raw as SkinId
+  return DEFAULT_SKIN_ID
+}
 
 /**
  * 발견 층을 읽어들인다.
