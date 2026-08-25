@@ -22,6 +22,14 @@ import {
   uploadPhoto,
 } from '@/lib/os2/photo'
 import { withTags } from '@/lib/os2/tagging'
+import {
+  type BackfillStamp,
+  CURRENT_STAMP,
+  isPending,
+  pendingLogs,
+  retagOne,
+  runBackfill,
+} from '@/lib/os2/tagging/backfill'
 import { newId } from '@/lib/repositories/base'
 import { todayKey } from '@/lib/date'
 import type { AuthState } from './useSession'
@@ -153,18 +161,65 @@ export function useQuickLogs(authState: AuthState = 'local', myTagNames: readonl
 
   /** Inspector 에서 태그만 고칠 때 — 본문·사진은 건드리지 않는다 */
   const saveLifeTags = useCallback(
-    async (id: string, lifeTags: QuickLog['lifeTags']) => {
+    async (id: string, lifeTags: QuickLog['lifeTags'], stamp?: BackfillStamp) => {
       const next = lifeTags ?? []
       // 화면을 먼저 바꾸고 저장한다. 태그 하나 누를 때마다 기다리게 하지 않는다
-      setLogs((prev) => prev.map((l) => (l.id === id ? { ...l, lifeTags: next } : l)))
+      setLogs((prev) =>
+        prev.map((l) =>
+          l.id === id
+            ? {
+                ...l,
+                lifeTags: next,
+                taggedRuleVersion: stamp?.ruleVersion ?? l.taggedRuleVersion,
+                taggedTaxonomyVersion: stamp?.taxonomyVersion ?? l.taggedTaxonomyVersion,
+              }
+            : l,
+        ),
+      )
       try {
-        await quickLogRepository.setLifeTags(id, next)
+        await quickLogRepository.setLifeTags(id, next, stamp)
       } catch (e) {
         setError(e instanceof Error ? e.message : '태그를 저장하지 못했어요.')
         refresh()
       }
     },
     [refresh],
+  )
+
+  /**
+   * 아직 지금 판으로 태깅하지 않은 기록들.
+   * 세기만 하고 저절로 돌리지는 않는다 — 돌리는 건 사용자가 누를 때다.
+   */
+  const pending = useMemo(() => pendingLogs(logs), [logs])
+
+  /** 설정에서 "예전 기록에 태그 붙이기" 를 눌렀을 때 */
+  const backfillTags = useCallback(
+    (options: { limit?: number; onProgress?: (done: number, total: number) => void } = {}) =>
+      runBackfill(logs, (id, tags, stamp) => saveLifeTags(id, tags, stamp), {
+        myTagNames,
+        ...options,
+      }),
+    [logs, myTagNames, saveLifeTags],
+  )
+
+  /**
+   * 기록 하나를 열어 봤을 때 조용히 다시 태깅한다.
+   * 사용자가 이미 손댄 태그는 retagOne 안에서 지켜진다.
+   * 같은 기록을 두 번 돌리지 않으려고 해 본 것을 기억해 둔다.
+   */
+  const retried = useRef(new Set<string>())
+  const retagOnOpen = useCallback(
+    (id: string) => {
+      if (retried.current.has(id)) return
+      const log = logs.find((l) => l.id === id)
+      // 이미 지금 판으로 붙어 있으면 다시 돌려도 결과가 같다
+      if (!log || !isPending(log)) return
+      retried.current.add(id)
+
+      const next = retagOne(log, myTagNames)
+      void saveLifeTags(id, next ?? log.lifeTags ?? [], CURRENT_STAMP)
+    },
+    [logs, myTagNames, saveLifeTags],
   )
 
   const removeLog = useCallback(async (id: string) => {
@@ -200,6 +255,9 @@ export function useQuickLogs(authState: AuthState = 'local', myTagNames: readonl
     createLog,
     updateLog,
     saveLifeTags,
+    pending,
+    backfillTags,
+    retagOnOpen,
     removeLog,
     refresh,
   }

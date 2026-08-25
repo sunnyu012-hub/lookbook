@@ -7,19 +7,36 @@ import { effects as fx, icons } from '@/lib/pixelAssets'
 import { haptic } from '@/hooks/useHaptic'
 import { cn } from '@/lib/cn'
 import { ExportPanel } from '@/components/settings/ExportPanel'
+import { BackfillPanel } from '@/components/settings/BackfillPanel'
 import type { ExportInput } from '@/lib/export'
+import type { QuickLog } from '@/lib/os2/types'
+import type { BackfillResult } from '@/lib/os2/tagging/backfill'
 
 interface Props {
   prefs: Preferences
   account: string | null
   /** 내보내기에 쓸 전체 기록 */
   exportData: ExportInput
+  /** 아직 지금 사전으로 태그가 안 붙은 Quick Log 들 */
+  pendingTagLogs: QuickLog[]
+  onBackfillTags: (options: {
+    onProgress?: (done: number, total: number) => void
+  }) => Promise<BackfillResult>
   onSave: (next: Preferences) => Promise<unknown>
   onSignOut: () => void
   onClose: () => void
 }
 
-export function SettingsPage({ prefs, account, exportData, onSave, onSignOut, onClose }: Props) {
+export function SettingsPage({
+  prefs,
+  account,
+  exportData,
+  pendingTagLogs,
+  onBackfillTags,
+  onSave,
+  onSignOut,
+  onClose,
+}: Props) {
   const [draft, setDraft] = useState<Preferences>(prefs)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -229,6 +246,8 @@ export function SettingsPage({ prefs, account, exportData, onSave, onSignOut, on
       >
         {saving ? 'Saving…' : saved ? 'Saved!' : 'Save settings'}
       </button>
+
+      <BackfillPanel pending={pendingTagLogs} run={onBackfillTags} />
 
       <ExportPanel data={exportData} />
 

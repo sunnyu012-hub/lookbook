@@ -29,6 +29,8 @@ import { CONFLICT_AXES, conflicts } from '@/lib/os2/tagging/conflicts'
 import { findTerm, makeView, splitClauses } from '@/lib/os2/tagging/normalize'
 import { isNegated } from '@/lib/os2/tagging/negation'
 import { contextOfClause } from '@/lib/os2/tagging/temporal'
+import { pendingLogs, retagOne, runBackfill } from '@/lib/os2/tagging/backfill'
+import type { AppliedLifeTag, QuickLog } from '@/lib/os2/types'
 
 const run = (f: Fixture) =>
   analyze({
@@ -340,5 +342,100 @@ describe('저장할 때 태그 붙이기', () => {
     for (const fixture of ALL_FIXTURES) {
       for (const tag of run(fixture)) expect(tag.source).not.toBe('ai')
     }
+  })
+})
+
+// ─────────────────────────────────────────────
+// 예전 기록에 태그 붙이기
+// ─────────────────────────────────────────────
+
+describe('백필', () => {
+  const makeLog = (over: Partial<QuickLog> = {}): QuickLog => ({
+    id: over.id ?? 'l1',
+    userId: 'u1',
+    mood: 3,
+    text: '클라이밍 갔다',
+    energy: null,
+    focus: null,
+    fatigue: null,
+    photoPath: null,
+    myTagIds: [],
+    lifeTags: [],
+    loggedAt: '2026-08-20T03:00:00.000Z',
+    date: '2026-08-20',
+    dayOfWeek: 4,
+    dayPart: 'morning',
+    schemaVersion: 1,
+    createdAt: '2026-08-20T03:00:00.000Z',
+    updatedAt: '2026-08-20T03:00:00.000Z',
+    ...over,
+  })
+
+  it('아직 안 돌린 기록만 고른다', () => {
+    const old = makeLog({ id: 'a' })
+    const fresh = makeLog({ id: 'b', taggedRuleVersion: 1, taggedTaxonomyVersion: 1 })
+    expect(pendingLogs([old, fresh]).map((l) => l.id)).toEqual(['a'])
+  })
+
+  it('본문이 없는 기록은 건드리지 않는다', () => {
+    expect(pendingLogs([makeLog({ text: null })])).toEqual([])
+    expect(pendingLogs([makeLog({ text: '   ' })])).toEqual([])
+  })
+
+  it('결과가 같으면 다시 쓰지 않는다', () => {
+    const tagged = makeLog({ lifeTags: retag({ mood: 3, text: '클라이밍 갔다' }).lifeTags })
+    expect(retagOne(tagged)).toBeNull()
+  })
+
+  it('사용자가 고친 태그는 백필해도 그대로다', () => {
+    const first = retag({ mood: 3, text: '클라이밍 갔다' })
+    const log = makeLog({ lifeTags: rejectTag(first.lifeTags, 'sport:climbing') })
+
+    const next = retagOne(log) ?? log.lifeTags ?? []
+    expect(next.find((t) => t.tagId === 'sport:climbing')?.userRejected).toBe(true)
+  })
+
+  it('돌린 기록에는 판 번호를 찍어서 두 번 돌지 않게 한다', async () => {
+    const logs = [makeLog({ id: 'a' }), makeLog({ id: 'b', text: '커피 마셨다' })]
+    const saved = new Map<string, AppliedLifeTag[]>()
+
+    const result = await runBackfill(logs, async (id, tags, stamp) => {
+      saved.set(id, tags)
+      const at = logs.findIndex((l) => l.id === id)
+      logs[at] = {
+        ...logs[at],
+        lifeTags: tags,
+        taggedRuleVersion: stamp.ruleVersion,
+        taggedTaxonomyVersion: stamp.taxonomyVersion,
+      }
+    })
+
+    expect(result.updated + result.unchanged).toBe(2)
+    expect(result.failed).toBe(0)
+    expect(pendingLogs(logs)).toEqual([])
+  })
+
+  it('저장이 실패한 기록은 다음에 다시 잡힌다', async () => {
+    const logs = [makeLog({ id: 'a' })]
+    const result = await runBackfill(logs, async () => {
+      throw new Error('네트워크')
+    })
+
+    expect(result.failed).toBe(1)
+    expect(pendingLogs(logs)).toHaveLength(1)
+  })
+
+  it('한 번에 몇 개까지만 돌릴 수 있다', async () => {
+    const logs = ['a', 'b', 'c'].map((id) => makeLog({ id }))
+    let calls = 0
+    await runBackfill(logs, async () => { calls += 1 }, { limit: 2 })
+    expect(calls).toBe(2)
+  })
+
+  it('중간에 멈출 수 있다', async () => {
+    const logs = ['a', 'b', 'c'].map((id) => makeLog({ id }))
+    let calls = 0
+    await runBackfill(logs, async () => { calls += 1 }, { shouldStop: () => calls >= 1 })
+    expect(calls).toBe(1)
   })
 })

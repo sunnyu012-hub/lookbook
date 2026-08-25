@@ -500,6 +500,8 @@ export default function App() {
             weeklyResets: weeklyStore.resets,
             prefs: prefStore.prefs,
           }}
+          pendingTagLogs={quickLogStore.pending}
+          onBackfillTags={quickLogStore.backfillTags}
           onSave={prefStore.save}
           onSignOut={() => void auth.signOut()}
           onClose={() => setSettingsOpen(false)}
@@ -536,6 +538,8 @@ export default function App() {
               onOpenQuickLog={(log) => {
                 setOpenLog(log.id)
                 setOverlay('quicklog')
+                // 사전이 바뀐 뒤 처음 열어 보는 기록이면 조용히 다시 태깅한다
+                quickLogStore.retagOnOpen(log.id)
               }}
             />
           )}
@@ -601,6 +605,8 @@ export default function App() {
               onOpenQuickLog={(log) => {
                 setOpenLog(log.id)
                 setOverlay('quicklog')
+                // 사전이 바뀐 뒤 처음 열어 보는 기록이면 조용히 다시 태깅한다
+                quickLogStore.retagOnOpen(log.id)
               }}
               onEdit={openCheckin}
               onAddEvent={eventStore.save}
