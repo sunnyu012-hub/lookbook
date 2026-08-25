@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { EnergyMode, TabKey } from '@/types'
+import type { TabKey } from '@/types'
+import type { QuickLogInput } from '@/lib/os2/types'
 import { AppShell } from '@/components/layout/AppShell'
 import { AuthGate } from '@/components/AuthGate'
 import { DevTools } from '@/components/DevTools'
@@ -12,11 +13,11 @@ import { MePage } from '@/pages/MePage'
 import { SettingsPage } from '@/pages/SettingsPage'
 import { ArchivePage } from '@/pages/ArchivePage'
 import { NightPage } from '@/pages/NightPage'
+import { QuickLogPage } from '@/pages/QuickLogPage'
 import { LifeTreePage } from '@/pages/LifeTreePage'
 import { LifeBalanceDetail } from '@/pages/LifeBalancePage'
 import { RhythmPage } from '@/pages/RhythmPage'
 import { WeeklyResetPage } from '@/pages/WeeklyResetPage'
-import { QuestBoardPage } from '@/pages/QuestBoardPage'
 import { CollectionPage } from '@/pages/CollectionPage'
 import { ManualPage } from '@/pages/ManualPage'
 import { DayComplete, DayStart } from '@/components/home/DayResult'
@@ -31,10 +32,12 @@ import {
   useWeights,
 } from '@/hooks/useLifeData'
 import { usePreferences } from '@/hooks/usePreferences'
-import { useQuests } from '@/hooks/useQuests'
+import { useQuestLegacy } from '@/hooks/useQuestLegacy'
+import { useQuickLogs } from '@/hooks/useQuickLogs'
+import { useMyTags } from '@/hooks/useMyTags'
 import { useSession } from '@/hooks/useSession'
 import { levelFromXp } from '@/lib/level'
-import { xpBreakdown } from '@/lib/xp'
+import { XP_RULES, xpBreakdown } from '@/lib/xp'
 import { earnedCount, evaluateBadges, markSeen, newlyEarned } from '@/lib/badges'
 import { buildManual } from '@/lib/manual'
 import { discoverPatterns } from '@/lib/analytics'
@@ -43,30 +46,16 @@ import { computeLifeBalance } from '@/lib/analytics/lifeBalance'
 import { buildLifeTree, markTreeSeen, newlyOpened } from '@/lib/analytics/lifeTree'
 import { recoveryCurve } from '@/lib/analytics/recoveryCurve'
 import { todayCapacity } from '@/lib/wellness/capacity'
-import { todayFocus } from '@/lib/quests/dailyFocus'
 import { nextUnlocks } from '@/lib/analytics/nextUnlock'
 import {
   WEEKLY_RESET_XP,
-  activeFocusDomains,
   focusByDate,
   weekStartOf,
   weekSummary,
 } from '@/lib/analytics/weeklyReset'
-import { dayXp } from '@/lib/quests/master'
 import { characters } from '@/lib/pixelAssets'
 import { todayKey } from '@/lib/date'
 import { storageMode } from '@/lib/repository'
-
-/**
- * 지난 날의 결은 되살릴 수 없어서 그때 저장된 mode 로 근사한다.
- * 오늘의 목표를 몇 번 해냈는지 세는 데만 쓴다.
- */
-const capacityOfMode = (mode: EnergyMode | null) => {
-  if (mode === 'RECOVERY') return 'REST' as const
-  if (mode === 'EASY') return 'GENTLE' as const
-  if (mode === 'POWER') return 'OPEN' as const
-  return 'STEADY' as const
-}
 
 interface ToastState {
   title: string
@@ -79,10 +68,12 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   /** 전체 화면으로 덮는 화면들 */
   const [overlay, setOverlay] = useState<
-    'night' | 'quests' | 'collection' | 'manual' | 'tree' | 'rhythm' | 'weekly' | 'balance' | null
+    'night' | 'quicklog' | 'collection' | 'manual' | 'tree' | 'rhythm' | 'weekly' | 'balance' | null
   >(null)
   const [result, setResult] = useState<'start' | 'complete' | null>(null)
   const [editingDate, setEditingDate] = useState<string>(todayKey())
+  /** 상세로 열어 둔 Quick Log */
+  const [openLog, setOpenLog] = useState<string | null>(null)
   const [toast, setToast] = useState<ToastState | null>(null)
 
   const auth = useSession()
@@ -95,6 +86,8 @@ export default function App() {
   const nightStore = useNights(auth.state)
   const tagStore = useEventTags(auth.state)
   const weeklyStore = useWeeklyResets(auth.state)
+  const quickLogStore = useQuickLogs(auth.state)
+  const myTagStore = useMyTags(auth.state)
 
   const todayTags = tagStore.tagsFor(todayKey())
 
@@ -109,19 +102,11 @@ export default function App() {
     [store.today, todayTags, prefStore.prefs.sleepGoalHours],
   )
 
-  /** 지난 주에 "조금 더 챙기고 싶다" 고 고른 영역 */
-  const focusDomains = useMemo(
-    () => activeFocusDomains(weeklyStore.resets),
-    [weeklyStore.resets],
-  )
-
-  const questStore = useQuests(auth.state, {
-    mode: store.today?.mode ?? null,
-    capacity: capacity?.type ?? null,
-    focusDomains,
-    events: todayTags,
-    prefs: prefStore.prefs,
-  })
+  /**
+   * Quest 는 Life OS 2.0 에서 사라졌다. 지난 기록만 읽어서
+   * Life Balance · Life Tree · XP 의 과거 값이 그대로 남게 한다.
+   */
+  const questStore = useQuestLegacy(auth.state)
 
   const patterns = useMemo(
     () =>
@@ -223,71 +208,8 @@ export default function App() {
     return day === 0 || day === 6 || day === 5
   }, [thisWeekReset])
 
-  /** 지금까지 한 번이라도 해본 퀘스트 — "안 해본 것" 목표에 쓴다 */
-  const everDone = useMemo(() => {
-    const set = new Set<string>()
-    for (const [date, day] of Object.entries(questStore.log)) {
-      if (date === todayKey()) continue
-      for (const [id, n] of Object.entries(day.completions)) if (n > 0) set.add(id)
-    }
-    return set
-  }, [questStore.log])
-
-  /** 오늘의 작은 목표 — 날짜마다 바뀐다 */
-  const focus = useMemo(
-    () =>
-      todayFocus({
-        date: todayKey(),
-        capacity: capacity?.type ?? null,
-        completions: questStore.today.completions,
-        customQuests: questStore.customQuests,
-        everDone,
-        morningDone: Boolean(store.today),
-        nightDone: nightStore.byDate.has(todayKey()),
-        taggedToday: todayTags.length > 0,
-      }),
-    [
-      capacity,
-      questStore.today.completions,
-      questStore.customQuests,
-      everDone,
-      store.today,
-      nightStore.byDate,
-      todayTags.length,
-    ],
-  )
-
-  /**
-   * 오늘의 목표를 해낸 날 수 — 지난 날들도 되짚어 센다.
-   * 그날의 결(Capacity)까지 되살릴 수는 없어서 저장된 mode 로 근사한다.
-   */
-  const focusDays = useMemo(() => {
-    let n = 0
-    for (const [date, day] of Object.entries(questStore.log)) {
-      const checkin = store.byDate.get(date)
-      const past = todayFocus({
-        date,
-        capacity: capacityOfMode(checkin?.mode ?? null),
-        completions: day.completions,
-        customQuests: questStore.customQuests,
-        morningDone: Boolean(checkin),
-        nightDone: nightStore.byDate.has(date),
-        taggedToday: (tagStore.log[date] ?? []).length > 0,
-      })
-      if (past.done) n += 1
-    }
-    return n
-  }, [questStore.log, questStore.customQuests, store.byDate, nightStore.byDate, tagStore.log])
-
-  /** 퀘스트 완료 총 횟수 (배지용) */
-  const questsDoneTotal = useMemo(
-    () =>
-      Object.values(questStore.log).reduce(
-        (sum, d) => sum + Object.values(d.completions).reduce((s, n) => s + n, 0),
-        0,
-      ),
-    [questStore.log],
-  )
+  /** 퀘스트 완료 총 횟수 (배지용) — 지난 기록 기준 */
+  const questsDoneTotal = questStore.doneTotal
 
   // XP 는 "적은 행동" 에서만 나온다 (건강 수치가 좋아진 것에는 주지 않는다)
   const xpNoBadges = useMemo(
@@ -302,7 +224,6 @@ export default function App() {
         questXp: questStore.questXp,
         discoveries: patterns.length,
         weeklyResets: weeklyStore.resets.length,
-        focusDays,
       }),
     [
       store.checkins,
@@ -314,7 +235,6 @@ export default function App() {
       questStore.questXp,
       patterns.length,
       weeklyStore.resets.length,
-      focusDays,
     ],
   )
 
@@ -330,7 +250,6 @@ export default function App() {
         questsDone: questsDoneTotal,
         discoveries: patterns.length,
         level: levelFromXp(xpNoBadges.total).level,
-        focusDays,
         weeklyResets: weeklyStore.resets.length,
         treeNodes: lifeTree.discovered,
       }),
@@ -344,7 +263,6 @@ export default function App() {
       questsDoneTotal,
       patterns.length,
       xpNoBadges.total,
-      focusDays,
       weeklyStore.resets.length,
       lifeTree.discovered,
     ],
@@ -438,17 +356,6 @@ export default function App() {
     setTab('life')
   }, [])
 
-  const toggleFavorite = useCallback(
-    (questId: string) => {
-      const current = prefStore.prefs.favoriteQuests ?? []
-      const next = current.includes(questId)
-        ? current.filter((id) => id !== questId)
-        : [...current, questId]
-      void prefStore.save({ ...prefStore.prefs, favoriteQuests: next })
-    },
-    [prefStore],
-  )
-
   const handleTab = (next: TabKey) => {
     setOverlay(null)
     setSettingsOpen(false)
@@ -458,6 +365,27 @@ export default function App() {
   }
 
   const existing = store.byDate.get(editingDate) ?? null
+  const openedLog = useMemo(
+    () => quickLogStore.logs.find((l) => l.id === openLog) ?? null,
+    [quickLogStore.logs, openLog],
+  )
+
+  /**
+   * Quick Log 저장.
+   * 사진만 실패한 경우에도 기록은 이미 저장돼 있다 — 그럴 때만 한 줄 덧붙인다.
+   */
+  const saveQuickLog = useCallback(
+    async (input: QuickLogInput, photo: File | null) => {
+      const result = await quickLogStore.createLog(input, photo)
+      if (!result) return
+      setToast({
+        title: '기록했어요 ✦',
+        detail: result.photoWarning ?? undefined,
+      })
+    },
+    [quickLogStore],
+  )
+
   /** 오늘까지 며칠째인지 — 오늘 기록이 없으면 다음 날짜로 센다 */
   const dayNumber = store.checkins.length + (store.today ? 0 : 1)
 
@@ -495,14 +423,24 @@ export default function App() {
             setResult('complete')
           }}
         />
-      ) : overlay === 'quests' ? (
-        <QuestBoardPage
-          questStore={questStore}
-          prefs={prefStore.prefs}
-          mode={store.today?.mode ?? null}
-          events={todayTags}
-          onFavorite={toggleFavorite}
-          onClose={() => setOverlay(null)}
+      ) : overlay === 'quicklog' && openedLog ? (
+        <QuickLogPage
+          log={openedLog}
+          tagStore={myTagStore}
+          onSave={async (input, photo) => {
+            const result = await quickLogStore.updateLog(openedLog.id, input, photo)
+            if (result?.photoWarning) setToast({ title: '기록했어요 ✦', detail: result.photoWarning })
+          }}
+          onRemove={async () => {
+            await quickLogStore.removeLog(openedLog.id)
+            setOpenLog(null)
+            setOverlay(null)
+            setToast({ title: 'Deleted', detail: '기록을 지웠어요.' })
+          }}
+          onClose={() => {
+            setOpenLog(null)
+            setOverlay(null)
+          }}
         />
       ) : overlay === 'collection' ? (
         <CollectionPage
@@ -577,7 +515,6 @@ export default function App() {
               level={level}
               dayNumber={dayNumber}
               loading={store.loading}
-              questStore={questStore}
               scoreContext={prefStore.scoreContext}
               onStartCheckin={() => openCheckin(todayKey())}
               onOpenLife={openLife}
@@ -586,14 +523,18 @@ export default function App() {
               onSaveEvents={(tags) => tagStore.setForDate(todayKey(), tags)}
               nightDone={nightStore.byDate.has(todayKey())}
               onNight={() => setOverlay('night')}
-              onOpenQuestBoard={() => setOverlay('quests')}
-              onFavoriteQuest={toggleFavorite}
               capacity={capacity}
               curve={curve}
               onOpenRhythm={() => setOverlay('rhythm')}
               weeklyDue={weeklyDue}
               onOpenWeekly={() => setOverlay('weekly')}
-              focus={focus}
+              todayLogs={quickLogStore.todayLogs}
+              tagStore={myTagStore}
+              onSaveQuickLog={saveQuickLog}
+              onOpenQuickLog={(log) => {
+                setOpenLog(log.id)
+                setOverlay('quicklog')
+              }}
             />
           )}
 
@@ -654,6 +595,11 @@ export default function App() {
               weeklyResets={weeklyStore.resets}
               insights={insights}
               prefs={prefStore.prefs}
+              quickLogsFor={quickLogStore.logsFor}
+              onOpenQuickLog={(log) => {
+                setOpenLog(log.id)
+                setOverlay('quicklog')
+              }}
               onEdit={openCheckin}
               onAddEvent={eventStore.save}
               onRemoveEvent={eventStore.remove}
@@ -706,9 +652,7 @@ export default function App() {
           checkin={store.today}
           night={nightStore.byDate.get(todayKey())!}
           dayNumber={dayNumber}
-          questsDone={questStore.doneCount}
-          questTotal={questStore.picks.length}
-          xpEarned={dayXp(questStore.today, questStore.featured, questStore.allQuests) + 10}
+          xpEarned={XP_RULES.morningCheckin + XP_RULES.nightCheckout}
           onClose={() => setResult(null)}
         />
       )}

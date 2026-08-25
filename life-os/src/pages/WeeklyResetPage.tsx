@@ -149,7 +149,7 @@ export function WeeklyResetPage({ summary, existing, onSave, onDone, onClose }: 
         right={<span className="plabel">최대 {MAX_FOCUS_DOMAINS}개</span>}
       >
         <p className="ko mb-2.5 text-inkdim">
-          고른 영역의 퀘스트가 다음 주에 조금 더 자주 보여요. 다른 영역이 사라지진 않아요.
+          고른 영역은 다음 주 Life Balance 에 함께 표시돼요. 다짐이 아니라 표시일 뿐이에요.
         </p>
         <div className="flex flex-wrap gap-1.5">
           {DOMAINS.map((d) => {

@@ -1,15 +1,19 @@
 /**
- * 퀘스트 기록.
+ * LEGACY — Life OS 1.x 의 Quest 기록. 읽기 전용이다.
  *
- * 하루 한 행에 세 가지를 담는다.
- *   picks       그날 골라 둔 퀘스트
- *   completions 퀘스트별 완료 횟수 (반복 퀘스트 때문에 횟수가 필요하다)
- *   questIds    예전 컬럼 — 되돌릴 수 있게 계속 채운다
+ * Life OS 2.0 에서 Quest 는 사라졌지만 이미 쌓인 기록은 지우지 않는다.
+ * Life Balance · Life Tree · XP · Archive 의 과거 값이 여기서 나오기 때문이다.
+ * 지우면 사용자가 보던 숫자가 소급해서 줄어든다.
+ *
+ * 쓰기 함수(setForDate / save / remove)는 일부러 뺐다.
+ * 새 Quest 기록이 생기면 "사라진 기능" 이 조용히 되살아나는 셈이라 그렇게 두지 않는다.
+ * 데이터 자체는 Supabase 의 daily_quests · custom_quests 와
+ * localStorage 의 life-os:quests:v2 · life-os:custom-quests:v1 에 그대로 있다.
  */
-import type { CustomQuestInput, CustomQuestRow } from '@/types'
-import { hasSupabaseConfig, LOCAL_USER_ID } from './env'
+import type { CustomQuestRow } from '@/types'
+import { hasSupabaseConfig } from './env'
 import { supabase } from './supabase'
-import { currentUserId, currentUserIdOrNull, localCollection, newId, nowIso } from './repositories/base'
+import { currentUserId, currentUserIdOrNull, localCollection } from './repositories/base'
 import type { Completions, DayQuests } from './quests/master'
 
 export const QUESTS_TABLE = 'daily_quests'
@@ -39,8 +43,6 @@ function readLocal(): QuestLog {
     return {}
   }
 }
-
-const writeLocal = (log: QuestLog) => localStorage.setItem(LOCAL_KEY, JSON.stringify(log))
 
 interface QuestRow {
   date: string
@@ -78,31 +80,6 @@ export const questRepository = {
     return log
   },
 
-  async setForDate(date: string, day: DayQuests): Promise<void> {
-    if (!hasSupabaseConfig || !supabase) {
-      const log = readLocal()
-      log[date] = day
-      writeLocal(log)
-      return
-    }
-
-    const userId = await currentUserId()
-    const questIds = Object.keys(day.completions).filter((id) => (day.completions[id] ?? 0) > 0)
-
-    const { error } = await supabase.from(QUESTS_TABLE).upsert(
-      {
-        user_id: userId,
-        date,
-        quest_ids: questIds,
-        picks: day.picks,
-        completions: day.completions,
-        updated_at: nowIso(),
-      },
-      { onConflict: 'user_id,date' },
-    )
-
-    if (error) throw new Error(error.message)
-  },
 }
 
 // ─────────────────────────────────────────────
@@ -145,46 +122,5 @@ export const customQuestRepository = {
     return (data as CustomRow[]).map(rowToCustom)
   },
 
-  async save(input: CustomQuestInput): Promise<CustomQuestRow> {
-    if (!supabase) {
-      const next: CustomQuestRow = {
-        ...input,
-        id: `custom-${newId()}`,
-        userId: LOCAL_USER_ID,
-        createdAt: nowIso(),
-      }
-      localCustom.write([next, ...localCustom.all()])
-      return next
-    }
 
-    const userId = await currentUserId()
-    const { data, error } = await supabase
-      .from(CUSTOM_QUESTS_TABLE)
-      .insert({
-        user_id: userId,
-        title: input.title.trim(),
-        category: input.category,
-        difficulty: input.difficulty,
-        is_repeatable: input.isRepeatable,
-      })
-      .select()
-      .single()
-
-    if (error) throw new Error(error.message)
-    return rowToCustom(data as CustomRow)
-  },
-
-  async remove(id: string): Promise<void> {
-    if (!supabase) {
-      localCustom.write(localCustom.all().filter((q) => q.id !== id))
-      return
-    }
-    const userId = await currentUserId()
-    const { error } = await supabase
-      .from(CUSTOM_QUESTS_TABLE)
-      .delete()
-      .eq('user_id', userId)
-      .eq('id', id)
-    if (error) throw new Error(error.message)
-  },
 }

@@ -7,15 +7,15 @@ import { TodayHUD } from '@/components/home/TodayHUD'
 import { HomeTabs, type HomeTab } from '@/components/home/HomeTabs'
 import { StatusView } from '@/components/home/StatusView'
 import { EffectsView } from '@/components/home/EffectsView'
-import { QuestView } from '@/components/home/QuestView'
 import { MyLife, buildLifeModules, type LifeSection } from '@/components/home/MyLife'
 import { EventSheet } from '@/components/home/EventSheet'
 import { CapacityCard } from '@/components/home/CapacityCard'
-import { FocusCard } from '@/components/home/FocusCard'
-import type { DailyFocus } from '@/lib/quests/dailyFocus'
+import { QuickLogEntry } from '@/components/quicklog/QuickLogEntry'
+import { TodayFlow } from '@/components/quicklog/TodayFlow'
+import type { QuickLog, QuickLogInput } from '@/lib/os2/types'
+import type { MyTagStore } from '@/hooks/useMyTags'
 import type { Capacity } from '@/lib/wellness/capacity'
 import type { RecoveryCurve } from '@/lib/analytics/recoveryCurve'
-import type { QuestStore } from '@/hooks/useQuests'
 import { pixelDate, todayKey } from '@/lib/date'
 import { loggingStreak } from '@/lib/xp'
 import { effects as fx, icons, pets } from '@/lib/pixelAssets'
@@ -33,8 +33,6 @@ interface Props {
   /** 밤 마무리를 마쳤는지 */
   nightDone: boolean
   onNight: () => void
-  onOpenQuestBoard: () => void
-  onFavoriteQuest: (questId: string) => void
   checkins: Checkin[]
   weights: WeightLog[]
   mounjaro: MounjaroLog[]
@@ -43,7 +41,6 @@ interface Props {
   level: LevelState
   dayNumber: number
   loading: boolean
-  questStore: QuestStore
   scoreContext?: ScoreContext
   onStartCheckin: () => void
   onOpenLife: (section: LifeSection) => void
@@ -56,8 +53,11 @@ interface Props {
   /** 일요일 저녁에만 슬쩍 뜬다 */
   weeklyDue: boolean
   onOpenWeekly: () => void
-  /** 오늘의 작은 목표 — 매일 바뀐다 */
-  focus: DailyFocus | null
+  /** 오늘 남긴 순간들 */
+  todayLogs: QuickLog[]
+  tagStore: MyTagStore
+  onSaveQuickLog: (input: QuickLogInput, photo: File | null) => Promise<void>
+  onOpenQuickLog: (log: QuickLog) => void
 }
 
 /**
@@ -70,8 +70,6 @@ export function HomePage({
   onSaveEvents,
   nightDone,
   onNight,
-  onOpenQuestBoard,
-  onFavoriteQuest,
   checkins,
   weights,
   mounjaro,
@@ -80,7 +78,6 @@ export function HomePage({
   level,
   dayNumber,
   loading,
-  questStore,
   scoreContext,
   onStartCheckin,
   onOpenLife,
@@ -90,14 +87,17 @@ export function HomePage({
   onOpenRhythm,
   weeklyDue,
   onOpenWeekly,
-  focus,
+  todayLogs,
+  tagStore,
+  onSaveQuickLog,
+  onOpenQuickLog,
 }: Props) {
   /**
-   * 기본 탭은 QUEST 다.
-   * 앱을 켰을 때 "오늘 뭘 하면 되는지" 가 먼저 보여야 한다.
-   * 컨디션 숫자는 이미 위 HUD 와 CAPACITY 가 말해 주고 있다.
+   * Quest 가 사라지면서 기본 탭을 STATUS 로 되돌린다.
+   * Phase 2 에서 Quick Log 가 들어오면 그때 첫 화면을 다시 정한다.
+   * 지금 빈자리를 억지로 채우지 않는다.
    */
-  const [tab, setTab] = useState<HomeTab>('quest')
+  const [tab, setTab] = useState<HomeTab>('status')
   const [eventsOpen, setEventsOpen] = useState(false)
 
   const streak = useMemo(
@@ -157,7 +157,6 @@ export function HomePage({
           injectedToday={injectedToday}
           events={events}
           nightDone={nightDone}
-          questsDone={questStore.doneCount}
           capacity={capacity?.type ?? null}
         />
       </div>
@@ -168,9 +167,16 @@ export function HomePage({
         <>
           <TodayHUD today={today} streak={streak} onStartCheckin={onStartCheckin} />
 
-          <CapacityCard capacity={capacity} curve={curve} onOpenCurve={onOpenRhythm} />
+          {/*
+            Quick Log 는 방 바로 아래에 둔다.
+            앱을 열자마자 "지금 기분" 을 누를 수 있어야 하기 때문이다.
+            방과 HUD 는 그대로 위에 남는다 — Life OS 의 얼굴이라 아래로 밀지 않는다.
+          */}
+          <QuickLogEntry tagStore={tagStore} onSave={onSaveQuickLog} />
 
-          {focus && <FocusCard focus={focus} />}
+          <TodayFlow logs={todayLogs} tagStore={tagStore} onOpen={onOpenQuickLog} />
+
+          <CapacityCard capacity={capacity} curve={curve} onOpenCurve={onOpenRhythm} />
 
           {/* ── 오늘 있었던 일 ── */}
           <section>
@@ -212,15 +218,6 @@ export function HomePage({
               <StatusView today={today} scoreContext={scoreContext} onEdit={onStartCheckin} />
             )}
             {tab === 'effects' && <EffectsView today={today} scoreContext={scoreContext} />}
-            {tab === 'quest' && (
-              <QuestView
-                questStore={questStore}
-                prefs={prefs}
-                onOpenBoard={onOpenQuestBoard}
-                onFavorite={onFavoriteQuest}
-                focus={focus}
-              />
-            )}
           </section>
 
           <MyLife modules={modules} onOpen={onOpenLife} />

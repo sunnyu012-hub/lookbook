@@ -10,6 +10,9 @@ import { MODE_CHARACTER, characters, effects as fx, icons, items as pixelItems }
 import { CATEGORY_META } from '@/lib/lifeCategories'
 import { iconOfTag, tintOfTag } from '@/lib/events'
 import type { LifeDomain } from '@/lib/domains'
+import type { QuickLog } from '@/lib/os2/types'
+import { MOOD_BY_VALUE } from '@/components/quicklog/MoodPicker'
+import { timeOf } from '@/components/quicklog/TodayFlow'
 import { DomainChips } from '@/components/life/LifeBalanceCard'
 
 interface Props {
@@ -27,6 +30,9 @@ interface Props {
   questCount?: number
   /** 그날 기록이 쌓인 영역 */
   domains?: { key: LifeDomain; value: number }[]
+  /** 그날의 Quick Log — Check-in 과 나란히 보여 준다. 대체하지 않는다 */
+  quickLogs?: QuickLog[]
+  onOpenQuickLog?: (log: QuickLog) => void
   onClose: () => void
   onEdit: (date: string) => void
   onDelete: (date: string) => void
@@ -44,6 +50,8 @@ export function DaySheet({
   night = null,
   questCount = 0,
   domains = [],
+  quickLogs = [],
+  onOpenQuickLog,
   onClose,
   onEdit,
   onDelete,
@@ -91,6 +99,32 @@ export function DaySheet({
                 {tag}
               </span>
             ))}
+          </div>
+        )}
+
+        {quickLogs.length > 0 && (
+          <div className="mb-3">
+            <p className="plabel mb-1.5">QUICK LOGS</p>
+            <ul className="space-y-1">
+              {quickLogs.map((log) => (
+                <li key={log.id}>
+                  <button
+                    type="button"
+                    disabled={!onOpenQuickLog}
+                    onClick={() => onOpenQuickLog?.(log)}
+                    className="press flex w-full items-start gap-2 rounded-px3 bg-cream px-2 py-1.5 text-left disabled:opacity-100"
+                  >
+                    <span className="text-[16px] leading-none" aria-hidden>
+                      {MOOD_BY_VALUE[log.mood].emoji}
+                    </span>
+                    <span className="plabel shrink-0">{timeOf(log.loggedAt)}</span>
+                    {log.text && (
+                      <span className="min-w-0 flex-1 truncate text-[12.5px]">{log.text}</span>
+                    )}
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 

@@ -39,8 +39,6 @@ interface Props {
   events?: string[]
   /** 밤 마무리를 마쳤는지 */
   nightDone?: boolean
-  /** 오늘 완료한 퀘스트 수 */
-  questsDone?: number
   capacity?: CapacityType | null
   className?: string
 }
@@ -52,15 +50,14 @@ export function RoomStage({
   injectedToday = false,
   events,
   nightDone,
-  questsDone,
   capacity,
   className,
 }: Props) {
   const time = useMemo(() => timeOfDay(), [])
   const scene = useMemo(
     () =>
-      buildScene({ checkin, mode, prefs, injectedToday, events, nightDone, questsDone, time, capacity }),
-    [checkin, mode, prefs, injectedToday, events, nightDone, questsDone, time, capacity],
+      buildScene({ checkin, mode, prefs, injectedToday, events, nightDone, time, capacity }),
+    [checkin, mode, prefs, injectedToday, events, nightDone, time, capacity],
   )
 
   return (

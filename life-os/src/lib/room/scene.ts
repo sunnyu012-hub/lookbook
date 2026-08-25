@@ -126,8 +126,6 @@ export interface SceneInput {
   events?: string[]
   /** 밤 마무리를 마쳤는지 */
   nightDone?: boolean
-  /** 오늘 완료한 퀘스트 수 */
-  questsDone?: number
   /** 지금 시간대 */
   time?: TimeOfDay
   /** 오늘의 결 — 점수만으로는 안 잡히는 결을 방에 반영한다 */
@@ -180,9 +178,6 @@ export function pickCharacter(input: SceneInput): CharacterPick {
   }
   if (has('야근') || has('집중 업무') || ((c?.focus ?? 0) >= 4 && (has('출근') || has('재택')))) {
     return { state: 'working', anchor: 'desk', height: 35, motion: 'breathe', note: '일하는 중' }
-  }
-  if ((input.questsDone ?? 0) >= 10) {
-    return { state: 'happy', anchor: 'rug', height: 37, motion: 'hop', note: '퀘스트를 많이 해낸 날' }
   }
 
   // 3. 밤 / 시간대

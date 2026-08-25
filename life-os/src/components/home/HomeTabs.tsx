@@ -3,12 +3,11 @@ import { haptic } from '@/hooks/useHaptic'
 import { icons, type PixelAsset } from '@/lib/pixelAssets'
 import { cn } from '@/lib/cn'
 
-export type HomeTab = 'status' | 'effects' | 'quest'
+export type HomeTab = 'status' | 'effects'
 
 const TABS: { key: HomeTab; label: string; ko: string; icon: PixelAsset; tint: string }[] = [
   { key: 'status', label: 'Status', ko: '오늘의 컨디션', icon: icons.mood, tint: '#FDE7EC' },
   { key: 'effects', label: 'Effects', ko: '현재 상태 효과', icon: icons.energy, tint: '#FDF4D6' },
-  { key: 'quest', label: 'Quest', ko: '오늘의 미션', icon: icons.xp, tint: '#FDEBDC' },
 ]
 
 /** 셋을 세로로 다 펼치지 않는다 — 하나만 골라서 본다 */

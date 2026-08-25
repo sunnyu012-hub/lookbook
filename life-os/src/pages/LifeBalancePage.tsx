@@ -79,11 +79,11 @@ export function LifeBalanceDetail({
         </p>
         <ul className="space-y-1.5 text-[12.5px]">
           {[
-            '완료한 퀘스트',
             '오늘 있었던 일 태그',
             '아침 기록 · 밤 마무리',
             '직접 적어 둔 순간',
             '주간 돌아보기에서 고른 영역',
+            '지난 퀘스트 기록 (Life OS 1.x)',
           ].map((line) => (
             <li key={line} className="flex items-center gap-2">
               <span className="text-inkfaint">·</span>

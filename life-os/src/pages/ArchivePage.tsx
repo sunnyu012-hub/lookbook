@@ -37,6 +37,7 @@ import { cn } from '@/lib/cn'
 import type { DayQuests } from '@/lib/quests/master'
 import type { Quest } from '@/lib/quests/types'
 import type { Insight } from '@/lib/analytics/insightEntity'
+import type { QuickLog } from '@/lib/os2/types'
 import { todayDomains } from '@/lib/analytics/lifeBalance'
 
 type View = 'calendar' | 'timeline' | 'explore'
@@ -74,6 +75,9 @@ interface Props {
   weeklyResets: WeeklyReset[]
   insights: Insight[]
   prefs: Preferences
+  /** 날짜별 Quick Log — Check-in 과 함께 보여 준다 */
+  quickLogsFor: (date: string) => QuickLog[]
+  onOpenQuickLog: (log: QuickLog) => void
   onEdit: (date: string) => void
   onDelete: (date: string) => Promise<void>
   onAddEvent: (input: LifeEventInput) => Promise<unknown>
@@ -437,6 +441,8 @@ export function ArchivePage(props: Props) {
           tags={props.eventLog[selected] ?? []}
           night={props.nightsByDate.get(selected) ?? null}
           questCount={countQuests(props.questLog[selected])}
+          quickLogs={props.quickLogsFor(selected)}
+          onOpenQuickLog={props.onOpenQuickLog}
           domains={todayDomains(selected, archiveInput)}
           onClose={() => setSelected(null)}
           onEdit={(date) => {
