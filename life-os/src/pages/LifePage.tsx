@@ -41,6 +41,9 @@ interface Props {
   onRemoveDday: (id: string) => Promise<void>
   onOpenLog: () => void
   onOpenSettings: () => void
+  /** 최근 기록 수 — My Rhythm 한 줄에 쓴다 */
+  quickLogDays: number
+  onOpenRhythm: () => void
 }
 
 /**
@@ -64,6 +67,8 @@ export function LifePage({
   onRemoveDday,
   onOpenLog,
   onOpenSettings,
+  quickLogDays,
+  onOpenRhythm,
 }: Props) {
   if (section) {
     return (
@@ -124,6 +129,8 @@ export function LifePage({
       ddays={ddays}
       onSection={onSection}
       onOpenSettings={onOpenSettings}
+      quickLogDays={quickLogDays}
+      onOpenRhythm={onOpenRhythm}
     />
   )
 }
@@ -144,6 +151,8 @@ function Hub({
   ddays,
   onSection,
   onOpenSettings,
+  quickLogDays,
+  onOpenRhythm,
 }: {
   prefs: Preferences
   checkins: Checkin[]
@@ -152,6 +161,8 @@ function Hub({
   ddays: DdayEvent[]
   onSection: (section: LifeTab) => void
   onOpenSettings: () => void
+  quickLogDays: number
+  onOpenRhythm: () => void
 }) {
   const today = todayKey()
   const modules = buildLifeModules({ prefs, checkins, weights, mounjaro, ddays })
@@ -229,6 +240,31 @@ function Hub({
           Settings
         </button>
       </header>
+
+      {/*
+        My Rhythm 은 위 목록과 성격이 다르다.
+        위는 하나씩 넘겨 보는 기록장이고 이건 그 기록들에서 나온 숫자다.
+        그래서 줄을 나눠 뒀다.
+      */}
+      <button
+        type="button"
+        onClick={() => {
+          haptic()
+          onOpenRhythm()
+        }}
+        className="press flex w-full items-center gap-3 rounded-px4 border-[1.5px] border-border bg-skysoft px-3.5 py-3 text-left shadow-hard"
+      >
+        <PixelImage asset={icons.mood} height={24} />
+        <span className="min-w-0 flex-1">
+          <span className="block text-[13.5px] font-medium leading-tight">My rhythm</span>
+          <span className="mt-1 block truncate text-[11.5px] leading-tight text-inkdim">
+            {quickLogDays >= 3
+              ? `${quickLogDays}일치 기록에서 시간대별 흐름을 봐요`
+              : '기록이 조금 더 쌓이면 볼 수 있어요'}
+          </span>
+        </span>
+        <span className="text-[12px] text-inkfaint">›</span>
+      </button>
 
       <ul className="space-y-2">
         {rows.map((row) => (

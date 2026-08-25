@@ -12,6 +12,7 @@ import { LifePage, type LifeTab } from '@/pages/LifePage'
 import { MePage } from '@/pages/MePage'
 import { SettingsPage } from '@/pages/SettingsPage'
 import { LearningPage } from '@/pages/LearningPage'
+import { MyRhythmPage } from '@/pages/MyRhythmPage'
 import { ArchivePage } from '@/pages/ArchivePage'
 import { NightPage } from '@/pages/NightPage'
 import { QuickLogPage } from '@/pages/QuickLogPage'
@@ -79,6 +80,7 @@ export default function App() {
     | 'weekly'
     | 'balance'
     | 'learning'
+    | 'myrhythm'
     | null
   >(null)
   const [result, setResult] = useState<'start' | 'complete' | null>(null)
@@ -468,6 +470,13 @@ export default function App() {
           memories={eventStore.events.map((e) => ({ date: e.date, title: e.title }))}
           onClose={() => setOverlay(null)}
         />
+      ) : overlay === 'myrhythm' ? (
+        <MyRhythmPage
+          logs={quickLogStore.logs}
+          checkins={store.checkins}
+          myTags={myTagStore.active}
+          onClose={() => setOverlay(null)}
+        />
       ) : overlay === 'learning' ? (
         <LearningPage store={learningStore} onClose={() => setOverlay(null)} />
       ) : overlay === 'manual' ? (
@@ -599,6 +608,8 @@ export default function App() {
               onRemoveDday={ddayStore.remove}
               onOpenLog={() => setTab('log')}
               onOpenSettings={() => setSettingsOpen(true)}
+              quickLogDays={quickLogStore.byDate.size}
+              onOpenRhythm={() => setOverlay('myrhythm')}
             />
           )}
 
