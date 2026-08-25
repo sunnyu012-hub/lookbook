@@ -56,7 +56,14 @@ export function CharacterSkinRenderer({
     setSrc((current) => (current === backup ? CHARACTER.idle : backup))
   }
 
-  return (
+  // 자를 때 발끝과 키를 이미 맞춰뒀기 때문에 보통은 손볼 게 없다.
+  // 한 장만 유난할 때 정의에서 바로잡는다 — 화면 컴포넌트마다
+  // margin 을 따로 주기 시작하면 어디서 어긋났는지 못 찾는다.
+  const nudged =
+    def !== null &&
+    (def.scale !== undefined || def.offsetX !== undefined || def.offsetY !== undefined)
+
+  const image = (
     <img
       // key 를 바꿔야 자세가 바뀔 때 폴짝 뛰는 움직임이 처음부터 다시 돈다
       key={`${skinId}:${mood}`}
@@ -67,9 +74,23 @@ export function CharacterSkinRenderer({
       className={cn(
         'h-full w-full select-none object-contain object-bottom',
         animated && ANIMATION[mood],
-        className,
+        !nudged && className,
       )}
       style={{ transformOrigin: 'bottom center' }}
     />
+  )
+
+  if (!nudged || !def) return image
+
+  return (
+    <span
+      className={cn('block', className)}
+      style={{
+        transform: `translate(${def.offsetX ?? 0}%, ${def.offsetY ?? 0}%) scale(${def.scale ?? 1})`,
+        transformOrigin: 'bottom center',
+      }}
+    >
+      {image}
+    </span>
   )
 }

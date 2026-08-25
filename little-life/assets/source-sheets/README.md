@@ -85,7 +85,12 @@ npm run assets:audit      # 빠진 것 · 깨진 경로 · 중복 점검
 npm run assets:skins   # → public/assets/characters/<스킨id>.webp
 ```
 
-1차 세 장은 **배경이 흰색**이다 (다른 시트는 투명). `scripts/extract-skins.py` 가
+### 1차 — 일상 (저장소에 있음)
+
+1차 세 장도 투명 배경이다. 아래 설명은 흰 배경 시트가 들어올 때를 위한 것이다.
+`scripts/extract-skins.py` 는 파일을 보고 알아서 정한다.
+
+원래 흰 배경 시트라면 (다른 시트는 투명). `scripts/extract-skins.py` 가
 "가장자리와 이어진 흰색" 만 지운다 — 크림색 후드와 흰 양말은 윤곽선에 둘러싸여 있어서
 가장자리와 이어지지 않기 때문에 살아남는다. 전체를 밝기로 자르면 그것들까지 사라진다.
 
@@ -93,6 +98,6 @@ npm run assets:skins   # → public/assets/characters/<스킨id>.webp
 같은 크기 캔버스에 올린다. 그래서 화면에서는 그냥 같은 크기로 그리면 몸 크기가 맞는다.
 우산이나 등불처럼 머리 위로 솟은 건 위쪽 여백에 그대로 들어간다.
 
-시트를 넣기 전까지는 그 모습들이 원래 캐릭터 그림으로 대신 나온다
+시트가 없으면 그 모습들이 원래 캐릭터 그림으로 대신 나온다
 (`CharacterSkinRenderer` 의 fallback). 깨진 그림 아이콘은 안 뜬다.
 잘라낸 뒤 `?dev=skins` 로 나란히 놓고 크기를 검수한다.

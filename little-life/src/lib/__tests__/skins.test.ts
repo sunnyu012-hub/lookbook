@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs'
+import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { AppState } from '@/types'
 import { SKIN_IDS } from '@/types'
@@ -96,6 +98,19 @@ describe('열두 모습', () => {
       if (skin.unlock.kind === 'DEFAULT') continue
       expect(skin.hint).not.toMatch(/\d/)
     }
+  })
+
+  it('스물네 장이 실제로 다 있다', () => {
+    const pub = path.resolve(__dirname, '../../../public')
+    const missing = SKINS.filter((s) => !existsSync(path.join(pub, `assets/characters/${s.id}.webp`)))
+    expect(missing.map((s) => s.id)).toEqual([])
+  })
+
+  it('보정값은 기본이 없다 — 자를 때 이미 맞춰뒀다', () => {
+    const nudged = SKINS.filter(
+      (s) => s.scale !== undefined || s.offsetX !== undefined || s.offsetY !== undefined,
+    )
+    expect(nudged.map((s) => s.id)).toEqual([])
   })
 
   it('그림 경로는 한 곳에서만 만든다', () => {

@@ -82,13 +82,11 @@ def sheet_alpha(image):
     """
     rgba = np.asarray(image.convert("RGBA"))
     alpha = rgba[..., 3]
-    edge = max(
-        int(alpha[0].max()),
-        int(alpha[-1].max()),
-        int(alpha[:, 0].max()),
-        int(alpha[:, -1].max()),
-    )
-    if edge < 24:
+    border = np.concatenate([alpha[0], alpha[-1], alpha[:, 0], alpha[:, -1]])
+    # 제일 밝은 한 점으로 보면 안 된다. 투명 배경 시트에도 테두리에
+    # 반쯤 살아 있는 점 하나쯤은 남아 있고, 그것 때문에 흰 배경으로 오해한다.
+    # 테두리가 거의 다 비어 있으면 투명 배경이다.
+    if float((border > 24).mean()) < 0.01:
         return alpha.copy(), "투명"
     return cut_background(image.convert("RGB")), "흰 배경"
 
