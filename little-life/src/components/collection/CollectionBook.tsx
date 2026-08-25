@@ -5,7 +5,7 @@ import { ProgressBar } from '@/components/ui/ProgressBar'
 import { SectionHeader } from '@/components/layout/ScreenHeader'
 import { ItemIcon } from './ItemIcon'
 import { ItemDetailSheet } from './ItemDetailSheet'
-import { CATALOG, CATALOG_CATEGORIES, TROPHY_CATALOG, hasHiddenLeft } from '@/lib/collection/catalog'
+import { CATALOG, CATALOG_CATEGORIES, CROP_CATALOG, TROPHY_CATALOG, hasHiddenLeft } from '@/lib/collection/catalog'
 import { COLLECTION_SETS } from '@/lib/collection/sets'
 import { TROPHIES } from '@/lib/collection/trophies'
 import { collectionProgress, isDiscovered, isSeen, ownedCount, setProgress } from '@/lib/collection/progress'
@@ -23,7 +23,7 @@ import { cn } from '@/components/ui/cn'
  * 다만 못 만난 칸에도 갈 곳은 알려준다. "어디선가" 로 끝나면 그건 힌트가 아니다.
  */
 
-type Tab = CollectionCategory | 'ALL' | 'TROPHY_TAB' | 'SETS'
+type Tab = CollectionCategory | 'ALL' | 'TROPHY_TAB' | 'SETS' | 'CROPS'
 
 const PAGE = 60
 
@@ -52,6 +52,8 @@ export function CollectionBook({
 
   const items = useMemo(() => {
     if (tab === 'TROPHY_TAB') return TROPHY_CATALOG
+    // 작물은 240칸에 안 들어간다. 여기서 자기 칸을 따로 가진다.
+    if (tab === 'CROPS') return CROP_CATALOG
     if (tab === 'ALL') return CATALOG
     if (tab === 'SETS') return []
     return CATALOG.filter((i) => i.category === tab)
@@ -66,6 +68,7 @@ export function CollectionBook({
 
   const skinProgress = useMemo(() => skinCollectionProgress(state), [state])
   const trophyFound = TROPHY_CATALOG.filter((t) => isDiscovered(collection, t.id)).length
+  const cropFound = CROP_CATALOG.filter((c) => isDiscovered(collection, c.id)).length
   const setsDone = COLLECTION_SETS.filter((s) => setProgress(s, collection).complete).length
 
   return (
@@ -97,6 +100,9 @@ export function CollectionBook({
           </span>
           <span className="rounded-pill bg-sunken px-2.5 py-1">
             세트 {setsDone} / {COLLECTION_SETS.length}
+          </span>
+          <span className="rounded-pill bg-sunken px-2.5 py-1">
+            작물 {cropFound} / {CROP_CATALOG.length}
           </span>
         </div>
       </Card>
@@ -136,6 +142,9 @@ export function CollectionBook({
           ))}
           <Chip on={tab === 'TROPHY_TAB'} onClick={() => switchTab('TROPHY_TAB')}>
             트로피
+          </Chip>
+          <Chip on={tab === 'CROPS'} onClick={() => switchTab('CROPS')}>
+            작물
           </Chip>
           <Chip on={tab === 'SETS'} onClick={() => switchTab('SETS')}>
             세트

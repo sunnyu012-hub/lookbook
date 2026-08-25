@@ -331,6 +331,8 @@ export interface TrophyContext {
   bossClears: number
   completedSetIds: string[]
   discoveredCount: number
+  /** 정원을 못 찾았으면 0 */
+  gardenLevel: number
 }
 
 export function trophyEarned(trophy: TrophyDef, ctx: TrophyContext): boolean {
@@ -345,6 +347,8 @@ export function trophyEarned(trophy: TrophyDef, ctx: TrophyContext): boolean {
       return ctx.discoveredCount >= trophy.condition.count
     case 'SET_COMPLETE':
       return ctx.completedSetIds.includes(trophy.condition.setId)
+    case 'GARDEN_LEVEL':
+      return ctx.gardenLevel >= trophy.condition.level
     default:
       return false
   }

@@ -473,6 +473,7 @@ describe('트로피와 도감 보상', () => {
       bossClears: 0,
       completedSetIds: [],
       discoveredCount: 0,
+      gardenLevel: 0,
     })
     expect(trophies.map((t) => t.id)).toContain('first_step')
   })
@@ -485,6 +486,7 @@ describe('트로피와 도감 보상', () => {
       bossClears: 0,
       completedSetIds: [],
       discoveredCount: 0,
+      gardenLevel: 0,
     })
     expect(trophies.map((t) => t.id)).not.toContain('first_step')
   })
@@ -497,6 +499,7 @@ describe('트로피와 도감 보상', () => {
       bossClears: 0,
       completedSetIds: [],
       discoveredCount: 0,
+      gardenLevel: 0,
     })
     const ids = trophies.map((t) => t.id)
     expect(ids).toContain('work_master')

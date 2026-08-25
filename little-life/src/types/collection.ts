@@ -265,6 +265,8 @@ export type TrophyCondition =
   | { kind: 'BOSS_CLEARS'; count: number }
   | { kind: 'COLLECTION'; count: number }
   | { kind: 'SET_COMPLETE'; setId: string }
+  /** 정원이 이만큼 넓어지면 */
+  | { kind: 'GARDEN_LEVEL'; level: number }
 
 export interface TrophyDef {
   id: string

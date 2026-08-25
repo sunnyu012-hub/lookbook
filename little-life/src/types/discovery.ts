@@ -23,6 +23,9 @@ export const AUTO_COLLECTION_IDS = [
   'LITTLE_EXPLORER',
   'SOCIAL_SPARK',
   'WEEKEND_WANDERER',
+  'GREEN_THUMB',
+  'LITTLE_FARMER',
+  'GARDEN_KEEPER',
 ] as const
 export type AutoCollectionId = (typeof AUTO_COLLECTION_IDS)[number]
 
@@ -43,6 +46,12 @@ export type AutoCondition =
   | { kind: 'WEEKEND_DAYS' }
   /** 도시 사람들과 얼마나 지냈는지 (친밀도 합) */
   | { kind: 'FRIENDSHIP_TOTAL' }
+  /** 정원에서 몇 번이나 거뒀는지 */
+  | { kind: 'CROPS_HARVESTED' }
+  /** 몇 가지 작물을 거둬봤는지 */
+  | { kind: 'CROPS_DISCOVERED' }
+  /** 정원이 몇 단계까지 넓어졌는지 (못 찾았으면 0) */
+  | { kind: 'GARDEN_LEVEL' }
 
 export interface AutoCollectionDef {
   id: AutoCollectionId

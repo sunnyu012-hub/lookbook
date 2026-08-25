@@ -31,6 +31,10 @@ import { GuideSheet } from '@/components/guide/GuideSheet'
 import { MyLookSheet } from '@/components/character/MyLookSheet'
 import { NewSkinOverlay } from '@/components/character/NewSkinOverlay'
 import { SkinGallery } from '@/components/character/SkinGallery'
+import { GardenScreen } from '@/components/garden/GardenScreen'
+import { gardenLevel, gardenXp, isGardenUnlocked } from '@/lib/garden/derive'
+import { GardenLab } from '@/components/garden/GardenLab'
+import type { HarvestNote } from '@/components/garden/HarvestOverlay'
 import { WorkshopSheet } from '@/components/collection/WorkshopSheet'
 import { DiscoveryOverlay } from '@/components/collection/DiscoveryOverlay'
 import { DecorateMode } from '@/components/room/DecorateMode'
@@ -114,6 +118,11 @@ export default function App() {
     devGrantAllSkins,
     newSkins,
     dismissNewSkins,
+    enterGarden,
+    plantSeed,
+    harvestPlot,
+    useDew,
+    devGarden: runDevGarden,
     replaceState,
   } = useGameState()
   const feedback = useFeedback()
@@ -133,13 +142,16 @@ export default function App() {
   const [conflictOpen, setConflictOpen] = useState(false)
   const [guideOpen, setGuideOpen] = useState(false)
   const [lookOpen, setLookOpen] = useState(false)
+  const [gardenOpen, setGardenOpen] = useState(false)
 
   /**
    * 개발용 갤러리. 주소에 ?dev=skins 를 붙였을 때만.
    * 화면 어디에도 들어가는 길을 두지 않는다 — 검수용이다.
    */
-  const devGallery =
-    typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('dev') === 'skins'
+  const devParam =
+    typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('dev')
+  const devGallery = devParam === 'skins'
+  const devGarden = devParam === 'garden'
 
   /**
    * 처음 여는 사람에게 한 번.
@@ -175,6 +187,12 @@ export default function App() {
 
   // 오늘의 이벤트는 저장하지 않고 날짜에서 계산한다. 한 번만 구해서 화면 전체가 같은 걸 본다.
   const events = useMemo(() => activeEvents(), [])
+
+  // 정원을 못 찾았으면 0. 도시 사람들이 그 얘기를 먼저 꺼내지 않게.
+  const gardenTalkLevel = useMemo(
+    () => (isGardenUnlocked(state) ? gardenLevel(gardenXp(state.garden)) : 0),
+    [state],
+  )
 
   const equippedIds = useMemo(
     () => new Set(Object.values(state.user.equippedItems).filter((v): v is string => v !== null)),
@@ -581,6 +599,10 @@ export default function App() {
     return <SkinGallery state={state} onGrantAll={devGrantAllSkins} onWear={selectSkin} />
   }
 
+  if (devGarden) {
+    return <GardenLab state={state} onRun={runDevGarden} />
+  }
+
   return (
     <>
       <AppShell
@@ -617,7 +639,8 @@ export default function App() {
           discoveryNotes={discoveryNotes}
           onDismissDiscovery={dismissDiscoveryNotes}
           onOpenDiscovery={() => setDiscoveryOpen(true)}
-          onOpenCollection={() => {
+            onOpenGarden={() => setGardenOpen(true)}
+            onOpenCollection={() => {
               setBagView('BOOK')
               setTab('bag')
             }}
@@ -655,6 +678,7 @@ export default function App() {
             onOpenShop={handleOpenShopForArea}
             onOpenCollectionShop={setOpenCollectionShop}
             onOpenWorkshop={() => setWorkshopOpen(true)}
+            onOpenGarden={() => setGardenOpen(true)}
           />
         )}
         {tab === 'bag' && (
@@ -738,6 +762,7 @@ export default function App() {
       />
 
       <NpcSheet
+        gardenLevel={gardenTalkLevel}
         npc={openNpc}
         npcState={(openNpc && state.npcs[openNpc.id]) || emptyNpcState()}
         quests={state.quests}
@@ -843,6 +868,38 @@ export default function App() {
         confirmLabel="지우기"
         onConfirm={confirmRoutineDelete}
         onCancel={() => setPendingRoutineDelete(null)}
+      />
+
+      <GardenScreen
+        open={gardenOpen}
+        state={state}
+        onClose={() => setGardenOpen(false)}
+        onEnter={enterGarden}
+        onPlant={(plotIndex, cropId) => {
+          const result = plantSeed(plotIndex, cropId)
+          if (!result.ok) {
+            feedback.notify(result.reason === 'NO_SEED' ? '그 씨앗이 없어' : '지금은 못 심어')
+            return false
+          }
+          feedback.notify(`${result.crop.name} 씨앗을 심었어 🌱`)
+          return true
+        }}
+        onHarvest={(plotIndex): HarvestNote | null => {
+          const result = harvestPlot(plotIndex)
+          if (!result.ok) return null
+          return {
+            crop: result.crop,
+            count: result.count,
+            isNew: result.isNew,
+            leveledUp: result.leveledUp,
+          }
+        }}
+        onUseDew={useDew}
+        onOpenBook={() => {
+          setBagView('BOOK')
+          setTab('bag')
+        }}
+        onNotify={feedback.notify}
       />
 
       <MyLookSheet

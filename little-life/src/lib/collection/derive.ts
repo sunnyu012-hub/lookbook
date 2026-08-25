@@ -4,6 +4,7 @@ import { addItem, discoveredCount, completedSetIds, newMilestones, newTrophies, 
 import { claimableGoals, goalKey } from '@/lib/goals'
 import { pendingGrants } from './grants'
 import { findCollectionItem } from './catalog'
+import { gardenLevel, gardenXp } from '@/lib/garden/derive'
 
 /**
  * 가진 것이 바뀔 때마다 따라오는 것들.
@@ -87,6 +88,8 @@ export function applyCollectionDerived(
       bossClears: current.bossClears,
       completedSetIds: completedSetIds(current.collection),
       discoveredCount: discoveredCount(current.collection),
+      // 정원을 못 찾았으면 0 — 정원 트로피는 후보에도 안 든다
+      gardenLevel: current.garden.unlockedAt ? gardenLevel(gardenXp(current.garden)) : 0,
     })
     for (const trophy of trophies) {
       const added = addItem(current.collection, trophy.itemId, now)

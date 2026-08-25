@@ -43,6 +43,14 @@ export interface NpcDialogue {
   band?: import('./rpg').TimeBand
   /** 이 이벤트가 열린 날에만 나온다 */
   eventId?: string
+  /**
+   * 정원이 이만큼 열렸을 때만 나온다.
+   *
+   * 1 은 "정원을 찾았을 때", 2·3 은 그만큼 넓어졌을 때다.
+   * 아직 못 찾았으면 0 이라, 이 줄들은 아예 후보에도 안 든다 —
+   * 있는 줄도 모르는 곳 얘기를 먼저 꺼내면 그건 힌트가 아니라 스포일러다.
+   */
+  minGardenLevel?: number
 }
 
 export interface NpcQuestStepDef {

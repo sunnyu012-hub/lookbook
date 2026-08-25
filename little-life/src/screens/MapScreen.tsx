@@ -28,6 +28,7 @@ import {
 } from '@/lib/collection/shops'
 import { hasFreshStock } from '@/lib/collection/progress'
 import { secretsInArea } from '@/lib/discovery/secrets'
+import { isGardenUnlocked, unlockProgress } from '@/lib/garden/derive'
 import { todayKey } from '@/lib/date'
 import { isTodayQuest } from '@/lib/stats'
 import { cn } from '@/components/ui/cn'
@@ -49,6 +50,8 @@ interface MapScreenProps {
   onOpenCollectionShop: (shop: CollectionShopDef) => void
   /** 작은 작업실 (집에만 있다) */
   onOpenWorkshop: () => void
+  /** 공원 너머 작은 정원 */
+  onOpenGarden: () => void
 }
 
 /**
@@ -70,6 +73,7 @@ export function MapScreen({
   onOpenShop,
   onOpenCollectionShop,
   onOpenWorkshop,
+  onOpenGarden,
 }: MapScreenProps) {
   const [openArea, setOpenArea] = useState<AreaDef | null>(null)
   const now = new Date()
@@ -213,6 +217,10 @@ export function MapScreen({
           setOpenArea(null)
           onOpenWorkshop()
         }}
+        onOpenGarden={() => {
+          setOpenArea(null)
+          onOpenGarden()
+        }}
         onOpenShop={(id) => {
           setOpenArea(null)
           onOpenShop(id)
@@ -242,6 +250,7 @@ interface AreaSheetProps {
   onOpenShop: (id: AreaId) => void
   onOpenCollectionShop: (shop: CollectionShopDef) => void
   onOpenWorkshop: () => void
+  onOpenGarden: () => void
 }
 
 function AreaSheet({
@@ -261,6 +270,7 @@ function AreaSheet({
   onOpenShop,
   onOpenCollectionShop,
   onOpenWorkshop,
+  onOpenGarden,
 }: AreaSheetProps) {
   if (!area) return null
 
@@ -449,6 +459,45 @@ function AreaSheet({
               </div>
             </li>
           ))}
+
+          {/* 공원 너머. 아직 못 찾았으면 뭔가 있다는 것만 보인다 —
+              조건을 숫자로 적어두지 않는다. 그건 할 일 목록이 된다. */}
+          {area.id === 'GREEN_PARK' && (
+            <li>
+              {isGardenUnlocked(state) ? (
+                <button
+                  type="button"
+                  onClick={onOpenGarden}
+                  className={cn(
+                    'flex w-full items-center gap-3 rounded-card border border-sage-deep/25 bg-sage-soft/50 px-3.5 py-3 text-left',
+                    'transition-transform duration-150 ease-out active:scale-[0.98]',
+                  )}
+                >
+                  <span className="text-[22px] leading-none">🌿</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[14px] font-medium text-ink">
+                      작은 정원
+                    </span>
+                    <span className="mt-0.5 block truncate text-[11.5px] text-inkdim">
+                      심어둔 것이 자라고 있다
+                    </span>
+                  </span>
+                </button>
+              ) : (
+                <div className="flex w-full items-center gap-3 rounded-card border border-dashed border-line bg-canvas px-3.5 py-3">
+                  <span className="text-[22px] leading-none opacity-45">🌿</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[14px] font-medium text-ink">???</span>
+                    <span className="mt-0.5 block text-[11.5px] leading-snug text-inkdim">
+                      {unlockProgress(state) >= 0.5
+                        ? '공원 너머에 작은 길이 있는 것 같다.'
+                        : '공원 안쪽은 아직 잘 모르겠다.'}
+                    </span>
+                  </span>
+                </div>
+              )}
+            </li>
+          )}
 
           {/* 작업실은 집에만 있다 */}
           {area.id === 'HOME_BASE' && (
