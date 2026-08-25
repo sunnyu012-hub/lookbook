@@ -6,6 +6,7 @@ import { TROPHY_ITEMS } from './trophies'
 import { CRAFTABLE_ITEM_IDS } from './recipes'
 import { setsForItem } from './sets'
 import { CROP_ITEMS, GARDEN_ITEMS } from '@/lib/garden/items'
+import { FOOD_ITEMS, KITCHEN_ITEMS } from '@/lib/kitchen/items'
 
 /**
  * 완성된 아이템 표.
@@ -69,12 +70,19 @@ export const GARDEN_CATALOG: CollectionItemDef[] = GARDEN_ITEMS.map(finish)
 /** 도감의 CROPS 칸에 들어가는 작물 (거둔 것) */
 export const CROP_CATALOG: CollectionItemDef[] = CROP_ITEMS.map(finish)
 
+/** 부엌의 것들 — 만든 음식과 세트를 채우면 남는 것. 240칸에는 안 들어간다. */
+export const KITCHEN_CATALOG: CollectionItemDef[] = KITCHEN_ITEMS.map(finish)
+
+/** 도감의 RECIPES 칸에 들어가는 음식 */
+export const FOOD_CATALOG: CollectionItemDef[] = FOOD_ITEMS.map(finish)
+
 /** 이름으로 찾을 수 있는 것 전부 */
 export const ALL_COLLECTION_ITEMS: CollectionItemDef[] = [
   ...CATALOG,
   ...TROPHY_CATALOG,
   ...MATERIAL_CATALOG,
   ...GARDEN_CATALOG,
+  ...KITCHEN_CATALOG,
 ]
 
 const BY_ID = new Map(ALL_COLLECTION_ITEMS.map((i) => [i.id, i]))

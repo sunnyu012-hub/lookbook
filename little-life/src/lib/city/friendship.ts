@@ -1,4 +1,4 @@
-import type { Bonuses, ItemDef, NpcDef, NpcState } from '@/types'
+import type { Bonuses, GiftTag, ItemDef, NpcDef, NpcState } from '@/types'
 
 /**
  * 친밀도가 오르는 규칙.
@@ -32,7 +32,17 @@ export function talkGain(state: NpcState, dayKey: string, bonuses: Bonuses): num
 
 /** 선물로 오르는 친밀도. 좋아하는 결이면 두 배쯤. */
 export function giftGain(npc: NpcDef, item: ItemDef, bonuses: Bonuses): number {
-  const liked = (item.giftTags ?? []).some((tag) => npc.likes.includes(tag))
+  return giftGainForTags(npc, item.giftTags ?? [], bonuses)
+}
+
+/**
+ * 결만 보고 계산한다.
+ *
+ * 가방 물건이든 부엌에서 만든 음식이든 친밀도가 오르는 식은 하나뿐이어야 한다.
+ * 음식용으로 식을 하나 더 만들면 두 값이 언젠가 어긋난다.
+ */
+export function giftGainForTags(npc: NpcDef, tags: GiftTag[], bonuses: Bonuses): number {
+  const liked = tags.some((tag) => npc.likes.includes(tag))
   return applyFriendshipBonus(liked ? GIFT_LIKED_FRIENDSHIP : GIFT_FRIENDSHIP, bonuses)
 }
 

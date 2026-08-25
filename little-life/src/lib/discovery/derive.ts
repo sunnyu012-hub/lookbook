@@ -5,6 +5,7 @@ import { SECRETS, newlyFound, newlyHinted, secretProgress } from './secrets'
 import { unreadChapters } from './stories'
 import { hintedCompanions, newlyMeetable } from './companions'
 import { applyGardenUnlock } from '@/lib/garden/derive'
+import { applyKitchenUnlock, newlyDiscovered } from '@/lib/kitchen/derive'
 
 /**
  * 발견을 한 번에 정리한다.
@@ -119,6 +120,33 @@ export function applyDiscovery(state: AppState, now: Date = new Date()): Discove
       title: `${def.name} — 다 모았어`,
       text: def.description,
     })
+  }
+
+  // ── 작은 부엌 ────────────────────────────────────────
+  const kitchen = applyKitchenUnlock(next, now)
+  next = kitchen.state
+  if (kitchen.opened) {
+    pending.push({
+      key: 'kitchen:opened',
+      kind: 'KITCHEN',
+      icon: '🍳',
+      title: '작은 부엌',
+      text: '정원에서 가져온 것들이 제법 모였다. 뭔가 만들어볼 수 있을 것 같다.',
+    })
+  }
+
+  // ── 새로 알게 된 레시피 ──────────────────────────────
+  // 조건은 정원 기록에서 세기 때문에, 거두다 보면 저절로 하나씩 떠오른다.
+  if (kitchen.state.kitchen.unlockedAt !== null) {
+    for (const recipe of newlyDiscovered(next, next.discovery.seenNoteKeys)) {
+      pending.push({
+        key: `recipe:${recipe.id}`,
+        kind: 'KITCHEN',
+        icon: recipe.icon,
+        title: `${recipe.name} — 만들 수 있을 것 같다`,
+        text: recipe.description,
+      })
+    }
   }
 
   // ── 비밀 장소 ────────────────────────────────────────

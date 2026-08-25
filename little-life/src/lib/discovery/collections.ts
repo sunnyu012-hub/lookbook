@@ -2,6 +2,7 @@ import type { AppState, AutoCollectionDef, AutoCollectionView } from '@/types'
 import { AREA_IDS } from '@/types'
 import { isWeekend } from '@/lib/collection/shops'
 import { discoveredCropIds, gardenLevel, gardenXp, harvestedTotal } from '@/lib/garden/derive'
+import { discoveredRecipes, totalCooked } from '@/lib/kitchen/derive'
 
 /**
  * 앱이 나중에 알아보는 것들.
@@ -157,6 +158,39 @@ export const AUTO_COLLECTIONS: AutoCollectionDef[] = [
     rewardItemId: 'lavender_pot',
     hiddenUntilTriggered: true,
   },
+  {
+    id: 'HOME_COOK',
+    name: '집에서 해 먹는 사람',
+    description: '사 먹는 것보다 만들어 먹은 날이 늘었다.',
+    icon: '🍳',
+    condition: { kind: 'MEALS_COOKED' },
+    target: 10,
+    revealAt: 2,
+    rewardItemId: 'toast_plate',
+    hiddenUntilTriggered: true,
+  },
+  {
+    id: 'RECIPE_HUNTER',
+    name: '조합을 찾아낸 사람',
+    description: '이것저것 거두다 보니 알게 된 것들.',
+    icon: '📖',
+    condition: { kind: 'RECIPES_KNOWN' },
+    target: 8,
+    revealAt: 5,
+    rewardItemId: 'k_recipe_book',
+    hiddenUntilTriggered: true,
+  },
+  {
+    id: 'TINY_CHEF',
+    name: '작은 요리사',
+    description: '정원에서 온 것으로 열두 가지를 알게 됐다.',
+    icon: '👩‍🍳',
+    condition: { kind: 'RECIPES_KNOWN' },
+    target: 12,
+    revealAt: 9,
+    rewardItemId: 'k_dessert_tray',
+    hiddenUntilTriggered: true,
+  },
 ]
 
 export function findAutoCollection(id: string): AutoCollectionDef | null {
@@ -203,6 +237,13 @@ export function autoProgress(state: AppState, def: AutoCollectionDef): number {
 
     case 'GARDEN_LEVEL':
       return state.garden.unlockedAt ? gardenLevel(gardenXp(state.garden)) : 0
+
+    case 'MEALS_COOKED':
+      return totalCooked(state.kitchen)
+
+    // 아는 레시피도 저장하지 않는다. 정원 기록에서 다시 센다.
+    case 'RECIPES_KNOWN':
+      return state.kitchen.unlockedAt ? discoveredRecipes(state).length : 0
   }
 }
 
