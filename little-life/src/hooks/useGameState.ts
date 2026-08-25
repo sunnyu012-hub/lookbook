@@ -52,9 +52,8 @@ import { timeBand } from '@/lib/rpg/time'
 import {
   addItem,
   canCraft,
-  completedSetIds,
-  discoveredCount,
   isRecipeKnown,
+  recipeContextOf,
   markSeen,
   markShopVisited,
   ownedCount,
@@ -1623,16 +1622,7 @@ export function useGameState(): GameState {
       const recipe = findRecipe(recipeId)
       if (!recipe) return { ok: false, reason: 'UNKNOWN' }
 
-      const known = isRecipeKnown(recipe, {
-        level: prev.user.level,
-        discoveredCount: discoveredCount(prev.collection),
-        completedSetIds: completedSetIds(prev.collection),
-        friendship: Object.fromEntries(
-          Object.entries(prev.npcs).map(([id, npc]) => [id, npc.friendship]),
-        ),
-        discoveredRecipeIds: prev.collection.discoveredRecipeIds,
-      })
-      if (!known) return { ok: false, reason: 'LOCKED' }
+      if (!isRecipeKnown(recipe, recipeContextOf(prev))) return { ok: false, reason: 'LOCKED' }
       if (!canCraft(recipe, prev.collection)) return { ok: false, reason: 'MISSING' }
 
       const now = new Date()

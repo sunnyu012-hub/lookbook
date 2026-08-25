@@ -83,7 +83,7 @@ export const WORKSHOP_RECIPES: RecipeDef[] = [
     unlock: { kind: 'CROP_HARVESTED', cropId: 'strawberry', count: 3 },
     unlockHint: '딸기를 몇 번 거두고 나면',
     category: 'DECOR',
-    hintAt: 0.34,
+    hintAt: 0.3,
     hint: '딸기를 둘 자리가 있으면 좋겠다.',
   },
   {
@@ -112,7 +112,7 @@ export const WORKSHOP_RECIPES: RecipeDef[] = [
     unlock: { kind: 'CROP_HARVESTED', cropId: 'potato', count: 3 },
     unlockHint: '감자를 몇 번 거두면',
     category: 'FURNITURE',
-    hintAt: 0.34,
+    hintAt: 0.3,
     hint: '거둔 걸 담아둘 게 필요하다.',
   },
   {
@@ -151,7 +151,7 @@ export const WORKSHOP_RECIPES: RecipeDef[] = [
     unlock: { kind: 'CROP_HARVESTED', cropId: 'basil', count: 3 },
     unlockHint: '바질을 몇 번 거두면',
     category: 'FURNITURE',
-    hintAt: 0.34,
+    hintAt: 0.3,
     hint: '정원 옆에 둘 게 하나 있으면 좋겠다.',
   },
   {
@@ -177,7 +177,7 @@ export const WORKSHOP_RECIPES: RecipeDef[] = [
     unlock: { kind: 'RECIPES_COOKED', count: 3 },
     unlockHint: '요리를 세 가지 만들어보면',
     category: 'DECOR',
-    hintAt: 0.34,
+    hintAt: 0.3,
     hint: '싸 들고 나갈 것을 묶어두고 싶다.',
   },
   {
@@ -191,7 +191,7 @@ export const WORKSHOP_RECIPES: RecipeDef[] = [
     unlock: { kind: 'CROP_HARVESTED', cropId: 'pumpkin', count: 3 },
     unlockHint: '호박을 세 번 거두면',
     category: 'FURNITURE',
-    hintAt: 0.34,
+    hintAt: 0.3,
     hint: '앉아서 정원을 볼 자리가 있으면.',
   },
   {

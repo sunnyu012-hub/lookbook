@@ -5,7 +5,7 @@ import { BottomSheet } from '@/components/ui/BottomSheet'
 import { Button } from '@/components/ui/Button'
 import { useOverlay } from '@/hooks/useOverlay'
 import { GARDEN_DEW_SECONDS } from '@/lib/garden/crops'
-import { dewCount, gardenView, seedStock } from '@/lib/garden/derive'
+import { dewCount, gardenView, nearestRareHint, seedStock } from '@/lib/garden/derive'
 import { STAGE_ICON, STAGE_LABEL, remainingLabel } from '@/lib/garden/labels'
 import { CompanionArt } from '@/components/discovery/CompanionArt'
 import { activeCompanion } from '@/lib/discovery/companions'
@@ -82,6 +82,7 @@ export function GardenScreen({
   const view = useMemo(() => gardenView(state, new Date()), [state, tick])
   const dew = dewCount(state)
   const seeds = seedStock(state)
+  const rareHint = useMemo(() => nearestRareHint(state), [state])
   const buddy = activeCompanion(state)
 
   if (!open) return null
@@ -199,6 +200,14 @@ export function GardenScreen({
             </span>
           </button>
 
+          {/* 아직 못 만난 것 하나. 조건을 적어주지는 않는다 —
+              "무엇을 몇 번" 이 적히는 순간 정원이 체크리스트가 된다. */}
+          {rareHint && (
+            <p className="mt-3 rounded-card bg-butter-soft/50 px-3.5 py-2.5 text-center text-[12.5px] leading-relaxed text-butter-deep">
+              {rareHint.crop.discovery?.reveal ?? '이 정원에 아직 못 본 게 있는 것 같다.'}
+            </p>
+          )}
+
           {/* 다음 단계까지 */}
           {view.nextLevelXp !== null && (
             <p className="mt-3 text-center font-game text-[10.5px] tracking-[0.06em] text-inkfaint">
@@ -276,8 +285,14 @@ export function GardenScreen({
                 className="flex items-center gap-3 rounded-card bg-canvas px-3.5 py-2.5"
               >
                 <span className="text-[20px] leading-none">{crop.icon}</span>
-                <span className="min-w-0 flex-1 truncate text-[13.5px] text-ink">
-                  {crop.name} 씨앗
+                <span className="flex min-w-0 flex-1 items-center gap-1.5">
+                  <span className="truncate text-[13.5px] text-ink">{crop.name} 씨앗</span>
+                  {/* 찾아낸 것에만 붙는다. 씨앗 고르는 시트와 같은 표시를 쓴다. */}
+                  {crop.discovery && (
+                    <span className="shrink-0 rounded-pill bg-butter-soft px-1.5 py-0.5 font-game text-[9px] tracking-[0.08em] text-butter-deep">
+                      RARE
+                    </span>
+                  )}
                 </span>
                 <span className="shrink-0 font-game text-[12px] text-inkdim">×{count}</span>
               </li>

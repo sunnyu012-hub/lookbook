@@ -953,6 +953,8 @@ export default function App() {
             count: result.count,
             isNew: result.isNew,
             leveledUp: result.leveledUp,
+            variant: result.variant,
+            variantIsNew: result.variantIsNew,
           }
         }}
         onUseDew={useDew}

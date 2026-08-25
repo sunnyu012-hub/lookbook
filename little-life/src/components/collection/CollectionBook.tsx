@@ -19,6 +19,7 @@ import { collectionProgress, isDiscovered, isSeen, ownedCount, setProgress } fro
 import { COLLECTION_CATEGORY_LABEL } from '@/lib/labels'
 import { skinCollectionProgress } from '@/lib/character/derive'
 import { recipeCollectionProgress } from '@/lib/kitchen/derive'
+import { workshopView } from '@/lib/collection/workshopView'
 import { CharacterSkinRenderer } from '@/components/character/CharacterSkinRenderer'
 import { cn } from '@/components/ui/cn'
 
@@ -76,6 +77,7 @@ export function CollectionBook({
   }
 
   const skinProgress = useMemo(() => skinCollectionProgress(state), [state])
+  const craftable = useMemo(() => workshopView(state), [state])
   const trophyFound = TROPHY_CATALOG.filter((t) => isDiscovered(collection, t.id)).length
   const cropFound = CROP_CATALOG.filter((c) => isDiscovered(collection, c.id)).length
   // 요리는 "만들어본 적이 있는지" 로 센다. 다 먹어 없어져도 도감에는 남는다.
@@ -140,6 +142,27 @@ export function CollectionBook({
         <span className="shrink-0 font-game text-[13px] text-coral-deep">
           {skinProgress.found}
           <span className="text-[10px] text-inkfaint"> / {skinProgress.total}</span>
+        </span>
+      </button>
+
+      {/* 작업실로 가는 길.
+          전에는 만들 수 있는 물건을 하나 찾아 들어가야만 열렸다.
+          만드는 법이 열둘 더 늘어난 지금은 그게 숨겨진 방이 된다. */}
+      <button
+        type="button"
+        onClick={onOpenWorkshop}
+        className="mt-2 flex w-full items-center gap-3 rounded-card border border-line/70 bg-surface px-4 py-3 text-left shadow-soft active:scale-[0.99]"
+      >
+        <span className="text-[22px] leading-none">🧰</span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[13.5px] font-medium text-ink">작은 작업실</span>
+          <span className="mt-0.5 block text-[11.5px] text-inkdim">
+            주운 것과 거둔 것으로 하나씩 만들기
+          </span>
+        </span>
+        <span className="shrink-0 font-game text-[13px] text-coral-deep">
+          {craftable.known}
+          <span className="text-[10px] text-inkfaint"> / {craftable.total}</span>
         </span>
       </button>
 

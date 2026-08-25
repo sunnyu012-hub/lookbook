@@ -264,6 +264,27 @@ export function applyRareSeeds(state: AppState, now: Date = new Date()): RareGra
   }
 }
 
+/**
+ * 아직 못 찾은 것 중 가장 가까이 온 것 하나.
+ *
+ * 목록을 다 펼치지 않는다. 넷을 조건과 함께 늘어놓으면
+ * 그건 낌새가 아니라 숙제표다. 제일 가까운 하나만, 그것도 한 줄만.
+ * 하나도 안 가까우면 (아무 조건도 시작 안 했으면) 아무것도 안 준다.
+ */
+export function nearestRareHint(state: AppState): { crop: CropDef; progress: number } | null {
+  if (!isGardenUnlocked(state)) return null
+
+  let best: { crop: CropDef; progress: number } | null = null
+  for (const crop of RARE_CROPS) {
+    if (!crop.discovery || isRareFound(state, crop)) continue
+    const parts = crop.discovery.conditions.map((c) => rareProgress(state, c))
+    const progress = parts.reduce((sum, p) => sum + p, 0) / parts.length
+    if (progress <= 0) continue
+    if (!best || progress > best.progress) best = { crop, progress }
+  }
+  return best
+}
+
 // ── 섞여 나오는 것 ──────────────────────────────────────
 
 /** 지금 이 작물을 거둘 때 다른 게 섞여 나올 확률 (%) */

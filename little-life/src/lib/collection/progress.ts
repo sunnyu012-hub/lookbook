@@ -1,4 +1,5 @@
 import type {
+  AppState,
   Category,
   CraftStage,
   ItemKnowledge,
@@ -347,6 +348,26 @@ export function recipeProgress(recipe: RecipeDef, ctx: RecipeContext): number {
       return 0
     default:
       return 0
+  }
+}
+
+/**
+ * 지금 상태에서 레시피 문맥을 만든다.
+ *
+ * 한 군데서만 만든다. 화면과 만들기 판정이 서로 다른 문맥을 쓰면
+ * "보이는데 안 눌리는" 것이 생긴다 — 실제로 그랬다.
+ */
+export function recipeContextOf(state: AppState): RecipeContext {
+  return {
+    harvestedCropCounts: state.garden.harvestedCropCounts,
+    cookedKinds: Object.values(state.kitchen.cookedRecipeCounts).filter((n) => n > 0).length,
+    level: state.user.level,
+    discoveredCount: discoveredCount(state.collection),
+    completedSetIds: completedSetIds(state.collection),
+    friendship: Object.fromEntries(
+      Object.entries(state.npcs).map(([id, npc]) => [id, npc.friendship]),
+    ),
+    discoveredRecipeIds: state.collection.discoveredRecipeIds,
   }
 }
 
