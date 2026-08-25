@@ -111,7 +111,7 @@ export const KITCHEN_RECIPES: KitchenRecipeDef[] = [
     tags: ['sweet'],
     giftTags: ['sweet'],
     conditions: [{ kind: 'CROP_HARVESTED', cropId: 'strawberry', count: 3 }],
-    hintAt: 0.34,
+    hintAt: 0.3,
     hint: '딸기를 조금 더 달콤하게 먹는 방법이 있을 것 같다.',
   },
   {
@@ -126,7 +126,7 @@ export const KITCHEN_RECIPES: KitchenRecipeDef[] = [
     tags: ['sweet', 'dessert'],
     giftTags: ['sweet', 'cozy'],
     conditions: [{ kind: 'CROP_HARVESTED', cropId: 'pumpkin', count: 3 }],
-    hintAt: 0.34,
+    hintAt: 0.3,
     hint: '천천히 자란 호박은 달콤한 무언가가 될 수 있다.',
   },
   {

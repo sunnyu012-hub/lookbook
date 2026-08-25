@@ -26,6 +26,9 @@ export const AUTO_COLLECTION_IDS = [
   'GREEN_THUMB',
   'LITTLE_FARMER',
   'GARDEN_KEEPER',
+  'HOME_COOK',
+  'RECIPE_HUNTER',
+  'TINY_CHEF',
 ] as const
 export type AutoCollectionId = (typeof AUTO_COLLECTION_IDS)[number]
 
@@ -52,6 +55,10 @@ export type AutoCondition =
   | { kind: 'CROPS_DISCOVERED' }
   /** 정원이 몇 단계까지 넓어졌는지 (못 찾았으면 0) */
   | { kind: 'GARDEN_LEVEL' }
+  /** 요리를 몇 번 만들었는지 */
+  | { kind: 'MEALS_COOKED' }
+  /** 레시피를 몇 가지 알게 됐는지 */
+  | { kind: 'RECIPES_KNOWN' }
 
 export interface AutoCollectionDef {
   id: AutoCollectionId

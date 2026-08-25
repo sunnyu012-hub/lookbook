@@ -1,7 +1,7 @@
 import type { AppState } from '@/types'
 import { addItem } from '@/lib/collection/progress'
 import { CROPS } from '@/lib/garden/crops'
-import { KITCHEN_RECIPES } from './recipes'
+import { DEFAULT_RECIPE_IDS, KITCHEN_RECIPES } from './recipes'
 import { emptyKitchen } from './derive'
 
 /**
@@ -54,7 +54,17 @@ export function applyDevKitchen(
     case 'DISCOVER_ALL': {
       const counts: Record<string, number> = { ...state.garden.harvestedCropCounts }
       for (const crop of CROPS) counts[crop.id] = Math.max(3, counts[crop.id] ?? 0)
-      return { ...state, garden: { ...state.garden, harvestedCropCounts: counts } }
+
+      // 도시락처럼 "여러 가지를 만들어봐야" 열리는 것도 있다.
+      // 거둔 기록만 채우면 그건 안 열리니까, 기본 넷을 만들어본 것으로도 친다.
+      const cooked = { ...state.kitchen.cookedRecipeCounts }
+      for (const id of DEFAULT_RECIPE_IDS) cooked[id] = Math.max(1, cooked[id] ?? 0)
+
+      return {
+        ...state,
+        garden: { ...state.garden, harvestedCropCounts: counts },
+        kitchen: { ...state.kitchen, cookedRecipeCounts: cooked },
+      }
     }
 
     case 'COOK': {

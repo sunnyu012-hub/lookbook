@@ -200,6 +200,33 @@ export const COLLECTION_SETS: CollectionSetDef[] = [
     // 완성하면 Moon Globe 가 트로피로 온다 (lib/collection/trophies.ts)
     rewards: [{ kind: 'COIN', amount: 600 }],
   },
+  // ── 부엌에서 만든 것들 ──
+  // 요리도 결국 모으는 것이라, 완성 보상은 방에 남는 물건으로 돌려준다.
+  // 다른 세트와 같은 얼개다 — 세트 시스템을 따로 만들지 않았다.
+  {
+    id: 'cozy_soup',
+    name: 'Cozy Soup',
+    icon: '🍲',
+    description: '따뜻한 걸 세 가지 끓여본 사람.',
+    itemIds: ['food_herb_potato_soup', 'food_carrot_soup', 'food_mushroom_cream_soup'],
+    rewards: [{ kind: 'ITEM', itemId: 'k_soup_pot' }],
+  },
+  {
+    id: 'sweet_afternoon',
+    name: 'Sweet Afternoon',
+    icon: '🍰',
+    description: '오후 세 시쯤에 어울리는 것들.',
+    itemIds: ['food_strawberry_milk', 'food_strawberry_toast', 'food_pumpkin_tart'],
+    rewards: [{ kind: 'ITEM', itemId: 'k_dessert_tray' }],
+  },
+  {
+    id: 'little_picnic',
+    name: 'Little Picnic',
+    icon: '🧺',
+    description: '나가서 먹으면 더 맛있는 것들.',
+    itemIds: ['food_picnic_lunchbox', 'food_strawberry_milk', 'food_tomato_pasta'],
+    rewards: [{ kind: 'ITEM', itemId: 'k_picnic_basket' }],
+  },
 ]
 
 /** 방의 공기. 세트를 완성하면 하나씩 열린다. */
@@ -238,32 +265,5 @@ const BY_ITEM: Record<string, string[]> = (() => {
 })()
 
 export function setsForItem(itemId: string): string[] {
-  return BY_ITEM[itemId] ?? [  // ── 부엌에서 만든 것들 ──
-  // 요리도 결국 모으는 것이라, 완성 보상은 방에 남는 물건으로 돌려준다.
-  // 다른 세트와 같은 얼개다 — 세트 시스템을 따로 만들지 않았다.
-  {
-    id: 'cozy_soup',
-    name: 'Cozy Soup',
-    icon: '🍲',
-    description: '따뜻한 걸 세 가지 끓여본 사람.',
-    itemIds: ['food_herb_potato_soup', 'food_carrot_soup', 'food_mushroom_cream_soup'],
-    rewards: [{ kind: 'ITEM', itemId: 'k_soup_pot' }],
-  },
-  {
-    id: 'sweet_afternoon',
-    name: 'Sweet Afternoon',
-    icon: '🍰',
-    description: '오후 세 시쯤에 어울리는 것들.',
-    itemIds: ['food_strawberry_milk', 'food_strawberry_toast', 'food_pumpkin_tart'],
-    rewards: [{ kind: 'ITEM', itemId: 'k_dessert_tray' }],
-  },
-  {
-    id: 'little_picnic',
-    name: 'Little Picnic',
-    icon: '🧺',
-    description: '나가서 먹으면 더 맛있는 것들.',
-    itemIds: ['food_picnic_lunchbox', 'food_strawberry_milk', 'food_tomato_pasta'],
-    rewards: [{ kind: 'ITEM', itemId: 'k_picnic_basket' }],
-  },
-]
+  return BY_ITEM[itemId] ?? []
 }

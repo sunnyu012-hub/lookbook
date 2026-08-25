@@ -6,6 +6,8 @@ interface DiscoveryCardsProps {
   onDismiss: () => void
   /** 정원을 찾았다는 알림은 누르면 바로 그리로 간다 */
   onOpenGarden?: () => void
+  /** 부엌도 마찬가지 */
+  onOpenKitchen?: () => void
 }
 
 /**
@@ -18,14 +20,23 @@ interface DiscoveryCardsProps {
  * 그걸 다 띄우면 축하가 아니라 사고다. 그래서 위에서 세 개까지만 넘어온다.
  * (나머지는 발견함에 쌓인다 — lib/discovery/derive.ts)
  */
-export function DiscoveryCards({ notes, onDismiss, onOpenGarden }: DiscoveryCardsProps) {
+export function DiscoveryCards({
+  notes,
+  onDismiss,
+  onOpenGarden,
+  onOpenKitchen,
+}: DiscoveryCardsProps) {
   if (notes.length === 0) return null
 
   return (
     <section className="space-y-2">
       {notes.map((note) => {
         // 새 장소는 눌렀을 때 갈 데가 있다. 다른 알림은 읽고 지우는 게 전부다.
-        const place = note.kind === 'GARDEN' && onOpenGarden !== undefined
+        // 부엌이 열렸다는 알림만 그렇고, 새 레시피 알림은 읽고 지우는 것이다.
+        const opensGarden = note.kind === 'GARDEN' && onOpenGarden !== undefined
+        const opensKitchen =
+          note.kind === 'KITCHEN' && note.key === 'kitchen:opened' && onOpenKitchen !== undefined
+        const place = opensGarden || opensKitchen
 
         return (
           <button
@@ -33,7 +44,8 @@ export function DiscoveryCards({ notes, onDismiss, onOpenGarden }: DiscoveryCard
             type="button"
             onClick={() => {
               onDismiss()
-              if (place) onOpenGarden()
+              if (opensGarden) onOpenGarden()
+              if (opensKitchen) onOpenKitchen()
             }}
             className={cn(
               'flex w-full animate-risein items-center gap-3 rounded-card border px-3.5 py-3 text-left',
@@ -60,7 +72,7 @@ export function DiscoveryCards({ notes, onDismiss, onOpenGarden }: DiscoveryCard
               </span>
               {place && (
                 <span className="mt-1 block text-[11.5px] font-medium text-sage-deep">
-                  정원에 들어가기 ›
+                  {opensKitchen ? '주방 열기 ›' : '정원에 들어가기 ›'}
                 </span>
               )}
             </span>

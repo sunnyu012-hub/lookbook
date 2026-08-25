@@ -44,6 +44,8 @@ interface NpcSheetProps {
   onOpenStory: () => void
   /** 정원이 어디까지 열렸는지. 못 찾았으면 0 — 그 얘기는 아예 안 꺼낸다. */
   gardenLevel?: number
+  /** 부엌에서 만들어둔 음식. 못 열었으면 빈 배열. */
+  foods?: Array<{ itemId: string; name: string; icon: string; count: number; liked: boolean }>
 }
 
 /**
@@ -68,6 +70,7 @@ export function NpcSheet({
   story,
   storyReady,
   gardenLevel = 0,
+  foods = [],
   onOpenStory,
 }: NpcSheetProps) {
   const [tab, setTab] = useState<Tab>('TALK')
@@ -181,6 +184,7 @@ export function NpcSheet({
             npc={npc}
             inventory={inventory}
             equippedIds={equippedIds}
+            foods={foods}
             onGift={onGift}
           />
         )}
@@ -356,11 +360,14 @@ function GiftTab({
   npc,
   inventory,
   equippedIds,
+  foods,
   onGift,
 }: {
   npc: NpcDef
   inventory: InventoryEntry[]
   equippedIds: Set<string>
+  /** 부엌에서 만들어둔 음식 */
+  foods: Array<{ itemId: string; name: string; icon: string; count: number; liked: boolean }>
   onGift: (itemId: string) => void
 }) {
   const rows = useMemo(
@@ -381,7 +388,42 @@ function GiftTab({
         {npc.name} — {npc.likes.join(' · ')} 쪽을 좋아해.
       </p>
 
-      {rows.length === 0 ? (
+      {/* 만들어둔 음식. 가방 물건과 나란히 두지 않고 위에 따로 둔다 —
+          직접 만든 걸 주는 건 조금 다른 일이다. */}
+      {foods.length > 0 && (
+        <ul className="mb-3 space-y-2">
+          {foods.map((food) => (
+            <li key={food.itemId}>
+              <button
+                type="button"
+                onClick={() => onGift(food.itemId)}
+                className={cn(
+                  'flex w-full items-center gap-3 rounded-card border px-3.5 py-3 text-left',
+                  'transition-transform duration-150 ease-out active:scale-[0.98]',
+                  food.liked ? 'border-coral bg-coral-soft/40' : 'border-line bg-surface',
+                )}
+              >
+                <span className="text-[24px] leading-none">{food.icon}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[14px] font-medium text-ink">
+                    {food.name}
+                  </span>
+                  <span className="mt-0.5 block text-[11.5px] text-inkdim">
+                    직접 만든 것 · {food.count}개
+                  </span>
+                </span>
+                {food.liked && (
+                  <span className="shrink-0 rounded-pill bg-coral-soft px-2 py-0.5 text-[10.5px] text-coral-deep">
+                    좋아할 듯
+                  </span>
+                )}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {rows.length === 0 && foods.length === 0 ? (
         <div className="rounded-card border border-dashed border-line px-4 py-6 text-center">
           <p className="text-[13.5px] text-ink">아직 줄 만한 게 없네.</p>
           <p className="mt-1 text-[12.5px] text-inkfaint">

@@ -20,6 +20,9 @@ interface CharacterRoomCardProps {
   overlay?: ReactNode
   onDecorate: () => void
   onOpenCollection: () => void
+  /** 부엌을 열었을 때만 방 안에 자리가 생긴다 */
+  kitchenOpen?: boolean
+  onOpenKitchen?: () => void
   /** 내 모습 고르기 */
   onOpenLook: () => void
 }
@@ -52,6 +55,8 @@ export function CharacterRoomCard({
   overlay,
   onDecorate,
   onOpenCollection,
+  kitchenOpen = false,
+  onOpenKitchen,
   onOpenLook,
 }: CharacterRoomCardProps) {
   const skin = findSkin(user.selectedSkinId)
@@ -119,6 +124,24 @@ export function CharacterRoomCard({
             꾸미기
           </button>
         </div>
+
+        {/*
+          방 안의 작은 자리.
+
+          아래 내비게이션에 버튼을 하나 더 다는 대신 방 안에 둔다 —
+          부엌은 매일 들르는 곳이 아니라 생각났을 때 들르는 곳이다.
+          아직 못 열었으면 아무것도 안 보인다.
+        */}
+        {kitchenOpen && onOpenKitchen && (
+          <button
+            type="button"
+            onClick={onOpenKitchen}
+            aria-label="작은 부엌"
+            className="absolute bottom-2.5 left-2.5 flex h-11 w-11 items-center justify-center rounded-full bg-surface/90 text-[20px] shadow-soft backdrop-blur-sm active:scale-[0.94]"
+          >
+            🍳
+          </button>
+        )}
 
         {overlay}
       </div>

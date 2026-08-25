@@ -121,9 +121,9 @@ describe('예전 기록이 그대로 반영된다', () => {
 // ── B. 진행도가 는다 ────────────────────────────────────
 
 describe('자동 컬렉션', () => {
-  it('열한 가지가 있고 id 가 겹치지 않는다', () => {
-    expect(AUTO_COLLECTIONS).toHaveLength(11)
-    expect(new Set(AUTO_COLLECTIONS.map((c) => c.id)).size).toBe(11)
+  it('열네 가지가 있고 id 가 겹치지 않는다', () => {
+    expect(AUTO_COLLECTIONS).toHaveLength(14)
+    expect(new Set(AUTO_COLLECTIONS.map((c) => c.id)).size).toBe(14)
     for (const c of AUTO_COLLECTIONS) expect(AUTO_COLLECTION_IDS).toContain(c.id)
   })
 

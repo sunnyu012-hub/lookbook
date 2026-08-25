@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
+  AppState,
   AreaId,
   Battle,
   BattleDef,
@@ -33,7 +34,11 @@ import { NewSkinOverlay } from '@/components/character/NewSkinOverlay'
 import { SkinGallery } from '@/components/character/SkinGallery'
 import { GardenScreen } from '@/components/garden/GardenScreen'
 import { gardenLevel, gardenXp, isGardenUnlocked } from '@/lib/garden/derive'
+import { KITCHEN_RECIPES } from '@/lib/kitchen/recipes'
 import { GardenLab } from '@/components/garden/GardenLab'
+import { KitchenScreen } from '@/components/kitchen/KitchenScreen'
+import { KitchenLab } from '@/components/kitchen/KitchenLab'
+import type { CookedNote } from '@/components/kitchen/CookedOverlay'
 import type { HarvestNote } from '@/components/garden/HarvestOverlay'
 import { WorkshopSheet } from '@/components/collection/WorkshopSheet'
 import { DiscoveryOverlay } from '@/components/collection/DiscoveryOverlay'
@@ -52,7 +57,7 @@ import { activeEvents } from '@/lib/city/events'
 import { emptyNpcState } from '@/lib/city/friendship'
 import { isShopOpen, shopInArea } from '@/lib/city/shops'
 import { findSkill } from '@/lib/city/skills'
-import { collectionProgress } from '@/lib/collection/progress'
+import { collectionProgress, ownedCount } from '@/lib/collection/progress'
 import { findCollectionItem } from '@/lib/collection/catalog'
 import { TIME_TINT, isNightOpen, timeBand } from '@/lib/rpg/time'
 import { HomeScreen } from '@/screens/HomeScreen'
@@ -123,6 +128,11 @@ export default function App() {
     harvestPlot,
     useDew,
     devGarden: runDevGarden,
+    enterKitchen,
+    cookRecipe,
+    eatFood,
+    toggleRecipeFavorite,
+    devKitchen: runDevKitchen,
     replaceState,
   } = useGameState()
   const feedback = useFeedback()
@@ -143,6 +153,7 @@ export default function App() {
   const [guideOpen, setGuideOpen] = useState(false)
   const [lookOpen, setLookOpen] = useState(false)
   const [gardenOpen, setGardenOpen] = useState(false)
+  const [kitchenOpen, setKitchenOpen] = useState(false)
 
   /**
    * 개발용 갤러리. 주소에 ?dev=skins 를 붙였을 때만.
@@ -152,6 +163,7 @@ export default function App() {
     typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('dev')
   const devGallery = devParam === 'skins'
   const devGarden = devParam === 'garden'
+  const devKitchen = devParam === 'kitchen'
 
   /**
    * 처음 여는 사람에게 한 번.
@@ -187,6 +199,26 @@ export default function App() {
 
   // 오늘의 이벤트는 저장하지 않고 날짜에서 계산한다. 한 번만 구해서 화면 전체가 같은 걸 본다.
   const events = useMemo(() => activeEvents(), [])
+
+  /**
+   * 만들어둔 음식 중 지금 줄 수 있는 것.
+   *
+   * 친밀도가 오르는 식은 하나뿐이라 (giftGainForTags) 여기서는
+   * "좋아할지" 만 미리 본다 — 계산을 다시 하지 않는다.
+   */
+  const giftableFoods = useCallback(
+    (s: AppState, npc: NpcDef) =>
+      KITCHEN_RECIPES.map((recipe) => ({
+        itemId: recipe.outputItemId,
+        name: recipe.name,
+        icon: recipe.icon,
+        count: ownedCount(s.collection, recipe.outputItemId),
+        liked: recipe.giftTags.some((tag) => npc.likes.includes(tag)),
+      }))
+        .filter((f) => f.count > 0)
+        .sort((a, b) => Number(b.liked) - Number(a.liked)),
+    [],
+  )
 
   // 정원을 못 찾았으면 0. 도시 사람들이 그 얘기를 먼저 꺼내지 않게.
   const gardenTalkLevel = useMemo(
@@ -603,6 +635,10 @@ export default function App() {
     return <GardenLab state={state} onRun={runDevGarden} />
   }
 
+  if (devKitchen) {
+    return <KitchenLab state={state} onRun={runDevKitchen} />
+  }
+
   return (
     <>
       <AppShell
@@ -640,6 +676,7 @@ export default function App() {
           onDismissDiscovery={dismissDiscoveryNotes}
           onOpenDiscovery={() => setDiscoveryOpen(true)}
             onOpenGarden={() => setGardenOpen(true)}
+            onOpenKitchen={() => setKitchenOpen(true)}
             onOpenCollection={() => {
               setBagView('BOOK')
               setTab('bag')
@@ -763,6 +800,7 @@ export default function App() {
 
       <NpcSheet
         gardenLevel={gardenTalkLevel}
+        foods={openNpc ? giftableFoods(state, openNpc) : []}
         npc={openNpc}
         npcState={(openNpc && state.npcs[openNpc.id]) || emptyNpcState()}
         quests={state.quests}
@@ -868,6 +906,29 @@ export default function App() {
         confirmLabel="지우기"
         onConfirm={confirmRoutineDelete}
         onCancel={() => setPendingRoutineDelete(null)}
+      />
+
+      <KitchenScreen
+        open={kitchenOpen}
+        state={state}
+        onClose={() => setKitchenOpen(false)}
+        onEnter={enterKitchen}
+        onCook={(recipeId): CookedNote | null => {
+          const result = cookRecipe(recipeId)
+          if (!result.ok) {
+            feedback.notify(result.reason === 'MISSING' ? '재료가 모자라' : '아직 모르는 요리야')
+            return null
+          }
+          return { def: result.def, firstTime: result.firstTime }
+        }}
+        onEat={(recipeId) => eatFood(recipeId) !== null}
+        onToggleFavorite={toggleRecipeFavorite}
+        onOpenBook={() => {
+          setBagView('BOOK')
+          setTab('bag')
+        }}
+        onOpenGarden={() => setGardenOpen(true)}
+        onNotify={feedback.notify}
       />
 
       <GardenScreen
