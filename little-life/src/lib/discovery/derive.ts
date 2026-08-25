@@ -4,6 +4,7 @@ import { AUTO_COLLECTIONS, autoProgress, claimableCollections, newlyRevealed } f
 import { SECRETS, newlyFound, newlyHinted, secretProgress } from './secrets'
 import { unreadChapters } from './stories'
 import { hintedCompanions, newlyMeetable } from './companions'
+import { applyGardenUnlock } from '@/lib/garden/derive'
 
 /**
  * 발견을 한 번에 정리한다.
@@ -58,6 +59,21 @@ export function applyDiscovery(state: AppState, now: Date = new Date()): Discove
   let next = state
   const pending: DiscoveryNote[] = []
   const gainedItemIds: string[] = []
+
+  // ── 공원 너머 ────────────────────────────────────────
+  // 조건은 이미 쌓여 있는 기록에서 센다. 그래서 이 업데이트를 켜는 순간
+  // 그동안 초록 공원을 다녀온 사람에게는 바로 열린다.
+  const garden = applyGardenUnlock(next, now)
+  next = garden.state
+  if (garden.opened) {
+    pending.push({
+      key: 'garden:opened',
+      kind: 'GARDEN',
+      icon: '🌿',
+      title: '작은 정원',
+      text: '울타리 너머로 작은 정원이 보인다. 오랫동안 아무도 돌보지 않은 것 같지만, 아직 살아 있다.',
+    })
+  }
 
   // ── 새로 눈에 띈 컬렉션 ──────────────────────────────
   const revealed = newlyRevealed(next)

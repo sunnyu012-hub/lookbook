@@ -12,6 +12,8 @@ export function eligibleDialogues(
   friendship: number,
   band: TimeBand,
   events: CityEvent[],
+  /** 정원을 아직 못 찾았으면 0 */
+  gardenLevel = 0,
 ): NpcDialogue[] {
   const level = friendshipLevel(friendship)
   const eventIds = new Set(events.map((e) => e.id))
@@ -20,11 +22,17 @@ export function eligibleDialogues(
     if (d.eventId && !eventIds.has(d.eventId)) return false
     if (d.band && d.band !== band) return false
     if (d.minLevel && friendshipLevelIndex(level) < friendshipLevelIndex(d.minLevel)) return false
+    if (d.minGardenLevel && gardenLevel < d.minGardenLevel) return false
     return true
   })
 
   const eventLines = usable.filter((d) => d.eventId)
   if (eventLines.length > 0) return eventLines
+
+  // 정원 얘기는 시간대 얘기보다 먼저 한다. 어쩌다 한 번 열리는 말이라
+  // 뒤로 밀리면 평생 안 나올 수도 있다.
+  const gardenLines = usable.filter((d) => d.minGardenLevel)
+  if (gardenLines.length > 0) return gardenLines
 
   const bandLines = usable.filter((d) => d.band)
   if (bandLines.length > 0) return bandLines
@@ -41,9 +49,10 @@ export function pickDialogue(
   friendship: number,
   band: TimeBand,
   events: CityEvent[],
+  gardenLevel = 0,
   random: () => number = Math.random,
 ): string {
-  const lines = eligibleDialogues(npc, friendship, band, events)
+  const lines = eligibleDialogues(npc, friendship, band, events, gardenLevel)
   if (lines.length === 0) return '...'
   return lines[Math.floor(random() * lines.length) % lines.length].text
 }

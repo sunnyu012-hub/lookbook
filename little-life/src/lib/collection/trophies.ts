@@ -121,6 +121,27 @@ const ROWS: TrophyRow[] = [
     hint: '관계 퀘스트 100개',
   },
   {
+    // 정원이 넓어지면 그만큼이 방에도 하나씩 남는다.
+    // 정원에 다녀왔다는 걸 방에서도 볼 수 있게 하려는 것뿐이고,
+    // 다른 트로피와 마찬가지로 능력치는 하나도 안 붙는다.
+    id: 'garden_pot',
+    itemId: 't_garden_pot',
+    name: '정원에서 온 화분',
+    icon: '🪴',
+    description: '공원 너머에서 하나 옮겨 심었다.',
+    condition: { kind: 'GARDEN_LEVEL', level: 2 },
+    hint: '정원 Lv.2',
+  },
+  {
+    id: 'garden_window',
+    itemId: 't_garden_window',
+    name: '정원이 보이는 창',
+    icon: '🪟',
+    description: '창밖에 초록이 조금 보인다.',
+    condition: { kind: 'GARDEN_LEVEL', level: 3 },
+    hint: '정원 Lv.3',
+  },
+  {
     // 이 트로피만 도감 240개 안에 있는 물건을 준다 (밤 시장 조명)
     id: 'moon_collector',
     itemId: 'moon_globe',

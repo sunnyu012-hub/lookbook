@@ -15,6 +15,7 @@ import { AREA_IDS, CATEGORIES, DIFFICULTIES, NPC_IDS } from '@/types'
 import { emptyCategoryStats } from '@/lib/stats'
 import type { StateRepository } from './repository'
 import { createDefaultState } from './defaultState'
+import { MAX_ADVENTURE_ENERGY } from '@/lib/garden/quest'
 import {
   STATE_VERSION,
   sanitizeAreaId,
@@ -33,6 +34,8 @@ import {
   sanitizeDiscovery,
   sanitizeOwnedSkins,
   sanitizeSelectedSkin,
+  sanitizeGarden,
+  sanitizeEnergy,
   backfillCategoryCompleted,
   backfillUsage,
   withSkillPoints,
@@ -254,6 +257,12 @@ export function sanitizeState(raw: unknown): AppState | null {
       // v10 에는 없던 항목들. 없으면 기본 모습 하나만 가진 것으로 본다.
       selectedSkinId: sanitizeSelectedSkin(user.selectedSkinId, user.ownedSkinIds),
       ownedSkinIds: sanitizeOwnedSkins(user.ownedSkinIds),
+      // v11 에는 없던 항목들. 없으면 0 부터 쌓기 시작한다 —
+      // 지난 퀘스트만큼 소급해서 채워주지 않는다. 쓰는 곳이 아직 없어서
+      // 채워줘봐야 의미가 없고, 나중에 쓰는 곳이 생겼을 때
+      // 이미 가득 차 있는 것보다 그때부터 쌓이는 게 낫다.
+      adventureEnergy: sanitizeEnergy(user.adventureEnergy),
+      maxAdventureEnergy: MAX_ADVENTURE_ENERGY,
     },
     quests: Array.isArray(s.quests)
       ? s.quests.map(sanitizeQuest).filter((q): q is Quest => q !== null)
@@ -281,6 +290,8 @@ export function sanitizeState(raw: unknown): AppState | null {
     // 예전 저장에는 없던 항목. 없으면 아직 안 본 것으로 본다 —
     // 업데이트하고 처음 열 때 한 번 보여주려는 것이라 그게 맞다.
     guideSeenAt: typeof s.guideSeenAt === 'string' ? s.guideSeenAt : null,
+    // v11 에는 없던 항목. 없으면 아직 못 찾은 정원으로 본다.
+    garden: sanitizeGarden(s.garden),
   }
 
   // 분야별 완료 수는 저장돼 있으면 그대로 쓰고, 없으면 남아 있는 퀘스트에서 센다

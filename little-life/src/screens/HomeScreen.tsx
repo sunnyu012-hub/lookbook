@@ -5,6 +5,7 @@ import { ExpToastLayer } from '@/components/feedback/ExpToastLayer'
 import { GreetingHeader } from '@/components/home/GreetingHeader'
 import { AdventureStatusCard } from '@/components/home/AdventureStatusCard'
 import { TodayInTheCity } from '@/components/home/TodayInTheCity'
+import { readyCount } from '@/lib/garden/derive'
 import { WeeklyGoalsCard } from '@/components/home/WeeklyGoalsCard'
 import { DeliveryCard } from '@/components/home/DeliveryCard'
 import { DiscoveryCards } from '@/components/discovery/DiscoveryCards'
@@ -38,6 +39,8 @@ interface HomeScreenProps {
   discoveryNotes: DiscoveryNote[]
   onDismissDiscovery: () => void
   onOpenDiscovery: () => void
+  /** 정원에 거둘 게 있을 때 그리로 */
+  onOpenGarden: () => void
   events: CityEvent[]
 }
 
@@ -58,9 +61,11 @@ export function HomeScreen({
   discoveryNotes,
   onDismissDiscovery,
   onOpenDiscovery,
+  onOpenGarden,
   events,
 }: HomeScreenProps) {
   const buddy = activeCompanion(state)
+  const gardenReady = readyCount(state)
   const openQuests = useMemo(
     () => sortByNewest(state.quests.filter((q) => !q.completed && isTodayQuest(q))),
     [state.quests],
@@ -97,7 +102,11 @@ export function HomeScreen({
 
       {/* 뭔가 발견했으면 제일 위에. 퀘스트 밑에 두면 스크롤을 안 내리는 날에는
           그냥 못 보고 지나간다. */}
-      <DiscoveryCards notes={discoveryNotes} onDismiss={onDismissDiscovery} />
+      <DiscoveryCards
+        notes={discoveryNotes}
+        onDismiss={onDismissDiscovery}
+        onOpenGarden={onOpenGarden}
+      />
 
       <CharacterRoomCard
         user={state.user}
@@ -124,6 +133,23 @@ export function HomeScreen({
       )}
 
       <DeliveryCard state={state} onClaim={onClaimDelivery} />
+
+      {/* 정원에 거둘 게 있을 때만 한 줄. 없으면 아무 줄도 안 만든다 —
+          "오늘 정원 안 봤어요" 같은 말은 하지 않는다.
+          거둘 게 없는 날은 정원 얘기를 아예 꺼내지 않는 게 맞다. */}
+      {gardenReady > 0 && (
+        <button
+          type="button"
+          onClick={onOpenGarden}
+          className="flex w-full items-center gap-2.5 rounded-card border border-sage-deep/20 bg-sage-soft/50 px-3.5 py-2.5 text-left transition-transform duration-150 ease-out active:scale-[0.98]"
+        >
+          <span className="w-9 shrink-0 text-center text-[20px] leading-none">🌱</span>
+          <span className="min-w-0 flex-1 truncate text-[12.5px] text-sage-deep">
+            {gardenReady}개의 작물이 수확을 기다리고 있어
+          </span>
+          <span className="shrink-0 text-[11px] text-inkfaint">›</span>
+        </button>
+      )}
 
       {/* 같이 다니는 아이. 캐릭터 그림에 합성하지 않고 옆에 한 줄로 둔다 —
           지금은 이모지라서 그림 위에 얹으면 결이 어긋난다. */}

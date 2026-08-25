@@ -1,5 +1,7 @@
 import type {
   DiscoveryState,
+  GardenPlot,
+  GardenState,
   ActiveBuff,
   QuestUsageProfile,
   RecommendSettings,
@@ -49,6 +51,9 @@ import { findCollectionItem } from '@/lib/collection/catalog'
 import { emptyCollection } from '@/lib/collection/progress'
 import { emptyDiscovery } from '@/lib/discovery/derive'
 import { DEFAULT_SKIN_ID, defaultOwnedSkinIds } from '@/lib/character/skins'
+import { MAX_PLOTS, emptyGarden, emptyPlots } from '@/lib/garden/derive'
+import { MAX_ADVENTURE_ENERGY } from '@/lib/garden/quest'
+import { findCrop } from '@/lib/garden/crops'
 import { AUTO_COLLECTION_IDS, COMPANION_IDS, SECRET_IDS, SKIN_IDS } from '@/types'
 import { findChapter } from '@/lib/discovery/stories'
 import { findRoom } from '@/lib/collection/rooms'
@@ -60,7 +65,7 @@ import { findRoom } from '@/lib/collection/rooms'
  * 없는 항목만 기본값으로 채우고, 있는 값은 손대지 않는다.
  */
 
-export const STATE_VERSION = 11
+export const STATE_VERSION = 12
 
 /** 구매 기록을 며칠치까지 남길지 */
 export const PURCHASE_DAYS_KEPT = 7
@@ -782,4 +787,71 @@ export function sanitizeDiscovery(raw: unknown): DiscoveryState {
       ? d.seenNoteKeys.filter((v): v is string => typeof v === 'string').slice(-200)
       : [],
   }
+}
+
+
+/**
+ * 작은 정원을 읽어들인다.
+ *
+ * 레벨 · 경험치 · 밭 개수 · 발견한 작물은 여기 없다.
+ * 전부 거둔 기록에서 다시 센다 — 그래서 나중에 필요 경험치를 손봐도
+ * 저장된 값과 어긋나지 않고, 따로 채워 넣는 코드도 필요 없다.
+ *
+ * 심어둔 것은 무슨 일이 있어도 지우지 않는다.
+ * 몇 달 만에 열어도 그때 심어둔 건 다 자란 채로 서 있어야 한다.
+ */
+export function sanitizeGarden(raw: unknown): GardenState {
+  const empty = emptyGarden()
+  if (!raw || typeof raw !== 'object') return empty
+  const g = raw as Record<string, unknown>
+
+  // 밭은 늘 여덟 칸이다. 몇 칸까지 쓸 수 있는지는 레벨에서 계산한다.
+  const savedPlots = Array.isArray(g.plots) ? g.plots : []
+  const plots: GardenPlot[] = emptyPlots().map((fallback, i) => {
+    const saved = savedPlots[i]
+    if (!saved || typeof saved !== 'object') return fallback
+    const p = saved as Record<string, unknown>
+
+    const id = typeof p.id === 'string' && p.id ? p.id : fallback.id
+    const crop = typeof p.cropId === 'string' ? findCrop(p.cropId) : null
+    const plantedAt = typeof p.plantedAt === 'string' ? p.plantedAt : null
+    const readyAt = typeof p.readyAt === 'string' ? p.readyAt : null
+
+    // 셋 중 하나라도 없으면 빈 칸으로 본다. 반쯤 남은 기록으로
+    // "언제 다 자라는지 모르는 작물" 을 만들지 않는다.
+    if (!crop || !plantedAt || !readyAt) return { id }
+    if (Number.isNaN(new Date(plantedAt).getTime())) return { id }
+    if (Number.isNaN(new Date(readyAt).getTime())) return { id }
+
+    return { id, cropId: crop.id, plantedAt, readyAt }
+  })
+
+  const harvestedCropCounts: Record<string, number> = {}
+  if (g.harvestedCropCounts && typeof g.harvestedCropCounts === 'object') {
+    for (const [cropId, count] of Object.entries(g.harvestedCropCounts as Record<string, unknown>)) {
+      // 없어진 작물이 저장돼 있으면 조용히 버린다
+      if (!findCrop(cropId)) continue
+      const n = Math.floor(numberOr(count, 0))
+      if (n > 0) harvestedCropCounts[cropId] = n
+    }
+  }
+
+  return {
+    unlockedAt: typeof g.unlockedAt === 'string' ? g.unlockedAt : null,
+    tutorialSeenAt: typeof g.tutorialSeenAt === 'string' ? g.tutorialSeenAt : null,
+    plots: plots.slice(0, MAX_PLOTS),
+    harvestedCropCounts,
+    plantedCount: Math.max(0, Math.floor(numberOr(g.plantedCount, 0))),
+  }
+}
+
+/**
+ * 모험 에너지.
+ *
+ * 저장된 값이 한도를 넘어 있으면 한도로 맞춘다.
+ * 한도 자체는 저장된 값을 믿지 않고 지금 값으로 덮는다 —
+ * 나중에 한도를 올리면 예전 저장에도 그대로 반영돼야 한다.
+ */
+export function sanitizeEnergy(raw: unknown): number {
+  return Math.max(0, Math.min(MAX_ADVENTURE_ENERGY, Math.floor(numberOr(raw, 0))))
 }
