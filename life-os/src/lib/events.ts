@@ -8,7 +8,7 @@
 import type { PixelAsset } from './pixelAssets'
 import { effects as fx, gear, icons, items, pets } from './pixelAssets'
 import type { DomainWeights } from './domains'
-import { PRIMARY_VALUE, SECONDARY_VALUE, type DomainMapping } from './quests/domains'
+import { weightsOf, type DomainMapping } from './domains'
 
 export type EventGroupKey = 'work' | 'activity' | 'social' | 'food' | 'body' | 'life'
 
@@ -179,8 +179,5 @@ const GROUP_DOMAINS: Record<string, DomainMapping> = {
 }
 
 export function domainsOfTag(tag: string): DomainWeights {
-  const m = TAG_DOMAINS[tag] ?? GROUP_DOMAINS[groupOfTag(tag).key]
-  const out: DomainWeights = { [m.primary]: PRIMARY_VALUE }
-  if (m.secondary) out[m.secondary] = SECONDARY_VALUE
-  return out
+  return weightsOf(TAG_DOMAINS[tag] ?? GROUP_DOMAINS[groupOfTag(tag).key])
 }

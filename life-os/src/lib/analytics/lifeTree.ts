@@ -13,6 +13,7 @@
 import type { Checkin, LifeEvent, MounjaroLog, NightCheckout, WeightLog } from '@/types'
 import { DOMAIN_META, type LifeDomain } from '../domains'
 import { domainsOfQuest } from '../quests/domains'
+import { domainsOfTag } from '../events'
 import { questById, type DayQuests } from '../quests/master'
 import type { Quest } from '../quests/types'
 import type { PixelAsset } from '../pixelAssets'
@@ -41,7 +42,9 @@ export const STATUS_KO: Record<NodeStatus, string> = {
 
 /** 무엇을 세서 이 Node 를 열 것인가 */
 export type CountKind =
-  | 'quest-domain' // 이 영역의 퀘스트 완료 횟수
+  // 이 영역에 쌓인 활동 — 지난 퀘스트 기록 + 이벤트 태그를 함께 센다.
+  // Quest 가 사라져도 태그로 계속 자라야 해서 둘을 같이 본다.
+  | 'domain-activity'
   | 'event-tag' // 특정 이벤트 태그를 적은 날
   | 'checkin-field' // 체크인의 어떤 값을 적은 날
   | 'checkin-flag' // 체크인의 boolean 이 켜진 날
@@ -89,7 +92,7 @@ const BRANCHES: TreeNodeDef[] = (
   ko: DOMAIN_META[domain].ko,
   icon,
   need: 1,
-  count: 'quest-domain' as CountKind,
+  count: 'domain-activity' as CountKind,
   target: domain,
 }))
 
@@ -97,7 +100,7 @@ const BRANCHES: TreeNodeDef[] = (
 const LEAVES: TreeNodeDef[] = [
   // ── RECOVERY
   { key: 'sleep', parent: 'recovery', domain: 'recovery', title: 'SLEEP', ko: '잠', icon: icons.sleep, need: 3, count: 'checkin-field', target: 'sleepHours', manualKey: 'sleep' },
-  { key: 'rest', parent: 'recovery', domain: 'recovery', title: 'REST', ko: '쉬는 시간', icon: pets.catCurl, need: 2, count: 'quest-domain', target: 'recovery' },
+  { key: 'rest', parent: 'recovery', domain: 'recovery', title: 'REST', ko: '쉬는 시간', icon: pets.catCurl, need: 2, count: 'domain-activity', target: 'recovery' },
   { key: 'evening', parent: 'recovery', domain: 'recovery', title: 'EVENING', ko: '저녁', icon: fx.zzzBubble, need: 2, count: 'night' },
   { key: 'recovery-pattern', parent: 'recovery', domain: 'recovery', title: 'MY RECOVERY PATTERN', ko: '내 회복 패턴', icon: fx.sparkle01, need: 10, count: 'checkin-field', target: 'sleepHours', manualKey: 'sleep' },
 
@@ -110,7 +113,7 @@ const LEAVES: TreeNodeDef[] = [
 
   // ── NOURISH
   { key: 'meals', parent: 'nourish', domain: 'nourish', title: 'MEALS', ko: '끼니', icon: items.onigiri, need: 3, count: 'checkin-field', target: 'mealsCount', manualKey: 'food' },
-  { key: 'water', parent: 'nourish', domain: 'nourish', title: 'WATER', ko: '물', icon: icons.water, need: 2, count: 'quest-domain', target: 'nourish' },
+  { key: 'water', parent: 'nourish', domain: 'nourish', title: 'WATER', ko: '물', icon: icons.water, need: 2, count: 'domain-activity', target: 'nourish' },
   { key: 'appetite', parent: 'nourish', domain: 'nourish', title: 'APPETITE', ko: '식욕', icon: icons.appetite, need: 4, count: 'checkin-field', target: 'appetite', manualKey: 'food' },
   { key: 'fuel-pattern', parent: 'nourish', domain: 'nourish', title: 'MY FUEL PATTERN', ko: '내 연료 패턴', icon: fx.sparkle02, need: 10, count: 'checkin-field', target: 'appetite', manualKey: 'food' },
 
@@ -123,12 +126,12 @@ const LEAVES: TreeNodeDef[] = [
   { key: 'mind-pattern', parent: 'mind', domain: 'mind', title: 'MY MIND PATTERN', ko: '내 마음 패턴', icon: fx.flower, need: 10, count: 'checkin-field', target: 'mood', manualKey: 'mind' },
 
   // ── HOME
-  { key: 'cleaning', parent: 'home', domain: 'home', title: 'CLEANING', ko: '청소', icon: icons.clean, need: 2, count: 'quest-domain', target: 'home' },
-  { key: 'organizing', parent: 'home', domain: 'home', title: 'ORGANIZING', ko: '정리', icon: icons.save, need: 6, count: 'quest-domain', target: 'home' },
-  { key: 'cozy-home', parent: 'home', domain: 'home', title: 'COZY HOME', ko: '포근한 집', icon: fx.stringLights, need: 14, count: 'quest-domain', target: 'home' },
+  { key: 'cleaning', parent: 'home', domain: 'home', title: 'CLEANING', ko: '청소', icon: icons.clean, need: 2, count: 'domain-activity', target: 'home' },
+  { key: 'organizing', parent: 'home', domain: 'home', title: 'ORGANIZING', ko: '정리', icon: icons.save, need: 6, count: 'domain-activity', target: 'home' },
+  { key: 'cozy-home', parent: 'home', domain: 'home', title: 'COZY HOME', ko: '포근한 집', icon: fx.stringLights, need: 14, count: 'domain-activity', target: 'home' },
 
   // ── CREATE
-  { key: 'ideas', parent: 'create', domain: 'create', title: 'IDEAS', ko: '아이디어', icon: fx.sparkle02, need: 2, count: 'quest-domain', target: 'create' },
+  { key: 'ideas', parent: 'create', domain: 'create', title: 'IDEAS', ko: '아이디어', icon: fx.sparkle02, need: 2, count: 'domain-activity', target: 'create' },
   { key: 'work', parent: 'create', domain: 'create', title: 'WORK', ko: '일', icon: icons.work, need: 2, count: 'checkin-field', target: 'workHours' },
   { key: 'projects', parent: 'create', domain: 'create', title: 'PROJECTS', ko: '프로젝트', icon: icons.log, need: 1, count: 'life-category', target: 'work' },
   { key: 'style', parent: 'create', domain: 'create', title: 'STYLE', ko: '스타일', icon: icons.outfit, need: 2, count: 'event-tag', target: '옷 꾸밈' },
@@ -146,7 +149,7 @@ const LEAVES: TreeNodeDef[] = [
   { key: 'game', parent: 'joy', domain: 'joy', title: 'GAME', ko: '게임', icon: icons.energy, need: 1, count: 'event-tag', target: '게임' },
   { key: 'photo', parent: 'joy', domain: 'joy', title: 'PHOTO', ko: '사진', icon: icons.camera, need: 1, count: 'event-tag', target: '사진 찍음' },
   { key: 'new-place', parent: 'joy', domain: 'joy', title: 'NEW PLACE', ko: '새로운 곳', icon: fx.rainbow, need: 1, count: 'event-tag', target: '새로운 장소' },
-  { key: 'small-joy', parent: 'joy', domain: 'joy', title: 'SMALL JOY', ko: '작은 즐거움', icon: fx.flower, need: 5, count: 'quest-domain', target: 'joy' },
+  { key: 'small-joy', parent: 'joy', domain: 'joy', title: 'SMALL JOY', ko: '작은 즐거움', icon: fx.flower, need: 5, count: 'domain-activity', target: 'joy' },
 ]
 
 export const TREE_NODES: TreeNodeDef[] = [...BRANCHES, ...LEAVES]
@@ -186,17 +189,27 @@ export interface LifeTree {
 /** count 종류별로 실제 개수를 센다 */
 function countFor(def: TreeNodeDef, input: TreeInput): number {
   switch (def.count) {
-    case 'quest-domain': {
-      const custom = input.customQuests ?? []
+    case 'domain-activity': {
+      const domain = def.target as LifeDomain
       let n = 0
+
+      // 지난 퀘스트 기록 (Life OS 1.x) — 이미 열린 가지가 다시 닫히지 않게
+      const custom = input.customQuests ?? []
       for (const day of Object.values(input.questLog)) {
         for (const [id, times] of Object.entries(day.completions)) {
           const quest = questById(id, custom)
           if (!quest) continue
-          const w = domainsOfQuest(quest)
-          if (w[def.target as LifeDomain]) n += times
+          if (domainsOfQuest(quest)[domain]) n += times
         }
       }
+
+      // 이벤트 태그 — 앞으로는 이쪽으로 자란다
+      for (const tags of Object.values(input.eventLog)) {
+        for (const tag of tags) {
+          if (domainsOfTag(tag)[domain]) n += 1
+        }
+      }
+
       return n
     }
     case 'event-tag':

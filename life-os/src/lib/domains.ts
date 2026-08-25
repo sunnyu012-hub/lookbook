@@ -119,6 +119,31 @@ export const DOMAIN_KEYS: LifeDomain[] = DOMAINS.map((d) => d.key)
 export const isDomain = (v: string): v is LifeDomain =>
   (DOMAIN_KEYS as string[]).includes(v)
 
+// ─────────────────────────────────────────────
+// 매핑 상수
+//
+// 원래 quests/domains.ts 에 있었지만, 영역 매핑은 퀘스트만의 개념이 아니다.
+// 이벤트 태그도, 앞으로의 Quick Log 도 같은 규칙으로 영역에 쌓인다.
+// Quest 가 사라져도 Life Balance 가 살아 있어야 하므로 여기로 옮겼다.
+// ─────────────────────────────────────────────
+
+/** 주 영역 1.0 / 보조 영역 0.5 */
+export const PRIMARY_VALUE = 1
+export const SECONDARY_VALUE = 0.5
+
+/** 한 행동은 최대 2개 영역까지만 연결한다 */
+export interface DomainMapping {
+  primary: LifeDomain
+  secondary?: LifeDomain
+}
+
+/** 매핑 하나를 분포로 편다 */
+export function weightsOf(m: DomainMapping): DomainWeights {
+  const out: DomainWeights = { [m.primary]: PRIMARY_VALUE }
+  if (m.secondary) out[m.secondary] = SECONDARY_VALUE
+  return out
+}
+
 /** 두 분포를 더한다. 한쪽에만 있는 키도 살린다. */
 export function addWeights(a: DomainWeights, b: DomainWeights): DomainWeights {
   const out: DomainWeights = { ...a }

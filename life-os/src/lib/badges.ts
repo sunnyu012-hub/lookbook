@@ -23,6 +23,12 @@ export interface Badge {
   secret?: boolean
   /** 진행도가 있는 배지 */
   goal?: number
+  /**
+   * Life OS 1.x 의 Quest 에 매인 배지.
+   * 이미 딴 것은 그대로 두지만, 아직 못 딴 것은 앞으로도 딸 수 없으므로 감춘다.
+   * 영영 안 움직이는 진행바를 Collection 에 남겨 두지 않는다.
+   */
+  legacy?: boolean
 }
 
 export interface BadgeState extends Badge {
@@ -59,7 +65,7 @@ const RULES: Rule[] = [
   // ── 시작
   { id: 'first-day', name: 'FIRST DAY', hint: '첫 기록을 남기면', group: 'start', icon: fx.sparkle01,
     goal: 1, progressOf: (i) => i.checkins.length },
-  { id: 'first-quest', name: 'FIRST STEP', hint: '퀘스트 하나 완료', group: 'start', icon: icons.xp,
+  { id: 'first-quest', legacy: true, name: 'FIRST STEP', hint: '퀘스트 하나 완료', group: 'start', icon: icons.xp,
     goal: 1, progressOf: (i) => i.questsDone },
   { id: 'first-tag', name: 'WHAT HAPPENED', hint: '오늘 있었던 일 한 번 적기', group: 'start', icon: icons.camera,
     goal: 1, progressOf: (i) => Object.values(i.eventLog).filter((t) => t.length > 0).length },
@@ -78,9 +84,9 @@ const RULES: Rule[] = [
     } },
 
   // ── 오늘의 목표
-  { id: 'focus-1', name: 'ON TARGET', hint: '오늘의 목표 한 번 해내기', group: 'quest', icon: fx.sparkle02,
+  { id: 'focus-1', legacy: true, name: 'ON TARGET', hint: '오늘의 목표 한 번 해내기', group: 'quest', icon: fx.sparkle02,
     goal: 1, progressOf: (i) => i.focusDays ?? 0 },
-  { id: 'focus-7', name: 'SEVEN FOCUS', hint: '오늘의 목표 7번', group: 'quest', icon: fx.flower,
+  { id: 'focus-7', legacy: true, name: 'SEVEN FOCUS', hint: '오늘의 목표 7번', group: 'quest', icon: fx.flower,
     goal: 7, progressOf: (i) => i.focusDays ?? 0 },
   { id: 'weekly-1', name: 'LOOKING BACK', hint: '주간 돌아보기 한 번', group: 'log', icon: pets.catSit,
     goal: 1, progressOf: (i) => i.weeklyResets ?? 0 },
@@ -88,13 +94,13 @@ const RULES: Rule[] = [
     goal: 4, progressOf: (i) => i.weeklyResets ?? 0 },
 
   // ── 퀘스트
-  { id: 'quest-beginner', name: 'QUEST BEGINNER', hint: '퀘스트 10개 완료', group: 'quest', icon: icons.xp,
+  { id: 'quest-beginner', legacy: true, name: 'QUEST BEGINNER', hint: '퀘스트 10개 완료', group: 'quest', icon: icons.xp,
     goal: 10, progressOf: (i) => i.questsDone },
-  { id: 'quest-hunter', name: 'QUEST HUNTER', hint: '퀘스트 50개 완료', group: 'quest', icon: icons.xp,
+  { id: 'quest-hunter', legacy: true, name: 'QUEST HUNTER', hint: '퀘스트 50개 완료', group: 'quest', icon: icons.xp,
     goal: 50, progressOf: (i) => i.questsDone },
-  { id: 'quest-master', name: 'QUEST MASTER', hint: '퀘스트 100개 완료', group: 'quest', icon: fx.sparkle02,
+  { id: 'quest-master', legacy: true, name: 'QUEST MASTER', hint: '퀘스트 100개 완료', group: 'quest', icon: fx.sparkle02,
     goal: 100, progressOf: (i) => i.questsDone },
-  { id: 'quest-maniac', name: 'QUEST MANIAC', hint: '퀘스트 500개 완료', group: 'quest', icon: fx.rainbow,
+  { id: 'quest-maniac', legacy: true, name: 'QUEST MANIAC', hint: '퀘스트 500개 완료', group: 'quest', icon: fx.rainbow,
     goal: 500, progressOf: (i) => i.questsDone },
 
   // ── 기록
@@ -140,7 +146,7 @@ export function evaluateBadges(input: BadgeInput): BadgeState[] {
   return RULES.map(({ progressOf, ...badge }) => {
     const progress = progressOf(input)
     return { ...badge, progress, earned: progress >= (badge.goal ?? 1) }
-  })
+  }).filter((badge) => !badge.legacy || badge.earned)
 }
 
 export const earnedCount = (states: BadgeState[]) => states.filter((b) => b.earned).length

@@ -276,14 +276,13 @@ export function MePage({
           {[
             { label: '아침 기록', value: xp.checkin },
             { label: '밤 마무리', value: xp.night },
-            { label: '퀘스트', value: xp.quest },
+            { label: '퀘스트 (지난 기록)', value: xp.quest },
             { label: '오늘 태그', value: xp.events },
             { label: '체중 기록', value: xp.weight },
             { label: '투약 기록', value: xp.mounjaro },
             { label: '있었던 일 기록', value: xp.lifeEvent },
             { label: '패턴 발견', value: xp.discovery },
             { label: '주간 돌아보기', value: xp.weekly },
-            { label: '오늘의 목표', value: xp.focus },
             { label: '새 배지', value: xp.badge },
           ]
             .filter((row) => row.value > 0)

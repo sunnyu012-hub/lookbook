@@ -9,17 +9,9 @@
  *
  * 한 행동은 최대 2개 영역까지만 연결한다. 값은 주 영역 1, 보조 영역 0.5 를 기본으로 둔다.
  */
-import type { DomainWeights, LifeDomain } from '../domains'
+import type { DomainWeights } from '../domains'
+import { weightsOf, type DomainMapping } from '../domains'
 import type { Quest, QuestCategory } from './types'
-
-/** 주 영역 1.0 / 보조 영역 0.5 */
-export const PRIMARY_VALUE = 1
-export const SECONDARY_VALUE = 0.5
-
-export interface DomainMapping {
-  primary: LifeDomain
-  secondary?: LifeDomain
-}
 
 /** 카테고리별 기본 매핑 — 새 퀘스트는 카테고리만 정하면 여기서 따라온다 */
 export const CATEGORY_DOMAINS: Record<QuestCategory, DomainMapping> = {
@@ -106,9 +98,7 @@ export function mappingOfQuest(quest: Pick<Quest, 'id' | 'category'>): DomainMap
 }
 
 /** 한 번 완료했을 때 쌓이는 분포 */
-export function domainsOfQuest(quest: Pick<Quest, 'id' | 'category'>): DomainWeights {
-  const m = mappingOfQuest(quest)
-  const out: DomainWeights = { [m.primary]: PRIMARY_VALUE }
-  if (m.secondary) out[m.secondary] = SECONDARY_VALUE
-  return out
-}
+export const domainsOfQuest = (quest: Pick<Quest, 'id' | 'category'>): DomainWeights =>
+  weightsOf(mappingOfQuest(quest))
+
+export type { DomainMapping }

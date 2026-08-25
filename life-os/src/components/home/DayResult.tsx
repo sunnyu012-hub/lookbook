@@ -60,16 +60,12 @@ export function DayComplete({
   checkin,
   night,
   dayNumber,
-  questsDone,
-  questTotal,
   xpEarned,
   onClose,
 }: {
   checkin: Checkin | null
   night: NightCheckout
   dayNumber: number
-  questsDone: number
-  questTotal: number
   xpEarned: number
   onClose: () => void
 }) {
@@ -88,10 +84,10 @@ export function DayComplete({
 
       <PixelImage asset={characters.recovery} height={86} className="mx-auto mt-3 animate-breathe" />
 
-      <div className="mt-4 grid grid-cols-3 gap-2">
+      {/* Quest 칸이 있던 자리 — 억지로 채우지 않고 두 칸으로 둔다 */}
+      <div className="mt-4 grid grid-cols-2 gap-2">
         <Cell label="Morning" value={morning === null ? '—' : String(morning)} />
         <Cell label="Actual" value={actual === null ? '—' : String(actual)} />
-        <Cell label="Quest" value={`${questsDone}/${Math.max(questTotal, questsDone)}`} />
       </div>
 
       {gap !== null && (
