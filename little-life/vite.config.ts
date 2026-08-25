@@ -43,6 +43,13 @@ function stampServiceWorker() {
               url.endsWith('/idle.webp') ||
               url.endsWith('/walk.webp'),
           )
+          // 캐릭터 모습도 스물네 벌이라 다 받지는 않는다.
+          // 기본 모습 하나만 미리 받는다 — 그림을 못 받았을 때 돌아가는 자리라
+          // 이건 오프라인에서도 반드시 있어야 한다.
+          // 나머지는 처음 보는 순간 받아서 캐시에 남는다.
+          .filter(
+            (url) => !url.startsWith('/assets/characters/') || url.endsWith('/basic_day.webp'),
+          )
           // 클라우드 백업 라이브러리는 백업을 켠 사람만 받는다.
           // 첫 실행에 미리 받아두면 안 쓰는 사람에게까지 짐이 된다.
           // (쓰기 시작하면 그때 받아서 캐시에 남는다)

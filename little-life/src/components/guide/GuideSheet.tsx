@@ -8,6 +8,8 @@ import { CATEGORY_BADGE } from '@/lib/assets'
 import { CATEGORY_LABEL } from '@/lib/labels'
 import { GUIDE_PAGES, type GuideArt } from '@/lib/guide/pages'
 import { companionViews, meetingLabel, meetingProgress } from '@/lib/discovery/companions'
+import { SKINS, ownedSkinCount, skinViews } from '@/lib/character/skins'
+import { CharacterSkinRenderer } from '@/components/character/CharacterSkinRenderer'
 import { CompanionArt } from '@/components/discovery/CompanionArt'
 
 interface GuideSheetProps {
@@ -86,6 +88,7 @@ export function GuideSheet({ open, state, firstRun, onClose }: GuideSheetProps) 
 
           {page.extra === 'CATEGORIES' && <Categories />}
           {page.extra === 'COMPANIONS' && <Companions state={state} />}
+          {page.extra === 'SKINS' && <Skins state={state} />}
         </div>
 
         <div className="shrink-0 pt-4">
@@ -141,6 +144,43 @@ function Categories() {
         </li>
       ))}
     </ul>
+  )
+}
+
+/**
+ * 캐릭터 모습 몇 가지.
+ *
+ * 전부 보여주지 않는다 — 목록은 "내 모습" 화면에 있고, 여기서는
+ * "이런 게 있다" 만 알면 된다. 아직 못 얻은 것도 실루엣으로 같이 둔다.
+ * 얻을 게 남아 있다는 걸 보여주는 게 여기서 할 일이다.
+ */
+function Skins({ state }: { state: AppState }) {
+  const views = skinViews(state).filter((v) => !v.hidden).slice(0, 4)
+  const owned = ownedSkinCount(state)
+
+  return (
+    <div className="mt-4">
+      <ul className="grid grid-cols-4 gap-2">
+        {views.map(({ def, owned: has }) => (
+          <li key={def.id} className="rounded-btn bg-canvas px-1 py-1.5">
+            <span
+              className={cn(
+                'mx-auto flex h-[54px] w-full items-center justify-center',
+                !has && 'opacity-30 grayscale',
+              )}
+            >
+              <CharacterSkinRenderer skinId={def.id} animated={false} className="h-[52px] w-auto" />
+            </span>
+            <span className="mt-1 block truncate text-center text-[9.5px] text-inkdim">
+              {def.name}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-center text-[11px] text-inkfaint">
+        지금 {owned}가지 · 전부 {SKINS.length}가지
+      </p>
+    </div>
   )
 }
 

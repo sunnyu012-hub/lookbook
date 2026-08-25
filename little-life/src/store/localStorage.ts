@@ -31,6 +31,8 @@ import {
   sanitizeUsageProfiles,
   sanitizeCollection,
   sanitizeDiscovery,
+  sanitizeOwnedSkins,
+  sanitizeSelectedSkin,
   backfillCategoryCompleted,
   backfillUsage,
   withSkillPoints,
@@ -249,6 +251,9 @@ export function sanitizeState(raw: unknown): AppState | null {
       skillPoints: 0,
       unlockedSkills: sanitizeSkills(user.unlockedSkills),
       activeBuffs: sanitizeBuffs(user.activeBuffs),
+      // v10 에는 없던 항목들. 없으면 기본 모습 하나만 가진 것으로 본다.
+      selectedSkinId: sanitizeSelectedSkin(user.selectedSkinId, user.ownedSkinIds),
+      ownedSkinIds: sanitizeOwnedSkins(user.ownedSkinIds),
     },
     quests: Array.isArray(s.quests)
       ? s.quests.map(sanitizeQuest).filter((q): q is Quest => q !== null)

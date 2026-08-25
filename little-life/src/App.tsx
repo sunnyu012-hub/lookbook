@@ -28,6 +28,9 @@ import { storyProgress, unreadChapters } from '@/lib/discovery/stories'
 import { StorySheet } from '@/components/discovery/StorySheet'
 import { ConflictSheet } from '@/components/sync/ConflictSheet'
 import { GuideSheet } from '@/components/guide/GuideSheet'
+import { MyLookSheet } from '@/components/character/MyLookSheet'
+import { NewSkinOverlay } from '@/components/character/NewSkinOverlay'
+import { SkinGallery } from '@/components/character/SkinGallery'
 import { WorkshopSheet } from '@/components/collection/WorkshopSheet'
 import { DiscoveryOverlay } from '@/components/collection/DiscoveryOverlay'
 import { DecorateMode } from '@/components/room/DecorateMode'
@@ -106,6 +109,11 @@ export default function App() {
     setCurrentRoom,
     setRoomEffect,
     markGuideSeen,
+    selectSkin,
+    buySkin,
+    devGrantAllSkins,
+    newSkins,
+    dismissNewSkins,
     replaceState,
   } = useGameState()
   const feedback = useFeedback()
@@ -124,6 +132,14 @@ export default function App() {
   const [discoveryOpen, setDiscoveryOpen] = useState(false)
   const [conflictOpen, setConflictOpen] = useState(false)
   const [guideOpen, setGuideOpen] = useState(false)
+  const [lookOpen, setLookOpen] = useState(false)
+
+  /**
+   * 개발용 갤러리. 주소에 ?dev=skins 를 붙였을 때만.
+   * 화면 어디에도 들어가는 길을 두지 않는다 — 검수용이다.
+   */
+  const devGallery =
+    typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('dev') === 'skins'
 
   /**
    * 처음 여는 사람에게 한 번.
@@ -561,6 +577,10 @@ export default function App() {
     return <div className="min-h-[100dvh] bg-canvas" />
   }
 
+  if (devGallery) {
+    return <SkinGallery state={state} onGrantAll={devGrantAllSkins} onWear={selectSkin} />
+  }
+
   return (
     <>
       <AppShell
@@ -592,6 +612,7 @@ export default function App() {
             }}
             onOpenMe={() => setTab('me')}
             onDecorate={() => setDecorating(true)}
+            onOpenLook={() => setLookOpen(true)}
             onClaimDelivery={handleClaimDelivery}
           discoveryNotes={discoveryNotes}
           onDismissDiscovery={dismissDiscoveryNotes}
@@ -649,6 +670,7 @@ export default function App() {
             onToggleWishlist={handleToggleWishlist}
             onPlace={handlePlace}
             onOpenWorkshop={() => setWorkshopOpen(true)}
+            onOpenLook={() => setLookOpen(true)}
             initialView={bagView}
           />
         )}
@@ -821,6 +843,25 @@ export default function App() {
         confirmLabel="지우기"
         onConfirm={confirmRoutineDelete}
         onCancel={() => setPendingRoutineDelete(null)}
+      />
+
+      <MyLookSheet
+        open={lookOpen}
+        state={state}
+        onClose={() => setLookOpen(false)}
+        onSelect={selectSkin}
+        onBuy={buySkin}
+      />
+
+      {/* 새 모습은 얻은 자리에서 한 번 보여준다. 자동으로 갈아입히지는 않는다. */}
+      <NewSkinOverlay
+        skins={newSkins}
+        onWear={(id) => {
+          selectSkin(id)
+          dismissNewSkins()
+          feedback.notify('이 모습으로 지낼게 ✦')
+        }}
+        onClose={dismissNewSkins}
       />
 
       <GuideSheet

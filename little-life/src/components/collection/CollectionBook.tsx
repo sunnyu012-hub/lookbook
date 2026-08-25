@@ -10,6 +10,8 @@ import { COLLECTION_SETS } from '@/lib/collection/sets'
 import { TROPHIES } from '@/lib/collection/trophies'
 import { collectionProgress, isDiscovered, isSeen, ownedCount, setProgress } from '@/lib/collection/progress'
 import { COLLECTION_CATEGORY_LABEL } from '@/lib/labels'
+import { skinCollectionProgress } from '@/lib/character/derive'
+import { CharacterSkinRenderer } from '@/components/character/CharacterSkinRenderer'
 import { cn } from '@/components/ui/cn'
 
 /**
@@ -30,6 +32,8 @@ interface CollectionBookProps {
   onToggleWishlist: (itemId: string) => void
   onPlace: (itemId: string) => void
   onOpenWorkshop: () => void
+  /** 캐릭터 모습 목록을 연다 */
+  onOpenLook: () => void
 }
 
 export function CollectionBook({
@@ -37,6 +41,7 @@ export function CollectionBook({
   onToggleWishlist,
   onPlace,
   onOpenWorkshop,
+  onOpenLook,
 }: CollectionBookProps) {
   const [tab, setTab] = useState<Tab>('ALL')
   const [shown, setShown] = useState(PAGE)
@@ -59,6 +64,7 @@ export function CollectionBook({
     setShown(PAGE)
   }
 
+  const skinProgress = useMemo(() => skinCollectionProgress(state), [state])
   const trophyFound = TROPHY_CATALOG.filter((t) => isDiscovered(collection, t.id)).length
   const setsDone = COLLECTION_SETS.filter((s) => setProgress(s, collection).complete).length
 
@@ -94,6 +100,28 @@ export function CollectionBook({
           </span>
         </div>
       </Card>
+
+      {/* 캐릭터 모습은 물건이 아니라 여기 목록에 섞지 않는다.
+          대신 여기서 몇 가지를 모았는지 보여주고 그쪽으로 넘긴다. */}
+      <button
+        type="button"
+        onClick={onOpenLook}
+        className="mt-3 flex w-full items-center gap-3 rounded-card border border-line/70 bg-surface px-4 py-3 text-left shadow-soft active:scale-[0.99]"
+      >
+        <span className="h-10 w-8 shrink-0">
+          <CharacterSkinRenderer skinId={state.user.selectedSkinId} animated={false} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[13.5px] font-medium text-ink">캐릭터 모습</span>
+          <span className="mt-0.5 block text-[11.5px] text-inkdim">
+            오늘 기분에 맞는 모습으로 지내기
+          </span>
+        </span>
+        <span className="shrink-0 font-game text-[13px] text-coral-deep">
+          {skinProgress.found}
+          <span className="text-[10px] text-inkfaint"> / {skinProgress.total}</span>
+        </span>
+      </button>
 
       {/* 분류 */}
       <div className="-mx-4 mt-4 overflow-x-auto px-4 pb-1">

@@ -3,6 +3,7 @@ export * from './city'
 export * from './library'
 export * from './collection'
 export * from './discovery'
+export * from './skins'
 import type { CollectionState } from './collection'
 import type { DiscoveryState } from './discovery'
 import type {
@@ -16,6 +17,7 @@ import type {
 import type { ActiveBuff, NpcId, NpcStates, Reputation } from './city'
 import type { RecommendSettings, UsageProfiles } from './library'
 import type { TimeBand } from './rpg'
+import type { SkinId } from './skins'
 
 /**
  * Little Life 의 데이터 모델.
@@ -152,6 +154,14 @@ export interface User {
   unlockedSkills: string[]
   /** 마시거나 먹어서 지금 걸려 있는 것 */
   activeBuffs: ActiveBuff[]
+  /**
+   * 지금 입고 있는 모습.
+   *
+   * 이 한 줄이 캐릭터 외형의 전부다. 상의 · 하의 · 헤어를 따로 들고 있지 않는다.
+   */
+  selectedSkinId: SkinId
+  /** 지금까지 얻은 모습들 */
+  ownedSkinIds: SkinId[]
 }
 
 /** 카테고리별 누적 EXP. 퀘스트에서 계산하지 않고 따로 쌓는다 — 아래 주석 참고. */

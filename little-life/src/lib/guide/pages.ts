@@ -30,6 +30,8 @@ export type GuideExtra =
   | 'COMPANIONS'
   /** 분야 여섯 개 배지 */
   | 'CATEGORIES'
+  /** 캐릭터 모습 몇 가지 미리보기 */
+  | 'SKINS'
 
 export interface GuidePage {
   id: string
@@ -104,6 +106,19 @@ export const GUIDE_PAGES: GuidePage[] = [
     where: '홈 맨 위 줄 › 발견함 › 동료',
     art: { kind: 'EMOJI', glyph: '🐾' },
     extra: 'COMPANIONS',
+  },
+  {
+    id: 'LOOK',
+    title: '내 모습',
+    lines: [
+      '캐릭터 모습이 스물네 벌 있어. 머리부터 신발, 들고 있는 것까지 통째로 바뀌어.',
+      '지내다 보면 하나씩 생겨. 달콤한 것, 락시크, 무대 위 모습까지 있어.',
+      '얻었다고 자동으로 갈아입지는 않아 — 오늘 마음에 드는 걸로 고르면 돼.',
+      '능력치랑은 상관없어. 예쁜 걸 못 입게 되는 일은 없어.',
+    ],
+    where: '홈 › 모습',
+    art: { kind: 'EMOJI', glyph: '👗' },
+    extra: 'SKINS',
   },
   {
     id: 'DISCOVERY',

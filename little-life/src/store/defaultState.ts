@@ -5,6 +5,7 @@ import { createId } from '@/lib/id'
 import { emptyReputation } from '@/lib/city/reputation'
 import { emptyCollection } from '@/lib/collection/progress'
 import { emptyDiscovery } from '@/lib/discovery/derive'
+import { DEFAULT_SKIN_ID, defaultOwnedSkinIds } from '@/lib/character/skins'
 import {
   STATE_VERSION,
   defaultRecommendSettings,
@@ -61,6 +62,8 @@ export function createDefaultState(): AppState {
       skillPoints: 0,
       unlockedSkills: [],
       activeBuffs: [],
+      selectedSkinId: DEFAULT_SKIN_ID,
+      ownedSkinIds: defaultOwnedSkinIds(),
     },
     // 목록에 적어둔 순서대로 보이도록 생성 시각을 1ms 씩 어긋나게 준다.
     quests: SAMPLE_QUESTS.map((draft, i) =>
