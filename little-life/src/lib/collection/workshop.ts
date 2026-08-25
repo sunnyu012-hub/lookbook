@@ -19,6 +19,17 @@ import type { CollectionItemDef, RecipeDef } from '@/types'
 
 const C = (id: string) => `crop_${id}`
 
+/** 분류별로 방에서 차지하는 자리 */
+const FOOTPRINT: Partial<Record<CollectionItemDef['category'], { width: number; height: number }>> =
+  {
+    FURNITURE: { width: 13, height: 13 },
+    LIGHTING: { width: 9, height: 12 },
+    WALL: { width: 10, height: 9 },
+    LITTLE_THING: { width: 8, height: 8 },
+    PLANT: { width: 9, height: 11 },
+    OUTDOOR: { width: 12, height: 11 },
+  }
+
 function item(
   id: string,
   nameKo: string,
@@ -37,7 +48,9 @@ function item(
     description,
     hasPlaceableAsset: true,
     placeable: true,
-    footprint: { width: 13, height: 14 },
+    // 아직 그림이 없어서 이모지가 그 자리를 채운다. 그러니 자리 크기가
+    // 곧 보이는 크기다 — 선반 하나가 벤치만 하면 방이 이상해진다.
+    footprint: FOOTPRINT[category] ?? { width: 11, height: 11 },
     acquisitionSources: [{ kind: 'CRAFT' }],
     collectionSetIds: [],
     tags: ['작업실'],

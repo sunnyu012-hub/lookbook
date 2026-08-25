@@ -112,18 +112,18 @@ describe('예전 기록이 그대로 반영된다', () => {
     expect(back).toEqual(emptyDiscovery())
   })
 
-  it('스키마 버전이 13 이다', () => {
-    expect(STATE_VERSION).toBe(13)
-    expect(createDefaultState().version).toBe(13)
+  it('스키마 버전이 14 이다', () => {
+    expect(STATE_VERSION).toBe(14)
+    expect(createDefaultState().version).toBe(14)
   })
 })
 
 // ── B. 진행도가 는다 ────────────────────────────────────
 
 describe('자동 컬렉션', () => {
-  it('열네 가지가 있고 id 가 겹치지 않는다', () => {
-    expect(AUTO_COLLECTIONS).toHaveLength(14)
-    expect(new Set(AUTO_COLLECTIONS.map((c) => c.id)).size).toBe(14)
+  it('열여덟 가지가 있고 id 가 겹치지 않는다', () => {
+    expect(AUTO_COLLECTIONS).toHaveLength(18)
+    expect(new Set(AUTO_COLLECTIONS.map((c) => c.id)).size).toBe(18)
     for (const c of AUTO_COLLECTIONS) expect(AUTO_COLLECTION_IDS).toContain(c.id)
   })
 

@@ -13,6 +13,8 @@ interface WorkshopSheetProps {
   state: AppState
   onClose: () => void
   onCraft: (recipeId: string) => void
+  /** 만들어둔 것을 그 자리에서 방에 놓는다 */
+  onPlace: (itemId: string) => void
 }
 
 const TABS: Array<{ key: WorkshopTab | 'ALL'; label: string }> = [
@@ -31,7 +33,7 @@ const TABS: Array<{ key: WorkshopTab | 'ALL'; label: string }> = [
  * 아직 모르는 것도 자리는 남긴다. 가까이 온 것에는 낌새 한 줄,
  * 아직 먼 것에는 ??? 만. 전부 펼쳐두면 만들기가 아니라 재료 숙제가 된다.
  */
-export function WorkshopSheet({ open, state, onClose, onCraft }: WorkshopSheetProps) {
+export function WorkshopSheet({ open, state, onClose, onCraft, onPlace }: WorkshopSheetProps) {
   const [tab, setTab] = useState<WorkshopTab | 'ALL'>('ALL')
   const [openId, setOpenId] = useState<string | null>(null)
   /** 만드는 짧은 순간. 기다리게 하려는 게 아니라 눈이 따라오게 하려는 것이다. */
@@ -234,6 +236,23 @@ export function WorkshopSheet({ open, state, onClose, onCraft }: WorkshopSheetPr
                 >
                   {crafting ? '만드는 중…' : active.ready ? '만들기' : '재료가 모자라'}
                 </button>
+
+                {/* 이미 만들어둔 게 있으면 여기서 바로 방으로.
+                    만들어놓고 놓을 데를 못 찾으면 그건 만든 게 아니다. */}
+                {active.owned > 0 && active.item.placement === 'PLACEABLE' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const id = active.item!.id
+                      setOpenId(null)
+                      onClose()
+                      onPlace(id)
+                    }}
+                    className="mt-2 min-h-[48px] w-full rounded-btn bg-sunken text-[13.5px] font-medium text-inkdim active:scale-[0.98]"
+                  >
+                    방에 놓기
+                  </button>
+                )}
               </>
             ) : (
               <p className="mt-4 rounded-card bg-canvas px-3.5 py-4 text-center text-[12.5px] leading-relaxed text-inkdim">

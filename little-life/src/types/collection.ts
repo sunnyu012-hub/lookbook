@@ -304,6 +304,8 @@ export type TrophyCondition =
   | { kind: 'SET_COMPLETE'; setId: string }
   /** 정원이 이만큼 넓어지면 */
   | { kind: 'GARDEN_LEVEL'; level: number }
+  /** 만들기로만 얻는 것을 이만큼 만들어보면 */
+  | { kind: 'CRAFTED_KINDS'; count: number }
 
 export interface TrophyDef {
   id: string

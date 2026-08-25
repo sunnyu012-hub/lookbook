@@ -33,6 +33,13 @@ import {
   isDiscovered,
   isRecipeKnown,
   recipeContextOf,
+  craftedKinds,
+  gardenCraftedKinds,
+  trophyEarned,
+  isSetVisible,
+  unclaimedPartials,
+  partialKey,
+  visibleSets,
   newMilestones,
   newTrophies,
   ownedCount,
@@ -476,6 +483,7 @@ describe('트로피와 도감 보상', () => {
       completedSetIds: [],
       discoveredCount: 0,
       gardenLevel: 0,
+      craftedKinds: 0,
     })
     expect(trophies.map((t) => t.id)).toContain('first_step')
   })
@@ -489,6 +497,7 @@ describe('트로피와 도감 보상', () => {
       completedSetIds: [],
       discoveredCount: 0,
       gardenLevel: 0,
+      craftedKinds: 0,
     })
     expect(trophies.map((t) => t.id)).not.toContain('first_step')
   })
@@ -502,6 +511,7 @@ describe('트로피와 도감 보상', () => {
       completedSetIds: [],
       discoveredCount: 0,
       gardenLevel: 0,
+      craftedKinds: 0,
     })
     const ids = trophies.map((t) => t.id)
     expect(ids).toContain('work_master')
@@ -726,6 +736,133 @@ describe('만들기', () => {
   })
 })
 
+describe('만들어본 가짓수', () => {
+  it('만든 횟수를 저장하지 않는다 — 발견 기록에서 센다', () => {
+    let c = emptyCollection()
+    expect(craftedKinds(c)).toBe(0)
+
+    c = addItem(c, 'w_strawberry_shelf').collection
+    expect(craftedKinds(c)).toBe(1)
+    expect(gardenCraftedKinds(c)).toBe(1)
+
+    // 같은 것을 또 만들어도 가짓수는 그대로다
+    c = addItem(c, 'w_strawberry_shelf').collection
+    expect(craftedKinds(c)).toBe(1)
+  })
+
+  it('재료로 다 써버려도 줄지 않는다', () => {
+    let c = emptyCollection()
+    c = addItem(c, 'w_herb_bundle').collection
+    expect(craftedKinds(c)).toBe(1)
+
+    c = { ...c, owned: {} }
+    expect(craftedKinds(c)).toBe(1)
+  })
+
+  it('가게에서도 파는 것은 만든 것으로 안 센다', () => {
+    // 사서 얻은 것을 만든 것으로 쳐주면 작업실을 한 번도 안 연 사람이
+    // 작업 트로피를 받는다
+    let c = emptyCollection()
+    const bought = RECIPES.find((r) => {
+      const def = findCollectionItem(r.resultItemId)
+      return def && def.acquisitionSources.some((s) => s.kind === 'SHOP')
+    })
+    if (!bought) return
+    c = addItem(c, bought.resultItemId).collection
+    expect(craftedKinds(c)).toBe(0)
+  })
+
+  it('정원 쪽만 따로 셀 수 있다', () => {
+    let c = emptyCollection()
+    c = addItem(c, 'sprout_jar').collection
+    expect(craftedKinds(c)).toBe(1)
+    expect(gardenCraftedKinds(c)).toBe(0)
+  })
+
+  it('서른 가지 만들면 작업대 트로피가 나온다', () => {
+    const trophy = TROPHIES.find((t) => t.id === 'tiny_workbench')!
+    const ctx = {
+      totalCompletedQuests: 0,
+      categoryCompleted: emptyCategoryStats(),
+      bossClears: 0,
+      completedSetIds: [] as string[],
+      discoveredCount: 0,
+      gardenLevel: 0,
+      craftedKinds: 29,
+    }
+    expect(trophyEarned(trophy, ctx)).toBe(false)
+    expect(trophyEarned(trophy, { ...ctx, craftedKinds: 30 })).toBe(true)
+  })
+})
+
+describe('정원 세트', () => {
+  function ready(): AppState {
+    const base = createDefaultState()
+    return { ...base, garden: { ...base.garden, unlockedAt: '2026-01-01T00:00:00.000Z' } }
+  }
+
+  it('아직 못 만난 것으로만 채우는 세트는 감춘다', () => {
+    const state = ready()
+    expect(visibleSets(state).map((s) => s.id)).not.toContain('moon_garden')
+
+    const found = {
+      ...state,
+      garden: { ...state.garden, harvestedCropCounts: { moon_herb: 1 } },
+    }
+    expect(visibleSets(found).map((s) => s.id)).toContain('moon_garden')
+  })
+
+  it('감춘 세트도 조건을 채우면 보인다 — 저장하지 않는다', () => {
+    const state = ready()
+    const set = COLLECTION_SETS.find((s) => s.id === 'moon_garden')!
+    expect(isSetVisible(set, state)).toBe(false)
+    expect(
+      isSetVisible(set, {
+        ...state,
+        garden: { ...state.garden, harvestedCropCounts: { star_flower: 2 } },
+      }),
+    ).toBe(true)
+  })
+
+  it('다 못 모아도 중간까지 온 몫이 한 번 나온다', () => {
+    const set = COLLECTION_SETS.find((s) => s.id === 'strawberry_patch')!
+    let c = emptyCollection()
+    expect(unclaimedPartials(c).map((s) => s.id)).not.toContain('strawberry_patch')
+
+    for (const id of set.itemIds.slice(0, 3)) c = addItem(c, id).collection
+    expect(unclaimedPartials(c).map((s) => s.id)).toContain('strawberry_patch')
+  })
+
+  it('중간 몫은 두 번 안 나온다 — 저장 구조를 안 늘리고 막는다', () => {
+    const set = COLLECTION_SETS.find((s) => s.id === 'herb_corner')!
+    let c = emptyCollection()
+    for (const id of set.itemIds.slice(0, 3)) c = addItem(c, id).collection
+    expect(unclaimedPartials(c).map((s) => s.id)).toContain('herb_corner')
+
+    c = { ...c, claimedSetIds: [...c.claimedSetIds, partialKey('herb_corner')] }
+    expect(unclaimedPartials(c).map((s) => s.id)).not.toContain('herb_corner')
+    // 세트 자체는 아직 안 받은 것으로 남는다
+    expect(c.claimedSetIds).not.toContain('herb_corner')
+  })
+
+  it('중간 몫을 받아도 완성 보상은 그대로 남는다', () => {
+    const set = COLLECTION_SETS.find((s) => s.id === 'autumn_harvest')!
+    let state = ready()
+    let c = state.collection
+    for (const id of set.itemIds) c = addItem(c, id).collection
+    state = { ...state, collection: c }
+
+    const first = applyCollectionDerived(state, new Date())
+    expect(ownedCount(first.state.collection, 'g_harvest_basket')).toBe(1)
+    expect(ownedCount(first.state.collection, 'g_autumn_table')).toBe(1)
+
+    // 한 번 더 지나가도 안 늘어난다
+    const again = applyCollectionDerived(first.state, new Date())
+    expect(ownedCount(again.state.collection, 'g_harvest_basket')).toBe(1)
+    expect(ownedCount(again.state.collection, 'g_autumn_table')).toBe(1)
+  })
+})
+
 describe('작업실 화면', () => {
   function ready(): AppState {
     const base = createDefaultState()
@@ -880,9 +1017,9 @@ describe('저장된 수집 기록', () => {
     expect(counts.WORK).toBe(42)
   })
 
-  it('스키마 버전이 13 이다', () => {
-    expect(STATE_VERSION).toBe(13)
-    expect(createDefaultState().version).toBe(13)
+  it('스키마 버전이 14 이다', () => {
+    expect(STATE_VERSION).toBe(14)
+    expect(createDefaultState().version).toBe(14)
   })
 })
 

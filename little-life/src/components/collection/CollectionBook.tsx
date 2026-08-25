@@ -13,9 +13,15 @@ import {
   TROPHY_CATALOG,
   hasHiddenLeft,
 } from '@/lib/collection/catalog'
-import { COLLECTION_SETS } from '@/lib/collection/sets'
 import { TROPHIES } from '@/lib/collection/trophies'
-import { collectionProgress, isDiscovered, isSeen, ownedCount, setProgress } from '@/lib/collection/progress'
+import {
+  collectionProgress,
+  isDiscovered,
+  isSeen,
+  ownedCount,
+  setProgress,
+  visibleSets,
+} from '@/lib/collection/progress'
 import { COLLECTION_CATEGORY_LABEL } from '@/lib/labels'
 import { skinCollectionProgress } from '@/lib/character/derive'
 import { recipeCollectionProgress } from '@/lib/kitchen/derive'
@@ -82,7 +88,10 @@ export function CollectionBook({
   const cropFound = CROP_CATALOG.filter((c) => isDiscovered(collection, c.id)).length
   // 요리는 "만들어본 적이 있는지" 로 센다. 다 먹어 없어져도 도감에는 남는다.
   const recipeFound = recipeCollectionProgress(state).found
-  const setsDone = COLLECTION_SETS.filter((s) => setProgress(s, collection).complete).length
+  // 아직 감춰둔 세트는 세지도 않는다. 안 보이는 것이 분모에 들어가면
+  // 어느 날 "12 / 69" 가 되고, 그건 새 내용이 아니라 뒷걸음질처럼 보인다.
+  const shownSets = useMemo(() => visibleSets(state), [state])
+  const setsDone = shownSets.filter((s) => setProgress(s, collection).complete).length
 
   return (
     <div>
@@ -112,7 +121,7 @@ export function CollectionBook({
             트로피 {trophyFound} / {TROPHIES.length}
           </span>
           <span className="rounded-pill bg-sunken px-2.5 py-1">
-            세트 {setsDone} / {COLLECTION_SETS.length}
+            세트 {setsDone} / {shownSets.length}
           </span>
           <span className="rounded-pill bg-sunken px-2.5 py-1">
             작물 {cropFound} / {CROP_CATALOG.length}
@@ -288,8 +297,11 @@ function SetList({ state }: { state: AppState }) {
   return (
     <div className="mt-3 space-y-2">
       <SectionHeader title="세트" />
-      {COLLECTION_SETS.map((set) => {
+      {visibleSets(state).map((set) => {
         const p = setProgress(set, state.collection)
+        // 다 모으기 전에 한 번 주는 자리가 있으면 거기까지 왔는지 표시한다
+        const partialDone =
+          set.partialAt !== undefined && p.have >= set.partialAt && !p.complete
         return (
           <Card key={set.id} className={cn('py-3.5', p.complete && 'ring-1 ring-inset ring-coral/40')}>
             <div className="flex items-center gap-3">
@@ -300,6 +312,9 @@ function SetList({ state }: { state: AppState }) {
                 <p className="flex items-center gap-1.5 text-[14px] font-medium text-ink">
                   {set.name}
                   {p.complete && <span className="text-[11px] text-coral-deep">완성 ✦</span>}
+                  {partialDone && (
+                    <span className="text-[11px] text-butter-deep">여기까지 온 몫 ✦</span>
+                  )}
                 </p>
                 <p className="mt-0.5 truncate text-[11.5px] text-inkdim">{set.description}</p>
               </div>

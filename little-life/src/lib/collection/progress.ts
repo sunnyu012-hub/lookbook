@@ -267,6 +267,25 @@ export function unclaimedPartials(c: CollectionState): CollectionSetDef[] {
   })
 }
 
+/**
+ * 도감에 이 세트를 보여줄지.
+ *
+ * 아직 못 만난 것으로만 채워지는 세트는 감춘다 — 별빛꽃을 본 적도 없는데
+ * "달빛 정원 0/4" 가 목록에 떠 있으면 그건 목표가 아니라 못 가진 것의 자리다.
+ * 감추는 조건도 저장하지 않는다. 거둔 기록에서 매번 다시 센다.
+ */
+export function isSetVisible(set: CollectionSetDef, state: AppState): boolean {
+  if (!set.hiddenUntil) return true
+  if (set.hiddenUntil.kind === 'CROP_FOUND') {
+    return set.hiddenUntil.cropIds.some((id) => (state.garden.harvestedCropCounts[id] ?? 0) > 0)
+  }
+  return true
+}
+
+export function visibleSets(state: AppState): CollectionSetDef[] {
+  return COLLECTION_SETS.filter((s) => isSetVisible(s, state))
+}
+
 export function partialKey(setId: string): string {
   return `${setId}:partial`
 }
@@ -399,6 +418,33 @@ export function unknownRecipeCount(ctx: RecipeContext): number {
   return RECIPES.length - knownRecipes(ctx).length
 }
 
+/**
+ * 만들어본 가짓수.
+ *
+ * 만든 횟수를 따로 저장하지 않는다. 만들어서 손에 넣은 것은 발견으로
+ * 남고, 발견은 지워지지 않는다 — 그러니 "만들기로만 얻을 수 있는 것을
+ * 몇 가지 발견했는지" 가 곧 몇 가지 만들어봤는지다.
+ *
+ * 가게에서도 파는 물건은 세지 않는다. 사서 얻은 것을 만든 것으로
+ * 쳐주면 작업실을 한 번도 안 연 사람이 작업 트로피를 받는다.
+ */
+function craftOnly(recipe: RecipeDef): boolean {
+  const def = findCollectionItem(recipe.resultItemId)
+  if (!def) return false
+  return def.acquisitionSources.every((src) => src.kind === 'CRAFT')
+}
+
+export function craftedKinds(c: CollectionState): number {
+  return RECIPES.filter((r) => craftOnly(r) && isDiscovered(c, r.resultItemId)).length
+}
+
+/** 그중 정원에서 온 재료로 만드는 것 (작업실에 늘어난 열둘) */
+export function gardenCraftedKinds(c: CollectionState): number {
+  return RECIPES.filter(
+    (r) => r.id.startsWith('w_') && craftOnly(r) && isDiscovered(c, r.resultItemId),
+  ).length
+}
+
 export function canCraft(recipe: RecipeDef, c: CollectionState): boolean {
   return recipe.ingredients.every((i) => ownedCount(c, i.itemId) >= i.count)
 }
@@ -413,6 +459,8 @@ export interface TrophyContext {
   discoveredCount: number
   /** 정원을 못 찾았으면 0 */
   gardenLevel: number
+  /** 만들기로만 얻는 것을 몇 가지 만들어봤는지 */
+  craftedKinds: number
 }
 
 export function trophyEarned(trophy: TrophyDef, ctx: TrophyContext): boolean {
@@ -429,6 +477,8 @@ export function trophyEarned(trophy: TrophyDef, ctx: TrophyContext): boolean {
       return ctx.completedSetIds.includes(trophy.condition.setId)
     case 'GARDEN_LEVEL':
       return ctx.gardenLevel >= trophy.condition.level
+    case 'CRAFTED_KINDS':
+      return ctx.craftedKinds >= trophy.condition.count
     default:
       return false
   }

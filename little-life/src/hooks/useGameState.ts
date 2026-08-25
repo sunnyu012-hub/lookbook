@@ -46,6 +46,8 @@ import type {
 import { ITEMS, findItem } from '@/lib/rpg/content'
 import { findCollectionItem } from '@/lib/collection/catalog'
 import { applyCollectionDerived } from '@/lib/collection/derive'
+import type { DevWorkshopAction } from '@/lib/collection/devWorkshop'
+import { applyDevWorkshop } from '@/lib/collection/devWorkshop'
 import { rollBossDrop, rollCollectDrops } from '@/lib/collection/drops'
 import { findRecipe } from '@/lib/collection/recipes'
 import { timeBand } from '@/lib/rpg/time'
@@ -259,6 +261,8 @@ interface GameState {
   toggleRecipeFavorite: (recipeId: string) => void
   /** 개발용 (?dev=kitchen 에서만 부른다) */
   devKitchen: (action: DevKitchenAction) => void
+  /** 개발용 (?dev=workshop 에서만 부른다) */
+  devWorkshop: (action: DevWorkshopAction) => void
   // ── 클라우드 백업 ──
   /**
    * 상태 전체를 다른 것으로 갈아 끼운다.
@@ -2183,6 +2187,18 @@ export function useGameState(): GameState {
     [commit],
   )
 
+  const devWorkshop = useCallback(
+    (action: DevWorkshopAction) => {
+      // 만들기로 얻은 것도 도감·세트·트로피·발견 사슬을 한 번 태운다.
+      // 검수판만 다른 길로 가면 검수가 검수가 아니게 된다.
+      const now = new Date()
+      const next = applyDevWorkshop(stateRef.current, action, now)
+      const derived = applyCollectionDerived(next, now)
+      commit(applyDiscovery(derived.state, now).state)
+    },
+    [commit],
+  )
+
   /**
    * 처음 안내를 다 봤다.
    *
@@ -2276,6 +2292,7 @@ export function useGameState(): GameState {
       eatFood,
       toggleRecipeFavorite,
       devKitchen,
+      devWorkshop,
       newSkins,
       dismissNewSkins,
       replaceState,
@@ -2342,6 +2359,7 @@ export function useGameState(): GameState {
       eatFood,
       toggleRecipeFavorite,
       devKitchen,
+      devWorkshop,
       newSkins,
       dismissNewSkins,
       replaceState,

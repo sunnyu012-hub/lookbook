@@ -68,7 +68,7 @@ import { findRoom } from '@/lib/collection/rooms'
  * 없는 항목만 기본값으로 채우고, 있는 값은 손대지 않는다.
  */
 
-export const STATE_VERSION = 13
+export const STATE_VERSION = 14
 
 /** 구매 기록을 며칠치까지 남길지 */
 export const PURCHASE_DAYS_KEPT = 7

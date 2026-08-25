@@ -90,6 +90,20 @@ export const ALL_COLLECTION_ITEMS: CollectionItemDef[] = [
   ...WORKSHOP_CATALOG,
 ]
 
+/**
+ * 방에 놓을 수 있는 것 전부.
+ *
+ * 240칸(CATALOG)만 보면 안 된다 — 정원·부엌·작업실에서 나온 것은
+ * 도감 수를 안 늘리려고 일부러 240칸 밖에 뒀다. 그것들도 방에는 놓인다.
+ * 만들어놓고 놓을 수가 없으면 그건 만든 게 아니다.
+ *
+ * 재료와 씨앗·음식은 여기 안 들어온다 — placement 가 MATERIAL_ONLY 라서
+ * 따로 걸러낼 필요가 없다.
+ */
+export const PLACEABLE_CATALOG: CollectionItemDef[] = ALL_COLLECTION_ITEMS.filter(
+  (i) => i.placement === 'PLACEABLE',
+)
+
 const BY_ID = new Map(ALL_COLLECTION_ITEMS.map((i) => [i.id, i]))
 
 export function findCollectionItem(id: string): CollectionItemDef | null {

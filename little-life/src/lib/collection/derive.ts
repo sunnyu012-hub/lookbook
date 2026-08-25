@@ -4,6 +4,7 @@ import {
   addItem,
   discoveredCount,
   completedSetIds,
+  craftedKinds,
   newMilestones,
   newTrophies,
   partialKey,
@@ -129,6 +130,7 @@ export function applyCollectionDerived(
       discoveredCount: discoveredCount(current.collection),
       // 정원을 못 찾았으면 0 — 정원 트로피는 후보에도 안 든다
       gardenLevel: current.garden.unlockedAt ? gardenLevel(gardenXp(current.garden)) : 0,
+      craftedKinds: craftedKinds(current.collection),
     })
     for (const trophy of trophies) {
       const added = addItem(current.collection, trophy.itemId, now)

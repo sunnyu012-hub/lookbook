@@ -38,6 +38,7 @@ import { KITCHEN_RECIPES } from '@/lib/kitchen/recipes'
 import { GardenLab } from '@/components/garden/GardenLab'
 import { KitchenScreen } from '@/components/kitchen/KitchenScreen'
 import { KitchenLab } from '@/components/kitchen/KitchenLab'
+import { WorkshopLab } from '@/components/collection/WorkshopLab'
 import type { CookedNote } from '@/components/kitchen/CookedOverlay'
 import type { HarvestNote } from '@/components/garden/HarvestOverlay'
 import { WorkshopSheet } from '@/components/collection/WorkshopSheet'
@@ -133,6 +134,7 @@ export default function App() {
     eatFood,
     toggleRecipeFavorite,
     devKitchen: runDevKitchen,
+    devWorkshop: runDevWorkshop,
     replaceState,
   } = useGameState()
   const feedback = useFeedback()
@@ -164,6 +166,7 @@ export default function App() {
   const devGallery = devParam === 'skins'
   const devGarden = devParam === 'garden'
   const devKitchen = devParam === 'kitchen'
+  const devWorkshop = devParam === 'workshop'
 
   /**
    * 처음 여는 사람에게 한 번.
@@ -635,6 +638,10 @@ export default function App() {
     return <GardenLab state={state} onRun={runDevGarden} />
   }
 
+  if (devWorkshop) {
+    return <WorkshopLab state={state} onRun={runDevWorkshop} />
+  }
+
   if (devKitchen) {
     return <KitchenLab state={state} onRun={runDevKitchen} />
   }
@@ -864,6 +871,7 @@ export default function App() {
         state={state}
         onClose={() => setWorkshopOpen(false)}
         onCraft={handleCraft}
+        onPlace={handlePlace}
       />
 
       <DecorateMode
