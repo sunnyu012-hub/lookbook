@@ -10,7 +10,7 @@
 | 트로피 | 14 |
 | 재료 | 8 |
 | 그림 연결됨 | 308 |
-| 그림 없음 (이모지로 그림) | 24 |
+| 그림 없음 (이모지로 그림) | 30 |
 | 그림도 이모지도 없음 | 0 |
 | 경로는 있는데 파일 없음 | 0 |
 | 카탈로그에 없는 파일 | 0 |
@@ -24,14 +24,14 @@
 | | 개수 |
 | --- | --- |
 | PLACEABLE | 257 |
-| DISPLAY_ONLY | 31 |
-| MATERIAL_ONLY | 44 |
+| DISPLAY_ONLY | 32 |
+| MATERIAL_ONLY | 49 |
 
 | 놓는 자리 | 개수 |
 | --- | --- |
 | TABLETOP | 156 |
 | FLOOR | 77 |
-| DECOR | 66 |
+| DECOR | 72 |
 | RUG | 14 |
 | WALL | 14 |
 | HANGING | 4 |
@@ -63,6 +63,12 @@
 - `mineral_rose_crystal` 장밋빛 수정 — MATERIAL
 - `mineral_old_metal` 오래된 금속 조각 — MATERIAL
 - `mineral_strange_fragment` 이상한 돌조각 — MATERIAL
+- `dungeon_wall_fragment` 벽화 조각 — MATERIAL
+- `dungeon_old_coin` 낡은 동전 — MATERIAL
+- `dungeon_small_crystal` 희미한 수정 — MATERIAL
+- `dungeon_soft_moss` 부드러운 동굴 이끼 — MATERIAL
+- `dungeon_unknown_trace` 작은 흔적 — MATERIAL
+- `old_key` 오래된 열쇠 — MAGIC
 
 ## 방에 놓을 수 있는데 그림이 없는 것
 

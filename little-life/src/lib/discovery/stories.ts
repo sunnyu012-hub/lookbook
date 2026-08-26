@@ -161,6 +161,28 @@ export const STORY_CHAPTERS: StoryChapterDef[] = [
     rewardItemId: null,
     rewardFriendship: 4,
   },
+  {
+    // 다섯 번째 장은 채석장에서 뭘 주웠는지를 본다.
+    // 친밀도만으로 열면 채석장에 한 번도 안 가본 사람이 먼저 문 이야기를
+    // 듣게 된다 — 그러면 "어? 나 그거 본 적 있는데" 가 아니라
+    // "그게 뭔데" 가 된다. 이야기가 뒤에서 앞으로 오면 안 된다.
+    id: 'HARU_5',
+    npcId: 'HARU',
+    order: 5,
+    title: '열쇠는 아무도 못 찾았대',
+    lockedHint: '주운 돌조각을 하루한테 보여주면 뭔가 알 것 같다.',
+    conditions: [
+      { kind: 'FRIENDSHIP', npcId: 'HARU', value: 34 },
+      { kind: 'QUARRY_FIND', itemId: 'mineral_strange_fragment', count: 1 },
+    ],
+    lines: [
+      '"그거… 예전에 본 적 있는 것 같은데."',
+      '"공원 바깥쪽에 오래된 문이 하나 있었다고 들었거든."',
+      '"문은 있는데 열쇠는 아무도 못 찾았대. 그 무늬가 딱 그거야."',
+    ],
+    rewardItemId: null,
+    rewardFriendship: 4,
+  },
 
   // ── 루루 · 창작 지구 ──────────────────────────────
   {

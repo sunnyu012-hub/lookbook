@@ -224,3 +224,72 @@
 | E. 정원/부엌/트로피 장식 | 13 | 방 · 도감 |
 | **합계 (필요)** | **54** | |
 | (선택) 씨앗 | 12 | 가방 |
+
+---
+
+## 6. UPDATE D · E 에서 새로 생긴 것 (NEEDS_REVIEW)
+
+시스템은 다 돌아가고 그림만 비어 있다. 지금은 이모지가 그 자리를 채우고,
+`npm run assets:audit` 의 "그림이 없는 물건" 목록에 그대로 뜬다.
+
+### F. 채석장 광물 11 — `public/assets/items/materials/`
+
+| 파일 | 이름 | 결 |
+| --- | --- | --- |
+| `mineral_spark_stone.webp` | 반짝돌 | 흔한 돌인데 한쪽 면만 빛을 받는다 |
+| `mineral_red_shard.webp` | 붉은 조각 | 깨진 단면이 붉다 |
+| `mineral_blue_stone.webp` | 푸른 돌 | 물에 젖은 것처럼 짙은 파랑 |
+| `mineral_quartz.webp` | 석영 조각 | 반투명한 흰 결정 |
+| `mineral_amethyst.webp` | 자수정 조각 | 연보라 결정 다발 |
+| `mineral_moss_stone.webp` | 이끼 낀 돌 | 돌 위에 이끼가 얇게 |
+| `mineral_moon_ore.webp` | 달조각 광석 | 은빛, 안쪽이 조금 밝다 |
+| `mineral_star_vein.webp` | 별맥석 | 돌 사이로 밝은 결이 지나간다 |
+| `mineral_rose_crystal.webp` | 장밋빛 수정 | 분홍 결정 |
+| `mineral_old_metal.webp` | 오래된 금속 조각 | 녹슨 쇳조각, 가장자리가 반듯하다 |
+| `mineral_strange_fragment.webp` | 이상한 돌조각 | **돌인데 가장자리가 이상할 만큼 반듯하다. 작은 홈이 하나.** 열쇠 이야기가 여기서 시작한다 — 열쇠처럼 보이면 안 되고, 그냥 이상한 돌이어야 한다 |
+
+반짝이는 입자(sparkle particle)는 안 그린다. 귀한 것도 조용해야 한다.
+
+### G. 잠든 돌문 5 — `public/assets/dungeon/`
+
+방 배경이 아니라 **구역 카드 한 장**이다. 지금은 이모지 하나가 그 자리를 채운다.
+
+| 파일 | 구역 | 결 |
+| --- | --- | --- |
+| `sleeping_gate.webp` | 돌문 앞 | 반쯤 열린 돌문. 무섭지 않게, 오래된 정도로 |
+| `dungeon_entrance.webp` | 조용한 입구 | 먼지가 가라앉은 통로 |
+| `dungeon_corridor.webp` | 무너진 복도 | 천장이 한 군데 내려앉음. 지나갈 자리는 있다 |
+| `dungeon_small_room.webp` | 작은 방 | 누가 살던 자리처럼 정리돼 있다 |
+| `dungeon_inner_door.webp` | 안쪽 닫힌 문 | 열쇠 구멍도 없는 문. 문 아래 좁은 틈 |
+
+**공포·폐허 호러 톤 금지.** 이 앱의 다른 화면과 같은 아이보리 위에 올라간다.
+어두운 것과 무서운 것은 다르다 — 조용하고 오래된 자리로 그린다.
+
+### H. 던전 발견물 5 + 열쇠 — `public/assets/items/materials/`
+
+| 파일 | 이름 |
+| --- | --- |
+| `dungeon_wall_fragment.webp` | 벽화 조각 — 무늬가 반쯤 남았다 |
+| `dungeon_old_coin.webp` | 낡은 동전 |
+| `dungeon_small_crystal.webp` | 희미한 수정 |
+| `dungeon_soft_moss.webp` | 부드러운 동굴 이끼 |
+| `dungeon_unknown_trace.webp` | 작은 흔적 — **발자국 같은 것. 무엇의 발자국인지는 안 보여야 한다** |
+| `old_key.webp` | 오래된 열쇠 — 이상한 돌조각의 홈과 맞물리는 무늬 |
+
+### I. 작업실 · 채석장 나머지 2
+
+| 파일 | 이름 | 폴더 |
+| --- | --- | --- |
+| `w_quarry_lantern.webp` | 돌등불 | `items/lighting/` |
+| (지도용) 채석장 장소 그림 | 오래된 채석장 | `assets/areas/` |
+
+### 합계
+
+| 묶음 | 개수 |
+| --- | --- |
+| F. 광물 | 11 |
+| G. 던전 구역 | 5 |
+| H. 발견물 + 열쇠 | 6 |
+| I. 나머지 | 2 |
+| (선택) 씨앗 | 12 |
+| **합계** | **24** (씨앗 포함 36) |

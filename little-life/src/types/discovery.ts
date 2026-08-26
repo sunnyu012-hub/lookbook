@@ -120,6 +120,8 @@ export type SecretCondition =
   | { kind: 'FRIENDSHIP'; npcId: NpcId; value: number }
   | { kind: 'CATEGORY_QUESTS'; category: Category; count: number }
   | { kind: 'COLLECTION_CATEGORY'; category: string; count: number }
+  /** 채석장에서 이것을 몇 번 캤는지. 이야기가 캔 기록을 볼 때 쓴다. */
+  | { kind: 'QUARRY_FIND'; itemId: string; count: number }
 
 export interface SecretDef {
   id: SecretId
@@ -275,6 +277,7 @@ export type DiscoveryKind =
   | 'GARDEN'
   | 'KITCHEN'
   | 'QUARRY'
+  | 'DUNGEON'
 
 export interface DiscoveryNote {
   /** 같은 것을 두 번 알리지 않으려고 쓰는 열쇠 */

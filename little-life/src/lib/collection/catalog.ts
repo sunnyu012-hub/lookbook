@@ -9,6 +9,7 @@ import { CROP_ITEMS, GARDEN_ITEMS } from '@/lib/garden/items'
 import { FOOD_ITEMS, KITCHEN_ITEMS } from '@/lib/kitchen/items'
 import { WORKSHOP_ITEMS } from './workshop'
 import { MINERAL_ITEMS } from '@/lib/quarry/minerals'
+import { DUNGEON_FINDS, STORY_ITEMS } from '@/lib/dungeon/items'
 import { GARDEN_DECOR } from '@/lib/garden/items'
 import { KITCHEN_DECOR } from '@/lib/kitchen/items'
 
@@ -98,6 +99,22 @@ export const WORKSHOP_CATALOG: CollectionItemDef[] = WORKSHOP_ITEMS.map(finish)
  */
 export const MINERAL_CATALOG: CollectionItemDef[] = MINERAL_ITEMS.map(finish)
 
+/**
+ * 잠든 돌문에서 나오는 것들.
+ *
+ * 광물과 같은 이유로 재료 목록에 안 섞는다 — 그 목록은 퀘스트 드롭 풀이라,
+ * 여기 다섯을 넣으면 기존 재료가 나올 확률이 조용히 낮아진다.
+ */
+export const DUNGEON_CATALOG: CollectionItemDef[] = DUNGEON_FINDS.map(finish)
+
+/**
+ * 이야기가 지나간 자리에 남는 것.
+ *
+ * 지금은 오래된 열쇠 하나뿐이다. 재료도 아니고 방에 놓는 것도 아니라서
+ * 어느 목록에도 안 들어간다 — 도감에서 이름으로 찾을 수만 있으면 된다.
+ */
+export const STORY_CATALOG: CollectionItemDef[] = STORY_ITEMS.map(finish)
+
 /** 이름으로 찾을 수 있는 것 전부 */
 export const ALL_COLLECTION_ITEMS: CollectionItemDef[] = [
   ...CATALOG,
@@ -107,6 +124,8 @@ export const ALL_COLLECTION_ITEMS: CollectionItemDef[] = [
   ...KITCHEN_CATALOG,
   ...WORKSHOP_CATALOG,
   ...MINERAL_CATALOG,
+  ...DUNGEON_CATALOG,
+  ...STORY_CATALOG,
 ]
 
 /**
@@ -124,6 +143,18 @@ export const CRAFTED_CATALOG: CollectionItemDef[] = [
   ...GARDEN_DECOR.map(finish),
   ...KITCHEN_DECOR.map(finish),
 ]
+
+/**
+ * 밖에서 주워 온 것 — 도감의 "탐험" 칸.
+ *
+ * 채석장 광물 열하나와 잠든 돌문에서 나온 다섯.
+ * 둘 다 240칸 밖이라 그동안 가방 재료 칸에만 있었다.
+ * 주워놓고 볼 데가 없으면 그건 모은 게 아니다 — "만든 것" 칸과 같은 이유다.
+ *
+ * 오래된 열쇠는 여기 안 넣는다. 그건 주워 온 물건이 아니라
+ * 이야기가 지나간 자리라, 개수에 섞이면 "16개 중 하나" 가 된다.
+ */
+export const EXPLORED_CATALOG: CollectionItemDef[] = [...MINERAL_CATALOG, ...DUNGEON_CATALOG]
 
 /**
  * 방에 놓을 수 있는 것 전부.

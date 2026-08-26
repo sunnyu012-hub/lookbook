@@ -115,6 +115,8 @@ export function conditionProgress(state: AppState, c: SecretCondition): number {
       ).length
       return Math.min(1, found / c.count)
     }
+    case 'QUARRY_FIND':
+      return Math.min(1, (state.quarry.foundMineralCounts[c.itemId] ?? 0) / c.count)
   }
 }
 

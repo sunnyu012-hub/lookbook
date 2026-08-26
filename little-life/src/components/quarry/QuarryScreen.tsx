@@ -5,6 +5,7 @@ import { BottomSheet } from '@/components/ui/BottomSheet'
 import { Button } from '@/components/ui/Button'
 import { useOverlay } from '@/hooks/useOverlay'
 import { DAILY_ATTEMPTS, quarryView } from '@/lib/quarry/derive'
+import { isGateFound } from '@/lib/dungeon/derive'
 import { QuarryTutorial } from './QuarryTutorial'
 import { FoundOverlay } from './FoundOverlay'
 import { cn } from '@/components/ui/cn'
@@ -17,6 +18,8 @@ interface QuarryScreenProps {
   onExplore: (spotId: string) => QuarryFind | null
   onSeeBlockedPath: () => void
   onOpenBook: () => void
+  /** 문을 찾은 뒤에만 쓴다. 그 전에는 이 자리에 문이 있는 줄도 모른다. */
+  onOpenDungeon: () => void
 }
 
 /**
@@ -36,6 +39,7 @@ export function QuarryScreen({
   onExplore,
   onSeeBlockedPath,
   onOpenBook,
+  onOpenDungeon,
 }: QuarryScreenProps) {
   const [openSpot, setOpenSpot] = useState<QuarrySpotView | null>(null)
   const [found, setFound] = useState<QuarryFind | null>(null)
@@ -60,6 +64,8 @@ export function QuarryScreen({
   }, [open, onEnter, state.quarry.tutorialSeenAt])
 
   const view = useMemo(() => quarryView(state), [state])
+  // 열쇠가 손에 있고 막힌 길을 이미 봤으면, 돌무더기 너머가 문이라는 걸 안다.
+  const gate = isGateFound(state)
 
   if (!open) return null
 
@@ -167,26 +173,46 @@ export function QuarryScreen({
               </li>
             ))}
 
-            {/* 아직 갈 수 없는 쪽. 눌러도 어디로도 가지 않는다 — 안내 한 장이 전부다. */}
+            {/* 안쪽 길. 열쇠를 얻기 전에는 눌러도 어디로도 안 간다 —
+                안내 한 장이 전부다. 열쇠가 생기면 같은 자리가 문이 된다. */}
             <li>
-              <button
-                type="button"
-                onClick={() => {
-                  setBlockedOpen(true)
-                  onSeeBlockedPath()
-                }}
-                className="flex w-full items-center gap-3 rounded-card border border-dashed border-line bg-sunken/30 px-3.5 py-3.5 text-left active:scale-[0.98]"
-              >
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-btn bg-sunken/70 text-[20px] opacity-60">
-                  🚧
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[14px] font-medium text-inkdim">막힌 안쪽 길</span>
-                  <span className="mt-0.5 block truncate text-[11.5px] text-inkfaint">
-                    돌무더기 너머로 길이 이어지는 것 같다
+              {gate ? (
+                <button
+                  type="button"
+                  onClick={onOpenDungeon}
+                  className="flex w-full items-center gap-3 rounded-card border border-line bg-surface px-3.5 py-3.5 text-left transition-transform duration-150 ease-out active:scale-[0.98]"
+                >
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-btn bg-sunken text-[22px]">
+                    🚪
                   </span>
-                </span>
-              </button>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[14.5px] font-medium text-ink">잠든 돌문</span>
+                    <span className="mt-0.5 block truncate text-[11.5px] text-inkdim">
+                      돌무더기를 치우니 문이 하나 있었다
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-[12px] text-inkfaint">›</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBlockedOpen(true)
+                    onSeeBlockedPath()
+                  }}
+                  className="flex w-full items-center gap-3 rounded-card border border-dashed border-line bg-sunken/30 px-3.5 py-3.5 text-left active:scale-[0.98]"
+                >
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-btn bg-sunken/70 text-[20px] opacity-60">
+                    🚧
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[14px] font-medium text-inkdim">막힌 안쪽 길</span>
+                    <span className="mt-0.5 block truncate text-[11.5px] text-inkfaint">
+                      돌무더기 너머로 길이 이어지는 것 같다
+                    </span>
+                  </span>
+                </button>
+              )}
             </li>
           </ul>
 
