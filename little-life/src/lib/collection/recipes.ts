@@ -1,5 +1,5 @@
 import type { RecipeDef } from '@/types'
-import { WORKSHOP_COMING, WORKSHOP_RECIPES } from './workshop'
+import { QUARRY_LANTERN_RECIPE, WORKSHOP_RECIPES } from './workshop'
 
 /**
  * 만들기.
@@ -312,7 +312,7 @@ const BASE_RECIPES: RecipeDef[] = [
  * 정원 쪽 레시피를 따로 두지 않고 같은 목록에 넣는다 —
  * 작업실이 두 개가 되면 어느 쪽에서 만드는지부터 헷갈린다.
  */
-export const RECIPES: RecipeDef[] = [...BASE_RECIPES, ...WORKSHOP_RECIPES, WORKSHOP_COMING]
+export const RECIPES: RecipeDef[] = [...BASE_RECIPES, ...WORKSHOP_RECIPES, QUARRY_LANTERN_RECIPE]
 
 export function findRecipe(id: string): RecipeDef | null {
   return RECIPES.find((r) => r.id === id) ?? null

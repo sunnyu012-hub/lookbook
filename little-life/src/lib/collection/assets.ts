@@ -9,7 +9,8 @@
  * 두 곳에 적어두면 언젠가 어긋난다. (조립은 catalog.ts 에서 한다)
  *
  * 아직 그림이 없는 물건은 이모지로, 이모지도 없으면 분류 실루엣으로 그린다.
- * 지금은 240개 전부 그림이 있어서 그 길로 내려갈 일이 없다.
+ * 240칸은 전부 그림이 있다. 그 밖의 것(작물 · 요리 · 만든 것)도
+ * 이 목록에 있으면 같은 길로 그림을 찾는다.
  */
 const BASE = '/assets/items'
 /** 도감 격자에서 쓰는 작은 그림 (npm run assets:thumbs) */
@@ -294,6 +295,55 @@ const WITH_ART = [
   'yellow_cushion',
   'yellow_tulip',
   'yoga_mat',
+  'crop_basil',
+  'crop_carrot',
+  'crop_dream_strawberry',
+  'crop_golden_strawberry',
+  'crop_lavender',
+  'crop_moon_herb',
+  'crop_potato',
+  'crop_pumpkin',
+  'crop_star_flower',
+  'crop_strawberry',
+  'crop_tiny_mushroom',
+  'crop_tomato',
+  'food_carrot_soup',
+  'food_dream_parfait',
+  'food_herb_potato_soup',
+  'food_lavender_tea',
+  'food_moon_tea',
+  'food_mushroom_cream_soup',
+  'food_picnic_lunchbox',
+  'food_pumpkin_tart',
+  'food_star_berry_cake',
+  'food_strawberry_milk',
+  'food_strawberry_toast',
+  'food_tomato_pasta',
+  'g_autumn_table',
+  'g_harvest_basket',
+  'g_herb_rack',
+  'g_moon_arch',
+  'g_strawberry_planter',
+  'g_strawberry_sign',
+  'garden_dew',
+  'k_dessert_tray',
+  'k_picnic_basket',
+  'k_recipe_book',
+  'k_soup_pot',
+  't_garden_pot',
+  't_garden_window',
+  't_tiny_workbench',
+  'w_autumn_bench',
+  'w_garden_table',
+  'w_herb_bundle',
+  'w_lavender_cushion',
+  'w_moon_lamp',
+  'w_mushroom_lamp',
+  'w_picnic_set',
+  'w_recipe_shelf',
+  'w_star_vase',
+  'w_strawberry_shelf',
+  'w_veggie_crate',
 ] as const
 
 /** 그림이 있는지 */

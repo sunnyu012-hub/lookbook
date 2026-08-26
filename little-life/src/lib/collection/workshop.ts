@@ -19,15 +19,34 @@ import type { CollectionItemDef, RecipeDef } from '@/types'
 
 const C = (id: string) => `crop_${id}`
 
-/** 분류별로 방에서 차지하는 자리 */
+/**
+ * 분류별로 방에서 차지하는 자리.
+ *
+ * 방 렌더러는 footprint.width 하나만 본다 (RoomCanvas.tsx — 높이는 그림
+ * 비율이 정한다). 그래서 폭을 이미 그림이 있는 물건들의 관례에 맞춘다:
+ *
+ *   LIGHTING · PLANT  13   (스무 개 · 스물다섯 개가 전부 13)
+ *   LITTLE_THING      10   (서른다섯 개가 전부 10)
+ *   WALL              16   (열다섯 개가 전부 16)
+ *   FURNITURE      15~32   (중앙값 26. 작은 선반은 아래쪽인 21)
+ *
+ * 처음에 적었던 13/9/10/8 은 어느 분류에서든 기존 물건보다 작았다.
+ * 방에 놓으면 장난감처럼 보인다. 받은 숫자는 서로의 크기 비(比)를
+ * 말한 것이라, 그 순서만 지키고 실제 값은 관례에서 가져왔다.
+ *
+ * 그림이 들어온 뒤 세 개만 분류값에서 벗어난다 (item() 마지막 인자).
+ * 그림 비율이 정사각형에서 멀어서, 폭을 분류값대로 두면 높이가 어긋난다 —
+ * 옆으로 넓은 벤치는 납작해지고, 세로로 긴 허브 다발은 벽을 다 덮는다.
+ */
 const FOOTPRINT: Partial<Record<CollectionItemDef['category'], { width: number; height: number }>> =
   {
-    FURNITURE: { width: 13, height: 13 },
-    LIGHTING: { width: 9, height: 12 },
-    WALL: { width: 10, height: 9 },
-    LITTLE_THING: { width: 8, height: 8 },
-    PLANT: { width: 9, height: 11 },
-    OUTDOOR: { width: 12, height: 11 },
+    FURNITURE: { width: 21, height: 21 },
+    LIGHTING: { width: 13, height: 17 },
+    WALL: { width: 16, height: 14 },
+    LITTLE_THING: { width: 10, height: 10 },
+    PLANT: { width: 13, height: 17 },
+    // 소품과 가구 사이. 그림이 있는 OUTDOOR 물건이 아직 없어 관례가 없다.
+    OUTDOOR: { width: 18, height: 16 },
   }
 
 function item(
@@ -37,6 +56,7 @@ function item(
   description: string,
   rarity: CollectionItemDef['rarity'],
   category: CollectionItemDef['category'],
+  footprint = FOOTPRINT[category] ?? { width: 11, height: 11 },
 ): CollectionItemDef {
   return {
     id,
@@ -48,9 +68,8 @@ function item(
     description,
     hasPlaceableAsset: true,
     placeable: true,
-    // 아직 그림이 없어서 이모지가 그 자리를 채운다. 그러니 자리 크기가
-    // 곧 보이는 크기다 — 선반 하나가 벤치만 하면 방이 이상해진다.
-    footprint: FOOTPRINT[category] ?? { width: 11, height: 11 },
+    // 폭만 정한다. 높이는 그림 비율이 정한다 (RoomCanvas.tsx).
+    footprint,
     acquisitionSources: [{ kind: 'CRAFT' }],
     collectionSetIds: [],
     tags: ['작업실'],
@@ -62,21 +81,33 @@ function item(
 /** 작업실에서 만들어지는 것들. 도감 240칸에는 안 들어간다. */
 export const WORKSHOP_ITEMS: CollectionItemDef[] = [
   item('w_strawberry_shelf', '딸기 선반', '🍓', '아침에 제일 먼저 눈에 띄는 자리.', 'COMMON', 'FURNITURE'),
-  item('w_herb_bundle', '허브 다발', '🌿', '거꾸로 매달아두면 향이 오래 간다.', 'COMMON', 'WALL'),
+  // 그림이 세로로 길다 (가로:세로 = 0.62). 벽 관례인 16으로 두면 높이가 26이 되어
+  // 벽 한 쪽을 다 덮는다. 다발 하나 크기로 줄인다.
+  item('w_herb_bundle', '허브 다발', '🌿', '거꾸로 매달아두면 향이 오래 간다.', 'COMMON', 'WALL', {
+    width: 11,
+    height: 18,
+  }),
   item('w_veggie_crate', '채소 상자', '🥕', '아래 칸에 뭐가 있는지는 대체로 잊는다.', 'COMMON', 'FURNITURE'),
-  item('w_lavender_cushion', '라벤더 쿠션', '💜', '누우면 향이 한 번 올라온다.', 'RARE', 'LITTLE_THING'),
+  // 바닥 쿠션이라 소품(10)보다 크다. 도감의 담요·쿠션 관례가 15다.
+  item('w_lavender_cushion', '라벤더 쿠션', '💜', '누우면 향이 한 번 올라온다.', 'RARE', 'LITTLE_THING', {
+    width: 15,
+    height: 13,
+  }),
   item('w_mushroom_lamp', '버섯 램프', '🍄', '갓 아래가 제일 따뜻하다.', 'RARE', 'LIGHTING'),
   item('w_garden_table', '정원 사이드 테이블', '🪵', '컵 하나 놓기 딱 좋은 크기.', 'COMMON', 'FURNITURE'),
   item('w_recipe_shelf', '레시피 선반', '📚', '적어둔 것보다 기억하는 게 더 많다.', 'RARE', 'FURNITURE'),
   item('w_picnic_set', '피크닉 세트', '🧺', '언제든 나갈 수 있게 묶어뒀다.', 'RARE', 'OUTDOOR'),
   item('w_moon_lamp', '달빛허브 램프', '🌙', '불을 끄면 그제야 보이는 빛.', 'EPIC', 'LIGHTING'),
   item('w_star_vase', '별빛꽃 화병', '✨', '물을 갈아줄 때마다 조금씩 반짝인다.', 'EPIC', 'PLANT'),
-  item('w_autumn_bench', '가을 벤치', '🍂', '해가 짧아지면 여기 앉는 시간이 는다.', 'EPIC', 'FURNITURE'),
-  // 아직 못 만드는 것. 이름도 그림도 만나기 전까지 감춘다.
-  {
-    ...item('w_quarry_lantern', '돌등불', '🪨', '단단한 것으로 받쳐야 오래 간다.', 'EPIC', 'LIGHTING'),
-    hiddenUntilDiscovered: true,
-  },
+  // 옆으로 넓은 그림(1.65). 선반 폭인 21로 두면 높이가 13밖에 안 나와
+  // 앉는 물건으로 안 보인다. 도감 가구 중앙값인 26으로 올린다.
+  item('w_autumn_bench', '가을 벤치', '🍂', '해가 짧아지면 여기 앉는 시간이 는다.', 'EPIC', 'FURNITURE', {
+    width: 26,
+    height: 16,
+  }),
+  // 채석장이 열리면서 진짜 만들 수 있는 물건이 됐다.
+  // 예고 자리로 열두 번째에 남겨뒀던 그 줄이다 — 새로 만들지 않고 상태만 바꿨다.
+  item('w_quarry_lantern', '돌등불', '🪨', '단단한 것으로 받쳐야 오래 간다.', 'EPIC', 'LIGHTING'),
 ]
 
 /**
@@ -237,18 +268,26 @@ export const WORKSHOP_RECIPES: RecipeDef[] = [
 ]
 
 /**
- * 아직 못 만드는 것.
+ * 돌등불.
  *
- * 정원에서 나는 것만으로는 안 되는 게 하나 있다.
- * 감춰두는 대신 자리를 남겨서, 다음에 무엇이 올지 알려준다.
+ * 정원 재료로는 끝내 안 되던 것이다. 채석장이 열리면서
+ * "작업대에 쓸 단단한 재료" 가 실제로 생겼다 —
+ * Garden → Workshop 하나뿐이던 재료 길에 Quarry → Workshop 이 붙는다.
+ *
+ * 작은 돌은 이미 있던 재료(m_stone)다. 채석장에서도 나오지만
+ * 퀘스트에서 주워둔 것으로 만들어도 된다. 길을 막지 않는다.
  */
-export const WORKSHOP_COMING: RecipeDef = {
+export const QUARRY_LANTERN_RECIPE: RecipeDef = {
   id: 'w_quarry_lantern',
   resultItemId: 'w_quarry_lantern',
-  ingredients: [{ itemId: 'm_glass', count: 2 }],
-  unlock: { kind: 'COMING_SOON' },
-  unlockHint: '아직',
+  ingredients: [
+    { itemId: 'm_stone', count: 3 },
+    { itemId: 'mineral_spark_stone', count: 1 },
+    { itemId: 'mineral_old_metal', count: 1 },
+  ],
+  unlock: { kind: 'MINERALS_FOUND', count: 3 },
+  unlockHint: '채석장에서 광물을 세 가지 만나면',
   category: 'SPECIAL',
-  hintAt: 0,
+  hintAt: 0.34,
   hint: '작업대에 쓸 단단한 재료가 조금 부족하다.',
 }

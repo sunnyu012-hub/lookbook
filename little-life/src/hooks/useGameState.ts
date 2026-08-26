@@ -73,6 +73,10 @@ import {
   useDew as useDewIn,
 } from '@/lib/garden/derive'
 import { applyDevGarden } from '@/lib/garden/dev'
+import type { DevQuarryAction } from '@/lib/quarry/dev'
+import { applyDevQuarry } from '@/lib/quarry/dev'
+import type { QuarryFind } from '@/types'
+import { explore as exploreQuarry, isQuarryUnlocked } from '@/lib/quarry/derive'
 import { FIRST_SEEDS } from '@/lib/garden/crops'
 import {
   ENERGY_BOSS,
@@ -242,6 +246,12 @@ interface GameState {
    * 적는 것과 주는 것이 한 번에 일어나서 두 번 받을 수가 없다.
    */
   enterGarden: () => void
+  /** 채석장에 처음 들어갔다고 적어둔다 */
+  enterQuarry: () => void
+  /** 한 자리를 살펴본다. 못 하면 null. */
+  exploreQuarrySpot: (spotId: string) => QuarryFind | null
+  /** 막힌 길을 들여다봤다고 적어둔다 */
+  seeBlockedPath: () => void
   /** 빈 밭에 씨앗 하나를 심는다 */
   plantSeed: (plotIndex: number, cropId: string) => PlantResult
   /** 다 자란 것을 거둔다 */
@@ -263,6 +273,8 @@ interface GameState {
   devKitchen: (action: DevKitchenAction) => void
   /** 개발용 (?dev=workshop 에서만 부른다) */
   devWorkshop: (action: DevWorkshopAction) => void
+  /** 개발용 (?dev=quarry 에서만 부른다) */
+  devQuarry: (action: DevQuarryAction) => void
   // ── 클라우드 백업 ──
   /**
    * 상태 전체를 다른 것으로 갈아 끼운다.
@@ -2051,6 +2063,50 @@ export function useGameState(): GameState {
     })
   }, [commit])
 
+  // ── 오래된 채석장 ───────────────────────────────────
+
+  /** 처음 들어갔다고 적어둔다. 첫 안내를 두 번 띄우지 않으려고. */
+  const enterQuarry = useCallback(() => {
+    const prev = stateRef.current
+    if (!isQuarryUnlocked(prev) || prev.quarry.tutorialSeenAt !== null) return
+    commit({
+      ...prev,
+      quarry: { ...prev.quarry, tutorialSeenAt: new Date().toISOString() },
+    })
+  }, [commit])
+
+  /**
+   * 한 자리를 살펴본다.
+   *
+   * 캐면 도감이 늘고, 도감이 늘면 마일스톤·세트가 따라 완성될 수 있다.
+   * 그래서 기존 사슬을 한 번 태운다 — 보상 계산을 여기서 다시 하지 않는다.
+   * (거두기 harvestPlot 과 같은 길이다)
+   */
+  const exploreQuarrySpot = useCallback(
+    (spotId: string): QuarryFind | null => {
+      const prev = stateRef.current
+      const now = new Date()
+      const result = exploreQuarry(prev, spotId, now)
+      if (!result.ok) return null
+
+      const derived = applyCollectionDerived(result.state, now)
+      const discovered = applyDiscovery(derived.state, now)
+      const skinned = applySkinUnlocks(discovered.state)
+      if (discovered.notes.length > 0) setDiscoveryNotes(discovered.notes)
+      if (skinned.unlocked.length > 0) setNewSkins(skinned.unlocked)
+      commit(skinned.state)
+      return result.find
+    },
+    [commit],
+  )
+
+  /** 막힌 길을 들여다봤다. 다음 이야기가 여기서 시작한다. */
+  const seeBlockedPath = useCallback(() => {
+    const prev = stateRef.current
+    if (prev.quarry.blockedPathSeen) return
+    commit({ ...prev, quarry: { ...prev.quarry, blockedPathSeen: true } })
+  }, [commit])
+
   const plantSeed = useCallback(
     (plotIndex: number, cropId: string): PlantResult => {
       const { state: next, result } = plantSeedIn(stateRef.current, plotIndex, cropId)
@@ -2187,6 +2243,16 @@ export function useGameState(): GameState {
     [commit],
   )
 
+  const devQuarry = useCallback(
+    (action: DevQuarryAction) => {
+      const now = new Date()
+      const next = applyDevQuarry(stateRef.current, action, now)
+      const derived = applyCollectionDerived(next, now)
+      commit(applyDiscovery(derived.state, now).state)
+    },
+    [commit],
+  )
+
   const devWorkshop = useCallback(
     (action: DevWorkshopAction) => {
       // 만들기로 얻은 것도 도감·세트·트로피·발견 사슬을 한 번 태운다.
@@ -2283,6 +2349,9 @@ export function useGameState(): GameState {
       buySkin,
       devGrantAllSkins,
       enterGarden,
+      enterQuarry,
+      exploreQuarrySpot,
+      seeBlockedPath,
       plantSeed,
       harvestPlot,
       useDew,
@@ -2293,6 +2362,7 @@ export function useGameState(): GameState {
       toggleRecipeFavorite,
       devKitchen,
       devWorkshop,
+      devQuarry,
       newSkins,
       dismissNewSkins,
       replaceState,
@@ -2350,6 +2420,9 @@ export function useGameState(): GameState {
       buySkin,
       devGrantAllSkins,
       enterGarden,
+      enterQuarry,
+      exploreQuarrySpot,
+      seeBlockedPath,
       plantSeed,
       harvestPlot,
       useDew,
@@ -2360,6 +2433,7 @@ export function useGameState(): GameState {
       toggleRecipeFavorite,
       devKitchen,
       devWorkshop,
+      devQuarry,
       newSkins,
       dismissNewSkins,
       replaceState,

@@ -1,4 +1,5 @@
 import type {
+  QuarryState,
   DiscoveryState,
   GardenPlot,
   GardenState,
@@ -56,6 +57,8 @@ import { MAX_PLOTS, emptyGarden, emptyPlots } from '@/lib/garden/derive'
 import { MAX_ADVENTURE_ENERGY } from '@/lib/garden/quest'
 import { findCrop } from '@/lib/garden/crops'
 import { emptyKitchen } from '@/lib/kitchen/derive'
+import { emptyQuarry, DAILY_ATTEMPTS } from '@/lib/quarry/derive'
+import { isMineral } from '@/lib/quarry/minerals'
 import { findKitchenRecipe } from '@/lib/kitchen/recipes'
 import { AUTO_COLLECTION_IDS, COMPANION_IDS, SECRET_IDS, SKIN_IDS } from '@/types'
 import { findChapter } from '@/lib/discovery/stories'
@@ -68,7 +71,7 @@ import { findRoom } from '@/lib/collection/rooms'
  * 없는 항목만 기본값으로 채우고, 있는 값은 손대지 않는다.
  */
 
-export const STATE_VERSION = 14
+export const STATE_VERSION = 15
 
 /** 구매 기록을 며칠치까지 남길지 */
 export const PURCHASE_DAYS_KEPT = 7
@@ -880,6 +883,38 @@ export function sanitizeEnergy(raw: unknown): number {
  * 만든 횟수는 절대 지우지 않는다. 한 번 만들어본 요리는
  * 무슨 일이 있어도 계속 아는 것으로 남아야 한다.
  */
+/**
+ * 오래된 채석장.
+ *
+ * 이 판올림에서 새로 생긴 자리다. 예전 저장에는 통째로 없으므로
+ * 없으면 빈 채석장으로 시작한다 — 기존 기록은 하나도 안 건드린다.
+ */
+export function sanitizeQuarry(raw: unknown): QuarryState {
+  const empty = emptyQuarry()
+  if (!raw || typeof raw !== 'object') return empty
+  const q = raw as Record<string, unknown>
+
+  const foundMineralCounts: Record<string, number> = {}
+  if (q.foundMineralCounts && typeof q.foundMineralCounts === 'object') {
+    for (const [id, count] of Object.entries(q.foundMineralCounts as Record<string, unknown>)) {
+      // 없어진 광물이 적혀 있으면 조용히 버린다
+      if (!isMineral(id)) continue
+      const n = Math.floor(numberOr(count, 0))
+      if (n > 0) foundMineralCounts[id] = n
+    }
+  }
+
+  return {
+    unlockedAt: typeof q.unlockedAt === 'string' ? q.unlockedAt : null,
+    tutorialSeenAt: typeof q.tutorialSeenAt === 'string' ? q.tutorialSeenAt : null,
+    attemptsOn: typeof q.attemptsOn === 'string' ? q.attemptsOn : null,
+    // 손으로 고친 저장으로 오늘 몫을 늘릴 수 없게 한도로 자른다
+    attempts: Math.min(DAILY_ATTEMPTS, Math.max(0, Math.floor(numberOr(q.attempts, 0)))),
+    foundMineralCounts,
+    blockedPathSeen: q.blockedPathSeen === true,
+  }
+}
+
 export function sanitizeKitchen(raw: unknown): KitchenState {
   const empty = emptyKitchen()
   if (!raw || typeof raw !== 'object') return empty

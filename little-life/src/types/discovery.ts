@@ -274,6 +274,7 @@ export type DiscoveryKind =
   | 'COMPANION'
   | 'GARDEN'
   | 'KITCHEN'
+  | 'QUARRY'
 
 export interface DiscoveryNote {
   /** 같은 것을 두 번 알리지 않으려고 쓰는 열쇠 */

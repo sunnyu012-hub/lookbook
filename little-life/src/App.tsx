@@ -37,8 +37,10 @@ import { gardenLevel, gardenXp, isGardenUnlocked } from '@/lib/garden/derive'
 import { KITCHEN_RECIPES } from '@/lib/kitchen/recipes'
 import { GardenLab } from '@/components/garden/GardenLab'
 import { KitchenScreen } from '@/components/kitchen/KitchenScreen'
+import { QuarryScreen } from '@/components/quarry/QuarryScreen'
 import { KitchenLab } from '@/components/kitchen/KitchenLab'
 import { WorkshopLab } from '@/components/collection/WorkshopLab'
+import { QuarryLab } from '@/components/quarry/QuarryLab'
 import type { CookedNote } from '@/components/kitchen/CookedOverlay'
 import type { HarvestNote } from '@/components/garden/HarvestOverlay'
 import { WorkshopSheet } from '@/components/collection/WorkshopSheet'
@@ -125,6 +127,9 @@ export default function App() {
     newSkins,
     dismissNewSkins,
     enterGarden,
+    enterQuarry,
+    exploreQuarrySpot,
+    seeBlockedPath,
     plantSeed,
     harvestPlot,
     useDew,
@@ -135,6 +140,7 @@ export default function App() {
     toggleRecipeFavorite,
     devKitchen: runDevKitchen,
     devWorkshop: runDevWorkshop,
+    devQuarry: runDevQuarry,
     replaceState,
   } = useGameState()
   const feedback = useFeedback()
@@ -156,6 +162,7 @@ export default function App() {
   const [lookOpen, setLookOpen] = useState(false)
   const [gardenOpen, setGardenOpen] = useState(false)
   const [kitchenOpen, setKitchenOpen] = useState(false)
+  const [quarryOpen, setQuarryOpen] = useState(false)
 
   /**
    * 개발용 갤러리. 주소에 ?dev=skins 를 붙였을 때만.
@@ -167,6 +174,7 @@ export default function App() {
   const devGarden = devParam === 'garden'
   const devKitchen = devParam === 'kitchen'
   const devWorkshop = devParam === 'workshop'
+  const devQuarry = devParam === 'quarry'
 
   /**
    * 처음 여는 사람에게 한 번.
@@ -638,6 +646,10 @@ export default function App() {
     return <GardenLab state={state} onRun={runDevGarden} />
   }
 
+  if (devQuarry) {
+    return <QuarryLab state={state} onRun={runDevQuarry} />
+  }
+
   if (devWorkshop) {
     return <WorkshopLab state={state} onRun={runDevWorkshop} />
   }
@@ -683,6 +695,7 @@ export default function App() {
           onDismissDiscovery={dismissDiscoveryNotes}
           onOpenDiscovery={() => setDiscoveryOpen(true)}
             onOpenGarden={() => setGardenOpen(true)}
+            onOpenQuarry={() => setQuarryOpen(true)}
             onOpenKitchen={() => setKitchenOpen(true)}
             onOpenCollection={() => {
               setBagView('BOOK')
@@ -723,6 +736,7 @@ export default function App() {
             onOpenCollectionShop={setOpenCollectionShop}
             onOpenWorkshop={() => setWorkshopOpen(true)}
             onOpenGarden={() => setGardenOpen(true)}
+            onOpenQuarry={() => setQuarryOpen(true)}
           />
         )}
         {tab === 'bag' && (
@@ -914,6 +928,19 @@ export default function App() {
         confirmLabel="지우기"
         onConfirm={confirmRoutineDelete}
         onCancel={() => setPendingRoutineDelete(null)}
+      />
+
+      <QuarryScreen
+        open={quarryOpen}
+        state={state}
+        onClose={() => setQuarryOpen(false)}
+        onEnter={enterQuarry}
+        onExplore={exploreQuarrySpot}
+        onSeeBlockedPath={seeBlockedPath}
+        onOpenBook={() => {
+          setBagView('BOOK')
+          setTab('bag')
+        }}
       />
 
       <KitchenScreen

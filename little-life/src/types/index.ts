@@ -6,6 +6,7 @@ export * from './discovery'
 export * from './skins'
 export * from './garden'
 export * from './kitchen'
+export * from './quarry'
 import type { CollectionState } from './collection'
 import type { DiscoveryState } from './discovery'
 import type {
@@ -22,6 +23,7 @@ import type { TimeBand } from './rpg'
 import type { SkinId } from './skins'
 import type { GardenState } from './garden'
 import type { KitchenState } from './kitchen'
+import type { QuarryState } from './quarry'
 
 /**
  * Little Life 의 데이터 모델.
@@ -268,6 +270,8 @@ export interface AppState {
    * (lib/kitchen/derive.ts). 저장하는 건 만든 횟수와 하트뿐이다.
    */
   kitchen: KitchenState
+  /** 오래된 채석장. 아직 못 찾았으면 unlockedAt 이 null 이다. */
+  quarry: QuarryState
   // 향후 확장 예정: achievements, character …
   //
   // 오늘의 이벤트와 상점 진열은 여기 없다.

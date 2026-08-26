@@ -4,7 +4,9 @@ import { ITEMS } from '@/lib/rpg/content'
 import {
   ALL_COLLECTION_ITEMS,
   CATALOG,
+  CRAFTED_CATALOG,
   MATERIAL_CATALOG,
+  PLACEABLE_CATALOG,
   TROPHY_CATALOG,
   catalogTotal,
   findCollectionItem,
@@ -863,6 +865,152 @@ describe('정원 세트', () => {
   })
 })
 
+describe('작업실 제작물 열둘 (UPDATE D)', () => {
+  const IDS = [
+    'w_strawberry_shelf', 'w_herb_bundle', 'w_veggie_crate', 'w_lavender_cushion',
+    'w_mushroom_lamp', 'w_garden_table', 'w_recipe_shelf', 'w_picnic_set',
+    'w_moon_lamp', 'w_star_vase', 'w_autumn_bench', 'w_quarry_lantern',
+  ]
+
+  function ready(): AppState {
+    const base = createDefaultState()
+    return { ...base, garden: { ...base.garden, unlockedAt: '2026-01-01T00:00:00.000Z' } }
+  }
+
+  it('열두 개가 다 있고 id 가 겹치지 않는다', () => {
+    expect(new Set(IDS).size).toBe(12)
+    for (const id of IDS) expect(findCollectionItem(id), id).not.toBeNull()
+  })
+
+  it('이제 열두 개 다 만들 수 있다 — 돌등불이 열렸다', () => {
+    const craftable = IDS.filter((id) =>
+      RECIPES.some((r) => r.resultItemId === id && r.unlock.kind !== 'COMING_SOON'),
+    )
+    expect(craftable).toHaveLength(12)
+    expect(craftable).toContain('w_quarry_lantern')
+  })
+
+  it('돌등불은 광물을 세 가지 만나야 열린다', () => {
+    const def = findCollectionItem('w_quarry_lantern')!
+    expect(def.comingSoon).toBeUndefined()
+    expect(PLACEABLE_CATALOG.some((i) => i.id === 'w_quarry_lantern')).toBe(true)
+
+    const recipe = RECIPES.find((r) => r.resultItemId === 'w_quarry_lantern')!
+    const before = ready()
+    expect(isRecipeKnown(recipe, recipeContextOf(before))).toBe(false)
+
+    const after = {
+      ...before,
+      quarry: {
+        ...before.quarry,
+        foundMineralCounts: { m_stone: 2, mineral_spark_stone: 1, mineral_old_metal: 1 },
+      },
+    }
+    expect(isRecipeKnown(recipe, recipeContextOf(after))).toBe(true)
+  })
+
+  it('허브 다발만 벽에 건다. 나머지는 벽이 아니다', () => {
+    expect(findCollectionItem('w_herb_bundle')!.placementType).toBe('WALL')
+    for (const id of IDS.filter((i) => i !== 'w_herb_bundle')) {
+      expect(findCollectionItem(id)!.placementType, id).not.toBe('WALL')
+    }
+  })
+
+  it('방에서 차지하는 폭이 기존 물건 관례와 맞는다', () => {
+    // 렌더러는 footprint.width 만 본다 (RoomCanvas). 분류마다 관례가 있다.
+    const 관례: Record<string, number> = { LIGHTING: 13, PLANT: 13, LITTLE_THING: 10, WALL: 16 }
+    // 그림 비율이 정사각형에서 먼 셋만 관례에서 벗어난다 (workshop.ts 주석).
+    // 폭을 관례대로 두면 높이가 어긋나는 것들이다.
+    const 예외: Record<string, number> = {
+      w_herb_bundle: 11, // 세로로 긴 그림 — 16이면 높이가 26이 되어 벽을 다 덮는다
+      w_lavender_cushion: 15, // 바닥 쿠션. 도감의 담요·쿠션 관례가 15다
+      w_autumn_bench: 26, // 옆으로 넓은 그림 — 21이면 높이가 13이라 앉는 물건으로 안 보인다
+    }
+    for (const id of IDS) {
+      const def = findCollectionItem(id)!
+      const want = 예외[id] ?? 관례[def.category]
+      if (want !== undefined) expect(def.footprint?.width, id).toBe(want)
+    }
+    // 가구는 기존 가구 폭 범위(15~32) 안에 있어야 한다
+    for (const id of IDS) {
+      const def = findCollectionItem(id)!
+      if (def.category !== 'FURNITURE') continue
+      expect(def.footprint!.width, id).toBeGreaterThanOrEqual(15)
+      expect(def.footprint!.width, id).toBeLessThanOrEqual(32)
+    }
+  })
+
+  it('이름이 비슷한 기존 물건과 완전히 다른 아이템이다', () => {
+    for (const [mine, theirs] of [
+      ['w_mushroom_lamp', 'mushroom_lamp'],
+      ['w_picnic_set', 'k_picnic_basket'],
+      ['w_recipe_shelf', 'k_recipe_book'],
+      ['w_garden_table', 'g_autumn_table'],
+    ]) {
+      const a = findCollectionItem(mine)!
+      const b = findCollectionItem(theirs)!
+      expect(a.id).not.toBe(b.id)
+      // 그림도 공유하지 않는다 (한쪽만 그림이 있어도 서로 빌려 쓰지 않는다)
+      if (a.assetKey && b.assetKey) expect(a.assetKey).not.toBe(b.assetKey)
+    }
+  })
+
+  it('만든 것은 도감의 자기 칸에 들어간다 — 240 은 안 늘어난다', () => {
+    for (const id of IDS) {
+      expect(CRAFTED_CATALOG.some((i) => i.id === id), id).toBe(true)
+      expect(CATALOG.some((i) => i.id === id), id).toBe(false)
+    }
+    // 정원·부엌 세트 보상도 같은 칸에 있다
+    expect(CRAFTED_CATALOG.some((i) => i.id === 'g_moon_arch')).toBe(true)
+    expect(CRAFTED_CATALOG.some((i) => i.id === 'k_soup_pot')).toBe(true)
+    // 240 칸은 그대로다
+    expect(catalogTotal({})).toBe(240)
+  })
+
+  it('만들면 재료가 빠지고 하나 생기고 도감에 남는다', () => {
+    const recipe = RECIPES.find((r) => r.id === 'w_strawberry_shelf')!
+    let c = emptyCollection()
+    for (const ing of recipe.ingredients) {
+      for (let i = 0; i < ing.count; i += 1) c = addItem(c, ing.itemId).collection
+    }
+    expect(canCraft(recipe, c)).toBe(true)
+
+    const spent = spendItems(c, recipe.ingredients)!
+    for (const ing of recipe.ingredients) expect(ownedCount(spent, ing.itemId)).toBe(0)
+
+    const made = addItem(spent, recipe.resultItemId)
+    expect(made.isNew).toBe(true)
+    expect(ownedCount(made.collection, recipe.resultItemId)).toBe(1)
+    expect(isDiscovered(made.collection, recipe.resultItemId)).toBe(true)
+
+    // 두 번째는 새 발견이 아니다 (연출을 두 번 띄우지 않는다)
+    const again = addItem(made.collection, recipe.resultItemId)
+    expect(again.isNew).toBe(false)
+  })
+
+  it('재료가 모자라면 하나도 안 빠진다', () => {
+    const recipe = RECIPES.find((r) => r.id === 'w_herb_bundle')!
+    let c = emptyCollection()
+    c = addItem(c, recipe.ingredients[0].itemId).collection
+    expect(canCraft(recipe, c)).toBe(false)
+    // 모자란 채로 쓰려 하면 아무것도 안 건드리고 null 을 준다
+    expect(spendItems(c, recipe.ingredients)).toBeNull()
+    expect(ownedCount(c, recipe.ingredients[0].itemId)).toBe(1)
+  })
+
+  it('레시피가 화면이 아니라 데이터에 있다', () => {
+    // 열한 개 전부 표에서 나온다. 컴포넌트가 비용을 정하지 않는다.
+    for (const id of IDS.filter((i) => i !== 'w_quarry_lantern')) {
+      const r = RECIPES.find((x) => x.resultItemId === id)!
+      expect(r.ingredients.length, id).toBeGreaterThan(0)
+      for (const ing of r.ingredients) {
+        expect(findCollectionItem(ing.itemId), `${id} → ${ing.itemId}`).not.toBeNull()
+        expect(ing.count).toBeGreaterThan(0)
+      }
+    }
+  })
+})
+
 describe('작업실 화면', () => {
   function ready(): AppState {
     const base = createDefaultState()
@@ -932,14 +1080,12 @@ describe('작업실 화면', () => {
     expect(row.ready).toBe(false)
   })
 
-  it('아직 못 만드는 것은 자리만 남고 세는 수에는 안 들어간다', () => {
+  it('돌등불도 이제 세는 수에 들어간다', () => {
     const view = workshopView(ready())
-    const coming = view.recipes.find((r) => r.def.id === 'w_quarry_lantern')!
-    expect(coming.stage).toBe('COMING_SOON')
-    expect(coming.def.hint).toBeTruthy()
-    expect(view.total).toBe(view.recipes.length - 1)
-    // 맨 아래로 간다 — 못 만드는 것이 위에 있으면 목록이 막힌 문처럼 보인다
-    expect(view.recipes[view.recipes.length - 1].def.id).toBe('w_quarry_lantern')
+    const lantern = view.recipes.find((r) => r.def.id === 'w_quarry_lantern')!
+    expect(lantern.stage).not.toBe('COMING_SOON')
+    // 아직 못 만들어도 셀 수 있는 목록에는 든다
+    expect(view.total).toBe(view.recipes.length)
   })
 
   it('예전 레시피도 칸이 정해진다 (표를 안 고치고 물건에서 가져온다)', () => {
@@ -1017,9 +1163,9 @@ describe('저장된 수집 기록', () => {
     expect(counts.WORK).toBe(42)
   })
 
-  it('스키마 버전이 14 이다', () => {
-    expect(STATE_VERSION).toBe(14)
-    expect(createDefaultState().version).toBe(14)
+  it('스키마 버전이 15 이다', () => {
+    expect(STATE_VERSION).toBe(15)
+    expect(createDefaultState().version).toBe(15)
   })
 })
 

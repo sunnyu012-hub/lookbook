@@ -256,11 +256,23 @@ export function WorkshopSheet({ open, state, onClose, onCraft, onPlace }: Worksh
               </>
             ) : (
               <p className="mt-4 rounded-card bg-canvas px-3.5 py-4 text-center text-[12.5px] leading-relaxed text-inkdim">
-                {active.stage === 'COMING_SOON'
-                  ? '지금 가진 것으로는 아직 안 돼.'
-                  : '아직 만드는 법을 모르겠어.'}
-                <br />
-                <span className="text-inkfaint">{active.def.unlockHint}</span>
+                {/* 아직 이 판에 없는 것은 "재료가 모자라" 와 다르게 말한다.
+                    모자란 건 채우면 되지만 이건 아직 갈 데가 없다. */}
+                {active.stage === 'COMING_SOON' ? (
+                  <>
+                    아직 만들 수 없어.
+                    <br />
+                    <span className="text-inkfaint">
+                      공원 바깥쪽 돌이 많은 길에서 찾을 수 있을 것 같아.
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    아직 만드는 법을 모르겠어.
+                    <br />
+                    <span className="text-inkfaint">{active.def.unlockHint}</span>
+                  </>
+                )}
               </p>
             )}
           </div>
@@ -317,7 +329,13 @@ function RecipeRow({
       </span>
 
       <span className="shrink-0 font-game text-[10px] tracking-[0.08em] text-inkfaint">
-        {stage === 'COMING_SOON' ? '아직' : recipe.ready ? '만들 수 있어' : known ? '재료 부족' : '낌새'}
+        {stage === 'COMING_SOON'
+          ? '아직'
+          : recipe.ready
+            ? '만들 수 있어'
+            : known
+              ? '재료가 모자라'
+              : '낌새'}
       </span>
     </button>
   )

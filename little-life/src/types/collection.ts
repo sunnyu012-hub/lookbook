@@ -105,6 +105,8 @@ export type AcquisitionSource =
   | { kind: 'TROPHY' }
   /** 작은 정원에서 거둔다 */
   | { kind: 'GARDEN' }
+  /** 오래된 채석장에서 캔다 */
+  | { kind: 'QUARRY' }
   | { kind: 'SECRET'; hint: string | null }
 
 // ── 아이템 ──────────────────────────────────────────────
@@ -174,6 +176,13 @@ export interface CollectionItemDef {
   unique: boolean
   /** 발견 전에는 이름도 힌트도 숨긴다 */
   hiddenUntilDiscovered?: boolean
+  /**
+   * 아직 이 판에 없는 것.
+   *
+   * 다음 업데이트 예고로 목록에 자리만 남긴 물건이다.
+   * 만들 수도 없고 방에 놓을 수도 없다 — 어떤 길로도 손에 들어오지 않는다.
+   */
+  comingSoon?: boolean
   /** 발견 전에는 전체 수에도 넣지 않는다 — "238 / 240 + ?" 를 위한 자리 */
   hiddenFromTotal?: boolean
 }
@@ -263,6 +272,8 @@ export type RecipeUnlock =
   | { kind: 'CROP_HARVESTED'; cropId: string; count: number }
   /** 서로 다른 요리를 이만큼 만들어보면 */
   | { kind: 'RECIPES_COOKED'; count: number }
+  /** 채석장에서 서로 다른 광물을 이만큼 만나면 */
+  | { kind: 'MINERALS_FOUND'; count: number }
   /**
    * 아직 만들 수 없다.
    *

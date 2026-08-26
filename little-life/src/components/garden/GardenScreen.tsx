@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { useOverlay } from '@/hooks/useOverlay'
 import { GARDEN_DEW_SECONDS } from '@/lib/garden/crops'
 import { dewCount, gardenView, nearestRareHint, seedStock } from '@/lib/garden/derive'
-import { STAGE_ICON, STAGE_LABEL, remainingLabel } from '@/lib/garden/labels'
+import { STAGE_ICON, STAGE_LABEL, remainingLabel, stageArt } from '@/lib/garden/labels'
 import { CompanionArt } from '@/components/discovery/CompanionArt'
 import { activeCompanion } from '@/lib/discovery/companions'
 import { SeedSheet } from './SeedSheet'
@@ -238,7 +238,18 @@ export function GardenScreen({
         {active?.crop && (
           <div className="text-center">
             <h2 className="mb-3 text-[17px] font-semibold text-ink">{active.crop.name}</h2>
-            <span className="block text-[44px] leading-none">{STAGE_ICON[active.stage] || active.crop.icon}</span>
+            {stageArt(active.stage) ? (
+              <img
+                src={stageArt(active.stage)}
+                alt=""
+                aria-hidden
+                className="mx-auto block h-[76px] w-auto select-none"
+              />
+            ) : (
+              <span className="block text-[44px] leading-none">
+                {STAGE_ICON[active.stage] || active.crop.icon}
+              </span>
+            )}
             <p className="mt-2 text-[15px] font-medium text-ink">{STAGE_LABEL[active.stage]}</p>
             <p className="mt-1 text-[13px] text-inkdim">
               {remainingLabel(active.remainingSeconds)} 남았어
@@ -356,8 +367,10 @@ function PlotCard({ plot, onClick }: { plot: GardenPlotView; onClick: () => void
         {locked ? (
           <span className="text-[20px] opacity-40">🔒</span>
         ) : plot.crop ? (
-          <span className={cn(ready && 'animate-bouncesm')}>
-            {ready ? plot.crop.icon : STAGE_ICON[plot.stage] || plot.crop.icon}
+          <span className={cn('flex items-center justify-center', ready && 'animate-bouncesm')}>
+            {/* 다 자라면 작물 그림, 그 전에는 자라는 단계 그림.
+                단계 그림은 열두 작물이 같이 쓴다. 아직 안 들어왔으면 이모지로 내려간다. */}
+            <StageArt plot={plot} ready={ready} />
           </span>
         ) : (
           <span className="text-[20px] text-inkfaint">＋</span>
@@ -375,5 +388,24 @@ function PlotCard({ plot, onClick }: { plot: GardenPlotView; onClick: () => void
             : '심어보기'}
       </span>
     </button>
+  )
+}
+
+/**
+ * 밭 한 칸에 보이는 그림.
+ *
+ * 거둘 때가 되면 작물 그림으로 바뀐다 — 그 전까지는 무엇을 심었는지
+ * 그림만 보고는 알 수 없다. 이름이 아래 줄에 적혀 있으니 그걸로 충분하고,
+ * 자라는 동안은 열두 작물이 같은 넉 장을 같이 쓴다.
+ */
+function StageArt({ plot, ready }: { plot: GardenPlotView; ready: boolean }) {
+  if (!plot.crop) return null
+  if (ready) return <span>{plot.crop.icon}</span>
+
+  const art = stageArt(plot.stage)
+  if (!art) return <span>{STAGE_ICON[plot.stage] || plot.crop.icon}</span>
+
+  return (
+    <img src={art} alt="" aria-hidden draggable={false} className="h-[64px] w-auto select-none" />
   )
 }

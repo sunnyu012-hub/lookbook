@@ -44,6 +44,7 @@ interface HomeScreenProps {
   onOpenGarden: () => void
   /** 방 안의 작은 부엌 */
   onOpenKitchen: () => void
+  onOpenQuarry: () => void
   events: CityEvent[]
 }
 
@@ -66,6 +67,7 @@ export function HomeScreen({
   onOpenDiscovery,
   onOpenGarden,
   onOpenKitchen,
+  onOpenQuarry,
   events,
 }: HomeScreenProps) {
   const buddy = activeCompanion(state)
@@ -111,6 +113,7 @@ export function HomeScreen({
         onDismiss={onDismissDiscovery}
         onOpenGarden={onOpenGarden}
         onOpenKitchen={onOpenKitchen}
+        onOpenQuarry={onOpenQuarry}
       />
 
       <CharacterRoomCard
