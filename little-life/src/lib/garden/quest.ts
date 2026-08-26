@@ -44,14 +44,24 @@ export function gainEnergy(current: number, amount: number, max = MAX_ADVENTURE_
 
 // ── 씨앗 드롭 ───────────────────────────────────────────
 
-/** 퀘스트에서 씨앗이 나올 확률 (%) */
+/**
+ * 퀘스트에서 씨앗이 나올 확률 (%).
+ *
+ * 처음 잡았던 20/20/30 은 실제로 도는 퀘스트를 안 본 숫자였다.
+ * 준비된 목록 142개 중 119개가 쉬움이라, 추천으로 뜨는 건 사실상
+ * 전부 20% 굴림이다. 하루 세 개를 해도 씨앗이 이틀에 하나꼴이고,
+ * 채석장까지 열일곱 날이 걸렸다. 만들어둔 걸 아무도 못 보는 속도다.
+ *
+ * 쉬움만 올리면 보통이 쉬움보다 못해진다 — 그래서 같이 올린다.
+ * 순서(쉬움 = 보통 < 어려움 < 보스)는 원래 모양 그대로다.
+ */
 export const SEED_CHANCE: Record<Difficulty, number> = {
-  EASY: 20,
-  NORMAL: 20,
-  HARD: 30,
+  EASY: 35,
+  NORMAL: 35,
+  HARD: 45,
 }
 
-export const SEED_CHANCE_BOSS = 50
+export const SEED_CHANCE_BOSS = 60
 
 /** 아침 이슬이 나올 확률 (%). 아주 가끔이다. */
 export const DEW_CHANCE = 4

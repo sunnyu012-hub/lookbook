@@ -40,7 +40,12 @@ export function emptyQuarry(): QuarryState {
  *
  * 하루의 네 번째 이야기(HARU_4)가 "공원 바깥쪽 돌이 많은 길" 을 말해둔 그 자리다.
  */
-export const QUARRY_UNLOCK = { harvested: 10, crafted: 3 } as const
+/**
+ * 열 번 거두기는 씨앗 여덟 개를 더 받아야 하는 수였다.
+ * 씨앗은 퀘스트에서만 나오니 그것만으로 열사흘이 붙었다.
+ * 정원을 "해봤다" 는 걸 보려는 조건이지 정원을 다 하라는 게 아니다.
+ */
+export const QUARRY_UNLOCK = { harvested: 6, crafted: 3 } as const
 
 export function unlockProgress(state: AppState): number {
   const byGarden = harvestedTotal(state.garden) / QUARRY_UNLOCK.harvested

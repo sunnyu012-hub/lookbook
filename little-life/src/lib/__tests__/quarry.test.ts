@@ -174,9 +174,13 @@ describe('C. 채석장을 찾는다', () => {
 
   it('조건에 얼마나 왔는지는 저장하지 않는다', () => {
     const base = createDefaultState()
+    // 조건 수를 여기 다시 적지 않는다 — 균형을 손볼 때마다 같이 틀린다
     const half: AppState = {
       ...base,
-      garden: { ...base.garden, harvestedCropCounts: { strawberry: 5 } },
+      garden: {
+        ...base.garden,
+        harvestedCropCounts: { strawberry: QUARRY_UNLOCK.harvested / 2 },
+      },
     }
     expect(unlockProgress(half)).toBeCloseTo(0.5)
     // 저장 구조에는 진행도 칸이 없다
