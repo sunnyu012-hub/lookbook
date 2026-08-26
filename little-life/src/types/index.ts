@@ -7,6 +7,7 @@ export * from './skins'
 export * from './garden'
 export * from './kitchen'
 export * from './quarry'
+export * from './dungeon'
 import type { CollectionState } from './collection'
 import type { DiscoveryState } from './discovery'
 import type {
@@ -24,6 +25,7 @@ import type { SkinId } from './skins'
 import type { GardenState } from './garden'
 import type { KitchenState } from './kitchen'
 import type { QuarryState } from './quarry'
+import type { DungeonState } from './dungeon'
 
 /**
  * Little Life 의 데이터 모델.
@@ -272,6 +274,14 @@ export interface AppState {
   kitchen: KitchenState
   /** 오래된 채석장. 아직 못 찾았으면 unlockedAt 이 null 이다. */
   quarry: QuarryState
+  /**
+   * 잠든 돌문.
+   *
+   * 열쇠를 가졌는지도, 문을 찾았는지도 여기 없다 —
+   * 단서 셋과 막힌 길 기록에서 계산한다 (lib/dungeon/derive.ts).
+   * 여기 남는 건 어디까지 걸어가 봤고 어디를 이미 들여다봤는지뿐이다.
+   */
+  dungeon: DungeonState
   // 향후 확장 예정: achievements, character …
   //
   // 오늘의 이벤트와 상점 진열은 여기 없다.

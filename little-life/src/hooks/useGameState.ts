@@ -74,9 +74,17 @@ import {
 } from '@/lib/garden/derive'
 import { applyDevGarden } from '@/lib/garden/dev'
 import type { DevQuarryAction } from '@/lib/quarry/dev'
+import type { DevDungeonAction } from '@/lib/dungeon/dev'
+import { applyDevDungeon } from '@/lib/dungeon/dev'
 import { applyDevQuarry } from '@/lib/quarry/dev'
-import type { QuarryFind } from '@/types'
+import type { DungeonFind, QuarryFind } from '@/types'
 import { explore as exploreQuarry, isQuarryUnlocked } from '@/lib/quarry/derive'
+import {
+  enterDungeon as enterGate,
+  goDeeper,
+  isGateFound,
+  search as searchSpot,
+} from '@/lib/dungeon/derive'
 import { FIRST_SEEDS } from '@/lib/garden/crops'
 import {
   ENERGY_BOSS,
@@ -252,6 +260,12 @@ interface GameState {
   exploreQuarrySpot: (spotId: string) => QuarryFind | null
   /** 막힌 길을 들여다봤다고 적어둔다 */
   seeBlockedPath: () => void
+  /** 잠든 돌문에 들어선다. 에너지가 0 이어도 들어갈 수 있다. */
+  enterDungeon: () => void
+  /** 안쪽으로 한 구역 더 간다. 못 가면 null. */
+  goDeeperInDungeon: (fromRoomId: string) => string | null
+  /** 한 자리를 들여다본다. 못 하면 null. */
+  searchDungeonSpot: (spotId: string) => DungeonFind | null
   /** 빈 밭에 씨앗 하나를 심는다 */
   plantSeed: (plotIndex: number, cropId: string) => PlantResult
   /** 다 자란 것을 거둔다 */
@@ -275,6 +289,8 @@ interface GameState {
   devWorkshop: (action: DevWorkshopAction) => void
   /** 개발용 (?dev=quarry 에서만 부른다) */
   devQuarry: (action: DevQuarryAction) => void
+  /** 개발용 (?dev=dungeon 에서만 부른다) */
+  devDungeon: (action: DevDungeonAction) => void
   // ── 클라우드 백업 ──
   /**
    * 상태 전체를 다른 것으로 갈아 끼운다.
@@ -2104,8 +2120,75 @@ export function useGameState(): GameState {
   const seeBlockedPath = useCallback(() => {
     const prev = stateRef.current
     if (prev.quarry.blockedPathSeen) return
-    commit({ ...prev, quarry: { ...prev.quarry, blockedPathSeen: true } })
+    // 열쇠를 이미 가진 채로 여기를 처음 봤으면 그 자리에서 문이 보인다.
+    // 발견 검사를 한 번 태워서 그 알림이 바로 뜨게 한다.
+    const now = new Date()
+    const seen: AppState = { ...prev, quarry: { ...prev.quarry, blockedPathSeen: true } }
+    const discovered = applyDiscovery(seen, now)
+    if (discovered.notes.length > 0) setDiscoveryNotes(discovered.notes)
+    commit(discovered.state)
   }, [commit])
+
+  // ── 잠든 돌문 ───────────────────────────────────────
+
+  /**
+   * 문을 열고 들어선다.
+   *
+   * 들어오는 데는 아무것도 안 든다 — 모험 에너지가 0 이어도 들어온다.
+   * 처음이면 첫 안내를 봤다고 같이 적는다.
+   */
+  const enterDungeon = useCallback(() => {
+    const prev = stateRef.current
+    if (!isGateFound(prev)) return
+    const entered = enterGate(prev)
+    const tutorial =
+      entered.dungeon.tutorialSeenAt === null
+        ? { ...entered.dungeon, tutorialSeenAt: new Date().toISOString() }
+        : entered.dungeon
+    if (entered === prev && tutorial === prev.dungeon) return
+    commit({ ...entered, dungeon: tutorial })
+  }, [commit])
+
+  /**
+   * 안쪽으로 한 구역 더 들어간다.
+   *
+   * 처음 가는 구역에만 모험 에너지가 1 든다. 가본 데로 돌아가는 건 공짜다.
+   * 못 가면 아무것도 안 바꾸고 null 을 돌려준다 — 화면이 안내를 띄운다.
+   */
+  const goDeeperInDungeon = useCallback(
+    (fromRoomId: string): string | null => {
+      const result = goDeeper(stateRef.current, fromRoomId)
+      if (!result.ok) return null
+      if (result.state !== stateRef.current) commit(result.state)
+      return result.roomId
+    },
+    [commit],
+  )
+
+  /**
+   * 한 자리를 들여다본다.
+   *
+   * 찾으면 도감이 늘고, 도감이 늘면 마일스톤·세트가 따라 완성될 수 있다.
+   * 그래서 기존 사슬을 한 번 태운다 — 보상 계산을 여기서 다시 하지 않는다.
+   * (채석장 exploreQuarrySpot 과 같은 길이다)
+   */
+  const searchDungeonSpot = useCallback(
+    (spotId: string): DungeonFind | null => {
+      const prev = stateRef.current
+      const now = new Date()
+      const result = searchSpot(prev, spotId, now)
+      if (!result.ok) return null
+
+      const derived = applyCollectionDerived(result.state, now)
+      const discovered = applyDiscovery(derived.state, now)
+      const skinned = applySkinUnlocks(discovered.state)
+      if (discovered.notes.length > 0) setDiscoveryNotes(discovered.notes)
+      if (skinned.unlocked.length > 0) setNewSkins(skinned.unlocked)
+      commit(skinned.state)
+      return result.find
+    },
+    [commit],
+  )
 
   const plantSeed = useCallback(
     (plotIndex: number, cropId: string): PlantResult => {
@@ -2253,6 +2336,16 @@ export function useGameState(): GameState {
     [commit],
   )
 
+  const devDungeon = useCallback(
+    (action: DevDungeonAction) => {
+      const now = new Date()
+      const next = applyDevDungeon(stateRef.current, action, now)
+      const derived = applyCollectionDerived(next, now)
+      commit(applyDiscovery(derived.state, now).state)
+    },
+    [commit],
+  )
+
   const devWorkshop = useCallback(
     (action: DevWorkshopAction) => {
       // 만들기로 얻은 것도 도감·세트·트로피·발견 사슬을 한 번 태운다.
@@ -2352,6 +2445,9 @@ export function useGameState(): GameState {
       enterQuarry,
       exploreQuarrySpot,
       seeBlockedPath,
+      enterDungeon,
+      goDeeperInDungeon,
+      searchDungeonSpot,
       plantSeed,
       harvestPlot,
       useDew,
@@ -2363,6 +2459,7 @@ export function useGameState(): GameState {
       devKitchen,
       devWorkshop,
       devQuarry,
+      devDungeon,
       newSkins,
       dismissNewSkins,
       replaceState,
@@ -2423,6 +2520,9 @@ export function useGameState(): GameState {
       enterQuarry,
       exploreQuarrySpot,
       seeBlockedPath,
+      enterDungeon,
+      goDeeperInDungeon,
+      searchDungeonSpot,
       plantSeed,
       harvestPlot,
       useDew,
@@ -2434,6 +2534,7 @@ export function useGameState(): GameState {
       devKitchen,
       devWorkshop,
       devQuarry,
+      devDungeon,
       newSkins,
       dismissNewSkins,
       replaceState,

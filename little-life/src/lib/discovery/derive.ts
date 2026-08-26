@@ -6,6 +6,7 @@ import { unreadChapters } from './stories'
 import { hintedCompanions, newlyMeetable } from './companions'
 import { applyGardenUnlock, applyRareSeeds } from '@/lib/garden/derive'
 import { applyQuarryUnlock } from '@/lib/quarry/derive'
+import { applyOldKey, isGateFound } from '@/lib/dungeon/derive'
 import { applyKitchenUnlock, newlyDiscovered } from '@/lib/kitchen/derive'
 
 /**
@@ -149,6 +150,35 @@ export function applyDiscovery(state: AppState, now: Date = new Date()): Discove
       icon: '⛏️',
       title: '오래된 채석장',
       text: '도시 끝에 오래된 길이 하나 남아 있었다. 예전에 돌을 캐던 자리 같다.',
+    })
+  }
+
+  // ── 오래된 열쇠 ──────────────────────────────────────
+  // 단서 셋(이상한 돌조각 · 낡은 금속 조각 · 하루의 이야기)이 모이면
+  // 그 순간 손에 들어온다. 따로 만들거나 사러 갈 데가 없다 —
+  // 셋 다 이미 하고 있던 일에서 나온 것이라, 모이면 그게 곧 획득이다.
+  const key = applyOldKey(next, now)
+  next = key.state
+  if (key.gained) {
+    pending.push({
+      key: 'story:old-key',
+      kind: 'DUNGEON',
+      icon: '🗝️',
+      title: '오래된 열쇠',
+      text: '주운 것들을 늘어놓고 보니 하나로 맞춰졌다. 어디에 쓰는 건지는 이제 알 것 같다.',
+    })
+  }
+
+  // ── 잠든 돌문 ────────────────────────────────────────
+  // 열쇠가 있고 막힌 길을 이미 봤으면, 그 자리에 문이 있다는 걸 알게 된다.
+  // 어느 쪽이 먼저였는지는 안 따진다.
+  if (isGateFound(next)) {
+    pending.push({
+      key: 'dungeon:gate',
+      kind: 'DUNGEON',
+      icon: '🚪',
+      title: '잠든 돌문',
+      text: '돌무더기 너머에 문이 하나 있었다. 오래 닫혀 있었던 것 같다.',
     })
   }
 

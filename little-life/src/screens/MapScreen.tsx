@@ -29,6 +29,7 @@ import {
 import { hasFreshStock } from '@/lib/collection/progress'
 import { secretsInArea } from '@/lib/discovery/secrets'
 import { isGardenUnlocked, unlockProgress } from '@/lib/garden/derive'
+import { isGateFound } from '@/lib/dungeon/derive'
 import { isQuarryUnlocked, unlockProgress as quarryProgress } from '@/lib/quarry/derive'
 import { todayKey } from '@/lib/date'
 import { isTodayQuest } from '@/lib/stats'
@@ -54,6 +55,8 @@ interface MapScreenProps {
   /** 공원 너머 작은 정원 */
   onOpenGarden: () => void
   onOpenQuarry: () => void
+  /** 채석장 안쪽의 잠든 돌문. 찾기 전에는 이 줄 자체가 안 뜬다. */
+  onOpenDungeon: () => void
 }
 
 /**
@@ -77,6 +80,7 @@ export function MapScreen({
   onOpenWorkshop,
   onOpenGarden,
   onOpenQuarry,
+  onOpenDungeon,
 }: MapScreenProps) {
   const [openArea, setOpenArea] = useState<AreaDef | null>(null)
   const now = new Date()
@@ -228,6 +232,10 @@ export function MapScreen({
           setOpenArea(null)
           onOpenQuarry()
         }}
+        onOpenDungeon={() => {
+          setOpenArea(null)
+          onOpenDungeon()
+        }}
         onOpenShop={(id) => {
           setOpenArea(null)
           onOpenShop(id)
@@ -259,6 +267,8 @@ interface AreaSheetProps {
   onOpenWorkshop: () => void
   onOpenGarden: () => void
   onOpenQuarry: () => void
+  /** 채석장 안쪽의 잠든 돌문. 찾기 전에는 이 줄 자체가 안 뜬다. */
+  onOpenDungeon: () => void
 }
 
 function AreaSheet({
@@ -280,6 +290,7 @@ function AreaSheet({
   onOpenWorkshop,
   onOpenGarden,
   onOpenQuarry,
+  onOpenDungeon,
 }: AreaSheetProps) {
   if (!area) return null
 
@@ -570,6 +581,31 @@ function AreaSheet({
                   </span>
                 </div>
               )}
+            </li>
+          )}
+
+          {/* 채석장 안쪽. 문을 찾기 전에는 여기 아무것도 안 뜬다 —
+              못 가는 곳을 지도에 미리 찍어두면 그건 기대가 아니라 잠긴 문이다. */}
+          {area.id === 'GREEN_PARK' && isGateFound(state) && (
+            <li>
+              <button
+                type="button"
+                onClick={onOpenDungeon}
+                className={cn(
+                  'flex w-full items-center gap-3 rounded-card border border-line bg-surface px-3.5 py-3 text-left',
+                  'transition-transform duration-150 ease-out active:scale-[0.98]',
+                )}
+              >
+                <span className="text-[22px] leading-none">🚪</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[14px] font-medium text-ink">
+                    잠든 돌문
+                  </span>
+                  <span className="mt-0.5 block truncate text-[11.5px] text-inkdim">
+                    채석장 안쪽. 이제 문이 열린다
+                  </span>
+                </span>
+              </button>
             </li>
           )}
         </ul>
