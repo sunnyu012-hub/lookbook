@@ -27,6 +27,7 @@ import {
 import {
   OLD_KEY_CHAPTER_ID,
   OLD_METAL_ID,
+  PATTERN_PIECES,
   TRACE_ID,
   applyOldKey,
   clueViews,
@@ -477,5 +478,47 @@ describe('N. 도감의 탐험 칸', () => {
 
   it('N3 240칸 분모는 그대로다', () => {
     expect(catalogTotal({})).toBe(240)
+  })
+})
+
+describe('O. 세 번째 단서는 길이 둘이다', () => {
+  /**
+   * 하루 이야기 하나만 두면 던전이 "매일 사람한테 말 걸기" 뒤에 잠긴다.
+   * 친밀도는 대화 하루 +2 가 주력이고 이야기는 순서대로만 열려서,
+   * 아무리 많이 놀아도 안 빨라진다.
+   */
+  it('O1 하루한테 안 들어도 금속 조각을 모으면 열린다', () => {
+    const s = base()
+    const self: AppState = {
+      ...s,
+      quarry: {
+        ...s.quarry,
+        foundMineralCounts: { [STRANGE_FRAGMENT_ID]: 1, [OLD_METAL_ID]: PATTERN_PIECES },
+        blockedPathSeen: true,
+      },
+      // 하루와 한 마디도 안 했다
+      discovery: { ...s.discovery, readChapterIds: [] },
+    }
+    expect(hasOldKey(self)).toBe(true)
+    expect(isGateFound(self)).toBe(true)
+  })
+
+  it('O2 조각이 모자라면 아직 아니다', () => {
+    const s = base()
+    const few: AppState = {
+      ...s,
+      quarry: {
+        ...s.quarry,
+        foundMineralCounts: { [STRANGE_FRAGMENT_ID]: 1, [OLD_METAL_ID]: PATTERN_PIECES - 1 },
+        blockedPathSeen: true,
+      },
+    }
+    expect(foundClueCount(few)).toBe(2)
+    expect(hasOldKey(few)).toBe(false)
+  })
+
+  it('O3 하루한테 들으면 조각 하나로도 열린다 — 듣고 가는 쪽이 더 빠르다', () => {
+    expect(hasOldKey(withClues())).toBe(true)
+    expect(withClues().quarry.foundMineralCounts[OLD_METAL_ID]).toBe(1)
   })
 })

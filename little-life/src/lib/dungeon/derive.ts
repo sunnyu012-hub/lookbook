@@ -45,6 +45,14 @@ export const OLD_KEY_CHAPTER_ID = 'HARU_5'
 /** 두 번째 단서로 보는 광물 */
 export const OLD_METAL_ID = 'mineral_old_metal'
 
+/**
+ * 하루한테 안 듣고 스스로 알아보는 데 필요한 금속 조각 수.
+ *
+ * 하나는 "이런 게 나오네" 고, 넷쯤 되면 "다 같은 무늬네" 가 된다.
+ * 채석장 두 자리에서 제법 잘 나오는 것이라 며칠이면 모인다.
+ */
+export const PATTERN_PIECES = 4
+
 export interface ClueView {
   id: string
   name: string
@@ -59,8 +67,10 @@ export interface ClueView {
  * 열쇠로 가는 단서 셋.
  *
  * 셋 다 이미 하고 있던 일에서 나온다 — 채석장에서 뭘 캤는지,
- * 도감에 뭐가 있는지, 하루와 얼마나 이야기했는지.
- * 단서를 모으려고 따로 해야 하는 일은 하나도 없다.
+ * 도감에 뭐가 있는지. 단서를 모으려고 따로 해야 하는 일은 없다.
+ *
+ * 세 번째만 길이 둘이다. 하루한테 듣거나, 금속 조각을 몇 개 모아
+ * 스스로 알아보거나. 어느 쪽으로 와도 열쇠는 같다.
  */
 export function clueViews(state: AppState): ClueView[] {
   return [
@@ -83,9 +93,21 @@ export function clueViews(state: AppState): ClueView[] {
     {
       id: 'haru_talk',
       name: '돌문 문양 기록',
-      hint: '하루가 문 이야기를 하려다 말았던 것 같다.',
-      note: '하루가 본 적 있다고 했다. 문양이 그 돌조각과 같다.',
-      found: state.discovery.readChapterIds.includes(OLD_KEY_CHAPTER_ID),
+      hint: '금속 조각이 몇 개 모이면 무늬가 눈에 들어올 것 같다.',
+      note: '문양이 그 돌조각과 같다.',
+      // 길이 둘이다. 하루한테 듣거나, 금속 조각을 몇 개 모아
+      // 스스로 알아보거나.
+      //
+      // 하루 이야기 하나만 두면 던전이 "매일 사람한테 말 걸기" 뒤에
+      // 잠긴다. 친밀도는 대화 하루 +2 가 주력이고 이야기는 순서대로만
+      // 열려서, 아무리 많이 놀아도 안 빨라진다 — 이 앱이 처음부터
+      // 안 만들겠다고 한 그 구조다.
+      //
+      // 그렇다고 하루 이야기를 빼지 않는다. 듣고 가는 쪽이 더 좋은
+      // 길이다. 유일한 길이 아니게만 한다.
+      found:
+        state.discovery.readChapterIds.includes(OLD_KEY_CHAPTER_ID) ||
+        (state.quarry.foundMineralCounts[OLD_METAL_ID] ?? 0) >= PATTERN_PIECES,
     },
   ]
 }
