@@ -919,9 +919,16 @@ describe('작업실 제작물 열둘 (UPDATE D)', () => {
   it('방에서 차지하는 폭이 기존 물건 관례와 맞는다', () => {
     // 렌더러는 footprint.width 만 본다 (RoomCanvas). 분류마다 관례가 있다.
     const 관례: Record<string, number> = { LIGHTING: 13, PLANT: 13, LITTLE_THING: 10, WALL: 16 }
+    // 그림 비율이 정사각형에서 먼 셋만 관례에서 벗어난다 (workshop.ts 주석).
+    // 폭을 관례대로 두면 높이가 어긋나는 것들이다.
+    const 예외: Record<string, number> = {
+      w_herb_bundle: 11, // 세로로 긴 그림 — 16이면 높이가 26이 되어 벽을 다 덮는다
+      w_lavender_cushion: 15, // 바닥 쿠션. 도감의 담요·쿠션 관례가 15다
+      w_autumn_bench: 26, // 옆으로 넓은 그림 — 21이면 높이가 13이라 앉는 물건으로 안 보인다
+    }
     for (const id of IDS) {
       const def = findCollectionItem(id)!
-      const want = 관례[def.category]
+      const want = 예외[id] ?? 관례[def.category]
       if (want !== undefined) expect(def.footprint?.width, id).toBe(want)
     }
     // 가구는 기존 가구 폭 범위(15~32) 안에 있어야 한다

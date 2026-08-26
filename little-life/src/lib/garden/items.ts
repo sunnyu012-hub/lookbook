@@ -112,8 +112,8 @@ function decor(
     description,
     hasPlaceableAsset: true,
     placeable: true,
-    // 아직 그림이 없어서 이모지가 그 자리를 채운다 — 자리 크기가 곧
-    // 보이는 크기다. 화분 하나가 아치만 하면 방이 이상해진다.
+    // 폭만 정한다. 높이는 그림 비율이 정한다 (RoomCanvas.tsx).
+    // 화분 하나가 아치만 하면 방이 이상해지니 서로의 크기 비는 지킨다.
     footprint,
     acquisitionSources: [{ kind: 'SET', setId: 'garden' }],
     collectionSetIds: [],
@@ -123,13 +123,18 @@ function decor(
   }
 }
 
+/**
+ * 그림이 들어온 뒤 폭을 도감 관례에 맞춰 올렸다.
+ * 이모지일 때 쓰던 8~15 는 방에 놓으면 다른 물건 옆에서 장난감처럼 보였다 —
+ * 정원 테이블이 도감 책상(27)의 절반이었다. 서로의 크기 비는 그대로다.
+ */
 export const GARDEN_DECOR: CollectionItemDef[] = [
-  decor('g_strawberry_planter', '딸기 화분', '🍓', '창가에 두면 아침에 제일 먼저 눈에 띈다.', { width: 9, height: 11 }),
-  decor('g_strawberry_sign', '딸기밭 표지판', '🪧', '누가 봐도 여기가 딸기밭이라는 뜻.', { width: 8, height: 10 }),
-  decor('g_herb_rack', '허브 건조대', '🌿', '지나갈 때마다 향이 한 번씩 난다.', { width: 11, height: 12 }),
-  decor('g_harvest_basket', '수확 바구니', '🧺', '가을에 한 번 가득 찼던 적이 있다.', { width: 9, height: 9 }),
-  decor('g_autumn_table', '가을 정원 테이블', '🍂', '해가 짧아지면 여기 앉는 시간이 는다.', { width: 13, height: 12 }),
-  decor('g_moon_arch', '달빛 정원 아치', '🌙', '밤에만 아치 아래가 조금 밝다.', { width: 15, height: 16 }),
+  decor('g_strawberry_planter', '딸기 화분', '🍓', '창가에 두면 아침에 제일 먼저 눈에 띈다.', { width: 13, height: 13 }),
+  decor('g_strawberry_sign', '딸기밭 표지판', '🪧', '누가 봐도 여기가 딸기밭이라는 뜻.', { width: 11, height: 17 }),
+  decor('g_herb_rack', '허브 건조대', '🌿', '지나갈 때마다 향이 한 번씩 난다.', { width: 16, height: 13 }),
+  decor('g_harvest_basket', '수확 바구니', '🧺', '가을에 한 번 가득 찼던 적이 있다.', { width: 12, height: 12 }),
+  decor('g_autumn_table', '가을 정원 테이블', '🍂', '해가 짧아지면 여기 앉는 시간이 는다.', { width: 22, height: 21 }),
+  decor('g_moon_arch', '달빛 정원 아치', '🌙', '밤에만 아치 아래가 조금 밝다.', { width: 24, height: 18 }),
 ]
 
 export const GARDEN_ITEMS: CollectionItemDef[] = [

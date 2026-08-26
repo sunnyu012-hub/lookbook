@@ -44,6 +44,13 @@ PARAMS = {
     # 이 시트만 물건마다 흰 테두리(스티커 선)가 둘려 있다
     "extra": dict(dilate=9, min_area=4000, row_h=300, sticker=True),
     "trophy": dict(dilate=9, min_area=4000, row_h=380),
+    # ── 정원 · 부엌 · 작업실 (UPDATE A~C 에서 요청한 다섯 장) ──
+    # 물건이 큼직하고 사이가 넓어서 row_h 를 크게 잡는다.
+    "crops": dict(dilate=6, min_area=2000, row_h=340),
+    "stages": dict(dilate=6, min_area=3000, row_h=600),
+    "foods": dict(dilate=6, min_area=2000, row_h=340),
+    "workshop": dict(dilate=6, min_area=2000, row_h=340),
+    "decor": dict(dilate=6, min_area=2000, row_h=350),
 }
 
 # 아이템이 들어갈 폴더 (카탈로그 분류와 같은 이름)
@@ -144,6 +151,60 @@ def slice_sheet(name, path, dilate=6, min_area=1800, row_h=130, sticker=False):
 
 
 MAP = {
+    # ── 정원에서 거둔 것 (crops.png) ──
+    "crop_strawberry": "crops/00.png",
+    "crop_tomato": "crops/01.png",
+    "crop_potato": "crops/02.png",
+    "crop_basil": "crops/03.png",
+    "crop_lavender": "crops/04.png",
+    "crop_carrot": "crops/05.png",
+    "crop_pumpkin": "crops/06.png",
+    "crop_tiny_mushroom": "crops/07.png",
+    "crop_star_flower": "crops/08.png",
+    "crop_moon_herb": "crops/09.png",
+    "crop_dream_strawberry": "crops/10.png",
+    "crop_golden_strawberry": "crops/11.png",
+    "garden_dew": "crops/12.png",
+    # ── 부엌에서 만든 것 (foods.png) ──
+    "food_strawberry_milk": "foods/00.png",
+    "food_herb_potato_soup": "foods/01.png",
+    "food_tomato_pasta": "foods/02.png",
+    "food_carrot_soup": "foods/03.png",
+    "food_strawberry_toast": "foods/04.png",
+    "food_pumpkin_tart": "foods/05.png",
+    "food_lavender_tea": "foods/06.png",
+    "food_mushroom_cream_soup": "foods/07.png",
+    "food_picnic_lunchbox": "foods/08.png",
+    "food_moon_tea": "foods/09.png",
+    "food_star_berry_cake": "foods/10.png",
+    "food_dream_parfait": "foods/11.png",
+    # ── 작업실에서 만든 것 (workshop.png) ──
+    # 돌등불은 이 시트에 없다. 채석장 업데이트에서 열린 물건이라 아직 그림이 없다.
+    "w_strawberry_shelf": "workshop/00.png",
+    "w_herb_bundle": "workshop/01.png",
+    "w_veggie_crate": "workshop/02.png",
+    "w_lavender_cushion": "workshop/03.png",
+    "w_mushroom_lamp": "workshop/04.png",
+    "w_garden_table": "workshop/05.png",
+    "w_recipe_shelf": "workshop/06.png",
+    "w_picnic_set": "workshop/07.png",
+    "w_moon_lamp": "workshop/08.png",
+    "w_star_vase": "workshop/09.png",
+    "w_autumn_bench": "workshop/10.png",
+    # ── 세트 보상과 트로피 (decor.png) ──
+    "g_strawberry_planter": "decor/00.png",
+    "g_strawberry_sign": "decor/01.png",
+    "g_herb_rack": "decor/02.png",
+    "g_harvest_basket": "decor/03.png",
+    "g_autumn_table": "decor/04.png",
+    "g_moon_arch": "decor/05.png",
+    "k_soup_pot": "decor/06.png",
+    "k_dessert_tray": "decor/07.png",
+    "k_picnic_basket": "decor/08.png",
+    "k_recipe_book": "decor/09.png",
+    "t_garden_pot": "decor/10.png",
+    "t_garden_window": "decor/11.png",
+    "t_tiny_workbench": "decor/12.png",
     # ── 가구 ──
     "cream_bed": "furniture/00.png",
     "cloud_bed": "furniture/01.png",
@@ -493,6 +554,25 @@ def main():
         os.makedirs(dst_dir, exist_ok=True)
         im.save(os.path.join(dst_dir, f"{item_id}.webp"), "WEBP", quality=86, method=6)
         made += 1
+
+    # ── 자라는 단계 넷 ──────────────────────────────────
+    #
+    # 이건 물건이 아니라 밭에 심긴 모습이라 도감에 안 들어간다.
+    # 그래서 분류 폴더가 아니라 자기 폴더로 따로 나간다.
+    # 열두 작물이 이 넉 장을 같이 쓴다.
+    stage_dir = os.path.join(SLICES, "stages")
+    if os.path.isdir(stage_dir):
+        out = os.path.join(ROOT, "public/assets/garden")
+        os.makedirs(out, exist_ok=True)
+        for i in range(4):
+            src = os.path.join(stage_dir, f"{i:02d}.png")
+            if not os.path.exists(src):
+                print(f"  조각 없음: stage-{i}")
+                continue
+            im = drop_fragments(Image.open(src).convert("RGBA"))
+            im.thumbnail((MAX, MAX), Image.LANCZOS)
+            im.save(os.path.join(out, f"stage-{i}.webp"), "WEBP", quality=86, method=6)
+        print("  자라는 단계 4장 → public/assets/garden/")
 
     print(f"조각 {total}개 · 내보낸 아이템 {made}개")
     print("다음: npm run assets:manifest (분류 폴더로 옮기고 매니페스트 갱신)")
