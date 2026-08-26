@@ -22,11 +22,33 @@
 | 채색 | 부드러운 셀셰이딩 + 옅은 광택 한 점. 파스텔, 채도 낮게 |
 | 금지 | 네온 · 다크 판타지 · 두꺼운 금테 · 진한 그림자 · 과한 파티클 |
 
-**참고할 기존 그림** (같은 결로 그려주면 됨)
+### 결을 맞출 기존 그림 13장
 
-- `public/assets/items/food/cake_slice.webp` — 음식 결
-- `public/assets/items/plants/basil_pot.webp` — 식물 · 화분 결
-- `public/assets/items/furniture/acrylic_chair.webp` — 가구 결
+앱에 이미 들어가 있는 것들이다. 새로 그릴 것을 이 옆에 놓았을 때
+같은 세계처럼 보이면 된다. 전부 `public/assets/items/` 아래에 있다.
+
+| 파일 | 무엇의 기준인지 |
+| --- | --- |
+| `food/strawberry_pack.webp` | 작물 — 거둔 것 한 줌 (담은 그릇 없이 열매만 그려도 됨) |
+| `plants/clover.webp` | 작물 — 잎 종류. 바질 · 라벤더는 화분 없이 줄기 다발로 |
+| `food/cake_slice.webp` | 요리 — 접시 위. 접시까지 포함, 배경 없음 |
+| `food/latte_cup.webp` | 요리 — 잔. 딸기 우유 · 라벤더 티 · 달빛차 |
+| `furniture/acrylic_chair.webp` | 가구 |
+| `furniture/entry_bench.webp` | 가구 — 벤치. 가을 벤치가 이 크기감 |
+| `lighting/mushroom_lamp.webp` | **이미 있는 버섯 램프** — `w_mushroom_lamp` 는 이것과 겹치지 않게 새로 |
+| `lighting/firefly_jar.webp` | 조명 — 유리병. 달빛허브 램프가 이 결 |
+| `plants/rose_vase.webp` | 화병. 별빛꽃 화병이 이 결 |
+| `wall/garland.webp` | 벽에 거는 것. 허브 다발이 이 결 (가로로 긴 그림) |
+| `little_things/flower_plate.webp` | 작은 물건. 라벤더 쿠션 크기감 |
+| `kitchen/small_pot.webp` | 부엌 물건. 수프 냄비가 이 결 |
+| `trophies/t_wood_star.webp` | 트로피 — **받침대 형태.** 트로피 셋은 반드시 이 형식 |
+
+이 열세 장에서 같이 읽어야 하는 것:
+
+- **어떤 그림에도 바닥 그림자가 없다.**
+- 선은 검정이 아니라 물건 색보다 한 단계 진한 갈색이다.
+- 광택은 **한 물건에 한두 점**, 왼쪽 위에서만 들어온다.
+- 어떤 것도 정면으로 서 있지 않다 — 전부 살짝 위에서 내려다본 각도다.
 
 ### 시트로 주는 법 (권장)
 
