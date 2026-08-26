@@ -1,4 +1,4 @@
-import type { Category, CropDef, CropId, Rarity } from '@/types'
+import type { Category, CropDef, CropId, CropVariant, RareDiscovery, Rarity } from '@/types'
 import { CROP_IDS } from '@/types'
 
 /**
@@ -54,11 +54,69 @@ const ROWS: Row[] = [
  * 도감에 ??? 로 자리만 있다. 만날 방법을 지금 만들지 않는 이유는,
  * 없는 조건을 급하게 지어내면 나중에 이야기가 생겼을 때 그걸 다시 뜯어야 하기 때문이다.
  */
-const FUTURE: Row[] = [
-  ['star_flower', '별빛꽃', '✨', 'EPIC', 12, 1, 2, '밤에만 피는 것 같다.', 'flower'],
-  ['moon_herb', '달빛허브', '🌙', 'EPIC', 12, 1, 2, '달이 밝은 날에 향이 진해진다.', 'herb'],
-  ['dream_strawberry', '꿈딸기', '🌌', 'EPIC', 14, 1, 1, '먹어본 사람이 아직 없다.', 'fruit'],
-  ['golden_strawberry', '황금 딸기', '🌟', 'LEGENDARY', 16, 1, 1, '정원의 가장 조용한 자리에서.', 'fruit'],
+const RARE: Row[] = [
+  ['star_flower', '별빛꽃', '✨', 'EPIC', 12, 1, 2, '해가 진 뒤에야 작은 빛을 낸다.', 'flower,magic,night'],
+  ['moon_herb', '달빛허브', '🌙', 'EPIC', 10, 1, 2, '밤이 깊어질수록 향이 짙어진다.', 'herb,magic,night'],
+  ['dream_strawberry', '꿈딸기', '🌌', 'EPIC', 12, 1, 2, '딸기인데 색이 조금 비현실적이다.', 'fruit,sweet,magic'],
+  ['golden_strawberry', '황금 딸기', '🌟', 'LEGENDARY', 14, 1, 1, '아주 드물게 보이는 따뜻한 금빛.', 'fruit,rare,gold'],
+]
+
+/**
+ * 희귀 작물을 찾는 조건.
+ *
+ * 전부 이미 쌓여 있는 기록에서 센다. 되돌아가는 값이 하나도 없어서
+ * "며칠 쉬었더니 멀어졌다" 가 생길 수 없다.
+ *
+ * 황금 딸기만 조건이 없다 — 그건 찾는 게 아니라 딸기를 거두다 섞여 나온다.
+ */
+const DISCOVERY: Partial<Record<CropId, RareDiscovery>> = {
+  star_flower: {
+    conditions: [
+      { kind: 'GARDEN_LEVEL', level: 2 },
+      { kind: 'CROPS_DISCOVERED', count: 6 },
+      { kind: 'NIGHT_QUESTS', count: 5 },
+    ],
+    reveal: '밤이 되자 정원 한쪽에서 작은 빛이 보인다.',
+    reseedChance: 6,
+    nightOnly: true,
+  },
+  moon_herb: {
+    conditions: [
+      { kind: 'GARDEN_LEVEL', level: 2 },
+      { kind: 'CROP_HARVESTED', cropId: 'lavender', count: 5 },
+      { kind: 'NIGHT_QUESTS', count: 8 },
+    ],
+    reveal: '라벤더 사이에 처음 보는 잎이 자라고 있다.',
+    reseedChance: 6,
+    nightOnly: true,
+  },
+  dream_strawberry: {
+    conditions: [
+      { kind: 'GARDEN_LEVEL', level: 3 },
+      { kind: 'CROP_HARVESTED', cropId: 'strawberry', count: 15 },
+      { kind: 'RECIPES_COOKED', count: 5 },
+    ],
+    reveal: '익숙한 딸기밭인데 색이 조금 이상하다.',
+    reseedChance: 8,
+  },
+}
+
+/**
+ * 딸기를 거두다 아주 가끔 섞여 나오는 것.
+ *
+ * 확률로 굴리되 쉰 번을 거뒀는데도 못 봤으면 그다음엔 반드시 나온다.
+ * 운이 나빠서 영영 못 보는 자리를 만들지 않는다.
+ */
+export const CROP_VARIANTS: CropVariant[] = [
+  {
+    id: 'golden_strawberry',
+    baseCropId: 'strawberry',
+    cropId: 'golden_strawberry',
+    chance: 1,
+    levelBonus: { level: 3, add: 0.5 },
+    harvestBonus: { count: 30, add: 0.5 },
+    pityAt: 50,
+  },
 ]
 
 /**
@@ -96,13 +154,14 @@ function toDef(row: Row, seedAvailable: boolean): CropDef {
     tags: ['crop', 'ingredient', ...tags.split(',')],
     seedAvailable,
     ...(BIAS[id] ? { seedBias: BIAS[id] } : {}),
+    ...(DISCOVERY[id] ? { discovery: DISCOVERY[id] } : {}),
     ...(seedAvailable ? {} : { hiddenUntilDiscovered: true }),
   }
 }
 
 export const CROPS: CropDef[] = [
   ...ROWS.map((r) => toDef(r, true)),
-  ...FUTURE.map((r) => toDef(r, false)),
+  ...RARE.map((r) => toDef(r, false)),
 ]
 
 const BY_ID = new Map(CROPS.map((c) => [c.id, c]))
@@ -123,8 +182,15 @@ export function cropForHarvest(harvestItemId: string): CropDef | null {
   return BY_HARVEST.get(harvestItemId) ?? null
 }
 
-/** 지금 씨앗이 도는 것들 */
+/** 처음부터 씨앗이 도는 것들. 찾아야 도는 것은 여기 없다. */
 export const PLANTABLE_CROPS: CropDef[] = CROPS.filter((c) => c.seedAvailable)
+
+/** 찾아야 만나는 것들 */
+export const RARE_CROPS: CropDef[] = CROPS.filter((c) => c.discovery !== undefined)
+
+export function findVariant(baseCropId: string): CropVariant | null {
+  return CROP_VARIANTS.find((v) => v.baseCropId === baseCropId) ?? null
+}
 
 /**
  * 처음 들어갔을 때 주는 것.

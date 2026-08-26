@@ -227,6 +227,74 @@ export const COLLECTION_SETS: CollectionSetDef[] = [
     itemIds: ['food_picnic_lunchbox', 'food_strawberry_milk', 'food_tomato_pasta'],
     rewards: [{ kind: 'ITEM', itemId: 'k_picnic_basket' }],
   },
+  // ── 정원에서 모으는 것들 ──
+  // 작물과 요리가 섞여 있다. 정원과 부엌이 따로 노는 게 아니라
+  // 하나의 이야기라는 걸 세트가 말해준다.
+  {
+    id: 'strawberry_patch',
+    name: 'Strawberry Patch',
+    icon: '🍓',
+    description: '딸기로 할 수 있는 것들.',
+    itemIds: [
+      'crop_strawberry',
+      'food_strawberry_milk',
+      'food_strawberry_toast',
+      'crop_dream_strawberry',
+      'crop_golden_strawberry',
+    ],
+    partialAt: 3,
+    partialRewards: [{ kind: 'ITEM', itemId: 'g_strawberry_planter' }],
+    rewards: [{ kind: 'ITEM', itemId: 'g_strawberry_sign' }],
+  },
+  {
+    id: 'herb_corner',
+    name: 'Herb Corner',
+    icon: '🌿',
+    description: '향이 나는 쪽 구석.',
+    itemIds: [
+      'crop_basil',
+      'crop_lavender',
+      'crop_moon_herb',
+      'food_lavender_tea',
+      'food_herb_potato_soup',
+    ],
+    partialAt: 3,
+    partialRewards: [{ kind: 'ITEM', itemId: 'g_herb_rack' }],
+    rewards: [{ kind: 'ITEM', itemId: 'g_moon_arch' }],
+  },
+  {
+    id: 'autumn_harvest',
+    name: 'Autumn Harvest',
+    icon: '🍂',
+    description: '해가 짧아질 때 거두는 것들.',
+    itemIds: [
+      'crop_potato',
+      'crop_carrot',
+      'crop_pumpkin',
+      'crop_tiny_mushroom',
+      'food_pumpkin_tart',
+    ],
+    partialAt: 3,
+    partialRewards: [{ kind: 'ITEM', itemId: 'g_harvest_basket' }],
+    rewards: [{ kind: 'ITEM', itemId: 'g_autumn_table' }],
+  },
+  {
+    id: 'moon_garden',
+    name: 'Moon Garden',
+    icon: '🌙',
+    description: '밤에만 보이는 쪽.',
+    // 별빛꽃이나 달빛허브를 만나기 전까지는 도감에서 감춘다 —
+    // 있는 줄도 모르는 것의 목록을 먼저 보여주면 그건 숙제가 된다.
+    hiddenUntil: { kind: 'CROP_FOUND', cropIds: ['star_flower', 'moon_herb'] },
+    itemIds: [
+      'crop_star_flower',
+      'crop_moon_herb',
+      'crop_dream_strawberry',
+      'food_moon_tea',
+      'w_moon_lamp',
+    ],
+    rewards: [{ kind: 'COIN', amount: 800 }],
+  },
 ]
 
 /** 방의 공기. 세트를 완성하면 하나씩 열린다. */

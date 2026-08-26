@@ -32,6 +32,14 @@ import {
   emptyCollection,
   isDiscovered,
   isRecipeKnown,
+  recipeContextOf,
+  craftedKinds,
+  gardenCraftedKinds,
+  trophyEarned,
+  isSetVisible,
+  unclaimedPartials,
+  partialKey,
+  visibleSets,
   newMilestones,
   newTrophies,
   ownedCount,
@@ -44,6 +52,7 @@ import {
 import { pendingGrants } from '@/lib/collection/grants'
 import { applyCollectionDerived } from '@/lib/collection/derive'
 import { rollBossDrop, rollCollectDrops } from '@/lib/collection/drops'
+import { workshopView } from '@/lib/collection/workshopView'
 import { createDefaultState } from '@/store/defaultState'
 import { sanitizeCollection, backfillCategoryCompleted, STATE_VERSION } from '@/store/migrate'
 import { emptyCategoryStats } from '@/lib/stats'
@@ -474,6 +483,7 @@ describe('트로피와 도감 보상', () => {
       completedSetIds: [],
       discoveredCount: 0,
       gardenLevel: 0,
+      craftedKinds: 0,
     })
     expect(trophies.map((t) => t.id)).toContain('first_step')
   })
@@ -487,6 +497,7 @@ describe('트로피와 도감 보상', () => {
       completedSetIds: [],
       discoveredCount: 0,
       gardenLevel: 0,
+      craftedKinds: 0,
     })
     expect(trophies.map((t) => t.id)).not.toContain('first_step')
   })
@@ -500,6 +511,7 @@ describe('트로피와 도감 보상', () => {
       completedSetIds: [],
       discoveredCount: 0,
       gardenLevel: 0,
+      craftedKinds: 0,
     })
     const ids = trophies.map((t) => t.id)
     expect(ids).toContain('work_master')
@@ -724,6 +736,220 @@ describe('만들기', () => {
   })
 })
 
+describe('만들어본 가짓수', () => {
+  it('만든 횟수를 저장하지 않는다 — 발견 기록에서 센다', () => {
+    let c = emptyCollection()
+    expect(craftedKinds(c)).toBe(0)
+
+    c = addItem(c, 'w_strawberry_shelf').collection
+    expect(craftedKinds(c)).toBe(1)
+    expect(gardenCraftedKinds(c)).toBe(1)
+
+    // 같은 것을 또 만들어도 가짓수는 그대로다
+    c = addItem(c, 'w_strawberry_shelf').collection
+    expect(craftedKinds(c)).toBe(1)
+  })
+
+  it('재료로 다 써버려도 줄지 않는다', () => {
+    let c = emptyCollection()
+    c = addItem(c, 'w_herb_bundle').collection
+    expect(craftedKinds(c)).toBe(1)
+
+    c = { ...c, owned: {} }
+    expect(craftedKinds(c)).toBe(1)
+  })
+
+  it('가게에서도 파는 것은 만든 것으로 안 센다', () => {
+    // 사서 얻은 것을 만든 것으로 쳐주면 작업실을 한 번도 안 연 사람이
+    // 작업 트로피를 받는다
+    let c = emptyCollection()
+    const bought = RECIPES.find((r) => {
+      const def = findCollectionItem(r.resultItemId)
+      return def && def.acquisitionSources.some((s) => s.kind === 'SHOP')
+    })
+    if (!bought) return
+    c = addItem(c, bought.resultItemId).collection
+    expect(craftedKinds(c)).toBe(0)
+  })
+
+  it('정원 쪽만 따로 셀 수 있다', () => {
+    let c = emptyCollection()
+    c = addItem(c, 'sprout_jar').collection
+    expect(craftedKinds(c)).toBe(1)
+    expect(gardenCraftedKinds(c)).toBe(0)
+  })
+
+  it('서른 가지 만들면 작업대 트로피가 나온다', () => {
+    const trophy = TROPHIES.find((t) => t.id === 'tiny_workbench')!
+    const ctx = {
+      totalCompletedQuests: 0,
+      categoryCompleted: emptyCategoryStats(),
+      bossClears: 0,
+      completedSetIds: [] as string[],
+      discoveredCount: 0,
+      gardenLevel: 0,
+      craftedKinds: 29,
+    }
+    expect(trophyEarned(trophy, ctx)).toBe(false)
+    expect(trophyEarned(trophy, { ...ctx, craftedKinds: 30 })).toBe(true)
+  })
+})
+
+describe('정원 세트', () => {
+  function ready(): AppState {
+    const base = createDefaultState()
+    return { ...base, garden: { ...base.garden, unlockedAt: '2026-01-01T00:00:00.000Z' } }
+  }
+
+  it('아직 못 만난 것으로만 채우는 세트는 감춘다', () => {
+    const state = ready()
+    expect(visibleSets(state).map((s) => s.id)).not.toContain('moon_garden')
+
+    const found = {
+      ...state,
+      garden: { ...state.garden, harvestedCropCounts: { moon_herb: 1 } },
+    }
+    expect(visibleSets(found).map((s) => s.id)).toContain('moon_garden')
+  })
+
+  it('감춘 세트도 조건을 채우면 보인다 — 저장하지 않는다', () => {
+    const state = ready()
+    const set = COLLECTION_SETS.find((s) => s.id === 'moon_garden')!
+    expect(isSetVisible(set, state)).toBe(false)
+    expect(
+      isSetVisible(set, {
+        ...state,
+        garden: { ...state.garden, harvestedCropCounts: { star_flower: 2 } },
+      }),
+    ).toBe(true)
+  })
+
+  it('다 못 모아도 중간까지 온 몫이 한 번 나온다', () => {
+    const set = COLLECTION_SETS.find((s) => s.id === 'strawberry_patch')!
+    let c = emptyCollection()
+    expect(unclaimedPartials(c).map((s) => s.id)).not.toContain('strawberry_patch')
+
+    for (const id of set.itemIds.slice(0, 3)) c = addItem(c, id).collection
+    expect(unclaimedPartials(c).map((s) => s.id)).toContain('strawberry_patch')
+  })
+
+  it('중간 몫은 두 번 안 나온다 — 저장 구조를 안 늘리고 막는다', () => {
+    const set = COLLECTION_SETS.find((s) => s.id === 'herb_corner')!
+    let c = emptyCollection()
+    for (const id of set.itemIds.slice(0, 3)) c = addItem(c, id).collection
+    expect(unclaimedPartials(c).map((s) => s.id)).toContain('herb_corner')
+
+    c = { ...c, claimedSetIds: [...c.claimedSetIds, partialKey('herb_corner')] }
+    expect(unclaimedPartials(c).map((s) => s.id)).not.toContain('herb_corner')
+    // 세트 자체는 아직 안 받은 것으로 남는다
+    expect(c.claimedSetIds).not.toContain('herb_corner')
+  })
+
+  it('중간 몫을 받아도 완성 보상은 그대로 남는다', () => {
+    const set = COLLECTION_SETS.find((s) => s.id === 'autumn_harvest')!
+    let state = ready()
+    let c = state.collection
+    for (const id of set.itemIds) c = addItem(c, id).collection
+    state = { ...state, collection: c }
+
+    const first = applyCollectionDerived(state, new Date())
+    expect(ownedCount(first.state.collection, 'g_harvest_basket')).toBe(1)
+    expect(ownedCount(first.state.collection, 'g_autumn_table')).toBe(1)
+
+    // 한 번 더 지나가도 안 늘어난다
+    const again = applyCollectionDerived(first.state, new Date())
+    expect(ownedCount(again.state.collection, 'g_harvest_basket')).toBe(1)
+    expect(ownedCount(again.state.collection, 'g_autumn_table')).toBe(1)
+  })
+})
+
+describe('작업실 화면', () => {
+  function ready(): AppState {
+    const base = createDefaultState()
+    return {
+      ...base,
+      garden: { ...base.garden, unlockedAt: '2026-01-01T00:00:00.000Z' },
+    }
+  }
+
+  it('한 문맥으로만 판단한다 — 정원과 부엌 기록이 함께 들어온다', () => {
+    const state = ready()
+    const ctx = recipeContextOf({
+      ...state,
+      garden: { ...state.garden, harvestedCropCounts: { strawberry: 7 } },
+      kitchen: { ...state.kitchen, cookedRecipeCounts: { strawberry_milk: 2, herb_tea: 0 } },
+    })
+    expect(ctx.harvestedCropCounts).toEqual({ strawberry: 7 })
+    expect(ctx.cookedKinds).toBe(1)
+  })
+
+  it('딸기를 거두면 딸기 선반을 알게 된다', () => {
+    const state = ready()
+    const before = workshopView(state).recipes.find((r) => r.def.id === 'w_strawberry_shelf')!
+    expect(before.stage).not.toBe('KNOWN')
+
+    const after = workshopView({
+      ...state,
+      garden: { ...state.garden, harvestedCropCounts: { strawberry: 3 } },
+    }).recipes.find((r) => r.def.id === 'w_strawberry_shelf')!
+    expect(after.stage).toBe('KNOWN')
+  })
+
+  it('가까이 오면 낌새만 흘린다 — 이름은 아직 안 알려준다', () => {
+    const state = ready()
+    const row = workshopView({
+      ...state,
+      garden: { ...state.garden, harvestedCropCounts: { strawberry: 1 } },
+    }).recipes.find((r) => r.def.id === 'w_strawberry_shelf')!
+    expect(row.stage).toBe('HINTED')
+    expect(row.def.hint).toBeTruthy()
+  })
+
+  it('만들 수 있는 것이 맨 위로 온다', () => {
+    let state = ready()
+    let collection = state.collection
+    for (let i = 0; i < 3; i += 1) collection = addItem(collection, 'crop_strawberry').collection
+    collection = addItem(collection, 'm_wood').collection
+    state = {
+      ...state,
+      collection,
+      garden: { ...state.garden, harvestedCropCounts: { strawberry: 3 } },
+    }
+
+    const view = workshopView(state)
+    expect(view.recipes[0].def.id).toBe('w_strawberry_shelf')
+    expect(view.recipes[0].ready).toBe(true)
+    expect(view.suggestion?.def.id).toBe('w_strawberry_shelf')
+  })
+
+  it('재료 칸에 가진 수와 필요한 수가 같이 온다', () => {
+    let state = ready()
+    state = { ...state, collection: addItem(state.collection, 'm_wood').collection }
+    const row = workshopView(state).recipes.find((r) => r.def.id === 'w_strawberry_shelf')!
+    const wood = row.ingredients.find((i) => i.itemId === 'm_wood')!
+    expect(wood.have).toBe(1)
+    expect(wood.need).toBe(1)
+    expect(row.ready).toBe(false)
+  })
+
+  it('아직 못 만드는 것은 자리만 남고 세는 수에는 안 들어간다', () => {
+    const view = workshopView(ready())
+    const coming = view.recipes.find((r) => r.def.id === 'w_quarry_lantern')!
+    expect(coming.stage).toBe('COMING_SOON')
+    expect(coming.def.hint).toBeTruthy()
+    expect(view.total).toBe(view.recipes.length - 1)
+    // 맨 아래로 간다 — 못 만드는 것이 위에 있으면 목록이 막힌 문처럼 보인다
+    expect(view.recipes[view.recipes.length - 1].def.id).toBe('w_quarry_lantern')
+  })
+
+  it('예전 레시피도 칸이 정해진다 (표를 안 고치고 물건에서 가져온다)', () => {
+    const view = workshopView(ready())
+    for (const row of view.recipes) {
+      expect(['FURNITURE', 'DECOR', 'SPECIAL']).toContain(row.tab)
+    }
+  })
+})
+
 // ── 저장된 것 읽기 ──────────────────────────────────────
 
 describe('저장된 수집 기록', () => {
@@ -791,9 +1017,9 @@ describe('저장된 수집 기록', () => {
     expect(counts.WORK).toBe(42)
   })
 
-  it('스키마 버전이 13 이다', () => {
-    expect(STATE_VERSION).toBe(13)
-    expect(createDefaultState().version).toBe(13)
+  it('스키마 버전이 14 이다', () => {
+    expect(STATE_VERSION).toBe(14)
+    expect(createDefaultState().version).toBe(14)
   })
 })
 

@@ -7,6 +7,7 @@ import { CRAFTABLE_ITEM_IDS } from './recipes'
 import { setsForItem } from './sets'
 import { CROP_ITEMS, GARDEN_ITEMS } from '@/lib/garden/items'
 import { FOOD_ITEMS, KITCHEN_ITEMS } from '@/lib/kitchen/items'
+import { WORKSHOP_ITEMS } from './workshop'
 
 /**
  * 완성된 아이템 표.
@@ -76,6 +77,9 @@ export const KITCHEN_CATALOG: CollectionItemDef[] = KITCHEN_ITEMS.map(finish)
 /** 도감의 RECIPES 칸에 들어가는 음식 */
 export const FOOD_CATALOG: CollectionItemDef[] = FOOD_ITEMS.map(finish)
 
+/** 작업실에서 만든 것들. 240칸에는 안 들어가고 방에는 놓을 수 있다. */
+export const WORKSHOP_CATALOG: CollectionItemDef[] = WORKSHOP_ITEMS.map(finish)
+
 /** 이름으로 찾을 수 있는 것 전부 */
 export const ALL_COLLECTION_ITEMS: CollectionItemDef[] = [
   ...CATALOG,
@@ -83,7 +87,22 @@ export const ALL_COLLECTION_ITEMS: CollectionItemDef[] = [
   ...MATERIAL_CATALOG,
   ...GARDEN_CATALOG,
   ...KITCHEN_CATALOG,
+  ...WORKSHOP_CATALOG,
 ]
+
+/**
+ * 방에 놓을 수 있는 것 전부.
+ *
+ * 240칸(CATALOG)만 보면 안 된다 — 정원·부엌·작업실에서 나온 것은
+ * 도감 수를 안 늘리려고 일부러 240칸 밖에 뒀다. 그것들도 방에는 놓인다.
+ * 만들어놓고 놓을 수가 없으면 그건 만든 게 아니다.
+ *
+ * 재료와 씨앗·음식은 여기 안 들어온다 — placement 가 MATERIAL_ONLY 라서
+ * 따로 걸러낼 필요가 없다.
+ */
+export const PLACEABLE_CATALOG: CollectionItemDef[] = ALL_COLLECTION_ITEMS.filter(
+  (i) => i.placement === 'PLACEABLE',
+)
 
 const BY_ID = new Map(ALL_COLLECTION_ITEMS.map((i) => [i.id, i]))
 

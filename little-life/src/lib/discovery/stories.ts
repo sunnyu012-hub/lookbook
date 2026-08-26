@@ -140,6 +140,27 @@ export const STORY_CHAPTERS: StoryChapterDef[] = [
     rewardItemId: 'sprout_jar',
     rewardFriendship: 4,
   },
+  {
+    // 다음에 올 것을 여기서 한 번 흘린다.
+    // 지도에 새 점을 미리 찍어두지 않는다 — 못 가는 곳이 지도에 있으면
+    // 그건 기대가 아니라 잠긴 문이다. 사람이 지나가듯 말하는 게 낫다.
+    id: 'HARU_4',
+    npcId: 'HARU',
+    order: 4,
+    title: '돌이 많은 길',
+    lockedHint: '하루가 요즘 다른 데를 다니는 것 같다.',
+    conditions: [
+      { kind: 'FRIENDSHIP', npcId: 'HARU', value: 30 },
+      { kind: 'AREA_REPUTATION', areaId: 'GREEN_PARK', value: 40 },
+    ],
+    lines: [
+      '"공원 바깥쪽으로 계속 걸으면 길이 좀 달라져."',
+      '"흙이 없고 돌이 많아. 옛날에 뭘 캤던 자리래."',
+      '"단단한 게 필요하면 거기 있을 것 같은데, 아직 안 가봤어."',
+    ],
+    rewardItemId: null,
+    rewardFriendship: 4,
+  },
 
   // ── 루루 · 창작 지구 ──────────────────────────────
   {

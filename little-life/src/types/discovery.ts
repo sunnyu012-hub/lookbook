@@ -29,6 +29,10 @@ export const AUTO_COLLECTION_IDS = [
   'HOME_COOK',
   'RECIPE_HUNTER',
   'TINY_CHEF',
+  'HANDMADE',
+  'LITTLE_MAKER',
+  'HOME_ARTISAN',
+  'GARDEN_CRAFTER',
 ] as const
 export type AutoCollectionId = (typeof AUTO_COLLECTION_IDS)[number]
 
@@ -59,6 +63,10 @@ export type AutoCondition =
   | { kind: 'MEALS_COOKED' }
   /** 레시피를 몇 가지 알게 됐는지 */
   | { kind: 'RECIPES_KNOWN' }
+  /** 만들기로만 얻는 것을 몇 가지 만들어봤는지 */
+  | { kind: 'CRAFTED_KINDS' }
+  /** 그중 정원에서 온 재료로 만든 것 */
+  | { kind: 'GARDEN_CRAFTED' }
 
 export interface AutoCollectionDef {
   id: AutoCollectionId

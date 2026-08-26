@@ -4,8 +4,11 @@ import { Portal } from '@/components/ui/Portal'
 import { useOverlay } from '@/hooks/useOverlay'
 import { ItemIcon } from '@/components/collection/ItemIcon'
 import { RoomCanvas } from './RoomCanvas'
-import { CATALOG_CATEGORIES, TROPHY_CATALOG, findCollectionItem } from '@/lib/collection/catalog'
-import { CATALOG } from '@/lib/collection/catalog'
+import {
+  CATALOG_CATEGORIES,
+  PLACEABLE_CATALOG,
+  findCollectionItem,
+} from '@/lib/collection/catalog'
 import { ROOMS, isRoomUnlocked, unlockLabel } from '@/lib/collection/rooms'
 import { discoveredCount, ownedCount, unlockedEffectIds } from '@/lib/collection/progress'
 import { HOME_EFFECTS } from '@/lib/collection/sets'
@@ -72,8 +75,7 @@ export function DecorateMode({
 
     // 방에 놓을 수 있는 종류만 보여준다. 재료나 먹을 것까지 나오면
     // 고를 게 아닌 것들 사이에서 고르게 된다. (도감에는 전부 그대로 있다)
-    return [...CATALOG, ...TROPHY_CATALOG]
-      .filter((item) => ownedCount(collection, item.id) > 0 && item.placement === 'PLACEABLE')
+    return PLACEABLE_CATALOG.filter((item) => ownedCount(collection, item.id) > 0)
       .map((item) => ({
         item,
         left: ownedCount(collection, item.id) - (usedByItem[item.id] ?? 0),

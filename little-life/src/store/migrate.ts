@@ -68,7 +68,7 @@ import { findRoom } from '@/lib/collection/rooms'
  * 없는 항목만 기본값으로 채우고, 있는 값은 손대지 않는다.
  */
 
-export const STATE_VERSION = 13
+export const STATE_VERSION = 14
 
 /** 구매 기록을 며칠치까지 남길지 */
 export const PURCHASE_DAYS_KEPT = 7
@@ -845,6 +845,16 @@ export function sanitizeGarden(raw: unknown): GardenState {
     plots: plots.slice(0, MAX_PLOTS),
     harvestedCropCounts,
     plantedCount: Math.max(0, Math.floor(numberOr(g.plantedCount, 0))),
+    // 첫 씨앗을 이미 준 희귀 작물. 없어진 작물이 적혀 있으면 조용히 버린다.
+    rareSeedsGiven: Array.isArray(g.rareSeedsGiven)
+      ? [
+          ...new Set(
+            g.rareSeedsGiven.filter(
+              (v): v is string => typeof v === 'string' && findCrop(v) !== null,
+            ),
+          ),
+        ]
+      : [],
   }
 }
 

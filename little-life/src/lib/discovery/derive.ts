@@ -4,7 +4,7 @@ import { AUTO_COLLECTIONS, autoProgress, claimableCollections, newlyRevealed } f
 import { SECRETS, newlyFound, newlyHinted, secretProgress } from './secrets'
 import { unreadChapters } from './stories'
 import { hintedCompanions, newlyMeetable } from './companions'
-import { applyGardenUnlock } from '@/lib/garden/derive'
+import { applyGardenUnlock, applyRareSeeds } from '@/lib/garden/derive'
 import { applyKitchenUnlock, newlyDiscovered } from '@/lib/kitchen/derive'
 
 /**
@@ -119,6 +119,20 @@ export function applyDiscovery(state: AppState, now: Date = new Date()): Discove
       icon: def.icon,
       title: `${def.name} — 다 모았어`,
       text: def.description,
+    })
+  }
+
+  // ── 정원에서 처음 보는 것 ────────────────────────────
+  // 조건은 이미 있는 기록에서 세고, 첫 씨앗을 준 적이 있는지만 저장한다.
+  const rare = applyRareSeeds(next, now)
+  next = rare.state
+  for (const crop of rare.found) {
+    pending.push({
+      key: `rare-crop:${crop.id}`,
+      kind: 'GARDEN',
+      icon: crop.icon,
+      title: `${crop.name} — 씨앗을 하나 얻었다`,
+      text: crop.discovery?.reveal ?? crop.description,
     })
   }
 
