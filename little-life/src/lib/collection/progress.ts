@@ -324,6 +324,8 @@ export interface RecipeContext {
   harvestedCropCounts?: Record<string, number>
   /** 서로 다른 요리를 몇 가지 만들어봤는지 */
   cookedKinds?: number
+  /** 채석장에서 몇 가지 광물을 만나봤는지 */
+  mineralKinds?: number
   level: number
   discoveredCount: number
   completedSetIds: string[]
@@ -362,6 +364,8 @@ export function recipeProgress(recipe: RecipeDef, ctx: RecipeContext): number {
       )
     case 'RECIPES_COOKED':
       return Math.min(1, (ctx.cookedKinds ?? 0) / recipe.unlock.count)
+    case 'MINERALS_FOUND':
+      return Math.min(1, (ctx.mineralKinds ?? 0) / recipe.unlock.count)
     case 'SECRET':
     case 'COMING_SOON':
       return 0
@@ -380,6 +384,8 @@ export function recipeContextOf(state: AppState): RecipeContext {
   return {
     harvestedCropCounts: state.garden.harvestedCropCounts,
     cookedKinds: Object.values(state.kitchen.cookedRecipeCounts).filter((n) => n > 0).length,
+    // 채석장 기록에서 센다. 정원·부엌과 같은 방식이다 — 따로 적어두지 않는다.
+    mineralKinds: Object.values(state.quarry.foundMineralCounts).filter((n) => n > 0).length,
     level: state.user.level,
     discoveredCount: discoveredCount(state.collection),
     completedSetIds: completedSetIds(state.collection),
@@ -549,6 +555,8 @@ export function acquisitionHint(item: CollectionItemDef, shopName: (id: string) 
       return '현실에서 충분히 쌓이면.'
     case 'GARDEN':
       return '작은 정원에서 거둘 수 있어.'
+    case 'QUARRY':
+      return '오래된 채석장에서 캘 수 있어.'
     case 'SECRET':
       return first.hint ?? '언제 만나게 될지는 아직.'
     default:

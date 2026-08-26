@@ -8,6 +8,7 @@ import { setsForItem } from './sets'
 import { CROP_ITEMS, GARDEN_ITEMS } from '@/lib/garden/items'
 import { FOOD_ITEMS, KITCHEN_ITEMS } from '@/lib/kitchen/items'
 import { WORKSHOP_ITEMS } from './workshop'
+import { MINERAL_ITEMS } from '@/lib/quarry/minerals'
 import { GARDEN_DECOR } from '@/lib/garden/items'
 import { KITCHEN_DECOR } from '@/lib/kitchen/items'
 
@@ -88,6 +89,15 @@ export const FOOD_CATALOG: CollectionItemDef[] = FOOD_ITEMS.map(finish)
 /** 작업실에서 만든 것들. 240칸에는 안 들어가고 방에는 놓을 수 있다. */
 export const WORKSHOP_CATALOG: CollectionItemDef[] = WORKSHOP_ITEMS.map(finish)
 
+/**
+ * 채석장에서 캐는 것들.
+ *
+ * 재료 목록(MATERIAL_CATALOG)에 섞지 않는다 — 그 목록은 퀘스트에서
+ * 무엇이 떨어질지 고르는 풀이기도 해서, 여기 스물두 개를 섞으면
+ * 기존 재료가 나올 확률이 조용히 낮아진다. 작물을 따로 둔 이유와 같다.
+ */
+export const MINERAL_CATALOG: CollectionItemDef[] = MINERAL_ITEMS.map(finish)
+
 /** 이름으로 찾을 수 있는 것 전부 */
 export const ALL_COLLECTION_ITEMS: CollectionItemDef[] = [
   ...CATALOG,
@@ -96,6 +106,7 @@ export const ALL_COLLECTION_ITEMS: CollectionItemDef[] = [
   ...GARDEN_CATALOG,
   ...KITCHEN_CATALOG,
   ...WORKSHOP_CATALOG,
+  ...MINERAL_CATALOG,
 ]
 
 /**

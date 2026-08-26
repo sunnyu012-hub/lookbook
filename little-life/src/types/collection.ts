@@ -105,6 +105,8 @@ export type AcquisitionSource =
   | { kind: 'TROPHY' }
   /** 작은 정원에서 거둔다 */
   | { kind: 'GARDEN' }
+  /** 오래된 채석장에서 캔다 */
+  | { kind: 'QUARRY' }
   | { kind: 'SECRET'; hint: string | null }
 
 // ── 아이템 ──────────────────────────────────────────────
@@ -270,6 +272,8 @@ export type RecipeUnlock =
   | { kind: 'CROP_HARVESTED'; cropId: string; count: number }
   /** 서로 다른 요리를 이만큼 만들어보면 */
   | { kind: 'RECIPES_COOKED'; count: number }
+  /** 채석장에서 서로 다른 광물을 이만큼 만나면 */
+  | { kind: 'MINERALS_FOUND'; count: number }
   /**
    * 아직 만들 수 없다.
    *

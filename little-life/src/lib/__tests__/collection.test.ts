@@ -882,22 +882,31 @@ describe('작업실 제작물 열둘 (UPDATE D)', () => {
     for (const id of IDS) expect(findCollectionItem(id), id).not.toBeNull()
   })
 
-  it('열한 개는 만들 수 있고 돌등불만 못 만든다', () => {
-    const craftable = IDS.filter((id) => RECIPES.some((r) => r.resultItemId === id && r.unlock.kind !== 'COMING_SOON'))
-    expect(craftable).toHaveLength(11)
-    expect(craftable).not.toContain('w_quarry_lantern')
+  it('이제 열두 개 다 만들 수 있다 — 돌등불이 열렸다', () => {
+    const craftable = IDS.filter((id) =>
+      RECIPES.some((r) => r.resultItemId === id && r.unlock.kind !== 'COMING_SOON'),
+    )
+    expect(craftable).toHaveLength(12)
+    expect(craftable).toContain('w_quarry_lantern')
   })
 
-  it('돌등불은 어떤 길로도 손에 안 들어온다', () => {
+  it('돌등불은 광물을 세 가지 만나야 열린다', () => {
     const def = findCollectionItem('w_quarry_lantern')!
-    expect(def.comingSoon).toBe(true)
-    // 얻는 길이 하나도 없다
-    expect(def.acquisitionSources).toEqual([])
-    // 놓을 수 있는 것 목록에도 없다
-    expect(PLACEABLE_CATALOG.some((i) => i.id === 'w_quarry_lantern')).toBe(false)
-    // 아무리 기다려도 아는 레시피가 되지 않는다
+    expect(def.comingSoon).toBeUndefined()
+    expect(PLACEABLE_CATALOG.some((i) => i.id === 'w_quarry_lantern')).toBe(true)
+
     const recipe = RECIPES.find((r) => r.resultItemId === 'w_quarry_lantern')!
-    expect(isRecipeKnown(recipe, recipeContextOf(ready()))).toBe(false)
+    const before = ready()
+    expect(isRecipeKnown(recipe, recipeContextOf(before))).toBe(false)
+
+    const after = {
+      ...before,
+      quarry: {
+        ...before.quarry,
+        foundMineralCounts: { m_stone: 2, mineral_spark_stone: 1, mineral_old_metal: 1 },
+      },
+    }
+    expect(isRecipeKnown(recipe, recipeContextOf(after))).toBe(true)
   })
 
   it('허브 다발만 벽에 건다. 나머지는 벽이 아니다', () => {
@@ -1064,14 +1073,12 @@ describe('작업실 화면', () => {
     expect(row.ready).toBe(false)
   })
 
-  it('아직 못 만드는 것은 자리만 남고 세는 수에는 안 들어간다', () => {
+  it('돌등불도 이제 세는 수에 들어간다', () => {
     const view = workshopView(ready())
-    const coming = view.recipes.find((r) => r.def.id === 'w_quarry_lantern')!
-    expect(coming.stage).toBe('COMING_SOON')
-    expect(coming.def.hint).toBeTruthy()
-    expect(view.total).toBe(view.recipes.length - 1)
-    // 맨 아래로 간다 — 못 만드는 것이 위에 있으면 목록이 막힌 문처럼 보인다
-    expect(view.recipes[view.recipes.length - 1].def.id).toBe('w_quarry_lantern')
+    const lantern = view.recipes.find((r) => r.def.id === 'w_quarry_lantern')!
+    expect(lantern.stage).not.toBe('COMING_SOON')
+    // 아직 못 만들어도 셀 수 있는 목록에는 든다
+    expect(view.total).toBe(view.recipes.length)
   })
 
   it('예전 레시피도 칸이 정해진다 (표를 안 고치고 물건에서 가져온다)', () => {
@@ -1149,9 +1156,9 @@ describe('저장된 수집 기록', () => {
     expect(counts.WORK).toBe(42)
   })
 
-  it('스키마 버전이 14 이다', () => {
-    expect(STATE_VERSION).toBe(14)
-    expect(createDefaultState().version).toBe(14)
+  it('스키마 버전이 15 이다', () => {
+    expect(STATE_VERSION).toBe(15)
+    expect(createDefaultState().version).toBe(15)
   })
 })
 

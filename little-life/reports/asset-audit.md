@@ -10,7 +10,7 @@
 | 트로피 | 14 |
 | 재료 | 8 |
 | 그림 연결됨 | 259 |
-| 그림 없음 (이모지로 그림) | 62 |
+| 그림 없음 (이모지로 그림) | 73 |
 | 그림도 이모지도 없음 | 0 |
 | 경로는 있는데 파일 없음 | 0 |
 | 카탈로그에 없는 파일 | 0 |
@@ -25,13 +25,13 @@
 | --- | --- |
 | PLACEABLE | 257 |
 | DISPLAY_ONLY | 31 |
-| MATERIAL_ONLY | 33 |
+| MATERIAL_ONLY | 44 |
 
 | 놓는 자리 | 개수 |
 | --- | --- |
 | TABLETOP | 156 |
 | FLOOR | 77 |
-| DECOR | 55 |
+| DECOR | 66 |
 | RUG | 14 |
 | WALL | 14 |
 | HANGING | 4 |
@@ -101,6 +101,17 @@
 - `w_star_vase` 별빛꽃 화병 — PLANT
 - `w_autumn_bench` 가을 벤치 — FURNITURE
 - `w_quarry_lantern` 돌등불 — LIGHTING
+- `mineral_spark_stone` 반짝돌 — MATERIAL
+- `mineral_red_shard` 붉은 조각 — MATERIAL
+- `mineral_blue_stone` 푸른 돌 — MATERIAL
+- `mineral_quartz` 석영 조각 — MATERIAL
+- `mineral_amethyst` 자수정 조각 — MATERIAL
+- `mineral_moss_stone` 이끼 낀 돌 — MATERIAL
+- `mineral_moon_ore` 달조각 광석 — MATERIAL
+- `mineral_star_vein` 별맥석 — MATERIAL
+- `mineral_rose_crystal` 장밋빛 수정 — MATERIAL
+- `mineral_old_metal` 오래된 금속 조각 — MATERIAL
+- `mineral_strange_fragment` 이상한 돌조각 — MATERIAL
 
 ## 방에 놓을 수 있는데 그림이 없는 것
 

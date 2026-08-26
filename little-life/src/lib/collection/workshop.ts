@@ -88,18 +88,9 @@ export const WORKSHOP_ITEMS: CollectionItemDef[] = [
   item('w_moon_lamp', '달빛허브 램프', '🌙', '불을 끄면 그제야 보이는 빛.', 'EPIC', 'LIGHTING'),
   item('w_star_vase', '별빛꽃 화병', '✨', '물을 갈아줄 때마다 조금씩 반짝인다.', 'EPIC', 'PLANT'),
   item('w_autumn_bench', '가을 벤치', '🍂', '해가 짧아지면 여기 앉는 시간이 는다.', 'EPIC', 'FURNITURE'),
-  // 아직 못 만드는 것. 이름도 그림도 만나기 전까지 감춘다.
-  //
-  // 손에 들어올 길이 하나도 없어야 한다 — 만들 수도, 방에 놓을 수도 없다.
-  // 목록에 자리만 남겨서 다음에 무엇이 올지 알려주는 게 전부다.
-  // acquisitionSources 를 비워두면 catalog 의 placementFor 를 지나서도
-  // 놓을 것 목록(PLACEABLE_CATALOG)에 안 들어간다.
-  {
-    ...item('w_quarry_lantern', '돌등불', '🪨', '단단한 것으로 받쳐야 오래 간다.', 'EPIC', 'LIGHTING'),
-    hiddenUntilDiscovered: true,
-    comingSoon: true,
-    acquisitionSources: [],
-  },
+  // 채석장이 열리면서 진짜 만들 수 있는 물건이 됐다.
+  // 예고 자리로 열두 번째에 남겨뒀던 그 줄이다 — 새로 만들지 않고 상태만 바꿨다.
+  item('w_quarry_lantern', '돌등불', '🪨', '단단한 것으로 받쳐야 오래 간다.', 'EPIC', 'LIGHTING'),
 ]
 
 /**
@@ -260,18 +251,26 @@ export const WORKSHOP_RECIPES: RecipeDef[] = [
 ]
 
 /**
- * 아직 못 만드는 것.
+ * 돌등불.
  *
- * 정원에서 나는 것만으로는 안 되는 게 하나 있다.
- * 감춰두는 대신 자리를 남겨서, 다음에 무엇이 올지 알려준다.
+ * 정원 재료로는 끝내 안 되던 것이다. 채석장이 열리면서
+ * "작업대에 쓸 단단한 재료" 가 실제로 생겼다 —
+ * Garden → Workshop 하나뿐이던 재료 길에 Quarry → Workshop 이 붙는다.
+ *
+ * 작은 돌은 이미 있던 재료(m_stone)다. 채석장에서도 나오지만
+ * 퀘스트에서 주워둔 것으로 만들어도 된다. 길을 막지 않는다.
  */
-export const WORKSHOP_COMING: RecipeDef = {
+export const QUARRY_LANTERN_RECIPE: RecipeDef = {
   id: 'w_quarry_lantern',
   resultItemId: 'w_quarry_lantern',
-  ingredients: [{ itemId: 'm_glass', count: 2 }],
-  unlock: { kind: 'COMING_SOON' },
-  unlockHint: '아직',
+  ingredients: [
+    { itemId: 'm_stone', count: 3 },
+    { itemId: 'mineral_spark_stone', count: 1 },
+    { itemId: 'mineral_old_metal', count: 1 },
+  ],
+  unlock: { kind: 'MINERALS_FOUND', count: 3 },
+  unlockHint: '채석장에서 광물을 세 가지 만나면',
   category: 'SPECIAL',
-  hintAt: 0,
+  hintAt: 0.34,
   hint: '작업대에 쓸 단단한 재료가 조금 부족하다.',
 }

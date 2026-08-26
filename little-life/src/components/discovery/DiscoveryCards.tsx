@@ -8,6 +8,7 @@ interface DiscoveryCardsProps {
   onOpenGarden?: () => void
   /** 부엌도 마찬가지 */
   onOpenKitchen?: () => void
+  onOpenQuarry?: () => void
 }
 
 /**
@@ -25,6 +26,7 @@ export function DiscoveryCards({
   onDismiss,
   onOpenGarden,
   onOpenKitchen,
+  onOpenQuarry,
 }: DiscoveryCardsProps) {
   if (notes.length === 0) return null
 
@@ -36,7 +38,8 @@ export function DiscoveryCards({
         const opensGarden = note.kind === 'GARDEN' && onOpenGarden !== undefined
         const opensKitchen =
           note.kind === 'KITCHEN' && note.key === 'kitchen:opened' && onOpenKitchen !== undefined
-        const place = opensGarden || opensKitchen
+        const opensQuarry = note.kind === 'QUARRY' && onOpenQuarry !== undefined
+        const place = opensGarden || opensKitchen || opensQuarry
 
         return (
           <button
@@ -46,6 +49,7 @@ export function DiscoveryCards({
               onDismiss()
               if (opensGarden) onOpenGarden()
               if (opensKitchen) onOpenKitchen()
+              if (opensQuarry) onOpenQuarry()
             }}
             className={cn(
               'flex w-full animate-risein items-center gap-3 rounded-card border px-3.5 py-3 text-left',

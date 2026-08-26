@@ -29,6 +29,7 @@ import {
 import { hasFreshStock } from '@/lib/collection/progress'
 import { secretsInArea } from '@/lib/discovery/secrets'
 import { isGardenUnlocked, unlockProgress } from '@/lib/garden/derive'
+import { isQuarryUnlocked, unlockProgress as quarryProgress } from '@/lib/quarry/derive'
 import { todayKey } from '@/lib/date'
 import { isTodayQuest } from '@/lib/stats'
 import { cn } from '@/components/ui/cn'
@@ -52,6 +53,7 @@ interface MapScreenProps {
   onOpenWorkshop: () => void
   /** 공원 너머 작은 정원 */
   onOpenGarden: () => void
+  onOpenQuarry: () => void
 }
 
 /**
@@ -74,6 +76,7 @@ export function MapScreen({
   onOpenCollectionShop,
   onOpenWorkshop,
   onOpenGarden,
+  onOpenQuarry,
 }: MapScreenProps) {
   const [openArea, setOpenArea] = useState<AreaDef | null>(null)
   const now = new Date()
@@ -221,6 +224,10 @@ export function MapScreen({
           setOpenArea(null)
           onOpenGarden()
         }}
+        onOpenQuarry={() => {
+          setOpenArea(null)
+          onOpenQuarry()
+        }}
         onOpenShop={(id) => {
           setOpenArea(null)
           onOpenShop(id)
@@ -251,6 +258,7 @@ interface AreaSheetProps {
   onOpenCollectionShop: (shop: CollectionShopDef) => void
   onOpenWorkshop: () => void
   onOpenGarden: () => void
+  onOpenQuarry: () => void
 }
 
 function AreaSheet({
@@ -271,6 +279,7 @@ function AreaSheet({
   onOpenCollectionShop,
   onOpenWorkshop,
   onOpenGarden,
+  onOpenQuarry,
 }: AreaSheetProps) {
   if (!area) return null
 
@@ -520,6 +529,47 @@ function AreaSheet({
                   </span>
                 </span>
               </button>
+            </li>
+          )}
+
+          {/* 공원 바깥쪽. 하루가 네 번째 이야기에서 말한 그 길이다.
+              아직 못 찾았으면 조건을 숫자로 적지 않는다 — 그건 할 일 목록이 된다. */}
+          {area.id === 'GREEN_PARK' && (
+            <li>
+              {isQuarryUnlocked(state) ? (
+                <button
+                  type="button"
+                  onClick={onOpenQuarry}
+                  className={cn(
+                    'flex w-full items-center gap-3 rounded-card border border-line bg-surface px-3.5 py-3 text-left',
+                    'transition-transform duration-150 ease-out active:scale-[0.98]',
+                  )}
+                >
+                  <span className="text-[22px] leading-none">⛏️</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[14px] font-medium text-ink">
+                      오래된 채석장
+                    </span>
+                    <span className="mt-0.5 block truncate text-[11.5px] text-inkdim">
+                      돌 틈에 아직 반짝이는 것이 남아 있다
+                    </span>
+                  </span>
+                </button>
+              ) : (
+                <div className="flex w-full items-center gap-3 rounded-card border border-dashed border-line bg-canvas px-3.5 py-3">
+                  <span className="text-[22px] leading-none opacity-45">🪨</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[14px] font-medium text-ink">
+                      오래된 길
+                    </span>
+                    <span className="mt-0.5 block text-[11.5px] leading-snug text-inkdim">
+                      {quarryProgress(state) >= 0.5
+                        ? '공원 바깥쪽으로 길이 이어지는 것 같다.'
+                        : '이 너머는 아직 잘 모르겠다.'}
+                    </span>
+                  </span>
+                </div>
+              )}
             </li>
           )}
         </ul>

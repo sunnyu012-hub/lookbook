@@ -5,6 +5,7 @@ import { SECRETS, newlyFound, newlyHinted, secretProgress } from './secrets'
 import { unreadChapters } from './stories'
 import { hintedCompanions, newlyMeetable } from './companions'
 import { applyGardenUnlock, applyRareSeeds } from '@/lib/garden/derive'
+import { applyQuarryUnlock } from '@/lib/quarry/derive'
 import { applyKitchenUnlock, newlyDiscovered } from '@/lib/kitchen/derive'
 
 /**
@@ -133,6 +134,21 @@ export function applyDiscovery(state: AppState, now: Date = new Date()): Discove
       icon: crop.icon,
       title: `${crop.name} — 씨앗을 하나 얻었다`,
       text: crop.discovery?.reveal ?? crop.description,
+    })
+  }
+
+  // ── 오래된 채석장 ────────────────────────────────────
+  // 조건은 이미 쌓인 기록에서 센다 (정원에서 열 번 거뒀거나 세 가지를 만들어봤거나).
+  // 그래서 이 업데이트를 켜는 순간 그동안 해온 사람에게는 바로 열린다.
+  const quarry = applyQuarryUnlock(next, now)
+  next = quarry.state
+  if (quarry.opened) {
+    pending.push({
+      key: 'quarry:opened',
+      kind: 'QUARRY',
+      icon: '⛏️',
+      title: '오래된 채석장',
+      text: '도시 끝에 오래된 길이 하나 남아 있었다. 예전에 돌을 캐던 자리 같다.',
     })
   }
 
