@@ -35,10 +35,22 @@ function base(id: string, nameKo: string, icon: string): CollectionItemDef {
   }
 }
 
+/**
+ * 이 / 가.
+ *
+ * 이름을 넣어 문장을 만들 때 받침을 봐야 한다 — "바질가 자란다" 는
+ * 사람이 쓰는 말이 아니다. 한글 음절은 코드가 규칙적이라 나눗셈으로 나온다.
+ */
+function subjectParticle(word: string): string {
+  const last = word.trim().charCodeAt(word.trim().length - 1)
+  if (Number.isNaN(last) || last < 0xac00 || last > 0xd7a3) return '가'
+  return (last - 0xac00) % 28 > 0 ? '이' : '가'
+}
+
 function seedItem(crop: CropDef): CollectionItemDef {
   return {
     ...base(crop.seedItemId, `${crop.name} 씨앗`, '🌱'),
-    description: `심으면 ${crop.name}가 자란다.`,
+    description: `심으면 ${crop.name}${subjectParticle(crop.name)} 자란다.`,
     tags: ['seed', 'garden'],
     acquisitionSources: crop.seedAvailable
       ? [{ kind: 'QUEST', category: null }]
@@ -83,7 +95,13 @@ export const GARDEN_DEW: CollectionItemDef = {
  *
  * 능력치는 하나도 안 붙는다 — 트로피 · 부엌 물건과 같은 규칙이다.
  */
-function decor(id: string, nameKo: string, icon: string, description: string): CollectionItemDef {
+function decor(
+  id: string,
+  nameKo: string,
+  icon: string,
+  description: string,
+  footprint: { width: number; height: number } = { width: 12, height: 12 },
+): CollectionItemDef {
   return {
     id,
     nameKo,
@@ -94,7 +112,9 @@ function decor(id: string, nameKo: string, icon: string, description: string): C
     description,
     hasPlaceableAsset: true,
     placeable: true,
-    footprint: { width: 14, height: 15 },
+    // 아직 그림이 없어서 이모지가 그 자리를 채운다 — 자리 크기가 곧
+    // 보이는 크기다. 화분 하나가 아치만 하면 방이 이상해진다.
+    footprint,
     acquisitionSources: [{ kind: 'SET', setId: 'garden' }],
     collectionSetIds: [],
     tags: ['정원'],
@@ -104,12 +124,12 @@ function decor(id: string, nameKo: string, icon: string, description: string): C
 }
 
 export const GARDEN_DECOR: CollectionItemDef[] = [
-  decor('g_strawberry_planter', '딸기 화분', '🍓', '창가에 두면 아침에 제일 먼저 눈에 띈다.'),
-  decor('g_strawberry_sign', '딸기밭 표지판', '🪧', '누가 봐도 여기가 딸기밭이라는 뜻.'),
-  decor('g_herb_rack', '허브 건조대', '🌿', '지나갈 때마다 향이 한 번씩 난다.'),
-  decor('g_harvest_basket', '수확 바구니', '🧺', '가을에 한 번 가득 찼던 적이 있다.'),
-  decor('g_autumn_table', '가을 정원 테이블', '🍂', '해가 짧아지면 여기 앉는 시간이 는다.'),
-  decor('g_moon_arch', '달빛 정원 아치', '🌙', '밤에만 아치 아래가 조금 밝다.'),
+  decor('g_strawberry_planter', '딸기 화분', '🍓', '창가에 두면 아침에 제일 먼저 눈에 띈다.', { width: 9, height: 11 }),
+  decor('g_strawberry_sign', '딸기밭 표지판', '🪧', '누가 봐도 여기가 딸기밭이라는 뜻.', { width: 8, height: 10 }),
+  decor('g_herb_rack', '허브 건조대', '🌿', '지나갈 때마다 향이 한 번씩 난다.', { width: 11, height: 12 }),
+  decor('g_harvest_basket', '수확 바구니', '🧺', '가을에 한 번 가득 찼던 적이 있다.', { width: 9, height: 9 }),
+  decor('g_autumn_table', '가을 정원 테이블', '🍂', '해가 짧아지면 여기 앉는 시간이 는다.', { width: 13, height: 12 }),
+  decor('g_moon_arch', '달빛 정원 아치', '🌙', '밤에만 아치 아래가 조금 밝다.', { width: 15, height: 16 }),
 ]
 
 export const GARDEN_ITEMS: CollectionItemDef[] = [
