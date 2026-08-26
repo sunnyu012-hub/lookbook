@@ -78,7 +78,7 @@ export function applyDevWorkshop(
     /** 만들어본 것으로 친다 (재료는 쓴다 — 실제 길과 같게) */
     case 'CRAFT': {
       const recipe = RECIPES.find((r) => r.id === action.recipeId)
-      if (!recipe) return state
+      if (!recipe || recipe.unlock.kind === 'COMING_SOON') return state
       const spent = spendItems(state.collection, recipe.ingredients)
       if (!spent) return state
       return { ...state, collection: addItem(spent, recipe.resultItemId, now).collection }
@@ -93,6 +93,9 @@ export function applyDevWorkshop(
     case 'CRAFT_ALL': {
       let next = state
       for (const recipe of RECIPES) {
+        // 아직 이 판에 없는 것은 검수판으로도 안 만든다.
+        // 재료만 맞으면 만들어지던 구멍이 여기 있었다.
+        if (recipe.unlock.kind === 'COMING_SOON') continue
         next = applyDevWorkshop(next, { kind: 'CRAFT', recipeId: recipe.id }, now)
       }
       return next

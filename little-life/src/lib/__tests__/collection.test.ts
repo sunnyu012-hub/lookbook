@@ -4,7 +4,9 @@ import { ITEMS } from '@/lib/rpg/content'
 import {
   ALL_COLLECTION_ITEMS,
   CATALOG,
+  CRAFTED_CATALOG,
   MATERIAL_CATALOG,
+  PLACEABLE_CATALOG,
   TROPHY_CATALOG,
   catalogTotal,
   findCollectionItem,
@@ -860,6 +862,136 @@ describe('정원 세트', () => {
     const again = applyCollectionDerived(first.state, new Date())
     expect(ownedCount(again.state.collection, 'g_harvest_basket')).toBe(1)
     expect(ownedCount(again.state.collection, 'g_autumn_table')).toBe(1)
+  })
+})
+
+describe('작업실 제작물 열둘 (UPDATE D)', () => {
+  const IDS = [
+    'w_strawberry_shelf', 'w_herb_bundle', 'w_veggie_crate', 'w_lavender_cushion',
+    'w_mushroom_lamp', 'w_garden_table', 'w_recipe_shelf', 'w_picnic_set',
+    'w_moon_lamp', 'w_star_vase', 'w_autumn_bench', 'w_quarry_lantern',
+  ]
+
+  function ready(): AppState {
+    const base = createDefaultState()
+    return { ...base, garden: { ...base.garden, unlockedAt: '2026-01-01T00:00:00.000Z' } }
+  }
+
+  it('열두 개가 다 있고 id 가 겹치지 않는다', () => {
+    expect(new Set(IDS).size).toBe(12)
+    for (const id of IDS) expect(findCollectionItem(id), id).not.toBeNull()
+  })
+
+  it('열한 개는 만들 수 있고 돌등불만 못 만든다', () => {
+    const craftable = IDS.filter((id) => RECIPES.some((r) => r.resultItemId === id && r.unlock.kind !== 'COMING_SOON'))
+    expect(craftable).toHaveLength(11)
+    expect(craftable).not.toContain('w_quarry_lantern')
+  })
+
+  it('돌등불은 어떤 길로도 손에 안 들어온다', () => {
+    const def = findCollectionItem('w_quarry_lantern')!
+    expect(def.comingSoon).toBe(true)
+    // 얻는 길이 하나도 없다
+    expect(def.acquisitionSources).toEqual([])
+    // 놓을 수 있는 것 목록에도 없다
+    expect(PLACEABLE_CATALOG.some((i) => i.id === 'w_quarry_lantern')).toBe(false)
+    // 아무리 기다려도 아는 레시피가 되지 않는다
+    const recipe = RECIPES.find((r) => r.resultItemId === 'w_quarry_lantern')!
+    expect(isRecipeKnown(recipe, recipeContextOf(ready()))).toBe(false)
+  })
+
+  it('허브 다발만 벽에 건다. 나머지는 벽이 아니다', () => {
+    expect(findCollectionItem('w_herb_bundle')!.placementType).toBe('WALL')
+    for (const id of IDS.filter((i) => i !== 'w_herb_bundle')) {
+      expect(findCollectionItem(id)!.placementType, id).not.toBe('WALL')
+    }
+  })
+
+  it('방에서 차지하는 폭이 기존 물건 관례와 맞는다', () => {
+    // 렌더러는 footprint.width 만 본다 (RoomCanvas). 분류마다 관례가 있다.
+    const 관례: Record<string, number> = { LIGHTING: 13, PLANT: 13, LITTLE_THING: 10, WALL: 16 }
+    for (const id of IDS) {
+      const def = findCollectionItem(id)!
+      const want = 관례[def.category]
+      if (want !== undefined) expect(def.footprint?.width, id).toBe(want)
+    }
+    // 가구는 기존 가구 폭 범위(15~32) 안에 있어야 한다
+    for (const id of IDS) {
+      const def = findCollectionItem(id)!
+      if (def.category !== 'FURNITURE') continue
+      expect(def.footprint!.width, id).toBeGreaterThanOrEqual(15)
+      expect(def.footprint!.width, id).toBeLessThanOrEqual(32)
+    }
+  })
+
+  it('이름이 비슷한 기존 물건과 완전히 다른 아이템이다', () => {
+    for (const [mine, theirs] of [
+      ['w_mushroom_lamp', 'mushroom_lamp'],
+      ['w_picnic_set', 'k_picnic_basket'],
+      ['w_recipe_shelf', 'k_recipe_book'],
+      ['w_garden_table', 'g_autumn_table'],
+    ]) {
+      const a = findCollectionItem(mine)!
+      const b = findCollectionItem(theirs)!
+      expect(a.id).not.toBe(b.id)
+      // 그림도 공유하지 않는다 (한쪽만 그림이 있어도 서로 빌려 쓰지 않는다)
+      if (a.assetKey && b.assetKey) expect(a.assetKey).not.toBe(b.assetKey)
+    }
+  })
+
+  it('만든 것은 도감의 자기 칸에 들어간다 — 240 은 안 늘어난다', () => {
+    for (const id of IDS) {
+      expect(CRAFTED_CATALOG.some((i) => i.id === id), id).toBe(true)
+      expect(CATALOG.some((i) => i.id === id), id).toBe(false)
+    }
+    // 정원·부엌 세트 보상도 같은 칸에 있다
+    expect(CRAFTED_CATALOG.some((i) => i.id === 'g_moon_arch')).toBe(true)
+    expect(CRAFTED_CATALOG.some((i) => i.id === 'k_soup_pot')).toBe(true)
+    // 240 칸은 그대로다
+    expect(catalogTotal({})).toBe(240)
+  })
+
+  it('만들면 재료가 빠지고 하나 생기고 도감에 남는다', () => {
+    const recipe = RECIPES.find((r) => r.id === 'w_strawberry_shelf')!
+    let c = emptyCollection()
+    for (const ing of recipe.ingredients) {
+      for (let i = 0; i < ing.count; i += 1) c = addItem(c, ing.itemId).collection
+    }
+    expect(canCraft(recipe, c)).toBe(true)
+
+    const spent = spendItems(c, recipe.ingredients)!
+    for (const ing of recipe.ingredients) expect(ownedCount(spent, ing.itemId)).toBe(0)
+
+    const made = addItem(spent, recipe.resultItemId)
+    expect(made.isNew).toBe(true)
+    expect(ownedCount(made.collection, recipe.resultItemId)).toBe(1)
+    expect(isDiscovered(made.collection, recipe.resultItemId)).toBe(true)
+
+    // 두 번째는 새 발견이 아니다 (연출을 두 번 띄우지 않는다)
+    const again = addItem(made.collection, recipe.resultItemId)
+    expect(again.isNew).toBe(false)
+  })
+
+  it('재료가 모자라면 하나도 안 빠진다', () => {
+    const recipe = RECIPES.find((r) => r.id === 'w_herb_bundle')!
+    let c = emptyCollection()
+    c = addItem(c, recipe.ingredients[0].itemId).collection
+    expect(canCraft(recipe, c)).toBe(false)
+    // 모자란 채로 쓰려 하면 아무것도 안 건드리고 null 을 준다
+    expect(spendItems(c, recipe.ingredients)).toBeNull()
+    expect(ownedCount(c, recipe.ingredients[0].itemId)).toBe(1)
+  })
+
+  it('레시피가 화면이 아니라 데이터에 있다', () => {
+    // 열한 개 전부 표에서 나온다. 컴포넌트가 비용을 정하지 않는다.
+    for (const id of IDS.filter((i) => i !== 'w_quarry_lantern')) {
+      const r = RECIPES.find((x) => x.resultItemId === id)!
+      expect(r.ingredients.length, id).toBeGreaterThan(0)
+      for (const ing of r.ingredients) {
+        expect(findCollectionItem(ing.itemId), `${id} → ${ing.itemId}`).not.toBeNull()
+        expect(ing.count).toBeGreaterThan(0)
+      }
+    }
   })
 })
 

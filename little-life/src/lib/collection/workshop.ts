@@ -19,15 +19,31 @@ import type { CollectionItemDef, RecipeDef } from '@/types'
 
 const C = (id: string) => `crop_${id}`
 
-/** 분류별로 방에서 차지하는 자리 */
+/**
+ * 분류별로 방에서 차지하는 자리.
+ *
+ * 방 렌더러는 footprint.width 하나만 본다 (RoomCanvas.tsx — 높이는 그림
+ * 비율이 정하고, 그림이 없으면 정사각형이 된다). 그래서 폭을 이미
+ * 그림이 있는 물건들의 관례에 맞춘다:
+ *
+ *   LIGHTING · PLANT  13   (스무 개 · 스물다섯 개가 전부 13)
+ *   LITTLE_THING      10   (서른다섯 개가 전부 10)
+ *   WALL              16   (열다섯 개가 전부 16)
+ *   FURNITURE      15~32   (중앙값 26. 작은 선반은 아래쪽인 21)
+ *
+ * 처음에 적었던 13/9/10/8 은 어느 분류에서든 기존 물건보다 작았다.
+ * 방에 놓으면 장난감처럼 보인다. 받은 숫자는 서로의 크기 비(比)를
+ * 말한 것이라, 그 순서만 지키고 실제 값은 관례에서 가져왔다.
+ */
 const FOOTPRINT: Partial<Record<CollectionItemDef['category'], { width: number; height: number }>> =
   {
-    FURNITURE: { width: 13, height: 13 },
-    LIGHTING: { width: 9, height: 12 },
-    WALL: { width: 10, height: 9 },
-    LITTLE_THING: { width: 8, height: 8 },
-    PLANT: { width: 9, height: 11 },
-    OUTDOOR: { width: 12, height: 11 },
+    FURNITURE: { width: 21, height: 21 },
+    LIGHTING: { width: 13, height: 17 },
+    WALL: { width: 16, height: 14 },
+    LITTLE_THING: { width: 10, height: 10 },
+    PLANT: { width: 13, height: 17 },
+    // 소품과 가구 사이. 그림이 있는 OUTDOOR 물건이 아직 없어 관례가 없다.
+    OUTDOOR: { width: 18, height: 16 },
   }
 
 function item(
@@ -73,9 +89,16 @@ export const WORKSHOP_ITEMS: CollectionItemDef[] = [
   item('w_star_vase', '별빛꽃 화병', '✨', '물을 갈아줄 때마다 조금씩 반짝인다.', 'EPIC', 'PLANT'),
   item('w_autumn_bench', '가을 벤치', '🍂', '해가 짧아지면 여기 앉는 시간이 는다.', 'EPIC', 'FURNITURE'),
   // 아직 못 만드는 것. 이름도 그림도 만나기 전까지 감춘다.
+  //
+  // 손에 들어올 길이 하나도 없어야 한다 — 만들 수도, 방에 놓을 수도 없다.
+  // 목록에 자리만 남겨서 다음에 무엇이 올지 알려주는 게 전부다.
+  // acquisitionSources 를 비워두면 catalog 의 placementFor 를 지나서도
+  // 놓을 것 목록(PLACEABLE_CATALOG)에 안 들어간다.
   {
     ...item('w_quarry_lantern', '돌등불', '🪨', '단단한 것으로 받쳐야 오래 간다.', 'EPIC', 'LIGHTING'),
     hiddenUntilDiscovered: true,
+    comingSoon: true,
+    acquisitionSources: [],
   },
 ]
 

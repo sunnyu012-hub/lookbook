@@ -174,6 +174,13 @@ export interface CollectionItemDef {
   unique: boolean
   /** 발견 전에는 이름도 힌트도 숨긴다 */
   hiddenUntilDiscovered?: boolean
+  /**
+   * 아직 이 판에 없는 것.
+   *
+   * 다음 업데이트 예고로 목록에 자리만 남긴 물건이다.
+   * 만들 수도 없고 방에 놓을 수도 없다 — 어떤 길로도 손에 들어오지 않는다.
+   */
+  comingSoon?: boolean
   /** 발견 전에는 전체 수에도 넣지 않는다 — "238 / 240 + ?" 를 위한 자리 */
   hiddenFromTotal?: boolean
 }

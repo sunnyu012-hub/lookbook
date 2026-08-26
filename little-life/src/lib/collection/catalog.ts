@@ -8,6 +8,8 @@ import { setsForItem } from './sets'
 import { CROP_ITEMS, GARDEN_ITEMS } from '@/lib/garden/items'
 import { FOOD_ITEMS, KITCHEN_ITEMS } from '@/lib/kitchen/items'
 import { WORKSHOP_ITEMS } from './workshop'
+import { GARDEN_DECOR } from '@/lib/garden/items'
+import { KITCHEN_DECOR } from '@/lib/kitchen/items'
 
 /**
  * 완성된 아이템 표.
@@ -18,7 +20,13 @@ import { WORKSHOP_ITEMS } from './workshop'
  */
 function finish(item: CollectionItemDef): CollectionItemDef {
   const sources = [...item.acquisitionSources]
-  if (CRAFTABLE_ITEM_IDS.has(item.id) && !sources.some((s) => s.kind === 'CRAFT')) {
+  // 아직 이 판에 없는 것에는 "만들어서 얻는다" 를 붙이지 않는다.
+  // 표에 줄은 있지만(예고용) 실제로는 못 만든다 — 얻는 길이라고 적으면 거짓말이 된다.
+  if (
+    !item.comingSoon &&
+    CRAFTABLE_ITEM_IDS.has(item.id) &&
+    !sources.some((s) => s.kind === 'CRAFT')
+  ) {
     sources.push({ kind: 'CRAFT' })
   }
 
@@ -91,6 +99,22 @@ export const ALL_COLLECTION_ITEMS: CollectionItemDef[] = [
 ]
 
 /**
+ * 손으로 만들어서 얻는 것 — 도감의 "만든 것" 칸.
+ *
+ * 작업실에서 만든 열둘, 정원 세트를 채우면 남는 여섯, 부엌 세트의 넷.
+ * 셋 다 240칸 밖에 있어서 그동안 도감 어디에도 안 보였다.
+ * 만들어놓고 볼 데가 없으면 그건 모은 게 아니다.
+ *
+ * 작물(CROP_CATALOG) · 요리(FOOD_CATALOG) 와 같은 방식이다 —
+ * 자기 칸을 따로 가지고 240 분모는 건드리지 않는다.
+ */
+export const CRAFTED_CATALOG: CollectionItemDef[] = [
+  ...WORKSHOP_CATALOG,
+  ...GARDEN_DECOR.map(finish),
+  ...KITCHEN_DECOR.map(finish),
+]
+
+/**
  * 방에 놓을 수 있는 것 전부.
  *
  * 240칸(CATALOG)만 보면 안 된다 — 정원·부엌·작업실에서 나온 것은
@@ -101,7 +125,8 @@ export const ALL_COLLECTION_ITEMS: CollectionItemDef[] = [
  * 따로 걸러낼 필요가 없다.
  */
 export const PLACEABLE_CATALOG: CollectionItemDef[] = ALL_COLLECTION_ITEMS.filter(
-  (i) => i.placement === 'PLACEABLE',
+  // 아직 이 판에 없는 것(다음 업데이트 예고)은 놓을 수 있는 것에도 안 든다.
+  (i) => i.placement === 'PLACEABLE' && !i.comingSoon,
 )
 
 const BY_ID = new Map(ALL_COLLECTION_ITEMS.map((i) => [i.id, i]))

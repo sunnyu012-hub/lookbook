@@ -8,6 +8,7 @@ import { ItemDetailSheet } from './ItemDetailSheet'
 import {
   CATALOG,
   CATALOG_CATEGORIES,
+  CRAFTED_CATALOG,
   CROP_CATALOG,
   FOOD_CATALOG,
   TROPHY_CATALOG,
@@ -38,7 +39,7 @@ import { cn } from '@/components/ui/cn'
  * 다만 못 만난 칸에도 갈 곳은 알려준다. "어디선가" 로 끝나면 그건 힌트가 아니다.
  */
 
-type Tab = CollectionCategory | 'ALL' | 'TROPHY_TAB' | 'SETS' | 'CROPS' | 'RECIPES'
+type Tab = CollectionCategory | 'ALL' | 'TROPHY_TAB' | 'SETS' | 'CROPS' | 'RECIPES' | 'CRAFTED'
 
 const PAGE = 60
 
@@ -70,6 +71,8 @@ export function CollectionBook({
     // 작물과 요리는 240칸에 안 들어간다. 여기서 자기 칸을 따로 가진다.
     if (tab === 'CROPS') return CROP_CATALOG
     if (tab === 'RECIPES') return FOOD_CATALOG
+    // 만든 것도 240칸 밖이다. 작물·요리와 같은 이유로 자기 칸을 가진다.
+    if (tab === 'CRAFTED') return CRAFTED_CATALOG
     if (tab === 'ALL') return CATALOG
     if (tab === 'SETS') return []
     return CATALOG.filter((i) => i.category === tab)
@@ -86,6 +89,7 @@ export function CollectionBook({
   const craftable = useMemo(() => workshopView(state), [state])
   const trophyFound = TROPHY_CATALOG.filter((t) => isDiscovered(collection, t.id)).length
   const cropFound = CROP_CATALOG.filter((c) => isDiscovered(collection, c.id)).length
+  const craftedFound = CRAFTED_CATALOG.filter((c) => isDiscovered(collection, c.id)).length
   // 요리는 "만들어본 적이 있는지" 로 센다. 다 먹어 없어져도 도감에는 남는다.
   const recipeFound = recipeCollectionProgress(state).found
   // 아직 감춰둔 세트는 세지도 않는다. 안 보이는 것이 분모에 들어가면
@@ -128,6 +132,9 @@ export function CollectionBook({
           </span>
           <span className="rounded-pill bg-sunken px-2.5 py-1">
             요리 {recipeFound} / {FOOD_CATALOG.length}
+          </span>
+          <span className="rounded-pill bg-sunken px-2.5 py-1">
+            만든 것 {craftedFound} / {CRAFTED_CATALOG.length}
           </span>
         </div>
       </Card>
@@ -194,6 +201,9 @@ export function CollectionBook({
           </Chip>
           <Chip on={tab === 'RECIPES'} onClick={() => switchTab('RECIPES')}>
             요리
+          </Chip>
+          <Chip on={tab === 'CRAFTED'} onClick={() => switchTab('CRAFTED')}>
+            만든 것
           </Chip>
           <Chip on={tab === 'SETS'} onClick={() => switchTab('SETS')}>
             세트
