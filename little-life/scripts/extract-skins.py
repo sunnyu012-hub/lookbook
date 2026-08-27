@@ -134,6 +134,20 @@ LAYOUT = [
     ("skins6-outing.png", [
         "popup_openrun", "concert_day", "airport_day", "interview_day",
     ]),
+    # 7차 — 남은 열여섯 (묶음 3 · 9 · 10)
+    ("skins7-city-c.png", [
+        "city_archivist", "vintage_shop_buyer", "little_theater_actor", "rooftop_gardener",
+    ]),
+    ("skins7-outing-a.png", [
+        "subway_commute", "work_from_home_day", "convenience_store_run", "after_work_meetup",
+    ]),
+    ("skins7-outing-b.png", [
+        "new_cafe_hunt", "exhibition_day", "baseball_cheer", "hangang_picnic",
+    ]),
+    ("skins7-taste-c.png", [
+        "french_girl_casual", "minimal_monotone", "kitsch_vintage_denim",
+        "vintage_bookcafe_mood",
+    ]),
 ]
 
 # 시트마다 네 명의 키 중앙값을 이 높이에 맞춘다.

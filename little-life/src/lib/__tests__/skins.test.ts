@@ -112,19 +112,24 @@ describe('열두 모습', () => {
     }
   })
 
-  it('처음 스물네 장은 실제로 다 있다', () => {
+  /**
+   * 백스무 장이 다 있다.
+   *
+   * 렌더러에 fallback 이 있다고 해서 없는 걸 통과시키지 않는다 —
+   * 그건 배포가 반쯤 갈렸을 때 화면이 안 깨지게 하는 장치지,
+   * 그림이 있다는 뜻이 아니다. 여기가 빨개지면 진짜로 없는 것이다.
+   */
+  it('백스무 장이 실제로 다 있다', () => {
     const pub = path.resolve(__dirname, '../../../public')
-    const legacy = SKINS.filter((s) => s.acquisition === 'LEGACY_UNLOCK')
-    const missing = legacy.filter(
+    const missing = SKINS.filter(
       (s) => !existsSync(path.join(pub, `assets/characters/${s.id}.webp`)),
     )
     expect(missing.map((s) => s.id)).toEqual([])
   })
 
-  it('스물네 장의 작은 그림도 다 있다', () => {
+  it('작은 그림도 백스무 장 다 있다', () => {
     const pub = path.resolve(__dirname, '../../../public')
-    const legacy = SKINS.filter((s) => s.acquisition === 'LEGACY_UNLOCK')
-    const missing = legacy.filter(
+    const missing = SKINS.filter(
       (s) => !existsSync(path.join(pub, `assets/thumbs/characters/${s.id}.webp`)),
     )
     expect(missing.map((s) => s.id)).toEqual([])

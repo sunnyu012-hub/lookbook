@@ -17,7 +17,7 @@
 | id 중복 | 0 |
 | 경로 중복 | 0 |
 | 캐릭터 모습 | 120 |
-| 모습 그림 없음 | 16 |
+| 모습 그림 없음 | 0 |
 | 모습 작은 그림 없음 | 0 |
 | 모습 캔버스 다름 | 0 |
 | 모습 id 중복 | 0 |
@@ -47,22 +47,7 @@
 
 캔버스 기준 433x508. fallback 이 있어도 여기 남은 건 없는 것이다.
 
-- `city_archivist` 도시 기록가 — 3팩 · 비밀스러운 도시의 사람들
-- `vintage_shop_buyer` 빈티지숍 바이어 — 3팩 · 비밀스러운 도시의 사람들
-- `little_theater_actor` 작은 극장의 배우 — 3팩 · 비밀스러운 도시의 사람들
-- `rooftop_gardener` 옥상 정원사 — 3팩 · 비밀스러운 도시의 사람들
-- `french_girl_casual` 프렌치 걸 캐주얼 — 9팩 · 나의 추구미
-- `minimal_monotone` 미니멀 모노톤 — 9팩 · 나의 추구미
-- `kitsch_vintage_denim` 키치 빈티지 데님 — 9팩 · 나의 추구미
-- `vintage_bookcafe_mood` 빈티지 북카페 무드 — 9팩 · 나의 추구미
-- `subway_commute` 지하철 출근길 — 10팩 · 오늘은 어디 가는 날?
-- `work_from_home_day` 재택근무하는 날 — 10팩 · 오늘은 어디 가는 날?
-- `convenience_store_run` 편의점 다녀오는 길 — 10팩 · 오늘은 어디 가는 날?
-- `after_work_meetup` 퇴근 후 약속 — 10팩 · 오늘은 어디 가는 날?
-- `new_cafe_hunt` 카페 신상 탐방 — 10팩 · 오늘은 어디 가는 날?
-- `exhibition_day` 전시회 보러 가는 날 — 10팩 · 오늘은 어디 가는 날?
-- `baseball_cheer` 야구장 응원룩 — 10팩 · 오늘은 어디 가는 날?
-- `hangang_picnic` 한강 피크닉 — 10팩 · 오늘은 어디 가는 날?
+없음
 
 ## 작은 그림이 없는 캐릭터 모습
 
