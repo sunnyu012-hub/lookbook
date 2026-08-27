@@ -127,9 +127,31 @@ describe('보상', () => {
     expect(claimableGoals(filled(), SUN).length).toBe(3)
   })
 
-  it('주 중간에는 아직 다 못 채운다', () => {
-    // 진행도는 오늘까지만 센다. 수요일에 한 주치가 채워져 있을 수는 없다.
-    expect(claimableGoals(filled(), WED).length).toBeLessThan(3)
+  /** 월요일에 퀘스트 하나만 하고 만 사람 */
+  function barely(): AppState {
+    return {
+      ...base(),
+      dailyLog: {
+        '2026-03-02': { completed: 1, exp: 20, byCategory: { LIFE: 20 } },
+      } as AppState['dailyLog'],
+    }
+  }
+
+  it('한 칸만 올라가도 받아갈 게 생긴다', () => {
+    const claims = claimableGoals(barely(), WED)
+    expect(claims.length).toBeGreaterThan(0)
+    expect(claims.some((c) => c.completed)).toBe(false)
+  })
+
+  it('다 안 채워도 온 만큼은 받는다', () => {
+    // 이게 이 조정의 핵심이다. 한 주에 몰아서 못 하는 사람이 늘 0원이면
+    // 그건 안 와도 괜찮은 앱이 아니다.
+    const mid = applyCollectionDerived(barely(), WED)
+    const gained = mid.state.user.coins - barely().user.coins
+    expect(gained).toBeGreaterThan(0)
+    // 그런데 한 주치를 다 준 것은 아니다
+    const all = weeklyGoals(WED).reduce((sum, g) => sum + g.coins, 0)
+    expect(gained).toBeLessThan(all)
   })
 
   it('앱을 열면 알아서 들어온다', () => {
@@ -138,14 +160,23 @@ describe('보상', () => {
     const earned = weeklyGoals(SUN).reduce((sum, g) => sum + g.coins, 0)
 
     expect(after.state.user.coins).toBe(before.user.coins + earned)
-    expect(after.state.claimedWeeklyGoals).toHaveLength(3)
+    // 칸마다 하나씩 적어둔다 — 목표 셋의 칸 수를 합친 만큼
+    const steps = weeklyGoals(SUN).reduce((sum, g) => sum + g.target, 0)
+    expect(after.state.claimedWeeklyGoals).toHaveLength(steps)
   })
 
   it('두 번 열어도 두 번 주지 않는다', () => {
     const once = applyCollectionDerived(filled(), SUN)
     const twice = applyCollectionDerived(once.state, SUN)
     expect(twice.state.user.coins).toBe(once.state.user.coins)
-    expect(twice.state.claimedWeeklyGoals).toHaveLength(3)
+    expect(twice.state.claimedWeeklyGoals).toEqual(once.state.claimedWeeklyGoals)
+  })
+
+  it('수요일에 받고 일요일에 또 열어도 겹쳐 주지 않는다', () => {
+    const wed = applyCollectionDerived(filled(), WED)
+    const sun = applyCollectionDerived(wed.state, SUN)
+    const total = weeklyGoals(SUN).reduce((sum, g) => sum + g.coins, 0)
+    expect(sun.state.user.coins).toBe(filled().user.coins + total)
   })
 
   it('아직 못 채웠으면 안 준다', () => {

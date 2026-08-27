@@ -15,6 +15,15 @@ import { weekDayKeys, weekKey } from '@/lib/date'
  *
  * 못 채워도 아무 일도 일어나지 않는다. 다음 주가 되면 새 목표가 온다.
  * 연속 기록도 없고, 못 했다고 말하지도 않는다.
+ *
+ * ── 한 칸씩 준다 ────────────────────────────────────
+ *
+ * 처음에는 다 채워야 줬다. 그러면 한 주에 몰아서 못 한 사람은
+ * 늘 0원이고, 월요일마다 없던 일이 된다. 안 와도 괜찮다고 해놓고
+ * 주간 목표만 주 단위 숙제였다.
+ *
+ * 그래서 한 칸 올라갈 때마다 그만큼 준다. 다섯 개 중 셋을 했으면
+ * 셋만큼 받는다. 못 채운 게 손해가 아니게 된다.
  */
 
 export type GoalKind = 'QUESTS' | 'DAYS' | 'CATEGORY_DAYS' | 'DISCOVER' | 'BUY'
@@ -30,16 +39,24 @@ export interface WeeklyGoal {
   category?: Category
 }
 
-/** 고를 수 있는 목표들. 매주 여기서 셋을 뽑는다. */
+/**
+ * 고를 수 있는 목표들. 매주 여기서 셋을 뽑는다.
+ *
+ * "나흘 열어보기" 는 무슨 말인지 안 와닿는다는 말을 들었다.
+ * 실제로 세는 건 "퀘스트를 하나라도 끝낸 날" 이라서, 앱을 켜기만
+ * 해서는 안 오른다. 재는 것과 적어둔 말이 달랐다 — 세는 대로 적는다.
+ *
+ * 수도 낮췄다. 퀘스트 여덟 개는 한 주에 몰아서 하는 사람 기준이었다.
+ */
 const POOL: WeeklyGoal[] = [
-  { id: 'q8', kind: 'QUESTS', label: '퀘스트 8개 끝내기', coins: 150, target: 8 },
-  { id: 'q15', kind: 'QUESTS', label: '퀘스트 15개 끝내기', coins: 260, target: 15 },
-  { id: 'd4', kind: 'DAYS', label: '나흘 열어보기', coins: 160, target: 4 },
-  { id: 'd6', kind: 'DAYS', label: '엿새 열어보기', coins: 280, target: 6 },
-  { id: 'find3', kind: 'DISCOVER', label: '처음 보는 물건 3개 만나기', coins: 180, target: 3 },
-  { id: 'find6', kind: 'DISCOVER', label: '처음 보는 물건 6개 만나기', coins: 320, target: 6 },
-  { id: 'buy2', kind: 'BUY', label: '가게에서 2개 사기', coins: 140, target: 2 },
-  { id: 'buy4', kind: 'BUY', label: '가게에서 4개 사기', coins: 240, target: 4 },
+  { id: 'q5', kind: 'QUESTS', label: '퀘스트 5개 끝내기', coins: 300, target: 5 },
+  { id: 'q10', kind: 'QUESTS', label: '퀘스트 10개 끝내기', coins: 500, target: 10 },
+  { id: 'd3', kind: 'DAYS', label: '사흘은 뭐라도 하나 끝내기', coins: 300, target: 3 },
+  { id: 'd5', kind: 'DAYS', label: '닷새는 뭐라도 하나 끝내기', coins: 500, target: 5 },
+  { id: 'find2', kind: 'DISCOVER', label: '처음 보는 물건 2개 만나기', coins: 300, target: 2 },
+  { id: 'find4', kind: 'DISCOVER', label: '처음 보는 물건 4개 만나기', coins: 480, target: 4 },
+  { id: 'buy1', kind: 'BUY', label: '가게에서 하나 사기', coins: 200, target: 1 },
+  { id: 'buy3', kind: 'BUY', label: '가게에서 3개 사기', coins: 420, target: 3 },
 ]
 
 /** 카테고리 목표는 여섯 갈래를 다 만들어두고 그중 하나가 뽑히게 한다 */
@@ -48,10 +65,10 @@ const CATEGORY_GOALS: WeeklyGoal[] = (
 ).map((category) => ({
   id: `cat_${category.toLowerCase()}`,
   kind: 'CATEGORY_DAYS' as const,
-  // 몇 개가 아니라 며칠이다. 하루에 몰아서 하는 것보다 사흘에 나눠 하는 게 낫다.
-  label: `${CATEGORY_LABEL[category]} 쪽으로 사흘`,
-  coins: 200,
-  target: 3,
+  // 몇 개가 아니라 며칠이다. 하루에 몰아서 하는 것보다 나눠 하는 게 낫다.
+  label: `${CATEGORY_LABEL[category]} 쪽으로 이틀`,
+  coins: 320,
+  target: 2,
   category,
 }))
 
@@ -100,8 +117,10 @@ export interface GoalProgress {
   goal: WeeklyGoal
   now: number
   done: boolean
-  /** 이미 받아간 보상인지 */
+  /** 여기까지 온 몫을 다 받았는지 */
   claimed: boolean
+  /** 이 목표에서 지금까지 받은 코인 */
+  earned: number
 }
 
 export function goalProgress(
@@ -131,11 +150,21 @@ export function goalProgress(
       break
   }
 
+  const reached = Math.min(value, goal.target)
   return {
     goal,
-    now: Math.min(value, goal.target),
+    now: reached,
     done: value >= goal.target,
-    claimed: state.claimedWeeklyGoals.includes(goalKey(goal, now)),
+    // 여기까지 온 몫을 다 받았는지. 한 칸씩 주기 때문에 "다 채웠는지" 와 다르다.
+    claimed:
+      reached > 0 &&
+      Array.from({ length: reached }, (_, i) => i + 1).every((step) =>
+        state.claimedWeeklyGoals.includes(stepKey(goal, step, now)),
+      ),
+    /** 지금까지 받은 코인 */
+    earned: Array.from({ length: reached }, (_, i) => i + 1)
+      .filter((step) => state.claimedWeeklyGoals.includes(stepKey(goal, step, now)))
+      .reduce((sum, step) => sum + stepCoins(goal, step), 0),
   }
 }
 
@@ -143,7 +172,54 @@ export function weeklyProgress(state: AppState, now: Date = new Date()): GoalPro
   return weeklyGoals(now).map((goal) => goalProgress(state, goal, now))
 }
 
-/** 지금 받아갈 수 있는 것 */
-export function claimableGoals(state: AppState, now: Date = new Date()): GoalProgress[] {
-  return weeklyProgress(state, now).filter((p) => p.done && !p.claimed)
+/**
+ * 한 칸 올라갈 때마다 받는 몫.
+ *
+ * 나머지는 마지막 칸에 붙인다 — 다 채웠는데 적힌 수보다 덜 받으면
+ * 그건 손해 본 것처럼 보인다.
+ */
+export function stepCoins(goal: WeeklyGoal, step: number): number {
+  const each = Math.floor(goal.coins / goal.target)
+  return step >= goal.target ? goal.coins - each * (goal.target - 1) : each
+}
+
+/** `${그 주 월요일}:${목표id}#${몇 칸째}` */
+export function stepKey(goal: WeeklyGoal, step: number, now: Date = new Date()): string {
+  return `${weekKey(now)}:${goal.id}#${step}`
+}
+
+export interface GoalStepClaim {
+  goal: WeeklyGoal
+  /** 이번에 올라간 칸들 */
+  steps: number[]
+  coins: number
+  /** 이걸로 다 채웠는지 */
+  completed: boolean
+}
+
+/**
+ * 지금 받아갈 수 있는 것.
+ *
+ * 다 채우기를 기다리지 않는다. 한 칸이라도 올라갔으면 그만큼 준다 —
+ * 한 주에 몰아서 못 하는 사람이 늘 0원인 구조를 없애려는 것이다.
+ *
+ * 한 목표에서 여러 칸이 한꺼번에 올라갈 수 있으니(퀘스트를 몰아 끝냈다면)
+ * 목표별로 묶어서 돌려준다. 알림이 세 줄씩 뜨면 그건 축하가 아니라 소음이다.
+ */
+export function claimableGoals(state: AppState, now: Date = new Date()): GoalStepClaim[] {
+  const out: GoalStepClaim[] = []
+
+  for (const { goal, now: value } of weeklyProgress(state, now)) {
+    const steps: number[] = []
+    let coins = 0
+    for (let step = 1; step <= value; step += 1) {
+      if (state.claimedWeeklyGoals.includes(stepKey(goal, step, now))) continue
+      steps.push(step)
+      coins += stepCoins(goal, step)
+    }
+    if (steps.length === 0) continue
+    out.push({ goal, steps, coins, completed: value >= goal.target })
+  }
+
+  return out
 }

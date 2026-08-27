@@ -548,9 +548,9 @@ describe('보상 파이프라인 — 도시가 붙은 뒤', () => {
       difficulty: 'NORMAL',
       reputation,
     })
-    // LOCAL = 3단계 → +6%, 기본 30 Coin → 31.8 → 32
-    expect(here.coins).toBe(32)
-    expect(elsewhere.coins).toBe(30)
+    // LOCAL = 3단계 → +6%, 기본 80 Coin → 84.8 → 85
+    expect(here.coins).toBe(85)
+    expect(elsewhere.coins).toBe(80)
   })
 
   it('마신 것이 맞는 카테고리에만 붙는다', () => {

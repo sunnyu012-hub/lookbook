@@ -10,7 +10,7 @@
 | 트로피 | 14 |
 | 재료 | 8 |
 | 그림 연결됨 | 308 |
-| 그림 없음 (이모지로 그림) | 30 |
+| 그림 없음 (이모지로 그림) | 35 |
 | 그림도 이모지도 없음 | 0 |
 | 경로는 있는데 파일 없음 | 0 |
 | 카탈로그에 없는 파일 | 0 |
@@ -24,14 +24,14 @@
 | | 개수 |
 | --- | --- |
 | PLACEABLE | 257 |
-| DISPLAY_ONLY | 32 |
-| MATERIAL_ONLY | 49 |
+| DISPLAY_ONLY | 36 |
+| MATERIAL_ONLY | 50 |
 
 | 놓는 자리 | 개수 |
 | --- | --- |
 | TABLETOP | 156 |
 | FLOOR | 77 |
-| DECOR | 72 |
+| DECOR | 77 |
 | RUG | 14 |
 | WALL | 14 |
 | HANGING | 4 |
@@ -68,7 +68,12 @@
 - `dungeon_small_crystal` 희미한 수정 — MATERIAL
 - `dungeon_soft_moss` 부드러운 동굴 이끼 — MATERIAL
 - `dungeon_unknown_trace` 작은 흔적 — MATERIAL
+- `dungeon_round_stone` 돌잠이의 작은 돌 — MATERIAL
 - `old_key` 오래된 열쇠 — MAGIC
+- `stone_bean` 돌콩이 — MAGIC
+- `moss_dream` 이끼몽 — MAGIC
+- `glow_pebble` 반딧돌 — MAGIC
+- `stone_sleeper` 돌잠이 — MAGIC
 
 ## 방에 놓을 수 있는데 그림이 없는 것
 

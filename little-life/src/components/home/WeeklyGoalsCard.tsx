@@ -14,8 +14,11 @@ interface WeeklyGoalsCardProps {
  * 도감 240개는 목표로 쓰기엔 너무 멀다. 그래서 이번 주치 세 개만 보여준다.
  * 채우면 그 자리에서 코인이 들어오고, 못 채워도 아무 말 없이 다음 주가 온다.
  *
- * **못 한 것을 세지 않는다.** "3/8" 은 여덟 개 중 다섯을 못 했다는 뜻이 아니라
+ * **못 한 것을 세지 않는다.** "3/5" 는 다섯 개 중 둘을 못 했다는 뜻이 아니라
  * 세 개를 했다는 뜻이다. 남은 수를 크게 쓰지 않는 이유가 그거다.
+ *
+ * 코인은 한 칸씩 들어온다. 그래서 아직 못 채운 줄에도 지금까지 받은 몫을
+ * 적어둔다 — 다 채워야 받는 줄 알면 도중에 그만두게 된다.
  */
 export function WeeklyGoalsCard({ state }: WeeklyGoalsCardProps) {
   const goals = useMemo(() => weeklyProgress(state), [state])
@@ -32,7 +35,7 @@ export function WeeklyGoalsCard({ state }: WeeklyGoalsCardProps) {
         }
       />
       <ul className="space-y-2">
-        {goals.map(({ goal, now, done: finished }) => {
+        {goals.map(({ goal, now, done: finished, earned }) => {
           const pct = Math.round((now / goal.target) * 100)
           return (
             <li
@@ -54,7 +57,7 @@ export function WeeklyGoalsCard({ state }: WeeklyGoalsCardProps) {
                   </span>
                 )}
                 <span className="shrink-0 font-game text-[10.5px] text-butter-deep">
-                  🪙 {goal.coins}
+                  🪙 {earned > 0 && !finished ? `${earned} / ${goal.coins}` : goal.coins}
                 </span>
               </div>
               {!finished && (

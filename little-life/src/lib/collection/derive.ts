@@ -11,7 +11,7 @@ import {
   unclaimedPartials,
   unclaimedSets,
 } from './progress'
-import { claimableGoals, goalKey } from '@/lib/goals'
+import { claimableGoals, stepKey } from '@/lib/goals'
 import { pendingGrants } from './grants'
 import { findCollectionItem } from './catalog'
 import { gardenLevel, gardenXp } from '@/lib/garden/derive'
@@ -163,14 +163,21 @@ export function applyCollectionDerived(
     }
 
     // 5. 이번 주 목표
-    // 버튼을 하나 더 누르게 하지 않는다. 채운 순간 들어온다.
-    for (const { goal } of claimableGoals(current, now)) {
+    // 버튼을 하나 더 누르게 하지 않는다. 한 칸 오른 순간 그만큼 들어온다.
+    for (const { goal, steps, coins, completed } of claimableGoals(current, now)) {
       current = {
         ...current,
-        user: { ...current.user, coins: current.user.coins + goal.coins },
-        claimedWeeklyGoals: [...current.claimedWeeklyGoals, goalKey(goal, now)],
+        user: { ...current.user, coins: current.user.coins + coins },
+        claimedWeeklyGoals: [
+          ...current.claimedWeeklyGoals,
+          ...steps.map((step) => stepKey(goal, step, now)),
+        ],
       }
-      notes.push(`이번 주 목표 · ${goal.label} · 🪙 +${goal.coins}`)
+      notes.push(
+        completed
+          ? `이번 주 목표 · ${goal.label} · 다 채웠어 · 🪙 +${coins}`
+          : `이번 주 목표 · ${goal.label} · 🪙 +${coins}`,
+      )
       changed = true
     }
 

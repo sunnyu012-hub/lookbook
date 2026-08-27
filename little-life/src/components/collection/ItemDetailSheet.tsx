@@ -1,4 +1,4 @@
-import type { AppState, CollectionItemDef } from '@/types'
+import type { AppState, CollectionItemDef, CreatureId } from '@/types'
 import { BottomSheet } from '@/components/ui/BottomSheet'
 import { Button } from '@/components/ui/Button'
 import { ItemIcon } from './ItemIcon'
@@ -10,6 +10,8 @@ import { hintFor } from '@/lib/discovery/hints'
 import { findCollectionItem } from '@/lib/collection/catalog'
 import { COLLECTION_CATEGORY_LABEL } from '@/lib/labels'
 import { cn } from '@/components/ui/cn'
+
+import { creatureDescription } from '@/lib/dungeon/creatureDerive'
 
 interface ItemDetailSheetProps {
   item: CollectionItemDef | null
@@ -37,6 +39,8 @@ export function ItemDetailSheet({
   if (!item) return null
 
   const collection = state.collection
+  // 생명체면 지나온 걸음만큼 기록이 길어진다 (creatureDerive.ts)
+  const creatureText = creatureDescription(state, item.id as CreatureId)
   const found = isDiscovered(collection, item.id)
   const owned = ownedCount(collection, item.id)
   const wished = collection.wishlist.includes(item.id)
@@ -96,8 +100,12 @@ export function ItemDetailSheet({
 
       <p className="mt-3.5 rounded-card bg-canvas px-3.5 py-3 text-[13px] leading-relaxed text-inkdim">
         {/* 본 것은 설명까지 보여준다. 어떤 물건인지 알고 나서 사러 갈지 정하는 게
-            "본 것" 이라는 단계를 둔 이유다. 다만 도감 수에는 안 들어간다. */}
-        {found ? item.description : glimpsed ? `${item.description} — ${hint}` : hint}
+            "본 것" 이라는 단계를 둔 이유다. 다만 도감 수에는 안 들어간다.
+
+            생명체만 다르다 — 물건은 설명 한 줄이 끝까지 그대로지만,
+            생명체는 같이 지낸 만큼 적힌 줄이 늘어난다. 그게 이 칸을
+            따로 낸 이유고, 저장하는 값은 하나도 안 늘린다. */}
+        {found ? (creatureText ?? item.description) : glimpsed ? `${item.description} — ${hint}` : hint}
       </p>
 
       {/* 세트 */}

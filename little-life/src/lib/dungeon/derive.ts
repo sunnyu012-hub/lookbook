@@ -10,11 +10,13 @@ import { seededRandom } from '@/lib/city/seed'
 import { todayKey } from '@/lib/date'
 import { blockedPathSeen, strangeFragmentFound } from '@/lib/quarry/derive'
 import { OLD_KEY_ID, findDungeonItem } from './items'
+import { isInnerDoorOpen } from './creatureDerive'
 import {
   DUNGEON_ROOMS,
   ENERGY_PER_ROOM,
   ENERGY_PER_SEARCH,
   FIRST_ROOM_ID,
+  INNER_HALL_ID,
   SIDE_COINS,
   SIDE_DROPS,
   findRoomDef,
@@ -34,6 +36,7 @@ export function emptyDungeon(): DungeonState {
     tutorialSeenAt: null,
     discoveredRoomIds: [],
     searchedSpotIds: [],
+    creatureLog: [],
   }
 }
 
@@ -44,6 +47,14 @@ export const OLD_KEY_CHAPTER_ID = 'HARU_5'
 
 /** 두 번째 단서로 보는 광물 */
 export const OLD_METAL_ID = 'mineral_old_metal'
+
+/**
+ * 하루한테 안 듣고 스스로 알아보는 데 필요한 금속 조각 수.
+ *
+ * 하나는 "이런 게 나오네" 고, 넷쯤 되면 "다 같은 무늬네" 가 된다.
+ * 채석장 두 자리에서 제법 잘 나오는 것이라 며칠이면 모인다.
+ */
+export const PATTERN_PIECES = 4
 
 export interface ClueView {
   id: string
@@ -59,8 +70,10 @@ export interface ClueView {
  * 열쇠로 가는 단서 셋.
  *
  * 셋 다 이미 하고 있던 일에서 나온다 — 채석장에서 뭘 캤는지,
- * 도감에 뭐가 있는지, 하루와 얼마나 이야기했는지.
- * 단서를 모으려고 따로 해야 하는 일은 하나도 없다.
+ * 도감에 뭐가 있는지. 단서를 모으려고 따로 해야 하는 일은 없다.
+ *
+ * 세 번째만 길이 둘이다. 하루한테 듣거나, 금속 조각을 몇 개 모아
+ * 스스로 알아보거나. 어느 쪽으로 와도 열쇠는 같다.
  */
 export function clueViews(state: AppState): ClueView[] {
   return [
@@ -83,9 +96,21 @@ export function clueViews(state: AppState): ClueView[] {
     {
       id: 'haru_talk',
       name: '돌문 문양 기록',
-      hint: '하루가 문 이야기를 하려다 말았던 것 같다.',
-      note: '하루가 본 적 있다고 했다. 문양이 그 돌조각과 같다.',
-      found: state.discovery.readChapterIds.includes(OLD_KEY_CHAPTER_ID),
+      hint: '금속 조각이 몇 개 모이면 무늬가 눈에 들어올 것 같다.',
+      note: '문양이 그 돌조각과 같다.',
+      // 길이 둘이다. 하루한테 듣거나, 금속 조각을 몇 개 모아
+      // 스스로 알아보거나.
+      //
+      // 하루 이야기 하나만 두면 던전이 "매일 사람한테 말 걸기" 뒤에
+      // 잠긴다. 친밀도는 대화 하루 +2 가 주력이고 이야기는 순서대로만
+      // 열려서, 아무리 많이 놀아도 안 빨라진다 — 이 앱이 처음부터
+      // 안 만들겠다고 한 그 구조다.
+      //
+      // 그렇다고 하루 이야기를 빼지 않는다. 듣고 가는 쪽이 더 좋은
+      // 길이다. 유일한 길이 아니게만 한다.
+      found:
+        state.discovery.readChapterIds.includes(OLD_KEY_CHAPTER_ID) ||
+        (state.quarry.foundMineralCounts[OLD_METAL_ID] ?? 0) >= PATTERN_PIECES,
     },
   ]
 }
@@ -174,7 +199,7 @@ export function deepestRoomId(state: AppState): string | null {
 
 export type GoDeeperResult =
   | { ok: true; state: AppState; roomId: string }
-  | { ok: false; reason: 'NO_MORE' | 'NO_ENERGY' | 'LOCKED' }
+  | { ok: false; reason: 'NO_MORE' | 'NO_ENERGY' | 'LOCKED' | 'DOOR_SHUT' }
 
 /**
  * 안쪽으로 한 구역 더 들어간다.
@@ -190,6 +215,9 @@ export function goDeeper(state: AppState, fromRoomId: string): GoDeeperResult {
   if (!next) return { ok: false, reason: 'NO_MORE' }
   // 이미 가본 데면 그냥 걸어간다. 값을 다시 받지 않는다.
   if (isRoomDiscovered(state, next)) return { ok: true, state, roomId: next }
+  // 안쪽 방은 문이 열려야 간다. 열렸는지는 저장하지 않는다 —
+  // 세 생명체와 친해졌으면 열린 것이다 (creatureDerive.ts).
+  if (next === INNER_HALL_ID && !isInnerDoorOpen(state)) return { ok: false, reason: 'DOOR_SHUT' }
 
   if (state.user.adventureEnergy < ENERGY_PER_ROOM) return { ok: false, reason: 'NO_ENERGY' }
 

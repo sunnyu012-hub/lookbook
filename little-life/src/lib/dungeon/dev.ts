@@ -1,8 +1,10 @@
 import type { AppState } from '@/types'
 import { addItem } from '@/lib/collection/progress'
-import { DUNGEON_ROOMS } from './rooms'
+import { DUNGEON_ROOMS, INNER_HALL_ID } from './rooms'
 import { DUNGEON_FINDS, OLD_KEY_ID } from './items'
 import { OLD_KEY_CHAPTER_ID, OLD_METAL_ID, emptyDungeon } from './derive'
+import { takeCreatureStep } from './creatureDerive'
+import { DOOR_CREATURE_IDS, STEPS_BY_CREATURE } from './creatures'
 import { STRANGE_FRAGMENT_ID } from '@/lib/quarry/derive'
 
 /**
@@ -18,6 +20,8 @@ export type DevDungeonAction =
   | { kind: 'ENERGY' }
   | { kind: 'OPEN_ALL' }
   | { kind: 'FIND_ALL' }
+  | { kind: 'FRIENDLY_THREE' }
+  | { kind: 'CREATURE_STEP'; stepId: string }
   | { kind: 'RESET' }
 
 export function applyDevDungeon(
@@ -58,11 +62,19 @@ export function applyDevDungeon(
     case 'ENERGY':
       return { ...state, user: { ...state.user, adventureEnergy: state.user.maxAdventureEnergy } }
 
-    /** 다섯 구역을 다 가본 것으로 친다 */
+    /**
+     * 문 앞까지 다 가본 것으로 친다.
+     *
+     * 안쪽 방은 여기서 열지 않는다 — 그건 셋과 친해져야 열리는 곳이고,
+     * 검수 도구가 그걸 건너뛰면 문이 실제로 막는지를 확인할 수가 없다.
+     */
     case 'OPEN_ALL':
       return {
         ...state,
-        dungeon: { ...state.dungeon, discoveredRoomIds: DUNGEON_ROOMS.map((r) => r.id) },
+        dungeon: {
+          ...state.dungeon,
+          discoveredRoomIds: DUNGEON_ROOMS.filter((r) => r.id !== INNER_HALL_ID).map((r) => r.id),
+        },
       }
 
     /** 다섯 발견물과 열쇠를 도감에 넣는다 */
@@ -72,6 +84,29 @@ export function applyDevDungeon(
         collection = addItem(collection, item, now).collection
       }
       return { ...state, collection }
+    }
+
+    /**
+     * 문을 여는 셋과 다 친해진 걸로 친다.
+     *
+     * 실제 길과 같이 걸음을 하나씩 남긴다 — 도감 등록도 그 길을 탄다.
+     * 여기서 결과만 세워두면 검수가 검수가 아니게 된다.
+     */
+    case 'FRIENDLY_THREE': {
+      let next = state
+      for (const id of DOOR_CREATURE_IDS) {
+        for (const step of STEPS_BY_CREATURE[id]) {
+          const result = takeCreatureStep(next, step.id, 0, now)
+          if (result.step !== null) next = result.state
+        }
+      }
+      return next
+    }
+
+    /** 걸음 하나만 밟는다 */
+    case 'CREATURE_STEP': {
+      const result = takeCreatureStep(state, action.stepId, 0, now)
+      return result.step === null ? state : result.state
     }
 
     /**

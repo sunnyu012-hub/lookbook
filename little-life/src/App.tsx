@@ -134,6 +134,7 @@ export default function App() {
     enterDungeon,
     goDeeperInDungeon,
     searchDungeonSpot,
+    takeCreatureStep,
     seeBlockedPath,
     plantSeed,
     harvestPlot,
@@ -967,6 +968,7 @@ export default function App() {
         onEnter={enterDungeon}
         onGoDeeper={goDeeperInDungeon}
         onSearch={searchDungeonSpot}
+        onTakeStep={takeCreatureStep}
         onOpenBook={() => {
           setBagView('BOOK')
           setTab('bag')

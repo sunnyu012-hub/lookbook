@@ -70,8 +70,10 @@ export const QUARRY_SPOTS: QuarrySpotDef[] = [
     drops: [
       { itemId: 'mineral_moon_ore', weight: 38 },
       { itemId: 'mineral_star_vein', weight: 38 },
-      // 가장 귀한 것. 여기서만, 그것도 드물게.
-      { itemId: 'mineral_strange_fragment', weight: 6 },
+      // 가장 귀한 것. 여기서만 나온다.
+      // 6 이었을 때는 채석장을 연 뒤에도 열이틀이 더 걸렸다 —
+      // 드문 것과 안 나오는 것은 다르다.
+      { itemId: 'mineral_strange_fragment', weight: 12 },
       { itemId: S, weight: 18 },
     ],
     // 밤에 조금 더 잘 보인다. 낮에 못 얻는 건 하나도 없다 —

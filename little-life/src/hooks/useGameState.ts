@@ -85,6 +85,7 @@ import {
   isGateFound,
   search as searchSpot,
 } from '@/lib/dungeon/derive'
+import { takeCreatureStep as takeStep } from '@/lib/dungeon/creatureDerive'
 import { FIRST_SEEDS } from '@/lib/garden/crops'
 import {
   ENERGY_BOSS,
@@ -266,6 +267,8 @@ interface GameState {
   goDeeperInDungeon: (fromRoomId: string) => string | null
   /** 한 자리를 들여다본다. 못 하면 null. */
   searchDungeonSpot: (spotId: string) => DungeonFind | null
+  /** 생명체와 한 걸음. 읽을 줄을 돌려준다. 못 밟으면 null. */
+  takeCreatureStep: (stepId: string, choiceIndex: number) => string[] | null
   /** 빈 밭에 씨앗 하나를 심는다 */
   plantSeed: (plotIndex: number, cropId: string) => PlantResult
   /** 다 자란 것을 거둔다 */
@@ -2346,6 +2349,33 @@ export function useGameState(): GameState {
     [commit],
   )
 
+  /**
+   * 생명체와 한 걸음.
+   *
+   * 모험 에너지를 쓰지 않는다 — 관계가 자원을 쓰기 시작하면
+   * 만나러 오는 게 아니라 소모하러 오는 게 된다.
+   *
+   * 처음 만나는 순간에는 도감이 늘어나므로 기존 발견 사슬을 한 번 태운다.
+   * (채석장 exploreQuarrySpot · 던전 searchDungeonSpot 과 같은 길이다)
+   */
+  const takeCreatureStepById = useCallback(
+    (stepId: string, choiceIndex: number): string[] | null => {
+      const prev = stateRef.current
+      const now = new Date()
+      const result = takeStep(prev, stepId, choiceIndex, now)
+      if (result.step === null) return null
+
+      const derived = applyCollectionDerived(result.state, now)
+      const discovered = applyDiscovery(derived.state, now)
+      const skinned = applySkinUnlocks(discovered.state)
+      if (discovered.notes.length > 0) setDiscoveryNotes(discovered.notes)
+      if (skinned.unlocked.length > 0) setNewSkins(skinned.unlocked)
+      commit(skinned.state)
+      return result.lines
+    },
+    [commit],
+  )
+
   const devWorkshop = useCallback(
     (action: DevWorkshopAction) => {
       // 만들기로 얻은 것도 도감·세트·트로피·발견 사슬을 한 번 태운다.
@@ -2448,6 +2478,7 @@ export function useGameState(): GameState {
       enterDungeon,
       goDeeperInDungeon,
       searchDungeonSpot,
+      takeCreatureStep: takeCreatureStepById,
       plantSeed,
       harvestPlot,
       useDew,
@@ -2523,6 +2554,7 @@ export function useGameState(): GameState {
       enterDungeon,
       goDeeperInDungeon,
       searchDungeonSpot,
+      takeCreatureStepById,
       plantSeed,
       harvestPlot,
       useDew,

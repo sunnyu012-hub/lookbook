@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { AppState } from '@/types'
+import type { AppState, CreatureId } from '@/types'
 import { createDefaultState } from '@/store/defaultState'
 import { sanitizeState } from '@/store/localStorage'
 import { sanitizeDungeon, STATE_VERSION } from '@/store/migrate'
@@ -7,11 +7,13 @@ import {
   findCollectionItem,
   CATALOG,
   catalogTotal,
+  CREATURE_CATALOG,
   EXPLORED_CATALOG,
   MATERIAL_CATALOG,
   MINERAL_CATALOG,
+  PLACEABLE_CATALOG,
 } from '@/lib/collection/catalog'
-import { isDiscovered } from '@/lib/collection/progress'
+import { isDiscovered, ownedCount } from '@/lib/collection/progress'
 import { applyDiscovery } from '@/lib/discovery/derive'
 import { STORY_CHAPTERS } from '@/lib/discovery/stories'
 import { conditionProgress } from '@/lib/discovery/secrets'
@@ -27,6 +29,7 @@ import {
 import {
   OLD_KEY_CHAPTER_ID,
   OLD_METAL_ID,
+  PATTERN_PIECES,
   TRACE_ID,
   applyOldKey,
   clueViews,
@@ -44,6 +47,24 @@ import {
   traceFound,
 } from '@/lib/dungeon/derive'
 import { applyDevDungeon } from '@/lib/dungeon/dev'
+import {
+  CREATURES,
+  CREATURE_STEPS,
+  DOOR_CREATURE_IDS,
+  STEPS_BY_CREATURE,
+} from '@/lib/dungeon/creatures'
+import {
+  ambientInRoom,
+  creatureDescription,
+  creatureNotes,
+  creatureStage,
+  isCreatureFriendly,
+  isDungeonStoryDone,
+  isInnerDoorOpen,
+  isSleeperFreed,
+  nextStep,
+  takeCreatureStep,
+} from '@/lib/dungeon/creatureDerive'
 
 /** 채석장까지는 이미 다녀온 사람 */
 function base(over: Partial<AppState> = {}): AppState {
@@ -85,9 +106,9 @@ describe('A. 예전 저장이 그대로 열린다', () => {
     expect(loaded.user.name).toBe(s.user.name)
   })
 
-  it('A2 스키마 버전이 16 이다', () => {
-    expect(STATE_VERSION).toBe(16)
-    expect(createDefaultState().version).toBe(16)
+  it('A2 스키마 버전이 17 이다', () => {
+    expect(STATE_VERSION).toBe(17)
+    expect(createDefaultState().version).toBe(17)
   })
 
   it('A3 모르는 구역·자리가 적혀 있으면 조용히 버린다', () => {
@@ -282,10 +303,12 @@ describe('G. 안쪽으로 들어갈 때만 에너지를 쓴다', () => {
   })
 
   it('G3 마지막 구역에서는 더 갈 데가 없다', () => {
-    const result = goDeeper(inside(), 'INNER_DOOR')
+    // 구역이 늘어나도 이 테스트가 같이 틀리지 않게 마지막을 목록에서 가져온다
+    const last = DUNGEON_ROOMS[DUNGEON_ROOMS.length - 1].id
+    const result = goDeeper(inside(), last)
     expect(result.ok).toBe(false)
     if (!result.ok) expect(result.reason).toBe('NO_MORE')
-    expect(nextRoomId('INNER_DOOR')).toBeNull()
+    expect(nextRoomId(last)).toBeNull()
   })
 
   it('G4 안 가본 데서는 출발할 수 없다', () => {
@@ -390,7 +413,7 @@ describe('J. 어디까지 갔는지 남는다', () => {
   it('J2 가장 안쪽이 어디인지 센다', () => {
     expect(deepestRoomId(base())).toBeNull()
     expect(deepestRoomId(enterDungeon(withClues()))).toBe('GATE')
-    expect(deepestRoomId(inside())).toBe('INNER_DOOR')
+    expect(deepestRoomId(inside())).toBe(DUNGEON_ROOMS[DUNGEON_ROOMS.length - 1].id)
   })
 
   it('J3 진행률을 숫자로 만들지 않는다', () => {
@@ -477,5 +500,366 @@ describe('N. 도감의 탐험 칸', () => {
 
   it('N3 240칸 분모는 그대로다', () => {
     expect(catalogTotal({})).toBe(240)
+  })
+})
+
+describe('O. 세 번째 단서는 길이 둘이다', () => {
+  /**
+   * 하루 이야기 하나만 두면 던전이 "매일 사람한테 말 걸기" 뒤에 잠긴다.
+   * 친밀도는 대화 하루 +2 가 주력이고 이야기는 순서대로만 열려서,
+   * 아무리 많이 놀아도 안 빨라진다.
+   */
+  it('O1 하루한테 안 들어도 금속 조각을 모으면 열린다', () => {
+    const s = base()
+    const self: AppState = {
+      ...s,
+      quarry: {
+        ...s.quarry,
+        foundMineralCounts: { [STRANGE_FRAGMENT_ID]: 1, [OLD_METAL_ID]: PATTERN_PIECES },
+        blockedPathSeen: true,
+      },
+      // 하루와 한 마디도 안 했다
+      discovery: { ...s.discovery, readChapterIds: [] },
+    }
+    expect(hasOldKey(self)).toBe(true)
+    expect(isGateFound(self)).toBe(true)
+  })
+
+  it('O2 조각이 모자라면 아직 아니다', () => {
+    const s = base()
+    const few: AppState = {
+      ...s,
+      quarry: {
+        ...s.quarry,
+        foundMineralCounts: { [STRANGE_FRAGMENT_ID]: 1, [OLD_METAL_ID]: PATTERN_PIECES - 1 },
+        blockedPathSeen: true,
+      },
+    }
+    expect(foundClueCount(few)).toBe(2)
+    expect(hasOldKey(few)).toBe(false)
+  })
+
+  it('O3 하루한테 들으면 조각 하나로도 열린다 — 듣고 가는 쪽이 더 빠르다', () => {
+    expect(hasOldKey(withClues())).toBe(true)
+    expect(withClues().quarry.foundMineralCounts[OLD_METAL_ID]).toBe(1)
+  })
+})
+
+// ══════════════════════════════════════════════════════════
+// UPDATE F — 생명체와 돌잠이
+// ══════════════════════════════════════════════════════════
+
+/** 문 앞까지 와 있고 에너지가 넉넉한 사람 */
+function atDoor(over: Partial<AppState> = {}): AppState {
+  return inside(over)
+}
+
+/** 그 생명체의 걸음이 모두 n 개가 될 때까지 밟는다 */
+function walk(state: AppState, creatureId: CreatureId, n = Infinity): AppState {
+  let next = state
+  for (;;) {
+    const done = STEPS_BY_CREATURE[creatureId].filter((s) =>
+      next.dungeon.creatureLog.includes(s.id),
+    ).length
+    if (done >= n) break
+    const step = nextStep(next, creatureId)
+    if (!step) break
+    const r = takeCreatureStep(next, step.id, 0)
+    if (r.step === null) break
+    next = r.state
+  }
+  return next
+}
+
+/** 문을 여는 셋과 다 친해진 사람 */
+function friendlyThree(over: Partial<AppState> = {}): AppState {
+  let s = atDoor(over)
+  for (const id of DOOR_CREATURE_IDS) s = walk(s, id)
+  return s
+}
+
+describe('P. 생명체 — 저장은 배열 하나뿐', () => {
+  it('P1 새 저장 자리는 creatureLog 하나만 늘었다', () => {
+    expect(Object.keys(emptyDungeon()).sort()).toEqual([
+      'creatureLog',
+      'discoveredRoomIds',
+      'searchedSpotIds',
+      'tutorialSeenAt',
+    ])
+  })
+
+  it('P2 파생 boolean 을 저장하지 않는다', () => {
+    const s = friendlyThree()
+    const saved = JSON.stringify(s.dungeon)
+    for (const banned of ['Friendly', 'innerDoorOpen', 'hasRockBean', 'stoneSleeperSolved']) {
+      expect(saved).not.toContain(banned)
+    }
+  })
+
+  it('P3 모르는 걸음이 적혀 있으면 조용히 버린다', () => {
+    const d = sanitizeDungeon({
+      discoveredRoomIds: ['GATE'],
+      searchedSpotIds: [],
+      creatureLog: ['stone_bean:discover', 'ghost:step', 'stone_bean:discover'],
+    })
+    expect(d.creatureLog).toEqual(['stone_bean:discover'])
+  })
+
+  it('P4 예전 저장에 creatureLog 가 없어도 빈 배열로 열린다', () => {
+    const s = createDefaultState()
+    const old = { ...s, version: 16, dungeon: { ...s.dungeon, creatureLog: undefined } }
+    const loaded = sanitizeState(old)!
+    expect(loaded.dungeon.creatureLog).toEqual([])
+    // UPDATE E 진행도는 그대로다
+    expect(loaded.dungeon.discoveredRoomIds).toEqual(s.dungeon.discoveredRoomIds)
+  })
+})
+
+describe('Q. 단계는 걸음에서 계산한다', () => {
+  it('Q1 아무것도 안 했으면 모르는 사이다', () => {
+    expect(creatureStage(atDoor(), 'stone_bean')).toBe('UNKNOWN')
+    expect(isCreatureFriendly(atDoor(), 'stone_bean')).toBe(false)
+  })
+
+  it('Q2 돌콩이 다섯 걸음이 순서대로 단계를 올린다', () => {
+    const want = ['DISCOVERED', 'OBSERVED', 'UNDERSTOOD', 'HELPED', 'FRIENDLY']
+    let s = atDoor()
+    for (let i = 0; i < want.length; i += 1) {
+      s = walk(s, 'stone_bean', i + 1)
+      expect(creatureStage(s, 'stone_bean'), String(i)).toBe(want[i])
+    }
+  })
+
+  it('Q3 순서를 건너뛸 수 없다', () => {
+    const r = takeCreatureStep(atDoor(), 'stone_bean:friendly', 0)
+    expect(r.step).toBeNull()
+  })
+
+  it('Q4 같은 걸음을 두 번 밟아도 한 번만 남는다', () => {
+    const once = takeCreatureStep(atDoor(), 'stone_bean:discover', 0)
+    expect(once.step).not.toBeNull()
+    if (once.step === null) return
+    const twice = takeCreatureStep(once.state, 'stone_bean:discover', 0)
+    expect(twice.step).toBeNull()
+    expect(once.state.dungeon.creatureLog).toEqual(['stone_bean:discover'])
+  })
+
+  it('Q5 안 가본 방의 걸음은 못 밟는다', () => {
+    const s = enterDungeon(withClues())
+    // 무너진 복도까지 안 갔다
+    expect(takeCreatureStep(s, 'stone_bean:discover', 0).step).toBeNull()
+  })
+
+  it('Q6 어느 갈래를 골라도 진행은 같다', () => {
+    const a = takeCreatureStep(walk(atDoor(), 'stone_bean', 1), 'stone_bean:observe', 0)
+    const b = takeCreatureStep(walk(atDoor(), 'stone_bean', 1), 'stone_bean:observe', 1)
+    expect(a.step).not.toBeNull()
+    expect(b.step).not.toBeNull()
+    if (a.step === null || b.step === null) return
+    expect(creatureStage(a.state, 'stone_bean')).toBe(creatureStage(b.state, 'stone_bean'))
+    // 읽는 줄만 다르다
+    expect(a.lines).not.toEqual(b.lines)
+  })
+})
+
+describe('R. 도감 기록이 같이 지낸 만큼 길어진다', () => {
+  it('R1 만나기 전에는 아무 기록도 없다', () => {
+    expect(creatureNotes(atDoor(), 'stone_bean')).toEqual([])
+  })
+
+  it('R2 걸음마다 한 줄씩 붙는다', () => {
+    let s = walk(atDoor(), 'stone_bean', 1)
+    expect(creatureNotes(s, 'stone_bean')).toHaveLength(1)
+    s = walk(s, 'stone_bean', 2)
+    expect(creatureNotes(s, 'stone_bean')).toHaveLength(2)
+    s = walk(s, 'stone_bean')
+    const notes = creatureNotes(s, 'stone_bean')
+    expect(notes[0]).toBe('돌처럼 웅크리고 있는 작은 생명체.')
+    expect(notes.at(-1)).toBe('이제 가까이 가도 숨지 않는다.')
+  })
+
+  it('R3 도감 카드가 그 기록을 쓴다', () => {
+    const s = walk(atDoor(), 'stone_bean')
+    expect(creatureDescription(s, 'stone_bean')).toContain('이제 가까이 가도 숨지 않는다')
+  })
+})
+
+describe('S. 안쪽 문', () => {
+  it('S1 셋과 친해지기 전에는 안 열린다', () => {
+    let s = atDoor()
+    expect(isInnerDoorOpen(s)).toBe(false)
+    s = walk(s, 'stone_bean')
+    expect(isInnerDoorOpen(s)).toBe(false)
+    s = walk(s, 'moss_dream')
+    expect(isInnerDoorOpen(s)).toBe(false)
+  })
+
+  it('S2 셋이 다 되면 열린다 — 저장하지 않는다', () => {
+    const s = friendlyThree()
+    expect(isInnerDoorOpen(s)).toBe(true)
+    expect(JSON.stringify(s.dungeon)).not.toContain('Door')
+  })
+
+  it('S3 문이 안 열렸으면 안쪽 방에 못 들어간다', () => {
+    const s = { ...atDoor(), dungeon: { ...atDoor().dungeon, discoveredRoomIds: ['GATE', 'ENTRANCE', 'CORRIDOR', 'SMALL_ROOM', 'INNER_DOOR'] } }
+    const r = goDeeper(s, 'INNER_DOOR')
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.reason).toBe('DOOR_SHUT')
+  })
+
+  it('S4 열리면 들어갈 수 있다 — 새 방이라 에너지 1', () => {
+    const base = friendlyThree()
+    const s = { ...base, dungeon: { ...base.dungeon, discoveredRoomIds: ['GATE', 'ENTRANCE', 'CORRIDOR', 'SMALL_ROOM', 'INNER_DOOR'] } }
+    const before = s.user.adventureEnergy
+    const r = goDeeper(s, 'INNER_DOOR')
+    expect(r.ok).toBe(true)
+    if (r.ok) {
+      expect(r.roomId).toBe('INNER_HALL')
+      expect(r.state.user.adventureEnergy).toBe(before - 1)
+    }
+  })
+})
+
+describe('T. 돌잠이 — 전투 없이 이야기로 푼다', () => {
+  it('T1 금속을 빼기 전에는 이름이 안 나온다', () => {
+    for (const step of STEPS_BY_CREATURE.stone_sleeper) {
+      if (step.id === 'stone_sleeper:free') break
+      expect(step.title, step.id).not.toContain('돌잠이')
+    }
+  })
+
+  it('T2 오해가 풀리는 문장이 있다', () => {
+    const metal = STEPS_BY_CREATURE.stone_sleeper.find((s) => s.id === 'stone_sleeper:metal')!
+    expect(metal.after?.join(' ')).toContain('공격하려는 게 아니라, 움직이지 못하고 있었던 것 같다')
+  })
+
+  it('T3 금속을 빼내면 그때 발견된다', () => {
+    let s = friendlyThree()
+    s = walk(s, 'stone_sleeper', 3)
+    expect(isDiscovered(s.collection, 'stone_sleeper')).toBe(false)
+    s = walk(s, 'stone_sleeper', 4)
+    expect(isSleeperFreed(s)).toBe(true)
+    expect(isDiscovered(s.collection, 'stone_sleeper')).toBe(true)
+  })
+
+  it('T4 마지막 걸음까지 가면 이야기가 끝난다', () => {
+    const s = walk(friendlyThree(), 'stone_sleeper')
+    expect(isDungeonStoryDone(s)).toBe(true)
+  })
+
+  it('T5 전투 값이 하나도 없다', () => {
+    const text = JSON.stringify(STEPS_BY_CREATURE.stone_sleeper)
+    for (const banned of ['hp', 'HP', 'damage', '공격력', '전투', '패배']) {
+      expect(text).not.toContain(banned)
+    }
+  })
+
+  it('T6 이야기 끝 알림이 뜬다', () => {
+    const { notes } = applyDiscovery(walk(friendlyThree(), 'stone_sleeper'))
+    expect(notes.some((n) => n.key === 'dungeon:story-done')).toBe(true)
+  })
+})
+
+describe('U. 관계 진행에 에너지를 쓰지 않는다', () => {
+  it('U1 에너지 0 이어도 다섯 걸음을 다 밟는다', () => {
+    const zero = { ...atDoor(), user: { ...atDoor().user, adventureEnergy: 0 } }
+    const s = walk(zero, 'stone_bean')
+    expect(isCreatureFriendly(s, 'stone_bean')).toBe(true)
+    expect(s.user.adventureEnergy).toBe(0)
+  })
+
+  it('U2 걸음을 밟아도 코인이 안 움직인다', () => {
+    const before = atDoor().user.coins
+    const s = walk(atDoor(), 'stone_bean')
+    expect(s.user.coins).toBe(before)
+  })
+})
+
+describe('V. 생명체는 물건이 아니다', () => {
+  const ids = CREATURE_CATALOG.map((c) => c.id)
+
+  it('V1 240칸에 안 들어간다', () => {
+    expect(CATALOG.some((i) => ids.includes(i.id))).toBe(false)
+    expect(catalogTotal({})).toBe(240)
+  })
+
+  it('V2 재료 목록에 안 들어간다 — 퀘스트 드롭 풀이 안 흔들린다', () => {
+    expect(MATERIAL_CATALOG.some((i) => ids.includes(i.id))).toBe(false)
+  })
+
+  it('V3 방에 못 놓는다', () => {
+    expect(PLACEABLE_CATALOG.some((i) => ids.includes(i.id))).toBe(false)
+    for (const c of CREATURE_CATALOG) expect(c.placeable, c.id).toBe(false)
+  })
+
+  it('V4 어디서도 살 수 없고 만들 수 없다', () => {
+    for (const c of CREATURE_CATALOG) {
+      expect(c.acquisitionSources, c.id).toEqual([])
+      expect(c.price, c.id).toBeUndefined()
+      expect(c.sellPrice, c.id).toBeUndefined()
+    }
+  })
+
+  it('V5 개수가 쌓이지 않는다 — 소유물이 아니다', () => {
+    for (const c of CREATURE_CATALOG) {
+      expect(c.stackable, c.id).toBe(false)
+      expect(c.unique, c.id).toBe(true)
+    }
+    const s = walk(atDoor(), 'stone_bean', 1)
+    expect(ownedCount(s.collection, 'stone_bean')).toBeLessThanOrEqual(1)
+  })
+
+  it('V6 탐험 칸과 섞이지 않는다', () => {
+    expect(EXPLORED_CATALOG.some((i) => ids.includes(i.id))).toBe(false)
+    expect(CREATURE_CATALOG).toHaveLength(4)
+  })
+
+  it('V7 세트에도 안 들어간다', () => {
+    for (const c of CREATURE_CATALOG) expect(c.collectionSetIds, c.id).toEqual([])
+  })
+})
+
+describe('W. 오늘 보이는 모습', () => {
+  it('W1 친해지기 전에는 안 뜬다', () => {
+    expect(ambientInRoom(atDoor(), 'CORRIDOR')).toEqual([])
+  })
+
+  it('W2 친해진 뒤에는 날마다 다를 수 있고, 같은 날은 같다', () => {
+    const s = walk(atDoor(), 'stone_bean')
+    const day = new Date('2026-05-05T09:00:00Z')
+    expect(ambientInRoom(s, 'CORRIDOR', day)).toEqual(ambientInRoom(s, 'CORRIDOR', day))
+  })
+
+  it('W3 매일 뜨지는 않는다', () => {
+    const s = walk(atDoor(), 'stone_bean')
+    const days = Array.from({ length: 30 }, (_, i) =>
+      ambientInRoom(s, 'CORRIDOR', new Date(`2026-06-${String(i + 1).padStart(2, '0')}T09:00:00Z`)),
+    )
+    expect(days.some((d) => d.length === 0)).toBe(true)
+    expect(days.some((d) => d.length > 0)).toBe(true)
+  })
+})
+
+describe('X. 금지한 것이 실제로 없다', () => {
+  it('X1 호감도 숫자도 단계 이름도 화면 문구에 안 쓴다', () => {
+    const text = JSON.stringify(CREATURE_STEPS) + JSON.stringify(CREATURES)
+    for (const banned of ['친밀도', 'Bond', '★', '레벨', 'Lv.', '포획', '먹이', '가챠']) {
+      expect(text).not.toContain(banned)
+    }
+  })
+
+  it('X2 사람처럼 말하는 대사가 없다', () => {
+    const text = JSON.stringify(CREATURE_STEPS)
+    for (const banned of ['고마워', '친구가 되었어', '클리어', '해방']) {
+      expect(text).not.toContain(banned)
+    }
+  })
+
+  it('X3 실패 분기가 없다 — 모든 갈래가 그냥 진행된다', () => {
+    for (const step of CREATURE_STEPS) {
+      if (!step.choices) continue
+      expect(step.choices.length, step.id).toBe(2)
+      for (const c of step.choices) expect(c.lines.length, step.id).toBeGreaterThan(0)
+    }
   })
 })

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { AppState, DungeonFind, DungeonSpotView } from '@/types'
+import type { AppState, CreatureStepDef, DungeonFind, DungeonSpotView } from '@/types'
 import { Portal } from '@/components/ui/Portal'
 import { BottomSheet } from '@/components/ui/BottomSheet'
 import { Button } from '@/components/ui/Button'
@@ -12,6 +12,8 @@ import {
   dungeonView,
   nextRoomId,
 } from '@/lib/dungeon/derive'
+import { ambientInRoom, isInnerDoorOpen, stepsInRoom } from '@/lib/dungeon/creatureDerive'
+import { CreatureSheet } from './CreatureSheet'
 import { DungeonTutorial } from './DungeonTutorial'
 import { FoundOverlay } from './FoundOverlay'
 import { cn } from '@/components/ui/cn'
@@ -23,6 +25,8 @@ interface DungeonScreenProps {
   onEnter: () => void
   onGoDeeper: (fromRoomId: string) => string | null
   onSearch: (spotId: string) => DungeonFind | null
+  /** 생명체와 한 걸음. 읽을 줄을 돌려준다. */
+  onTakeStep: (stepId: string, choiceIndex: number) => string[] | null
   onOpenBook: () => void
 }
 
@@ -46,6 +50,7 @@ export function DungeonScreen({
   onEnter,
   onGoDeeper,
   onSearch,
+  onTakeStep,
   onOpenBook,
 }: DungeonScreenProps) {
   const [roomId, setRoomId] = useState<string>(FIRST_ROOM_ID)
@@ -54,6 +59,7 @@ export function DungeonScreen({
   const [movingTo, setMovingTo] = useState(false)
   const [tutorialOpen, setTutorialOpen] = useState(false)
   const [searching, setSearching] = useState(false)
+  const [openStep, setOpenStep] = useState<CreatureStepDef | null>(null)
 
   useOverlay(open, onClose)
 
@@ -78,10 +84,17 @@ export function DungeonScreen({
   if (!open) return null
 
   const room = view.rooms.find((r) => r.def.id === roomId) ?? view.rooms[0]
+  // 이 방에서 지금 밟을 수 있는 걸음과, 친해진 뒤 가끔 보이는 모습
+  const steps = stepsInRoom(state, room.def.id)
+  const ambient = ambientInRoom(state, room.def.id)
+  const doorOpen = isInnerDoorOpen(state)
   const next = nextRoomId(room.def.id)
   const nextRoom = next ? view.rooms.find((r) => r.def.id === next) : null
   const nextIsNew = nextRoom !== null && nextRoom !== undefined && !nextRoom.discovered
-  const canGoNext = nextRoom !== null && (!nextIsNew || view.energy >= ENERGY_PER_ROOM)
+  // 안쪽 방은 셋과 친해져야 열린다. 열렸는지는 저장하지 않는다.
+  const shutDoor = nextRoom?.def.id === 'INNER_HALL' && !doorOpen
+  const canGoNext =
+    nextRoom !== null && !shutDoor && (!nextIsNew || view.energy >= ENERGY_PER_ROOM)
   const visited = view.rooms.filter((r) => r.discovered)
 
   const search = (spotId: string) => {
@@ -139,6 +152,54 @@ export function DungeonScreen({
             <h2 className="mt-2 text-[17px] font-semibold text-ink">{room.def.name}</h2>
             <p className="mt-1 text-[13px] leading-relaxed text-inkdim">{room.def.description}</p>
           </div>
+
+          {/* 오늘 보이는 모습. 눌러도 아무 일 없고 진행도 없다. */}
+          {ambient.length > 0 && (
+            <div className="mt-3 space-y-1.5">
+              {ambient.map((line) => (
+                <p
+                  key={line}
+                  className="rounded-card bg-sage-soft/50 px-3.5 py-2.5 text-[12.5px] leading-relaxed text-inkdim"
+                >
+                  {line}
+                </p>
+              ))}
+            </div>
+          )}
+
+          {/* 지금 여기서 만날 수 있는 것 */}
+          {steps.length > 0 && (
+            <>
+              <p className="mb-2 mt-4 text-[12px] text-inkdim">여기</p>
+              <ul className="space-y-2">
+                {steps.map((step) => (
+                  <li key={step.id}>
+                    <button
+                      type="button"
+                      onClick={() => setOpenStep(step)}
+                      className={cn(
+                        'flex w-full items-center gap-3 rounded-card border border-line bg-surface px-3.5 py-3.5 text-left',
+                        'transition-transform duration-150 ease-out active:scale-[0.98]',
+                      )}
+                    >
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-btn bg-sunken text-[22px]">
+                        {step.icon}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[14.5px] font-medium text-ink">
+                          {step.title}
+                        </span>
+                        <span className="mt-0.5 block truncate text-[12px] text-inkdim">
+                          {step.teaser}
+                        </span>
+                      </span>
+                      <span className="shrink-0 text-[12px] text-inkfaint">›</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
 
           {/* 여기서 볼 수 있는 것 */}
           <p className="mb-2 mt-4 text-[12px] text-inkdim">둘러보기</p>
@@ -200,7 +261,9 @@ export function DungeonScreen({
                       ? '걸어가는 중…'
                       : nextRoom.discovered
                         ? '가본 곳이야'
-                        : `처음 가는 길 · 탐험 에너지 ${ENERGY_PER_ROOM}`}
+                        : shutDoor
+                          ? '아직 안 열린다'
+                          : `처음 가는 길 · 탐험 에너지 ${ENERGY_PER_ROOM}`}
                   </span>
                 </span>
                 <span className="shrink-0 text-[12px] text-inkfaint">›</span>
@@ -294,6 +357,8 @@ export function DungeonScreen({
           </div>
         )}
       </BottomSheet>
+
+      <CreatureSheet step={openStep} onClose={() => setOpenStep(null)} onTake={onTakeStep} />
 
       <FoundOverlay
         find={found}

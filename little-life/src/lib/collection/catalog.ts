@@ -9,7 +9,7 @@ import { CROP_ITEMS, GARDEN_ITEMS } from '@/lib/garden/items'
 import { FOOD_ITEMS, KITCHEN_ITEMS } from '@/lib/kitchen/items'
 import { WORKSHOP_ITEMS } from './workshop'
 import { MINERAL_ITEMS } from '@/lib/quarry/minerals'
-import { DUNGEON_FINDS, STORY_ITEMS } from '@/lib/dungeon/items'
+import { CREATURE_ITEMS, DUNGEON_FINDS, STORY_ITEMS } from '@/lib/dungeon/items'
 import { GARDEN_DECOR } from '@/lib/garden/items'
 import { KITCHEN_DECOR } from '@/lib/kitchen/items'
 
@@ -115,6 +115,18 @@ export const DUNGEON_CATALOG: CollectionItemDef[] = DUNGEON_FINDS.map(finish)
  */
 export const STORY_CATALOG: CollectionItemDef[] = STORY_ITEMS.map(finish)
 
+/**
+ * 잠든 돌문에 사는 것들 — 도감의 "생명체" 칸.
+ *
+ * 광물·발견물과 같은 칸에 두지 않는다. 저건 주워 온 물건이고
+ * 이건 만난 상대다. 카드에 적히는 것도 다르다 — 물건은 설명 한 줄이
+ * 끝까지 그대로지만, 생명체는 지나온 걸음마다 한 줄씩 늘어난다
+ * (creatureDescription, lib/dungeon/creatureDerive.ts).
+ *
+ * 240 분모는 그대로다. 작물·요리·만든 것과 같은 방식이다.
+ */
+export const CREATURE_CATALOG: CollectionItemDef[] = CREATURE_ITEMS.map(finish)
+
 /** 이름으로 찾을 수 있는 것 전부 */
 export const ALL_COLLECTION_ITEMS: CollectionItemDef[] = [
   ...CATALOG,
@@ -126,6 +138,7 @@ export const ALL_COLLECTION_ITEMS: CollectionItemDef[] = [
   ...MINERAL_CATALOG,
   ...DUNGEON_CATALOG,
   ...STORY_CATALOG,
+  ...CREATURE_CATALOG,
 ]
 
 /**
