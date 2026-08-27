@@ -17,7 +17,7 @@
 | id 중복 | 0 |
 | 경로 중복 | 0 |
 | 캐릭터 모습 | 120 |
-| 모습 그림 없음 | 96 |
+| 모습 그림 없음 | 76 |
 | 모습 작은 그림 없음 | 0 |
 | 모습 캔버스 다름 | 0 |
 | 모습 id 중복 | 0 |
@@ -45,7 +45,7 @@
 
 ## 그림이 없는 캐릭터 모습
 
-캔버스 기준 367x508. fallback 이 있어도 여기 남은 건 없는 것이다.
+캔버스 기준 433x508. fallback 이 있어도 여기 남은 건 없는 것이다.
 
 - `night_bookkeeper` 심야 서점지기 — 3팩 · 비밀스러운 도시의 사람들
 - `starlight_patissier` 별빛 파티시에 — 3팩 · 비밀스러운 도시의 사람들
@@ -59,14 +59,6 @@
 - `night_market_trader` 야시장 상인 — 3팩 · 비밀스러운 도시의 사람들
 - `treasure_appraiser` 보물 감정사 — 3팩 · 비밀스러운 도시의 사람들
 - `neon_dj` 네온 DJ — 3팩 · 비밀스러운 도시의 사람들
-- `cherry_blossom_picnic` 벚꽃 피크닉 — 4팩 · 사계절의 축제
-- `spring_rain_walker` 봄비 산책자 — 4팩 · 사계절의 축제
-- `summer_firework_keeper` 여름밤 불꽃지기 — 4팩 · 사계절의 축제
-- `marine_vacance` 마린 바캉스 — 4팩 · 사계절의 축제
-- `peach_holiday` 복숭아빛 휴일 — 4팩 · 사계절의 축제
-- `autumn_leaf_explorer` 단풍 탐험가 — 4팩 · 사계절의 축제
-- `halloween_candy_witch` 핼러윈 캔디 마녀 — 4팩 · 사계절의 축제
-- `ghost_hotel_bellboy` 유령 호텔 벨보이 — 4팩 · 사계절의 축제
 - `first_snow_angel` 첫눈의 천사 — 4팩 · 사계절의 축제
 - `christmas_idol` 크리스마스 아이돌 — 4팩 · 사계절의 축제
 - `new_year_pouch` 새해 복주머니 — 4팩 · 사계절의 축제
@@ -79,18 +71,6 @@
 - `dessert_alchemist` 디저트 연금술사 — 5팩 · 생활 길드의 모험가들
 - `mushroom_forager` 버섯 채집가 — 5팩 · 생활 길드의 모험가들
 - `moonlight_angler` 달빛 낚시꾼 — 5팩 · 생활 길드의 모험가들
-- `treasure_hunter` 보물 사냥꾼 — 5팩 · 생활 길드의 모험가들
-- `slime_researcher` 슬라임 연구원 — 5팩 · 생활 길드의 모험가들
-- `dungeon_idol` 던전 아이돌 — 5팩 · 생활 길드의 모험가들
-- `legendary_guildmaster` 전설의 길드장 — 5팩 · 생활 길드의 모험가들
-- `dawn_black_cat` 새벽의 검은 고양이 — 6팩 · 또 다른 세계의 나
-- `moonlight_rockstar` 달빛 록스타 — 6팩 · 또 다른 세계의 나
-- `dream_ballerina` 꿈속의 발레리나 — 6팩 · 또 다른 세계의 나
-- `neon_angel` 네온 천사 — 6팩 · 또 다른 세계의 나
-- `rose_garden_ghost` 장미 정원의 유령 — 6팩 · 또 다른 세계의 나
-- `star_thief_mage` 별을 훔친 마법사 — 6팩 · 또 다른 세계의 나
-- `time_traveler` 시간 여행자 — 6팩 · 또 다른 세계의 나
-- `mirror_world_me` 거울세계의 나 — 6팩 · 또 다른 세계의 나
 - `city_guardian` 도시의 수호자 — 6팩 · 또 다른 세계의 나
 - `golden_slime_queen` 황금 슬라임 퀸 — 6팩 · 또 다른 세계의 나
 - `all_seasons_spirit` 모든 계절의 정령 — 6팩 · 또 다른 세계의 나

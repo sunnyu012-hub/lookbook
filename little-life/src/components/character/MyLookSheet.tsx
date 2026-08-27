@@ -153,7 +153,10 @@ export function MyLookSheet({ open, state, onClose, onSelect, onBuy }: MyLookShe
             </span>
           </div>
           <div className="flex items-end gap-3 rounded-card bg-canvas px-4 pb-3 pt-2">
-            <div className="h-[124px] w-[92px] shrink-0">
+            {/* 크기는 이 상자가 정한다 — 렌더러 안의 그림은 h-full w-full 이다.
+                폭을 빠듯하게 잡으면 안 된다. 캔버스가 제일 넓은 한 벌에 맞춰져
+                있어서(433 × 508), 폭이 모자라면 폭으로 재느라 캐릭터가 작아진다. */}
+            <div className="h-[124px] w-[112px] shrink-0">
               <CharacterSkinRenderer skinId={current.def.id} />
             </div>
             <div className="min-w-0 flex-1 pb-2">

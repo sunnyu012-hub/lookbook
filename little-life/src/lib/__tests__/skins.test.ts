@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { AppState } from '@/types'
@@ -753,5 +753,46 @@ describe('F.5 · 도감', () => {
   it('가진 만큼 센다', () => {
     const state = withUser({ ownedSkinIds: ['basic_day', 'cozy_home', 'french_girl_casual'] })
     expect(skinCollectionProgress(state)).toEqual({ found: 3, total: 120 })
+  })
+})
+
+describe('F.5 · 그림 캔버스', () => {
+  /**
+   * 캔버스 하나에 다 올라가 있어야 한다.
+   *
+   * extract-skins.py 가 판에 들어온 조각 전부에서 캔버스를 계산한다.
+   * 새 시트만 따로 돌리면 그것들만 다른 크기가 되고, 화면에서
+   * 새 옷만 몸 크기가 달라 보인다.
+   */
+  function canvasOf(id: string): { w: number; h: number } | null {
+    const file = path.resolve(__dirname, '../../../public', `assets/characters/${id}.webp`)
+    if (!existsSync(file)) return null
+    const buf = readFileSync(file)
+    // VP8L 만 다룬다 — 이 폴더는 전부 무손실이 아니라 VP8 이라 헤더에서 읽는다
+    const tag = buf.subarray(12, 16).toString('ascii')
+    if (tag === 'VP8 ') {
+      return { w: buf.readUInt16LE(26) & 0x3fff, h: buf.readUInt16LE(28) & 0x3fff }
+    }
+    if (tag === 'VP8X') {
+      return { w: buf.readUIntLE(24, 3) + 1, h: buf.readUIntLE(27, 3) + 1 }
+    }
+    return null
+  }
+
+  const made = SKINS.map((s) => ({ id: s.id, box: canvasOf(s.id) })).filter((r) => r.box !== null)
+
+  it('그림이 있는 것들은 캔버스가 하나다', () => {
+    const boxes = new Set(made.map((r) => `${r.box!.w}x${r.box!.h}`))
+    expect([...boxes]).toHaveLength(1)
+  })
+
+  /**
+   * 홈 카드의 idle 자리(45% 폭 · 62% 높이)가 폭이 아니라 높이로 재도록.
+   * 여기를 넘기는 그림이 들어오면 홈에서 캐릭터가 조금 작아진다 —
+   * 그때는 그림이 아니라 PLACEMENT.idle 을 손봐야 한다.
+   */
+  it('캔버스가 홈 카드가 버티는 비율 안에 있다', () => {
+    const box = made[0].box!
+    expect(box.w / box.h).toBeLessThanOrEqual(0.95)
   })
 })

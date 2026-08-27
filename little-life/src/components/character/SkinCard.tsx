@@ -62,13 +62,9 @@ export function SkinCard({ view, onSelect, onPack }: SkinCardProps) {
                 !owned && 'opacity-30 grayscale',
               )}
             >
-              <CharacterSkinRenderer
-                skinId={def.id}
-                animated={false}
-                small
-                lazy
-                className="h-[86px] w-auto"
-              />
+              {/* 크기는 위 상자가 정한다. 여기에 h-[..] 를 또 주면
+                  렌더러 안의 h-full 과 싸워서 어느 쪽이 이길지 모른다. */}
+              <CharacterSkinRenderer skinId={def.id} animated={false} small lazy />
             </span>
           )}
         </span>

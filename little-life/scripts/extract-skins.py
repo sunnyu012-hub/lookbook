@@ -68,6 +68,22 @@ LAYOUT = [
     ("skins2-sweet.png", ["strawberry_bonbon", "milky_ballet", "toy_candy_pop", "angel_picnic"]),
     ("skins2-rock.png", ["soft_rock_chic", "pink_punk", "vintage_band_girl", "midnight_leather"]),
     ("skins2-idol.png", ["pink_idol_stage", "navy_star_idol", "white_encore", "aurora_pop"]),
+    # 3차 — 묶음 4 · 5 · 6 (스무 벌. 나머지는 아직 안 왔다)
+    ("skins3-festival-a.png", [
+        "cherry_blossom_picnic", "spring_rain_walker", "summer_firework_keeper", "marine_vacance",
+    ]),
+    ("skins3-festival-b.png", [
+        "peach_holiday", "autumn_leaf_explorer", "halloween_candy_witch", "ghost_hotel_bellboy",
+    ]),
+    ("skins3-guild.png", [
+        "treasure_hunter", "slime_researcher", "dungeon_idol", "legendary_guildmaster",
+    ]),
+    ("skins3-other-a.png", [
+        "dawn_black_cat", "moonlight_rockstar", "dream_ballerina", "neon_angel",
+    ]),
+    ("skins3-other-b.png", [
+        "rose_garden_ghost", "star_thief_mage", "time_traveler", "mirror_world_me",
+    ]),
 ]
 
 # 시트마다 네 명의 키 중앙값을 이 높이에 맞춘다.
