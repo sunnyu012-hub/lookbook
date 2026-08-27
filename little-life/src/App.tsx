@@ -49,6 +49,7 @@ import { WorkshopSheet } from '@/components/collection/WorkshopSheet'
 import { DiscoveryOverlay } from '@/components/collection/DiscoveryOverlay'
 import { DecorateMode } from '@/components/room/DecorateMode'
 import { LevelUpOverlay } from '@/components/feedback/LevelUpOverlay'
+import { RewardSummaryOverlay } from '@/components/feedback/RewardSummaryOverlay'
 import { BattleClearOverlay } from '@/components/feedback/BattleClearOverlay'
 import { DropRevealOverlay } from '@/components/feedback/DropRevealOverlay'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -287,21 +288,22 @@ export default function App() {
 
   const handleComplete = useCallback(
     (id: string) => {
+      // 제목은 완료 전에 챙긴다 — 완료 뒤에는 목록에서 자리가 바뀔 수 있다
+      const title = state.quests.find((q) => q.id === id)?.title ?? ''
       const result = completeQuest(id)
       if (!result) return
 
-      feedback.celebrate(result)
+      // 무엇이 얼마나 늘었는지는 보상 요약 한 장이 전부 말한다.
+      // 요약이 닫히고 나서야 새 발견을 띄운다 — 겹치면 둘 다 안 읽힌다.
+      feedback.celebrate(result, title, () => showCollected(result.collected))
+
       // 잘못 눌렀을 때 바로 되돌릴 수 있게. 레벨업까지 정확히 되감긴다.
-      const coins = result.gainedCoins > 0 ? ` · 🪙 +${result.gainedCoins}` : ''
-      feedback.notify(`+${result.gainedExp} EXP${coins}`, {
+      feedback.notify('완료했어', {
         label: '되돌리기',
         onClick: () => uncompleteQuest(id),
       })
-
-      // 처음 만난 것만 크게 보여주고, 이미 아는 건 한 줄로 지나간다
-      showCollected(result.collected)
     },
-    [completeQuest, uncompleteQuest, feedback, showCollected],
+    [state.quests, completeQuest, uncompleteQuest, feedback, showCollected],
   )
 
   const openEditor = useCallback((quest: Quest) => {
@@ -691,7 +693,6 @@ export default function App() {
           <HomeScreen
             state={state}
             mood={feedback.mood}
-            expToasts={feedback.expToasts}
             onComplete={handleComplete}
             onAddQuest={() => setHubOpen(true)}
             onSeeAll={() => setTab('quest')}
@@ -1068,6 +1069,7 @@ export default function App() {
         }}
       />
 
+      <RewardSummaryOverlay summary={feedback.rewardSummary} onClose={feedback.dismissReward} />
       <BattleClearOverlay banner={feedback.battleClear} />
       <LevelUpOverlay level={feedback.levelUp} />
       <DropRevealOverlay drops={feedback.drops} onClose={feedback.dismissDrops} />

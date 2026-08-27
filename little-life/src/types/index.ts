@@ -140,6 +140,13 @@ export interface QuestReward {
   gardenDrops?: Array<{ itemId: string; wasNew: boolean }>
   /** 이때 앞당겨준 밭들. 되돌리면 그대로 도로 민다. */
   growthBonus?: Array<{ plotId: string; plantedAt: string; seconds: number }>
+  /**
+   * 이 퀘스트가 대신 눌러준 몬스터·보스 행동. 되돌리면 같이 풀린다.
+   *
+   * 그 행동으로 쓰러진 배틀은 여기 안 적는다 — 클리어는 앱 어디서도
+   * 되돌릴 수 없고, 보상까지 거꾸로 돌리는 예외를 여기만 만들지 않는다.
+   */
+  battleTicks?: Array<{ battleId: string; actionId: string }>
 }
 
 export interface User {
@@ -303,6 +310,25 @@ export interface QuestDraft {
 }
 
 /** 퀘스트 완료 결과 — 화면에서 피드백 애니메이션을 띄우는 데 쓴다. */
+/**
+ * 완료 전과 후의 내 모습.
+ *
+ * 저장하지 않는다 — 완료 직전 상태와 직후 상태에서 그때그때 뽑는다.
+ * 화면에서 "58% → 72%" 처럼 **뭐가 얼마나 달라졌는지** 를 보여주려는 것뿐이고,
+ * 값 자체는 전부 user 에 이미 있다.
+ */
+export interface GrowthSnapshot {
+  level: number
+  currentExp: number
+  /** 이 레벨을 넘는 데 필요한 EXP. 진행률 계산에 쓴다. */
+  requiredExp: number
+  /** 지금까지 받은 EXP 총합. 레벨이 오른 완료에서도 늘어난 양을 정확히 잴 수 있다. */
+  totalExp: number
+  coins: number
+  /** 이번에 오른 스탯의 값 */
+  stat: number
+}
+
 export interface CompleteResult {
   gainedExp: number
   gainedCoins: number
@@ -328,4 +354,11 @@ export interface CompleteResult {
   gainedEnergy: number
   /** 이번에 정원 밭을 몇 초나 앞당겼는지. 0 이면 앞당길 게 없었다는 뜻. */
   growthBonusSeconds: number
+  /** 완료 전 · 완료 후. 보상 요약이 변화를 그릴 때 쓴다. */
+  before: GrowthSnapshot
+  after: GrowthSnapshot
+  /** 이번 완료로 같이 깎인 몬스터·보스 */
+  battleProgress: import('@/lib/rpg/link').BattleProgress[]
+  /** 그러다 쓰러진 몬스터·보스가 떨군 것 */
+  battleDrops: import('./rpg').DropResult[]
 }

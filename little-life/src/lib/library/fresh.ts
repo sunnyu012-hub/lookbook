@@ -1,7 +1,7 @@
-import type { Category, Recommendation, UsageProfiles } from '@/types'
+import type { Category, Difficulty, Recommendation, UsageProfiles } from '@/types'
 import { seededRandom } from '@/lib/city/seed'
 import { ALL_PRESETS, type PresetEntry } from './packs'
-import type { RecommendContext } from './recommend'
+import { BASE_DIFFICULTY_MIX, type RecommendContext } from './recommend'
 
 /**
  * 오늘 처음 해볼 것.
@@ -91,11 +91,13 @@ interface Candidate {
  * - 오래 안 한 것이 그다음
  * - 요즘 손 안 댄 분야면 더 무거워진다
  * - 시간대가 맞으면 조금 더 (거르지는 않는다 — 거르면 목록 절반이 영영 안 보인다)
+ * - 지금의 난이도 기울기에 맞으면 더 무거워진다
  */
 function candidates(
   profiles: UsageProfiles,
   ctx: RecommendContext,
   exclude: Set<string>,
+  mix: Record<Difficulty, number>,
 ): Candidate[] {
   const recent = recentCategoryDays(profiles, ctx)
   const out: Candidate[] = []
@@ -126,6 +128,9 @@ function candidates(
     if (bands) weight *= bands.includes(ctx.band) ? 1.6 : 0.5
     if (entry.pack.weekend === true) weight *= ctx.weekend ? 1.6 : 0.35
 
+    // 새것 칸까지 쉬움으로 채우면 "새로 해볼까" 가 또 물 마시기가 된다
+    weight *= mix[entry.preset.difficulty] / Math.max(...Object.values(mix))
+
     out.push({ entry, weight })
   }
   return out
@@ -143,8 +148,9 @@ export function pickFresh(
   ctx: RecommendContext,
   exclude: Set<string>,
   count: number = FRESH_SLOTS,
+  mix: Record<Difficulty, number> = BASE_DIFFICULTY_MIX,
 ): Recommendation[] {
-  const pool = candidates(profiles, ctx, exclude)
+  const pool = candidates(profiles, ctx, exclude, mix)
   if (pool.length === 0) return []
 
   const random = seededRandom(`${ctx.dayKey}:fresh`)

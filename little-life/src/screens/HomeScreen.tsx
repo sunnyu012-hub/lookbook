@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import type { AppState, CityEvent, DiscoveryNote } from '@/types'
 import { CharacterRoomCard } from '@/components/character/CharacterRoomCard'
-import { ExpToastLayer } from '@/components/feedback/ExpToastLayer'
 import { GreetingHeader } from '@/components/home/GreetingHeader'
 import { AdventureStatusCard } from '@/components/home/AdventureStatusCard'
 import { TodayInTheCity } from '@/components/home/TodayInTheCity'
@@ -18,13 +17,11 @@ import { ScreenHeader } from '@/components/layout/ScreenHeader'
 import { Button } from '@/components/ui/Button'
 import { isTodayQuest, sortByNewest, todaySummary } from '@/lib/stats'
 import { EFFECT } from '@/lib/assets'
-import type { ExpToast } from '@/hooks/useFeedback'
 import type { CharacterMood } from '@/components/character/types'
 
 interface HomeScreenProps {
   state: AppState
   mood: CharacterMood
-  expToasts: ExpToast[]
   onComplete: (id: string) => void
   onAddQuest: () => void
   onSeeAll: () => void
@@ -51,7 +48,6 @@ interface HomeScreenProps {
 export function HomeScreen({
   state,
   mood,
-  expToasts,
   onComplete,
   onAddQuest,
   onSeeAll,
@@ -125,7 +121,6 @@ export function HomeScreen({
         onOpenLook={onOpenLook}
         kitchenOpen={isKitchenUnlocked(state)}
         onOpenKitchen={onOpenKitchen}
-        overlay={<ExpToastLayer toasts={expToasts} />}
       />
 
       <TodayQuestSection
