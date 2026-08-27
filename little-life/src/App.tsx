@@ -697,17 +697,12 @@ export default function App() {
             onAddQuest={() => setHubOpen(true)}
             onSeeAll={() => setTab('quest')}
             onOpenMap={() => setTab('map')}
-            onOpenBag={() => {
-              setBagView('BAG')
-              setTab('bag')
-            }}
-            onOpenMe={() => setTab('me')}
             onDecorate={() => setDecorating(true)}
             onOpenLook={() => setLookOpen(true)}
             onClaimDelivery={handleClaimDelivery}
-          discoveryNotes={discoveryNotes}
-          onDismissDiscovery={dismissDiscoveryNotes}
-          onOpenDiscovery={() => setDiscoveryOpen(true)}
+            discoveryNotes={discoveryNotes}
+            onDismissDiscovery={dismissDiscoveryNotes}
+            onOpenDiscovery={() => setDiscoveryOpen(true)}
             onOpenGarden={() => setGardenOpen(true)}
             onOpenQuarry={() => setQuarryOpen(true)}
             onOpenKitchen={() => setKitchenOpen(true)}
@@ -738,11 +733,9 @@ export default function App() {
         {tab === 'map' && (
           <MapScreen
             currentAreaId={state.user.currentAreaId}
-            quests={state.quests}
             reputation={state.reputation}
             npcs={state.npcs}
             events={events}
-            collection={state.collection}
             state={state}
             onSelectArea={handleSelectArea}
             onOpenNpc={setOpenNpc}

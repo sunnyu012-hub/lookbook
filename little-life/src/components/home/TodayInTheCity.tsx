@@ -24,11 +24,15 @@ interface TodayInTheCityProps {
   state: AppState
   events: CityEvent[]
   onOpenMap: () => void
+  /** 발견 쪽 줄은 지도가 아니라 그리로 간다 */
+  onOpenDiscovery: () => void
 }
 
 interface Line {
   icon: string
   text: string
+  /** 눌렀을 때 어디로. 안 적으면 지도로 간다 — 소식은 대부분 도시 얘기다. */
+  to?: 'MAP' | 'DISCOVERY'
 }
 
 /**
@@ -88,37 +92,42 @@ function shopLines(): Line[] {
  * 캐릭터보다 위로 올라오지 않는다. 이 앱의 중심은 여전히 내 하루다.
  * 소식은 서너 줄이면 충분하고, 없으면 굳이 만들지 않는다.
  */
-export function TodayInTheCity({ state, events, onOpenMap }: TodayInTheCityProps) {
-  const lines = useMemo(() => buildLines(state, events), [state, events])
+export function TodayInTheCity({
+  state,
+  events,
+  onOpenMap,
+  onOpenDiscovery,
+}: TodayInTheCityProps) {
+  // 다섯 줄이면 그건 소식이 아니라 목록이고, 목록은 안 읽힌다.
+  const lines = useMemo(() => buildLines(state, events).slice(0, 3), [state, events])
   if (lines.length === 0) return null
 
   return (
     <section>
-      <SectionHeader
-        title="오늘의 도시"
-        trailing={
-          <button
-            type="button"
-            onClick={onOpenMap}
-            className="rounded-pill bg-sunken px-2.5 py-1 text-[11px] font-medium text-inkdim"
-          >
-            {/* 아래 내비게이션에도 MAP 이 있다. 이름이 같으면 소리로 읽을 때 구별이 안 된다. */}
-            지도 열기
-          </button>
-        }
-      />
-      <ul className="space-y-1.5">
+      <SectionHeader title="오늘의 소식" />
+      {/*
+        흰 카드를 세 장 만들지 않는다. 한 칸 안에 줄로 나눈다 —
+        홈이 길어지는 이유의 절반이 "모든 게 각자 카드" 였다.
+      */}
+      <ul className="divide-y divide-line/70 overflow-hidden rounded-card border border-line/70 bg-surface shadow-soft">
         {lines.map((line, i) => (
-          <li
-            key={i}
-            className={cn(
-              'flex items-start gap-2.5 rounded-card border border-line/70 bg-surface px-3.5 py-3 shadow-soft',
-            )}
-          >
-            <span className="text-[17px] leading-[1.35]">{line.icon}</span>
-            <span className="min-w-0 flex-1 text-[13.5px] leading-relaxed text-ink">
-              {line.text}
-            </span>
+          <li key={i}>
+            <button
+              type="button"
+              onClick={line.to === 'DISCOVERY' ? onOpenDiscovery : onOpenMap}
+              className={cn(
+                'flex w-full items-center gap-2.5 px-4 py-3.5 text-left',
+                'transition-transform duration-150 ease-out active:scale-[0.99]',
+              )}
+            >
+              <span className="w-6 shrink-0 text-center text-[16px] leading-[1.35]">
+                {line.icon}
+              </span>
+              <span className="min-w-0 flex-1 text-[13.5px] leading-snug text-ink">
+                {line.text}
+              </span>
+              <span className="shrink-0 text-[11px] text-inkfaint">›</span>
+            </button>
           </li>
         ))}
       </ul>
@@ -165,13 +174,13 @@ function buildLines(state: AppState, events: CityEvent[]): Line[] {
   // 어디선가 낌새. 아직 못 찾은 곳 하나만.
   const secret = secretViews(state).find((v) => v.stage === 'HINTED')
   if (secret) {
-    lines.push({ icon: '✨', text: secret.def.hint })
+    lines.push({ icon: '✨', text: secret.def.hint, to: 'DISCOVERY' })
   }
 
   // 아직 못 만난 아이
   const buddy = hintedCompanions(state)[0]
   if (buddy) {
-    lines.push({ icon: '🐾', text: buddy.hint })
+    lines.push({ icon: '🐾', text: buddy.hint, to: 'DISCOVERY' })
   }
 
   // 오늘만 참인 것을 먼저. 이벤트는 매일 몇 개씩 있어서 이 자리를 다 먹는다.

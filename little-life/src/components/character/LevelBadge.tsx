@@ -3,10 +3,12 @@ import { cn } from '@/components/ui/cn'
 interface LevelBadgeProps {
   level: number
   className?: string
-  size?: 'sm' | 'md'
+  size?: 'xs' | 'sm' | 'md'
 }
 
 const SIZE = {
+  /** 장면 아래 정보 줄에 이름과 나란히 놓는 크기 */
+  xs: { box: 'h-9 w-9', label: 'text-[7px]', value: 'text-[12px]' },
   sm: { box: 'h-12 w-12', label: 'text-[9px]', value: 'text-[16px]' },
   md: { box: 'h-[58px] w-[58px]', label: 'text-[10px]', value: 'text-[19px]' },
 }
