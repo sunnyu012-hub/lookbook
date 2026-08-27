@@ -12,13 +12,22 @@ const OPTIONS: CategoryFilterValue[] = ['ALL', ...CATEGORIES]
 interface CategoryFilterProps {
   value: CategoryFilterValue
   onChange: (value: CategoryFilterValue) => void
+  /**
+   * 이 분야들만 칩으로 만든다. 안 주면 전부 만든다.
+   *
+   * 몬스터 목록처럼 애초에 없는 분야가 있는 곳에 쓴다 — 눌러도 빈 목록이 나오는
+   * 칩은 고르는 걸 돕는 게 아니라 한 번 헛걸음시키는 것뿐이다.
+   */
+  only?: Category[]
 }
 
 /** 목업처럼 두 줄로 접히는 칩. 선택된 칩만 파스텔로 채운다. */
-export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
+export function CategoryFilter({ value, onChange, only }: CategoryFilterProps) {
+  const options = only ? OPTIONS.filter((o) => o === 'ALL' || only.includes(o)) : OPTIONS
+
   return (
     <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="카테고리 필터">
-      {OPTIONS.map((option) => {
+      {options.map((option) => {
         const active = option === value
         const style = option === 'ALL' ? null : categoryStyle(option)
 

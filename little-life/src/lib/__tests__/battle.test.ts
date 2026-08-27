@@ -1,9 +1,17 @@
 import { describe, expect, it } from 'vitest'
+import type { Battle } from '@/types'
 import { BATTLE_DEFS, BOSSES, MONSTERS } from '@/lib/rpg/content'
 import { ALL_PRESETS } from '@/lib/library/packs'
 import { applyBattleAction, createBattle, remainingDamage, undoBattleAction } from '../rpg/battle'
 import { findBattleDef } from '../rpg/content'
 import { linkQuestToBattles, unlinkQuestFromBattles } from '../rpg/link'
+import {
+  LINEUP_COUNT,
+  categoriesIn,
+  libraryOrder,
+  startableDefs,
+  todaysLineup,
+} from '../rpg/lineup'
 
 let seq = 0
 const makeId = () => `b${(seq += 1)}`
@@ -264,5 +272,124 @@ describe('몬스터·보스 콘텐츠', () => {
         expect(r.progress.length, `${def.id} ← ${entry.preset.title}`).toBeLessThanOrEqual(1)
       }
     }
+  })
+})
+
+// ── 목록에 뭘 먼저 보여줄지 ──────────────────────────────
+describe('오늘의 노출 목록', () => {
+  const started = (defId: string, status: 'ACTIVE' | 'CLEARED' = 'ACTIVE'): Battle => ({
+    ...createBattle(findBattleDef(defId)!, makeId),
+    status,
+    clearedAt: status === 'CLEARED' ? '2026-08-20T10:00:00.000Z' : null,
+  })
+  const day = new Date('2026-08-24T09:00:00')
+
+  it('몬스터는 4개, 보스는 3개만 내민다', () => {
+    expect(todaysLineup(MONSTERS, [], 'MONSTER', day)).toHaveLength(LINEUP_COUNT.MONSTER)
+    expect(todaysLineup(BOSSES, [], 'BOSS', day)).toHaveLength(LINEUP_COUNT.BOSS)
+  })
+
+  it('같은 날에는 순서가 요동치지 않는다', () => {
+    const morning = todaysLineup(MONSTERS, [], 'MONSTER', new Date('2026-08-24T07:00:00'))
+    const night = todaysLineup(MONSTERS, [], 'MONSTER', new Date('2026-08-24T23:30:00'))
+    expect(night.map((d) => d.id)).toEqual(morning.map((d) => d.id))
+  })
+
+  it('날이 바뀌면 다른 것도 올라온다', () => {
+    const today = todaysLineup(MONSTERS, [], 'MONSTER', day).map((d) => d.id)
+    const week = ['25', '26', '27', '28', '29', '30'].map((d) =>
+      todaysLineup(MONSTERS, [], 'MONSTER', new Date(`2026-08-${d}T09:00:00`)).map((x) => x.id),
+    )
+    expect(week.some((ids) => ids.join() !== today.join())).toBe(true)
+  })
+
+  it('분야가 겹치지 않게 고른다', () => {
+    const picked = todaysLineup(MONSTERS, [], 'MONSTER', day)
+    expect(new Set(picked.map((d) => d.category)).size).toBe(picked.length)
+  })
+
+  it('진행 중인 것은 안 내민다 — 위에 이미 있다', () => {
+    const first = todaysLineup(MONSTERS, [], 'MONSTER', day)[0]
+    const picked = todaysLineup(MONSTERS, [started(first.id)], 'MONSTER', day)
+    expect(picked.map((d) => d.id)).not.toContain(first.id)
+    expect(picked).toHaveLength(LINEUP_COUNT.MONSTER)
+  })
+
+  it('하나 시작해도 나머지 자리는 그대로 있다', () => {
+    // 고른 벌로 안 고른 것들까지 바뀌면, 그건 누르기 싫어지는 화면이다
+    const before = todaysLineup(MONSTERS, [], 'MONSTER', day)
+    const after = todaysLineup(MONSTERS, [started(before[0].id)], 'MONSTER', day)
+    expect(after.map((d) => d.id).slice(0, 3)).toEqual(before.slice(1).map((d) => d.id))
+  })
+
+  it('방금 끝낸 것은 다시 안 내민다', () => {
+    const first = todaysLineup(MONSTERS, [], 'MONSTER', day)[0]
+    const picked = todaysLineup(MONSTERS, [started(first.id, 'CLEARED')], 'MONSTER', day)
+    expect(picked.map((d) => d.id)).not.toContain(first.id)
+  })
+
+  it('남은 게 모자라면 있는 만큼만 낸다 — 없는 걸 지어내지 않는다', () => {
+    const two = MONSTERS.slice(0, 2)
+    expect(todaysLineup(two, [], 'MONSTER', day)).toHaveLength(2)
+  })
+})
+
+describe('전체 보기 목록', () => {
+  const battleOf = (defId: string, status: 'ACTIVE' | 'CLEARED', clearedAt?: string): Battle => ({
+    ...createBattle(findBattleDef(defId)!, makeId),
+    status,
+    clearedAt: clearedAt ?? null,
+  })
+
+  it('진행 중인 것만 빠지고 나머지는 전부 있다', () => {
+    const battles = [battleOf('dish_slime', 'ACTIVE')]
+    const ids = libraryOrder(MONSTERS, battles).map((e) => e.def.id)
+
+    expect(ids).toHaveLength(MONSTERS.length - 1)
+    expect(ids).not.toContain('dish_slime')
+  })
+
+  it('끝낸 것도 남는다 — 설거지는 다음 주에 또 쌓인다', () => {
+    const battles = [battleOf('dish_slime', 'CLEARED', '2026-08-20T10:00:00.000Z')]
+    const entry = libraryOrder(MONSTERS, battles).find((e) => e.def.id === 'dish_slime')
+
+    expect(entry).toBeTruthy()
+    expect(entry!.clearedAt).toBe('2026-08-20T10:00:00.000Z')
+  })
+
+  it('안 해본 것이 먼저, 끝낸 것은 오래된 순으로 뒤에', () => {
+    const battles = [
+      battleOf('dish_slime', 'CLEARED', '2026-08-22T10:00:00.000Z'),
+      battleOf('mail_goblin', 'CLEARED', '2026-08-20T10:00:00.000Z'),
+    ]
+    const entries = libraryOrder(MONSTERS, battles)
+    const done = entries.filter((e) => e.clearedAt)
+
+    expect(entries.slice(0, entries.length - 2).every((e) => e.clearedAt === null)).toBe(true)
+    expect(done.map((e) => e.def.id)).toEqual(['mail_goblin', 'dish_slime'])
+  })
+
+  it('노출 목록에 없는 몬스터도 전체 보기에서는 전부 닿는다', () => {
+    // 앞 화면에 몇 개만 보이는 건 표시일 뿐이고 접근 제한이 아니다
+    const lineup = todaysLineup(MONSTERS, [], 'MONSTER', new Date('2026-08-24T09:00:00'))
+    const all = libraryOrder(MONSTERS, []).map((e) => e.def.id)
+
+    expect(all).toHaveLength(MONSTERS.length)
+    for (const def of MONSTERS) expect(all, def.id).toContain(def.id)
+    expect(lineup.every((d) => all.includes(d.id))).toBe(true)
+  })
+
+  it('필터 칩은 목록에 실제로 있는 분야만 만든다', () => {
+    const categories = categoriesIn(libraryOrder(MONSTERS, []))
+    const real = new Set(MONSTERS.map((m) => m.category))
+    expect(new Set(categories)).toEqual(real)
+  })
+
+  it('시작할 수 있는 것에서 진행 중인 것만 뺀다', () => {
+    const battles = [battleOf('dish_slime', 'ACTIVE'), battleOf('mail_goblin', 'CLEARED', 'x')]
+    const ids = startableDefs(MONSTERS, battles).map((d) => d.id)
+
+    expect(ids).not.toContain('dish_slime')
+    expect(ids).toContain('mail_goblin')
   })
 })

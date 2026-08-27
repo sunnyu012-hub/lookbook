@@ -93,10 +93,17 @@ export function BattleCard({ battle, onOpen }: BattleCardProps) {
 interface BattleDefCardProps {
   def: BattleDef
   onStart: (def: BattleDef) => void
+  /**
+   * 카드 오른쪽 아래에 붙는 작은 한마디. 전에 끝냈던 것에 쓴다.
+   *
+   * 끝냈다고 목록에서 빼지는 않는다 — 설거지는 다음 주에 또 쌓인다.
+   * 다만 아무 표시가 없으면 "이거 아까 끝내지 않았나" 를 혼자 확인해야 한다.
+   */
+  note?: string
 }
 
 /** 아직 시작하지 않은 몬스터·보스. 눌러야만 시작된다. */
-export function BattleDefCard({ def, onStart }: BattleDefCardProps) {
+export function BattleDefCard({ def, onStart, note }: BattleDefCardProps) {
   return (
     <button
       type="button"
@@ -123,8 +130,11 @@ export function BattleDefCard({ def, onStart }: BattleDefCardProps) {
         </span>
       </span>
 
-      <span className="shrink-0 rounded-pill bg-sunken px-2.5 py-1 text-[11px] font-medium text-inkdim">
-        시작
+      <span className="flex shrink-0 flex-col items-end gap-1">
+        <span className="rounded-pill bg-sunken px-2.5 py-1 text-[11px] font-medium text-inkdim">
+          시작
+        </span>
+        {note && <span className="text-[10px] leading-none text-inkfaint">{note}</span>}
       </span>
     </button>
   )
