@@ -53,6 +53,17 @@ function opened(): AppState {
   return { ...s, garden: { ...emptyGarden(), unlockedAt: '2026-01-01T00:00:00.000Z' } }
 }
 
+/**
+ * 굴림을 순서대로 돌려준다.
+ *
+ * 거두기는 굴림을 두 번 쓴다 — 개수 하나, 섞여 나오는 것 하나.
+ * 0 만 돌려주면 황금 딸기가 늘 같이 나와서 개수 검사가 흔들린다.
+ */
+function rolls(...values: number[]): () => number {
+  let i = 0
+  return () => values[Math.min(i++, values.length - 1)]
+}
+
 /** 씨앗을 n개 쥐어준다 */
 function withSeeds(state: AppState, cropId: string, n: number): AppState {
   const crop = findCrop(cropId)!
@@ -229,7 +240,8 @@ describe('C. 심고 자라고 거둔다', () => {
     const planted = plantSeed(withSeeds(opened(), 'strawberry', 1), 0, 'strawberry', now).state
     const ready = new Date('2026-03-01T13:00:00.000Z')
     // 늘 최소 개수가 나오게 고정한다
-    const { state, result } = harvestPlot(planted, 0, ready, () => 0)
+    // 개수는 최소로, 섞여 나오는 것은 안 나오게
+    const { state, result } = harvestPlot(planted, 0, ready, rolls(0, 0.99))
 
     expect(result.ok).toBe(true)
     if (!result.ok) return
@@ -247,7 +259,7 @@ describe('C. 심고 자라고 거둔다', () => {
   it('거둔 개수는 최소와 최대 사이다', () => {
     for (const roll of [0, 0.5, 0.999999]) {
       const planted = plantSeed(withSeeds(opened(), 'potato', 1), 0, 'potato', now).state
-      const { result } = harvestPlot(planted, 0, new Date('2026-03-02T09:00:00.000Z'), () => roll)
+      const { result } = harvestPlot(planted, 0, new Date('2026-03-02T09:00:00.000Z'), rolls(roll, 0.99))
       expect(result.ok).toBe(true)
       if (!result.ok) return
       expect(result.count).toBeGreaterThanOrEqual(result.crop.harvestMin)
@@ -257,9 +269,9 @@ describe('C. 심고 자라고 거둔다', () => {
 
   it('두 번째부터는 처음 발견이 아니다', () => {
     let state = plantSeed(withSeeds(opened(), 'strawberry', 2), 0, 'strawberry', now).state
-    state = harvestPlot(state, 0, new Date('2026-03-01T13:00:00.000Z'), () => 0).state
+    state = harvestPlot(state, 0, new Date('2026-03-01T13:00:00.000Z'), rolls(0, 0.99)).state
     state = plantSeed(state, 0, 'strawberry', new Date('2026-03-01T14:00:00.000Z')).state
-    const { result } = harvestPlot(state, 0, new Date('2026-03-01T18:00:00.000Z'), () => 0)
+    const { result } = harvestPlot(state, 0, new Date('2026-03-01T18:00:00.000Z'), rolls(0, 0.99))
     expect(result.ok && result.isNew).toBe(false)
   })
 })
@@ -402,7 +414,7 @@ describe('E. 퀘스트에서 오는 것들', () => {
     const { state, applied } = applyGrowthBonus(planted, 600, now)
 
     // 거두고 다시 심는다
-    let after = harvestPlot(state, 0, new Date('2026-03-01T13:00:00.000Z'), () => 0).state
+    let after = harvestPlot(state, 0, new Date('2026-03-01T13:00:00.000Z'), rolls(0, 0.99)).state
     after = plantSeed(after, 0, 'strawberry', new Date('2026-03-01T14:00:00.000Z')).state
     const readyBefore = after.garden.plots[0].readyAt
 

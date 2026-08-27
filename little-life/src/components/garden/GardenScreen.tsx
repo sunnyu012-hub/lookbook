@@ -5,8 +5,8 @@ import { BottomSheet } from '@/components/ui/BottomSheet'
 import { Button } from '@/components/ui/Button'
 import { useOverlay } from '@/hooks/useOverlay'
 import { GARDEN_DEW_SECONDS } from '@/lib/garden/crops'
-import { dewCount, gardenView, seedStock } from '@/lib/garden/derive'
-import { STAGE_ICON, STAGE_LABEL, remainingLabel } from '@/lib/garden/labels'
+import { dewCount, gardenView, nearestRareHint, seedStock } from '@/lib/garden/derive'
+import { STAGE_ICON, STAGE_LABEL, remainingLabel, stageArt } from '@/lib/garden/labels'
 import { CompanionArt } from '@/components/discovery/CompanionArt'
 import { activeCompanion } from '@/lib/discovery/companions'
 import { SeedSheet } from './SeedSheet'
@@ -82,6 +82,7 @@ export function GardenScreen({
   const view = useMemo(() => gardenView(state, new Date()), [state, tick])
   const dew = dewCount(state)
   const seeds = seedStock(state)
+  const rareHint = useMemo(() => nearestRareHint(state), [state])
   const buddy = activeCompanion(state)
 
   if (!open) return null
@@ -199,6 +200,14 @@ export function GardenScreen({
             </span>
           </button>
 
+          {/* 아직 못 만난 것 하나. 조건을 적어주지는 않는다 —
+              "무엇을 몇 번" 이 적히는 순간 정원이 체크리스트가 된다. */}
+          {rareHint && (
+            <p className="mt-3 rounded-card bg-butter-soft/50 px-3.5 py-2.5 text-center text-[12.5px] leading-relaxed text-butter-deep">
+              {rareHint.crop.discovery?.reveal ?? '이 정원에 아직 못 본 게 있는 것 같다.'}
+            </p>
+          )}
+
           {/* 다음 단계까지 */}
           {view.nextLevelXp !== null && (
             <p className="mt-3 text-center font-game text-[10.5px] tracking-[0.06em] text-inkfaint">
@@ -229,7 +238,18 @@ export function GardenScreen({
         {active?.crop && (
           <div className="text-center">
             <h2 className="mb-3 text-[17px] font-semibold text-ink">{active.crop.name}</h2>
-            <span className="block text-[44px] leading-none">{STAGE_ICON[active.stage] || active.crop.icon}</span>
+            {stageArt(active.stage) ? (
+              <img
+                src={stageArt(active.stage)}
+                alt=""
+                aria-hidden
+                className="mx-auto block h-[76px] w-auto select-none"
+              />
+            ) : (
+              <span className="block text-[44px] leading-none">
+                {STAGE_ICON[active.stage] || active.crop.icon}
+              </span>
+            )}
             <p className="mt-2 text-[15px] font-medium text-ink">{STAGE_LABEL[active.stage]}</p>
             <p className="mt-1 text-[13px] text-inkdim">
               {remainingLabel(active.remainingSeconds)} 남았어
@@ -276,8 +296,14 @@ export function GardenScreen({
                 className="flex items-center gap-3 rounded-card bg-canvas px-3.5 py-2.5"
               >
                 <span className="text-[20px] leading-none">{crop.icon}</span>
-                <span className="min-w-0 flex-1 truncate text-[13.5px] text-ink">
-                  {crop.name} 씨앗
+                <span className="flex min-w-0 flex-1 items-center gap-1.5">
+                  <span className="truncate text-[13.5px] text-ink">{crop.name} 씨앗</span>
+                  {/* 찾아낸 것에만 붙는다. 씨앗 고르는 시트와 같은 표시를 쓴다. */}
+                  {crop.discovery && (
+                    <span className="shrink-0 rounded-pill bg-butter-soft px-1.5 py-0.5 font-game text-[9px] tracking-[0.08em] text-butter-deep">
+                      RARE
+                    </span>
+                  )}
                 </span>
                 <span className="shrink-0 font-game text-[12px] text-inkdim">×{count}</span>
               </li>
@@ -341,8 +367,10 @@ function PlotCard({ plot, onClick }: { plot: GardenPlotView; onClick: () => void
         {locked ? (
           <span className="text-[20px] opacity-40">🔒</span>
         ) : plot.crop ? (
-          <span className={cn(ready && 'animate-bouncesm')}>
-            {ready ? plot.crop.icon : STAGE_ICON[plot.stage] || plot.crop.icon}
+          <span className={cn('flex items-center justify-center', ready && 'animate-bouncesm')}>
+            {/* 다 자라면 작물 그림, 그 전에는 자라는 단계 그림.
+                단계 그림은 열두 작물이 같이 쓴다. 아직 안 들어왔으면 이모지로 내려간다. */}
+            <StageArt plot={plot} ready={ready} />
           </span>
         ) : (
           <span className="text-[20px] text-inkfaint">＋</span>
@@ -360,5 +388,24 @@ function PlotCard({ plot, onClick }: { plot: GardenPlotView; onClick: () => void
             : '심어보기'}
       </span>
     </button>
+  )
+}
+
+/**
+ * 밭 한 칸에 보이는 그림.
+ *
+ * 거둘 때가 되면 작물 그림으로 바뀐다 — 그 전까지는 무엇을 심었는지
+ * 그림만 보고는 알 수 없다. 이름이 아래 줄에 적혀 있으니 그걸로 충분하고,
+ * 자라는 동안은 열두 작물이 같은 넉 장을 같이 쓴다.
+ */
+function StageArt({ plot, ready }: { plot: GardenPlotView; ready: boolean }) {
+  if (!plot.crop) return null
+  if (ready) return <span>{plot.crop.icon}</span>
+
+  const art = stageArt(plot.stage)
+  if (!art) return <span>{STAGE_ICON[plot.stage] || plot.crop.icon}</span>
+
+  return (
+    <img src={art} alt="" aria-hidden draggable={false} className="h-[64px] w-auto select-none" />
   )
 }

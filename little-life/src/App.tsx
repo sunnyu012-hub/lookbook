@@ -37,7 +37,12 @@ import { gardenLevel, gardenXp, isGardenUnlocked } from '@/lib/garden/derive'
 import { KITCHEN_RECIPES } from '@/lib/kitchen/recipes'
 import { GardenLab } from '@/components/garden/GardenLab'
 import { KitchenScreen } from '@/components/kitchen/KitchenScreen'
+import { QuarryScreen } from '@/components/quarry/QuarryScreen'
+import { DungeonScreen } from '@/components/dungeon/DungeonScreen'
 import { KitchenLab } from '@/components/kitchen/KitchenLab'
+import { WorkshopLab } from '@/components/collection/WorkshopLab'
+import { QuarryLab } from '@/components/quarry/QuarryLab'
+import { DungeonLab } from '@/components/dungeon/DungeonLab'
 import type { CookedNote } from '@/components/kitchen/CookedOverlay'
 import type { HarvestNote } from '@/components/garden/HarvestOverlay'
 import { WorkshopSheet } from '@/components/collection/WorkshopSheet'
@@ -124,6 +129,12 @@ export default function App() {
     newSkins,
     dismissNewSkins,
     enterGarden,
+    enterQuarry,
+    exploreQuarrySpot,
+    enterDungeon,
+    goDeeperInDungeon,
+    searchDungeonSpot,
+    seeBlockedPath,
     plantSeed,
     harvestPlot,
     useDew,
@@ -133,6 +144,9 @@ export default function App() {
     eatFood,
     toggleRecipeFavorite,
     devKitchen: runDevKitchen,
+    devWorkshop: runDevWorkshop,
+    devQuarry: runDevQuarry,
+    devDungeon: runDevDungeon,
     replaceState,
   } = useGameState()
   const feedback = useFeedback()
@@ -154,6 +168,8 @@ export default function App() {
   const [lookOpen, setLookOpen] = useState(false)
   const [gardenOpen, setGardenOpen] = useState(false)
   const [kitchenOpen, setKitchenOpen] = useState(false)
+  const [quarryOpen, setQuarryOpen] = useState(false)
+  const [dungeonOpen, setDungeonOpen] = useState(false)
 
   /**
    * 개발용 갤러리. 주소에 ?dev=skins 를 붙였을 때만.
@@ -164,6 +180,9 @@ export default function App() {
   const devGallery = devParam === 'skins'
   const devGarden = devParam === 'garden'
   const devKitchen = devParam === 'kitchen'
+  const devWorkshop = devParam === 'workshop'
+  const devQuarry = devParam === 'quarry'
+  const devDungeon = devParam === 'dungeon'
 
   /**
    * 처음 여는 사람에게 한 번.
@@ -635,6 +654,18 @@ export default function App() {
     return <GardenLab state={state} onRun={runDevGarden} />
   }
 
+  if (devDungeon) {
+    return <DungeonLab state={state} onRun={runDevDungeon} />
+  }
+
+  if (devQuarry) {
+    return <QuarryLab state={state} onRun={runDevQuarry} />
+  }
+
+  if (devWorkshop) {
+    return <WorkshopLab state={state} onRun={runDevWorkshop} />
+  }
+
   if (devKitchen) {
     return <KitchenLab state={state} onRun={runDevKitchen} />
   }
@@ -676,6 +707,7 @@ export default function App() {
           onDismissDiscovery={dismissDiscoveryNotes}
           onOpenDiscovery={() => setDiscoveryOpen(true)}
             onOpenGarden={() => setGardenOpen(true)}
+            onOpenQuarry={() => setQuarryOpen(true)}
             onOpenKitchen={() => setKitchenOpen(true)}
             onOpenCollection={() => {
               setBagView('BOOK')
@@ -716,6 +748,8 @@ export default function App() {
             onOpenCollectionShop={setOpenCollectionShop}
             onOpenWorkshop={() => setWorkshopOpen(true)}
             onOpenGarden={() => setGardenOpen(true)}
+            onOpenQuarry={() => setQuarryOpen(true)}
+            onOpenDungeon={() => setDungeonOpen(true)}
           />
         )}
         {tab === 'bag' && (
@@ -864,6 +898,7 @@ export default function App() {
         state={state}
         onClose={() => setWorkshopOpen(false)}
         onCraft={handleCraft}
+        onPlace={handlePlace}
       />
 
       <DecorateMode
@@ -906,6 +941,36 @@ export default function App() {
         confirmLabel="지우기"
         onConfirm={confirmRoutineDelete}
         onCancel={() => setPendingRoutineDelete(null)}
+      />
+
+      <QuarryScreen
+        open={quarryOpen}
+        state={state}
+        onClose={() => setQuarryOpen(false)}
+        onEnter={enterQuarry}
+        onExplore={exploreQuarrySpot}
+        onSeeBlockedPath={seeBlockedPath}
+        onOpenDungeon={() => {
+          setQuarryOpen(false)
+          setDungeonOpen(true)
+        }}
+        onOpenBook={() => {
+          setBagView('BOOK')
+          setTab('bag')
+        }}
+      />
+
+      <DungeonScreen
+        open={dungeonOpen}
+        state={state}
+        onClose={() => setDungeonOpen(false)}
+        onEnter={enterDungeon}
+        onGoDeeper={goDeeperInDungeon}
+        onSearch={searchDungeonSpot}
+        onOpenBook={() => {
+          setBagView('BOOK')
+          setTab('bag')
+        }}
       />
 
       <KitchenScreen
@@ -953,6 +1018,8 @@ export default function App() {
             count: result.count,
             isNew: result.isNew,
             leveledUp: result.leveledUp,
+            variant: result.variant,
+            variantIsNew: result.variantIsNew,
           }
         }}
         onUseDew={useDew}

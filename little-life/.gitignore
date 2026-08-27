@@ -23,3 +23,6 @@ assets/slices/
 .env
 .env.local
 .env.*.local
+
+# 파이썬이 만든 캐시
+__pycache__/

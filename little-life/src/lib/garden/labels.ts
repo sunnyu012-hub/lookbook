@@ -47,3 +47,23 @@ export const STAGE_LABEL: Record<GrowthStage, string> = {
   3: '거의 다 됐어',
   4: '다 자랐어',
 }
+
+/**
+ * 밭에 심긴 모습.
+ *
+ * 열두 작물이 이 넉 장을 같이 쓴다 — 작물마다 그리면 마흔여덟 장이 된다.
+ * 다 자란 뒤(4단계)에는 작물 그림을 쓰므로 여기 없다.
+ *
+ * 그림이 아직 안 들어왔으면 undefined 를 돌려준다. 화면은 그때
+ * STAGE_ICON 의 이모지로 내려간다 — 없다고 빈 칸이 되지 않는다.
+ */
+const STAGE_ART: Partial<Record<GrowthStage, string>> = {
+  0: '/assets/garden/stage-0.webp',
+  1: '/assets/garden/stage-1.webp',
+  2: '/assets/garden/stage-2.webp',
+  3: '/assets/garden/stage-3.webp',
+}
+
+export function stageArt(stage: GrowthStage): string | undefined {
+  return STAGE_ART[stage]
+}

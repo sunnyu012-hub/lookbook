@@ -3,6 +3,7 @@ import { AREA_IDS } from '@/types'
 import { isWeekend } from '@/lib/collection/shops'
 import { discoveredCropIds, gardenLevel, gardenXp, harvestedTotal } from '@/lib/garden/derive'
 import { discoveredRecipes, totalCooked } from '@/lib/kitchen/derive'
+import { craftedKinds, gardenCraftedKinds } from '@/lib/collection/progress'
 
 /**
  * 앱이 나중에 알아보는 것들.
@@ -180,6 +181,53 @@ export const AUTO_COLLECTIONS: AutoCollectionDef[] = [
     rewardItemId: 'k_recipe_book',
     hiddenUntilTriggered: true,
   },
+  // ── 작업실 쪽 ──
+  // 상 주는 기능이 아니라 이름 붙여주는 기능이라는 규칙은 여기서도 같다.
+  // 트로피 대신 결이 맞는 평범한 물건을 준다.
+  {
+    id: 'HANDMADE',
+    name: '손으로 만든 것',
+    description: '사는 대신 만든 게 몇 개 생겼다.',
+    icon: '🧰',
+    condition: { kind: 'CRAFTED_KINDS' },
+    target: 3,
+    revealAt: 1,
+    rewardItemId: 'm_wood',
+    hiddenUntilTriggered: true,
+  },
+  {
+    id: 'LITTLE_MAKER',
+    name: '작은 만드는 사람',
+    description: '뭘 만들지 먼저 생각하는 편이 됐다.',
+    icon: '🔨',
+    condition: { kind: 'CRAFTED_KINDS' },
+    target: 8,
+    revealAt: 4,
+    rewardItemId: 'wood_tray',
+    hiddenUntilTriggered: true,
+  },
+  {
+    id: 'HOME_ARTISAN',
+    name: '집을 손수 채운 사람',
+    description: '방에 있는 것 중 만든 게 꽤 된다.',
+    icon: '🪵',
+    condition: { kind: 'CRAFTED_KINDS' },
+    target: 15,
+    revealAt: 9,
+    rewardItemId: 'cork_board',
+    hiddenUntilTriggered: true,
+  },
+  {
+    id: 'GARDEN_CRAFTER',
+    name: '정원에서 온 것으로',
+    description: '거둔 것이 방에 있는 물건이 됐다.',
+    icon: '🌿',
+    condition: { kind: 'GARDEN_CRAFTED' },
+    target: 6,
+    revealAt: 2,
+    rewardItemId: 'herb_pot',
+    hiddenUntilTriggered: true,
+  },
   {
     id: 'TINY_CHEF',
     name: '작은 요리사',
@@ -244,6 +292,13 @@ export function autoProgress(state: AppState, def: AutoCollectionDef): number {
     // 아는 레시피도 저장하지 않는다. 정원 기록에서 다시 센다.
     case 'RECIPES_KNOWN':
       return state.kitchen.unlockedAt ? discoveredRecipes(state).length : 0
+
+    // 만든 횟수를 따로 저장하지 않는다. 발견 기록에서 가짓수를 센다.
+    case 'CRAFTED_KINDS':
+      return craftedKinds(state.collection)
+
+    case 'GARDEN_CRAFTED':
+      return gardenCraftedKinds(state.collection)
   }
 }
 

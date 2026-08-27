@@ -55,8 +55,17 @@ export function SeedSheet({ open, state, repeatCropId, onClose, onPick }: SeedSh
                   {crop.icon}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[14.5px] font-medium text-ink">
-                    {crop.name} 씨앗
+                  <span className="flex items-center gap-1.5">
+                    <span className="truncate text-[14.5px] font-medium text-ink">
+                      {crop.name} 씨앗
+                    </span>
+                    {/* 찾아낸 것에만 붙는다. 못 찾은 것은 목록에 아예 없다 —
+                        회색 줄로 남겨두면 그건 안내가 아니라 못 가진 것의 목록이다. */}
+                    {crop.discovery && (
+                      <span className="shrink-0 rounded-pill bg-butter-soft px-1.5 py-0.5 font-game text-[9px] tracking-[0.08em] text-butter-deep">
+                        RARE
+                      </span>
+                    )}
                   </span>
                   <span className="mt-0.5 block truncate text-[12px] text-inkdim">
                     {growthLabel(crop.growthSeconds)}이면 다 자라

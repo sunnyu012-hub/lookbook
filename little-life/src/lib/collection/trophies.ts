@@ -133,6 +133,17 @@ const ROWS: TrophyRow[] = [
     hint: '정원 Lv.2',
   },
   {
+    // 만든 횟수를 저장하지 않는다. "만들기로만 얻는 것을 몇 가지 발견했는지"
+    // 로 센다 — 발견은 지워지지 않으니 이 값도 내려가지 않는다.
+    id: 'tiny_workbench',
+    itemId: 't_tiny_workbench',
+    name: '작은 작업대',
+    icon: '🪚',
+    description: '쓰다 보니 자국이 남았다.',
+    condition: { kind: 'CRAFTED_KINDS', count: 30 },
+    hint: '서른 가지 만들어보기',
+  },
+  {
     id: 'garden_window',
     itemId: 't_garden_window',
     name: '정원이 보이는 창',

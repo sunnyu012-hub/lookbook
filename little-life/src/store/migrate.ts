@@ -1,4 +1,6 @@
 import type {
+  QuarryState,
+  DungeonState,
   DiscoveryState,
   GardenPlot,
   GardenState,
@@ -56,6 +58,10 @@ import { MAX_PLOTS, emptyGarden, emptyPlots } from '@/lib/garden/derive'
 import { MAX_ADVENTURE_ENERGY } from '@/lib/garden/quest'
 import { findCrop } from '@/lib/garden/crops'
 import { emptyKitchen } from '@/lib/kitchen/derive'
+import { emptyQuarry, DAILY_ATTEMPTS } from '@/lib/quarry/derive'
+import { isMineral } from '@/lib/quarry/minerals'
+import { emptyDungeon } from '@/lib/dungeon/derive'
+import { findRoomDef, findSpotDef } from '@/lib/dungeon/rooms'
 import { findKitchenRecipe } from '@/lib/kitchen/recipes'
 import { AUTO_COLLECTION_IDS, COMPANION_IDS, SECRET_IDS, SKIN_IDS } from '@/types'
 import { findChapter } from '@/lib/discovery/stories'
@@ -68,7 +74,7 @@ import { findRoom } from '@/lib/collection/rooms'
  * 없는 항목만 기본값으로 채우고, 있는 값은 손대지 않는다.
  */
 
-export const STATE_VERSION = 13
+export const STATE_VERSION = 16
 
 /** 구매 기록을 며칠치까지 남길지 */
 export const PURCHASE_DAYS_KEPT = 7
@@ -845,6 +851,16 @@ export function sanitizeGarden(raw: unknown): GardenState {
     plots: plots.slice(0, MAX_PLOTS),
     harvestedCropCounts,
     plantedCount: Math.max(0, Math.floor(numberOr(g.plantedCount, 0))),
+    // 첫 씨앗을 이미 준 희귀 작물. 없어진 작물이 적혀 있으면 조용히 버린다.
+    rareSeedsGiven: Array.isArray(g.rareSeedsGiven)
+      ? [
+          ...new Set(
+            g.rareSeedsGiven.filter(
+              (v): v is string => typeof v === 'string' && findCrop(v) !== null,
+            ),
+          ),
+        ]
+      : [],
   }
 }
 
@@ -870,6 +886,65 @@ export function sanitizeEnergy(raw: unknown): number {
  * 만든 횟수는 절대 지우지 않는다. 한 번 만들어본 요리는
  * 무슨 일이 있어도 계속 아는 것으로 남아야 한다.
  */
+/**
+ * 오래된 채석장.
+ *
+ * 이 판올림에서 새로 생긴 자리다. 예전 저장에는 통째로 없으므로
+ * 없으면 빈 채석장으로 시작한다 — 기존 기록은 하나도 안 건드린다.
+ */
+export function sanitizeQuarry(raw: unknown): QuarryState {
+  const empty = emptyQuarry()
+  if (!raw || typeof raw !== 'object') return empty
+  const q = raw as Record<string, unknown>
+
+  const foundMineralCounts: Record<string, number> = {}
+  if (q.foundMineralCounts && typeof q.foundMineralCounts === 'object') {
+    for (const [id, count] of Object.entries(q.foundMineralCounts as Record<string, unknown>)) {
+      // 없어진 광물이 적혀 있으면 조용히 버린다
+      if (!isMineral(id)) continue
+      const n = Math.floor(numberOr(count, 0))
+      if (n > 0) foundMineralCounts[id] = n
+    }
+  }
+
+  return {
+    unlockedAt: typeof q.unlockedAt === 'string' ? q.unlockedAt : null,
+    tutorialSeenAt: typeof q.tutorialSeenAt === 'string' ? q.tutorialSeenAt : null,
+    attemptsOn: typeof q.attemptsOn === 'string' ? q.attemptsOn : null,
+    // 손으로 고친 저장으로 오늘 몫을 늘릴 수 없게 한도로 자른다
+    attempts: Math.min(DAILY_ATTEMPTS, Math.max(0, Math.floor(numberOr(q.attempts, 0)))),
+    foundMineralCounts,
+    blockedPathSeen: q.blockedPathSeen === true,
+  }
+}
+
+/**
+ * 잠든 돌문.
+ *
+ * 이 판올림에서 새로 생긴 자리다. 예전 저장에는 통째로 없으므로
+ * 없으면 아직 안 들어가 본 상태로 시작한다 — 기존 기록은 안 건드린다.
+ *
+ * 열쇠를 가졌는지도 문을 찾았는지도 여기 안 적는다. 그건 단서 셋과
+ * 막힌 길 기록에서 계산하는 것이라, 저장을 손으로 고쳐도 앞당길 수 없다.
+ */
+export function sanitizeDungeon(raw: unknown): DungeonState {
+  const empty = emptyDungeon()
+  if (!raw || typeof raw !== 'object') return empty
+  const d = raw as Record<string, unknown>
+
+  const ids = (value: unknown, ok: (id: string) => boolean) =>
+    Array.isArray(value)
+      ? [...new Set(value.filter((v): v is string => typeof v === 'string' && ok(v)))]
+      : []
+
+  return {
+    tutorialSeenAt: typeof d.tutorialSeenAt === 'string' ? d.tutorialSeenAt : null,
+    // 없어진 구역·자리가 적혀 있으면 조용히 버린다
+    discoveredRoomIds: ids(d.discoveredRoomIds, (id) => findRoomDef(id) !== null),
+    searchedSpotIds: ids(d.searchedSpotIds, (id) => findSpotDef(id) !== null),
+  }
+}
+
 export function sanitizeKitchen(raw: unknown): KitchenState {
   const empty = emptyKitchen()
   if (!raw || typeof raw !== 'object') return empty

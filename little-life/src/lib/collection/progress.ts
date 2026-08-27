@@ -1,5 +1,7 @@
 import type {
+  AppState,
   Category,
+  CraftStage,
   ItemKnowledge,
   CollectionItemDef,
   CollectionSetDef,
@@ -251,6 +253,43 @@ export function unclaimedSets(c: CollectionState): CollectionSetDef[] {
   )
 }
 
+/**
+ * 중간까지 왔는데 아직 그 몫을 안 받은 세트.
+ *
+ * 완성 보상과 따로 센다. `${id}:partial` 로 적어둬서
+ * 저장 구조를 새로 늘리지 않았다.
+ */
+export function unclaimedPartials(c: CollectionState): CollectionSetDef[] {
+  return COLLECTION_SETS.filter((s) => {
+    if (s.partialAt === undefined || !s.partialRewards) return false
+    if (c.claimedSetIds.includes(partialKey(s.id))) return false
+    return setProgress(s, c).have >= s.partialAt
+  })
+}
+
+/**
+ * 도감에 이 세트를 보여줄지.
+ *
+ * 아직 못 만난 것으로만 채워지는 세트는 감춘다 — 별빛꽃을 본 적도 없는데
+ * "달빛 정원 0/4" 가 목록에 떠 있으면 그건 목표가 아니라 못 가진 것의 자리다.
+ * 감추는 조건도 저장하지 않는다. 거둔 기록에서 매번 다시 센다.
+ */
+export function isSetVisible(set: CollectionSetDef, state: AppState): boolean {
+  if (!set.hiddenUntil) return true
+  if (set.hiddenUntil.kind === 'CROP_FOUND') {
+    return set.hiddenUntil.cropIds.some((id) => (state.garden.harvestedCropCounts[id] ?? 0) > 0)
+  }
+  return true
+}
+
+export function visibleSets(state: AppState): CollectionSetDef[] {
+  return COLLECTION_SETS.filter((s) => isSetVisible(s, state))
+}
+
+export function partialKey(setId: string): string {
+  return `${setId}:partial`
+}
+
 /** 지금 방에 걸 수 있는 공기 */
 export function unlockedEffectIds(c: CollectionState): HomeEffectId[] {
   const done = new Set(completedSetIds(c))
@@ -281,6 +320,12 @@ export function unlockedTitles(c: CollectionState): string[] {
 // ── 레시피 ──────────────────────────────────────────────
 
 export interface RecipeContext {
+  /** 정원에서 무엇을 몇 번 거뒀는지 */
+  harvestedCropCounts?: Record<string, number>
+  /** 서로 다른 요리를 몇 가지 만들어봤는지 */
+  cookedKinds?: number
+  /** 채석장에서 몇 가지 광물을 만나봤는지 */
+  mineralKinds?: number
   level: number
   discoveredCount: number
   completedSetIds: string[]
@@ -289,25 +334,85 @@ export interface RecipeContext {
   discoveredRecipeIds: string[]
 }
 
-export function isRecipeKnown(recipe: RecipeDef, ctx: RecipeContext): boolean {
-  if (ctx.discoveredRecipeIds.includes(recipe.id)) return true
+/**
+ * 조건에 지금 얼마나 왔는지 (0~1).
+ *
+ * 알거나 모르거나로만 두면 낌새를 흘릴 수가 없다.
+ * 예전부터 있던 조건은 0 아니면 1 로 나온다 — 그건 그대로다.
+ */
+export function recipeProgress(recipe: RecipeDef, ctx: RecipeContext): number {
+  if (ctx.discoveredRecipeIds.includes(recipe.id)) return 1
 
   switch (recipe.unlock.kind) {
     case 'DEFAULT':
-      return true
+      return 1
     case 'LEVEL':
-      return ctx.level >= recipe.unlock.level
+      return Math.min(1, ctx.level / recipe.unlock.level)
     case 'COLLECTION':
-      return ctx.discoveredCount >= recipe.unlock.count
+      return Math.min(1, ctx.discoveredCount / recipe.unlock.count)
     case 'SET':
-      return ctx.completedSetIds.includes(recipe.unlock.setId)
+      return ctx.completedSetIds.includes(recipe.unlock.setId) ? 1 : 0
     case 'NPC':
-      return (ctx.friendship[recipe.unlock.npcId as NpcId] ?? 0) >= recipe.unlock.friendship
+      return Math.min(
+        1,
+        (ctx.friendship[recipe.unlock.npcId as NpcId] ?? 0) / recipe.unlock.friendship,
+      )
+    case 'CROP_HARVESTED':
+      return Math.min(
+        1,
+        (ctx.harvestedCropCounts?.[recipe.unlock.cropId] ?? 0) / recipe.unlock.count,
+      )
+    case 'RECIPES_COOKED':
+      return Math.min(1, (ctx.cookedKinds ?? 0) / recipe.unlock.count)
+    case 'MINERALS_FOUND':
+      return Math.min(1, (ctx.mineralKinds ?? 0) / recipe.unlock.count)
     case 'SECRET':
-      return false
+    case 'COMING_SOON':
+      return 0
     default:
-      return false
+      return 0
   }
+}
+
+/**
+ * 지금 상태에서 레시피 문맥을 만든다.
+ *
+ * 한 군데서만 만든다. 화면과 만들기 판정이 서로 다른 문맥을 쓰면
+ * "보이는데 안 눌리는" 것이 생긴다 — 실제로 그랬다.
+ */
+export function recipeContextOf(state: AppState): RecipeContext {
+  return {
+    harvestedCropCounts: state.garden.harvestedCropCounts,
+    cookedKinds: Object.values(state.kitchen.cookedRecipeCounts).filter((n) => n > 0).length,
+    // 채석장 기록에서 센다. 정원·부엌과 같은 방식이다 — 따로 적어두지 않는다.
+    mineralKinds: Object.values(state.quarry.foundMineralCounts).filter((n) => n > 0).length,
+    level: state.user.level,
+    discoveredCount: discoveredCount(state.collection),
+    completedSetIds: completedSetIds(state.collection),
+    friendship: Object.fromEntries(
+      Object.entries(state.npcs).map(([id, npc]) => [id, npc.friendship]),
+    ),
+    discoveredRecipeIds: state.collection.discoveredRecipeIds,
+  }
+}
+
+export function isRecipeKnown(recipe: RecipeDef, ctx: RecipeContext): boolean {
+  if (recipe.unlock.kind === 'COMING_SOON') return false
+  return recipeProgress(recipe, ctx) >= 1
+}
+
+/**
+ * 이 레시피가 어디까지 왔는지.
+ *
+ * 낌새(hintAt)를 안 적은 레시피는 낌새 단계가 없다 —
+ * 예전부터 있던 것들은 알거나 모르거나 둘 중 하나다.
+ */
+export function craftStage(recipe: RecipeDef, ctx: RecipeContext): CraftStage {
+  if (recipe.unlock.kind === 'COMING_SOON') return 'COMING_SOON'
+  const progress = recipeProgress(recipe, ctx)
+  if (progress >= 1) return 'KNOWN'
+  if (recipe.hintAt !== undefined && progress >= recipe.hintAt) return 'HINTED'
+  return 'UNKNOWN'
 }
 
 export function knownRecipes(ctx: RecipeContext): RecipeDef[] {
@@ -317,6 +422,33 @@ export function knownRecipes(ctx: RecipeContext): RecipeDef[] {
 /** 아직 모르는 레시피가 몇 개 남았는지 — 목록은 보여주지 않는다 */
 export function unknownRecipeCount(ctx: RecipeContext): number {
   return RECIPES.length - knownRecipes(ctx).length
+}
+
+/**
+ * 만들어본 가짓수.
+ *
+ * 만든 횟수를 따로 저장하지 않는다. 만들어서 손에 넣은 것은 발견으로
+ * 남고, 발견은 지워지지 않는다 — 그러니 "만들기로만 얻을 수 있는 것을
+ * 몇 가지 발견했는지" 가 곧 몇 가지 만들어봤는지다.
+ *
+ * 가게에서도 파는 물건은 세지 않는다. 사서 얻은 것을 만든 것으로
+ * 쳐주면 작업실을 한 번도 안 연 사람이 작업 트로피를 받는다.
+ */
+function craftOnly(recipe: RecipeDef): boolean {
+  const def = findCollectionItem(recipe.resultItemId)
+  if (!def) return false
+  return def.acquisitionSources.every((src) => src.kind === 'CRAFT')
+}
+
+export function craftedKinds(c: CollectionState): number {
+  return RECIPES.filter((r) => craftOnly(r) && isDiscovered(c, r.resultItemId)).length
+}
+
+/** 그중 정원에서 온 재료로 만드는 것 (작업실에 늘어난 열둘) */
+export function gardenCraftedKinds(c: CollectionState): number {
+  return RECIPES.filter(
+    (r) => r.id.startsWith('w_') && craftOnly(r) && isDiscovered(c, r.resultItemId),
+  ).length
 }
 
 export function canCraft(recipe: RecipeDef, c: CollectionState): boolean {
@@ -333,6 +465,8 @@ export interface TrophyContext {
   discoveredCount: number
   /** 정원을 못 찾았으면 0 */
   gardenLevel: number
+  /** 만들기로만 얻는 것을 몇 가지 만들어봤는지 */
+  craftedKinds: number
 }
 
 export function trophyEarned(trophy: TrophyDef, ctx: TrophyContext): boolean {
@@ -349,6 +483,8 @@ export function trophyEarned(trophy: TrophyDef, ctx: TrophyContext): boolean {
       return ctx.completedSetIds.includes(trophy.condition.setId)
     case 'GARDEN_LEVEL':
       return ctx.gardenLevel >= trophy.condition.level
+    case 'CRAFTED_KINDS':
+      return ctx.craftedKinds >= trophy.condition.count
     default:
       return false
   }
@@ -419,6 +555,8 @@ export function acquisitionHint(item: CollectionItemDef, shopName: (id: string) 
       return '현실에서 충분히 쌓이면.'
     case 'GARDEN':
       return '작은 정원에서 거둘 수 있어.'
+    case 'QUARRY':
+      return '오래된 채석장에서 캘 수 있어.'
     case 'SECRET':
       return first.hint ?? '언제 만나게 될지는 아직.'
     default:

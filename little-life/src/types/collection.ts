@@ -105,6 +105,8 @@ export type AcquisitionSource =
   | { kind: 'TROPHY' }
   /** 작은 정원에서 거둔다 */
   | { kind: 'GARDEN' }
+  /** 오래된 채석장에서 캔다 */
+  | { kind: 'QUARRY' }
   | { kind: 'SECRET'; hint: string | null }
 
 // ── 아이템 ──────────────────────────────────────────────
@@ -174,6 +176,13 @@ export interface CollectionItemDef {
   unique: boolean
   /** 발견 전에는 이름도 힌트도 숨긴다 */
   hiddenUntilDiscovered?: boolean
+  /**
+   * 아직 이 판에 없는 것.
+   *
+   * 다음 업데이트 예고로 목록에 자리만 남긴 물건이다.
+   * 만들 수도 없고 방에 놓을 수도 없다 — 어떤 길로도 손에 들어오지 않는다.
+   */
+  comingSoon?: boolean
   /** 발견 전에는 전체 수에도 넣지 않는다 — "238 / 240 + ?" 를 위한 자리 */
   hiddenFromTotal?: boolean
 }
@@ -203,6 +212,19 @@ export interface CollectionSetDef {
   description: string
   /** 정해진 물건을 다 모으면 완성 */
   itemIds: string[]
+  /**
+   * 다 모으기 전에 한 번 주는 자리.
+   *
+   * 다섯 개짜리 세트에서 다섯 번째가 귀한 것이면, 넷을 모아도 손에
+   * 남는 게 없다. 중간에 한 번 쥐여주면 거기까지 온 게 헛되지 않다.
+   *
+   * 받았는지는 claimedSetIds 에 `${id}:partial` 로 적는다 —
+   * 저장 구조를 새로 늘리지 않으려고 그렇게 했다.
+   */
+  partialAt?: number
+  partialRewards?: SetRewardKind[]
+  /** 조건을 채우기 전에는 도감에서 감춘다 */
+  hiddenUntil?: { kind: 'CROP_FOUND'; cropIds: string[] }
   /**
    * 물건을 지정하는 대신 "이 분류를 N개" 로 여는 세트.
    * 식물처럼 취향이 갈리는 건 목록을 정해두면 강요가 된다.
@@ -246,6 +268,19 @@ export type RecipeUnlock =
   | { kind: 'COLLECTION'; count: number }
   | { kind: 'LEVEL'; level: number }
   | { kind: 'SECRET' }
+  /** 이 작물을 이만큼 거두면 */
+  | { kind: 'CROP_HARVESTED'; cropId: string; count: number }
+  /** 서로 다른 요리를 이만큼 만들어보면 */
+  | { kind: 'RECIPES_COOKED'; count: number }
+  /** 채석장에서 서로 다른 광물을 이만큼 만나면 */
+  | { kind: 'MINERALS_FOUND'; count: number }
+  /**
+   * 아직 만들 수 없다.
+   *
+   * 감춰두는 대신 자리를 남긴다 — 다음에 무엇이 올지 알려주는 건
+   * 잠긴 문이 아니라 열쇠구멍이다.
+   */
+  | { kind: 'COMING_SOON' }
 
 export interface RecipeDef {
   id: string
@@ -255,7 +290,20 @@ export interface RecipeDef {
   unlock: RecipeUnlock
   /** 어떻게 알게 됐는지 한 줄 */
   unlockHint: string
+  /** 작업실 목록에서 어느 칸에 들어가는지 */
+  category?: 'FURNITURE' | 'DECOR' | 'SPECIAL'
+  /**
+   * 이 비율만큼 왔으면 낌새를 흘린다 (0~1).
+   *
+   * 없으면 낌새 단계가 없다 — 예전부터 있던 레시피는 알거나 모르거나 둘 중 하나다.
+   */
+  hintAt?: number
+  /** 알기 전에 흘리는 말 */
+  hint?: string
 }
+
+/** 이 레시피가 나에게 어디까지 왔는지 */
+export type CraftStage = 'UNKNOWN' | 'HINTED' | 'KNOWN' | 'COMING_SOON'
 
 // ── 트로피 ──────────────────────────────────────────────
 /** 현실에서 쌓은 것을 방에 놓을 수 있는 물건으로 바꾼다 */
@@ -267,6 +315,8 @@ export type TrophyCondition =
   | { kind: 'SET_COMPLETE'; setId: string }
   /** 정원이 이만큼 넓어지면 */
   | { kind: 'GARDEN_LEVEL'; level: number }
+  /** 만들기로만 얻는 것을 이만큼 만들어보면 */
+  | { kind: 'CRAFTED_KINDS'; count: number }
 
 export interface TrophyDef {
   id: string

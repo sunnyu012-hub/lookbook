@@ -29,6 +29,10 @@ export const AUTO_COLLECTION_IDS = [
   'HOME_COOK',
   'RECIPE_HUNTER',
   'TINY_CHEF',
+  'HANDMADE',
+  'LITTLE_MAKER',
+  'HOME_ARTISAN',
+  'GARDEN_CRAFTER',
 ] as const
 export type AutoCollectionId = (typeof AUTO_COLLECTION_IDS)[number]
 
@@ -59,6 +63,10 @@ export type AutoCondition =
   | { kind: 'MEALS_COOKED' }
   /** 레시피를 몇 가지 알게 됐는지 */
   | { kind: 'RECIPES_KNOWN' }
+  /** 만들기로만 얻는 것을 몇 가지 만들어봤는지 */
+  | { kind: 'CRAFTED_KINDS' }
+  /** 그중 정원에서 온 재료로 만든 것 */
+  | { kind: 'GARDEN_CRAFTED' }
 
 export interface AutoCollectionDef {
   id: AutoCollectionId
@@ -112,6 +120,8 @@ export type SecretCondition =
   | { kind: 'FRIENDSHIP'; npcId: NpcId; value: number }
   | { kind: 'CATEGORY_QUESTS'; category: Category; count: number }
   | { kind: 'COLLECTION_CATEGORY'; category: string; count: number }
+  /** 채석장에서 이것을 몇 번 캤는지. 이야기가 캔 기록을 볼 때 쓴다. */
+  | { kind: 'QUARRY_FIND'; itemId: string; count: number }
 
 export interface SecretDef {
   id: SecretId
@@ -266,6 +276,8 @@ export type DiscoveryKind =
   | 'COMPANION'
   | 'GARDEN'
   | 'KITCHEN'
+  | 'QUARRY'
+  | 'DUNGEON'
 
 export interface DiscoveryNote {
   /** 같은 것을 두 번 알리지 않으려고 쓰는 열쇠 */

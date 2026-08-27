@@ -58,16 +58,85 @@ export interface CropDef {
   description: string
   tags: string[]
   /**
-   * 씨앗이 지금 돌고 있는지.
+   * 씨앗이 처음부터 돌고 있는지.
    *
-   * false 면 퀘스트에서 씨앗이 나오지 않는다. 도감에는 자리만 있다 —
-   * 아직 만날 방법이 없는 것을 "언젠가" 로 남겨두는 자리다.
+   * false 면 찾기 전까지는 퀘스트에서도 안 나오고 심을 수도 없다.
+   * 찾고 나면 (discovery 조건을 채우면) 그때부터 돈다.
    */
   seedAvailable: boolean
+  /**
+   * 찾아야 만나는 것.
+   *
+   * 조건은 전부 이미 쌓여 있는 기록에서 센다 — 정원 단계 · 거둔 가짓수 ·
+   * 특정 작물을 몇 번 거뒀는지 · 밤에 끝낸 퀘스트 수.
+   * 그래서 이 업데이트를 켜는 순간 그동안의 기록이 그대로 반영된다.
+   */
+  discovery?: RareDiscovery
   /** 이 분야 퀘스트에서 씨앗이 조금 더 잘 나온다. 강제는 아니다. */
   seedBias?: Category[]
   /** 거두기 전에는 도감에서 이름도 감춘다 */
   hiddenUntilDiscovered?: boolean
+}
+
+/** 희귀 작물을 찾는 조건 하나 */
+export type RareCondition =
+  /** 정원이 이만큼 넓어지면 */
+  | { kind: 'GARDEN_LEVEL'; level: number }
+  /** 서로 다른 작물을 이만큼 거뒀으면 */
+  | { kind: 'CROPS_DISCOVERED'; count: number }
+  /** 이 작물을 이만큼 거뒀으면 */
+  | { kind: 'CROP_HARVESTED'; cropId: CropId; count: number }
+  /** 밤에 끝낸 퀘스트가 이만큼이면 */
+  | { kind: 'NIGHT_QUESTS'; count: number }
+  /**
+   * 서로 다른 요리를 이만큼 만들어봤으면.
+   *
+   * "알게 된 요리" 가 아니라 "만들어본 요리" 를 본다. 부엌 쪽 계산을
+   * 들여오면 정원 ↔ 부엌이 서로를 부르게 되고, 그건 언제 터져도
+   * 이상하지 않은 구조다. 만든 횟수는 저장된 값이라 그냥 읽으면 된다.
+   */
+  | { kind: 'RECIPES_COOKED'; count: number }
+
+export interface RareDiscovery {
+  /** 전부 만족하면 찾는다 */
+  conditions: RareCondition[]
+  /** 찾은 순간의 한 줄 */
+  reveal: string
+  /**
+   * 찾고 나서 퀘스트에서 씨앗이 다시 나올 확률 (%).
+   *
+   * 한 번 주고 끝내지 않는다 — 한 번 심으면 다시는 못 보는 작물은
+   * 발견이 아니라 박제다.
+   */
+  reseedChance: number
+  /** 밤에 끝낸 퀘스트에서만 다시 나오는지 */
+  nightOnly?: boolean
+}
+
+/**
+ * 같은 작물에서 아주 가끔 나오는 다른 것.
+ *
+ * 씨앗을 따로 심는 게 아니라, 거둘 때 섞여 나온다.
+ */
+export interface CropVariant {
+  id: string
+  /** 어느 작물을 거둘 때 나오는지 */
+  baseCropId: CropId
+  /** 나오는 작물 (그 자체도 CropDef 다) */
+  cropId: CropId
+  /** 기본 확률 (%) */
+  chance: number
+  /** 정원 단계가 이만큼이면 조금 더 (%p) */
+  levelBonus: { level: number; add: number }
+  /** 이만큼 거뒀으면 조금 더 (%p) */
+  harvestBonus: { count: number; add: number }
+  /**
+   * 이만큼 거뒀는데도 못 봤으면 다음에 반드시 나온다.
+   *
+   * 운이 나빠서 영영 못 보는 일을 만들지 않는다.
+   * 이 값도 저장하지 않는다 — 거둔 기록에서 그대로 센다.
+   */
+  pityAt: number
 }
 
 // ── 밭 ──────────────────────────────────────────────────
@@ -100,6 +169,13 @@ export interface GardenState {
   harvestedCropCounts: Record<string, number>
   /** 지금까지 심은 횟수. 되돌아가지 않는 기록이다. */
   plantedCount: number
+  /**
+   * 첫 씨앗을 이미 받은 희귀 작물.
+   *
+   * 찾았는지 자체는 저장하지 않는다 (조건에서 계산한다).
+   * 여기 있는 건 "처음 한 번을 이미 줬는지" 뿐이라 두 번 줄 수가 없다.
+   */
+  rareSeedsGiven: string[]
 }
 
 // ── 화면에서 보는 모양 ──────────────────────────────────

@@ -10,6 +10,9 @@ export interface HarvestNote {
   isNew: boolean
   /** 이번 수확으로 정원이 넓어졌으면 그 단계 */
   leveledUp: number | null
+  /** 아주 가끔 섞여 나오는 것 (황금 딸기처럼). 없으면 null. */
+  variant?: CropDef | null
+  variantIsNew?: boolean
 }
 
 interface HarvestOverlayProps {
@@ -29,7 +32,7 @@ export function HarvestOverlay({ note, onClose, onOpenBook }: HarvestOverlayProp
   useOverlay(note !== null, onClose)
   if (!note) return null
 
-  const { crop, count, isNew, leveledUp } = note
+  const { crop, count, isNew, leveledUp, variant, variantIsNew } = note
 
   return (
     <Portal>
@@ -62,6 +65,22 @@ export function HarvestOverlay({ note, onClose, onOpenBook }: HarvestOverlayProp
             </p>
           )}
 
+          {/* 섞여 나온 것. 따로 창을 하나 더 띄우지 않는다 —
+              거둘 때마다 창이 두 장 뜨면 그건 선물이 아니라 절차가 된다. */}
+          {variant && (
+            <div className="mt-3 rounded-btn bg-butter-soft/70 px-3 py-2.5">
+              <p className="font-game text-[10px] tracking-[0.14em] text-butter-deep">
+                {variantIsNew ? 'RARE FIND ✦' : 'ALSO FOUND ✦'}
+              </p>
+              <p className="mt-1 text-[13.5px] text-ink">
+                {variant.icon} {variant.name}도 하나 섞여 있었어
+              </p>
+              <p className="mt-0.5 text-[12px] leading-relaxed text-inkdim">
+                {variant.description}
+              </p>
+            </div>
+          )}
+
           {leveledUp !== null && (
             <div className="mt-3 rounded-btn bg-butter-soft px-3 py-2.5">
               <p className="font-game text-[10px] tracking-[0.14em] text-butter-deep">
@@ -74,7 +93,7 @@ export function HarvestOverlay({ note, onClose, onOpenBook }: HarvestOverlayProp
           )}
 
           <div className="mt-4 flex gap-2">
-            {isNew && (
+            {(isNew || variantIsNew) && (
               <Button variant="soft" size="lg" className="flex-1" onClick={onOpenBook}>
                 도감 보기
               </Button>
