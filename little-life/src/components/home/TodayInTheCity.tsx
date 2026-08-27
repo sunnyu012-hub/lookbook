@@ -1,6 +1,7 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import type { AppState, CityEvent } from '@/types'
 import { SectionHeader } from '@/components/layout/ScreenHeader'
+import { BottomSheet } from '@/components/ui/BottomSheet'
 import { findArea } from '@/lib/rpg/content'
 import { NPCS, findNpc, meetsLevel } from '@/lib/city/npcs'
 import { SHOPS } from '@/lib/city/shops'
@@ -92,15 +93,28 @@ function shopLines(): Line[] {
  * 캐릭터보다 위로 올라오지 않는다. 이 앱의 중심은 여전히 내 하루다.
  * 소식은 서너 줄이면 충분하고, 없으면 굳이 만들지 않는다.
  */
+/** 홈에 바로 내놓는 줄 수. 넷째부터는 "더 보기" 안으로 간다. */
+const HOME_LINES = 3
+
 export function TodayInTheCity({
   state,
   events,
   onOpenMap,
   onOpenDiscovery,
 }: TodayInTheCityProps) {
-  // 다섯 줄이면 그건 소식이 아니라 목록이고, 목록은 안 읽힌다.
-  const lines = useMemo(() => buildLines(state, events).slice(0, 3), [state, events])
+  const [allOpen, setAllOpen] = useState(false)
+
+  const lines = useMemo(() => buildLines(state, events), [state, events])
+  const shown = lines.slice(0, HOME_LINES)
+  const rest = lines.length - shown.length
+
   if (lines.length === 0) return null
+
+  const goTo = (line: Line) => {
+    setAllOpen(false)
+    if (line.to === 'DISCOVERY') onOpenDiscovery()
+    else onOpenMap()
+  }
 
   return (
     <section>
@@ -110,28 +124,67 @@ export function TodayInTheCity({
         홈이 길어지는 이유의 절반이 "모든 게 각자 카드" 였다.
       */}
       <ul className="divide-y divide-line/70 overflow-hidden rounded-card border border-line/70 bg-surface shadow-soft">
-        {lines.map((line, i) => (
-          <li key={i}>
+        {shown.map((line, i) => (
+          <NewsRow key={i} line={line} onSelect={() => goTo(line)} />
+        ))}
+
+        {/*
+          홈에서 펼치지 않는다. 펼치면 홈이 다시 길어지고, 접으면 방금 읽던
+          자리가 사라진다. 나머지는 시트에서 한 번에 본다.
+        */}
+        {rest > 0 && (
+          <li>
             <button
               type="button"
-              onClick={line.to === 'DISCOVERY' ? onOpenDiscovery : onOpenMap}
-              className={cn(
-                'flex w-full items-center gap-2.5 px-4 py-3.5 text-left',
-                'transition-transform duration-150 ease-out active:scale-[0.99]',
-              )}
+              onClick={() => setAllOpen(true)}
+              className="flex w-full items-center justify-center gap-1 px-4 py-3 text-[12.5px] font-medium text-inkdim transition-transform duration-150 ease-out active:scale-[0.99]"
             >
-              <span className="w-6 shrink-0 text-center text-[16px] leading-[1.35]">
-                {line.icon}
-              </span>
-              <span className="min-w-0 flex-1 text-[13.5px] leading-snug text-ink">
-                {line.text}
-              </span>
-              <span className="shrink-0 text-[11px] text-inkfaint">›</span>
+              오늘 소식 {rest}개 더 보기
+              <span className="text-[11px] leading-none text-inkfaint">›</span>
             </button>
           </li>
-        ))}
+        )}
       </ul>
+
+      <BottomSheet open={allOpen} onClose={() => setAllOpen(false)} title="오늘의 소식">
+        <h2 className="text-[19px] font-bold text-ink">오늘의 소식</h2>
+        <p className="mt-1 text-[13px] leading-relaxed text-inkdim">
+          오늘만 참인 것들이야. 눌러서 바로 가도 돼.
+        </p>
+        <ul className="mt-4 divide-y divide-line/70 overflow-hidden rounded-card border border-line/70 bg-surface">
+          {lines.map((line, i) => (
+            <NewsRow key={i} line={line} onSelect={() => goTo(line)} />
+          ))}
+        </ul>
+      </BottomSheet>
     </section>
+  )
+}
+
+/**
+ * 소식 한 줄.
+ *
+ * 두 줄까지 내준다. 한 줄로 잘라버리면 "도시 전체 · 작은 축제 — 모든 코인…"
+ * 처럼 정작 무슨 일인지가 사라진다. 그럴 거면 안 적은 것만도 못하다.
+ */
+function NewsRow({ line, onSelect }: { line: Line; onSelect: () => void }) {
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={onSelect}
+        className={cn(
+          'flex w-full items-center gap-2.5 px-4 py-3.5 text-left',
+          'transition-transform duration-150 ease-out active:scale-[0.99]',
+        )}
+      >
+        <span className="w-6 shrink-0 text-center text-[16px] leading-[1.35]">{line.icon}</span>
+        <span className="line-clamp-2 min-w-0 flex-1 text-[13.5px] leading-snug text-ink">
+          {line.text}
+        </span>
+        <span className="shrink-0 text-[11px] text-inkfaint">›</span>
+      </button>
+    </li>
   )
 }
 
@@ -139,7 +192,9 @@ export function TodayInTheCity({
  * 오늘 알려줄 만한 것만 고른다.
  *
  * 순서: 도시 이벤트 → 새로 받을 수 있는 의뢰 → 밤 시장 → 오늘 바뀐 진열.
- * 다 합쳐 네 줄을 넘기지 않는다. 넘치면 그냥 목록이 되고, 목록은 안 읽힌다.
+ *
+ * 여기서는 자르지 않는다. 홈에 몇 줄을 낼지, 나머지를 어디서 볼지는
+ * 화면이 정한다 — 여기서 잘라버리면 "더 보기" 로도 못 보는 소식이 생긴다.
  */
 function buildLines(state: AppState, events: CityEvent[]): Line[] {
   const lines: Line[] = []
@@ -240,5 +295,5 @@ function buildLines(state: AppState, events: CityEvent[]): Line[] {
   }
 
 
-  return lines.slice(0, 5)
+  return lines
 }

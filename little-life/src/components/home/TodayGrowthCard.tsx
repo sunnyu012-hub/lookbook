@@ -19,10 +19,11 @@ interface TodayGrowthCardProps {
  * 카드를 세 장 만들지 않는다. 한 칸 안에 세 열로 둔다 —
  * 숫자 세 개를 나란히 놓는 게 카드 세 장보다 훨씬 빨리 읽힌다.
  *
- * "받은 EXP" 가 아니라 "퀘스트 EXP" 다. 몬스터를 넘기거나 주간 목표를 채워서
+ * 숫자 셋은 **오늘 퀘스트 보상**이다. 몬스터를 넘기거나 주간 목표를 채워서
  * 들어온 몫은 여기 안 잡힌다 — 그건 오늘 것인지 알 방법이 세이브에 없고,
- * 이 화면 하나 때문에 누적 필드를 새로 만들 이유는 없다.
- * 못 세는 걸 센 척하는 것보다 무엇을 센 건지 적어두는 쪽이 낫다.
+ * 이 화면 하나 때문에 보상 원장을 새로 만들 이유는 없다.
+ *
+ * 그래서 무엇을 센 건지 숫자 위에 적어둔다. 못 세는 걸 센 척하지 않는다.
  */
 export function TodayGrowthCard({ user, today }: TodayGrowthCardProps) {
   const need = requiredExp(user.level)
@@ -32,18 +33,26 @@ export function TodayGrowthCard({ user, today }: TodayGrowthCardProps) {
     <section className="rounded-card border border-line/70 bg-surface px-5 py-5 shadow-soft">
       <h2 className="text-[13px] font-medium text-inkdim">오늘의 성장</h2>
 
-      <div className="mt-3 flex items-start">
+      {/* 무엇을 센 건지 한 번만 적고, 아래 라벨은 짧게 간다.
+          세 칸에 "퀘스트" 를 세 번 적으면 그건 설명이 아니라 소음이다. */}
+      <p className="mt-3 font-game text-[10px] tracking-[0.1em] text-inkfaint">오늘 퀘스트 보상</p>
+
+      <div className="mt-2 flex items-start">
         <Figure
           icon={<img src={UI.check} alt="" aria-hidden className="h-4 w-4 object-contain" />}
           value={`${today.completed}개`}
-          label="완료한 퀘스트"
+          label="완료"
         />
         <Figure
           icon={<img src={EFFECT.star} alt="" aria-hidden className="h-4 w-4 object-contain" />}
           value={`+${today.exp}`}
-          label="퀘스트 EXP"
+          label="EXP"
         />
-        <Figure icon={<span className="text-[13px] leading-none">🪙</span>} value={`+${today.coins}`} label="퀘스트 코인" />
+        <Figure
+          icon={<span className="text-[13px] leading-none">🪙</span>}
+          value={`+${today.coins}`}
+          label="코인"
+        />
       </div>
 
       <div className="mt-5">
