@@ -97,20 +97,20 @@ LAYOUT = [
     ("skins4-other-c.png", [
         "city_guardian", "golden_slime_queen", "all_seasons_spirit", "little_life_lead",
     ]),
-    ("skins4-daily.png", [
-        "pack7_73", "pack7_74", "pack7_75",
-        "pack7_76",
+    ("skins4-taste-a.png", [
+        "french_girl_casual", "minimal_monotone", "kitsch_vintage_denim",
+        "vintage_bookcafe_mood",
     ]),
     # 5차 — 묶음 4 · 7 · 8 · 9 (스무 벌 더)
     ("skins5-festival-c.png", [
         "first_snow_angel", "christmas_idol", "new_year_pouch", "starlight_ball",
     ]),
-    ("skins5-daily-b.png", [
-        "pack7_77", "pack7_78", "pack7_79", "pack7_80",
+    ("skins5-outing-c.png", [
+        "new_cafe_hunt", "exhibition_day", "baseball_cheer", "hangang_picnic",
     ]),
     ("skins5-daily-c.png", [
-        "pack7_81", "pack7_82", "pack7_83",
-        "pack7_84",
+        "dusty_blue_work_jacket", "cream_knit_vest_long_skirt", "dusty_red_rugby_shirt",
+        "shirring_blouse_cargo_skirt",
     ]),
     ("skins5-weather.png", [
         "rainy_season_practical", "heatwave_linen", "aircon_cardigan", "midsummer_long_skirt",
@@ -141,12 +141,13 @@ LAYOUT = [
     ("skins7-outing-a.png", [
         "subway_commute", "work_from_home_day", "convenience_store_run", "after_work_meetup",
     ]),
-    ("skins7-outing-b.png", [
-        "new_cafe_hunt", "exhibition_day", "baseball_cheer", "hangang_picnic",
+    ("skins7-daily-b.png", [
+        "denim_shirt_setup", "lavender_shirt_dress", "city_windbreaker_wide_pants",
+        "red_cardigan_cream_pants",
     ]),
-    ("skins7-taste-c.png", [
-        "french_girl_casual", "minimal_monotone", "kitsch_vintage_denim",
-        "vintage_bookcafe_mood",
+    ("skins7-daily-a.png", [
+        "oatmeal_sweatshirt_daily", "coral_tee_light_denim", "sage_check_shirt_layered",
+        "charcoal_cardigan_raw_denim",
     ]),
 ]
 

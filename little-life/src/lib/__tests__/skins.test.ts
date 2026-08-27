@@ -802,41 +802,24 @@ describe('F.5 · 그림 캔버스', () => {
   })
 })
 
-describe('F.5 · 이름이 아직 안 정해진 것', () => {
+describe('F.5 · 이름 자리표', () => {
   /**
-   * 7묶음 열둘은 그림만 왔고 이름이 없다.
+   * 한때 7묶음 열둘이 자리표였다.
    *
-   * 리포·시트 파일명 · PNG 메타데이터 · 기획 문서 · git 기록(폐기된
-   * 레이어 옷장까지) 어디에도 확정명이 없어서 자리표로 뒀다.
-   * 여기가 붙잡는 건 하나다 — **자리표가 조용히 이름이 되어 굳지 않는 것.**
-   * 이름이 오면 이 테스트가 빨개지고, 그때 id · 이름 · 그림 파일을
-   * 한 번에 같이 정하면 된다.
+   * 그림은 왔는데 확정명을 못 찾아서 PACK7_SKIN_73 으로 세워뒀다가,
+   * 확정명을 받고 id · 이름 · 그림 파일을 한 번에 정했다.
+   * 장치는 남겨둔다 — 다음에 또 그림이 이름보다 먼저 올 수 있다.
+   *
+   * 여기가 붙잡는 건 하나다: **자리표가 조용히 이름이 되어 굳지 않는 것.**
    */
-  const pending = () => SKINS.filter((s) => s.nameMissing)
-
-  it('7묶음 열둘만 자리표다', () => {
-    expect(pending().map((s) => s.packId)).toEqual(Array(12).fill(7))
+  it('지금은 자리표가 하나도 없다', () => {
+    expect(SKINS.filter((s) => s.nameMissing).map((s) => s.id)).toEqual([])
   })
 
-  it('자리표는 자리표처럼 생겼다 — 이름처럼 안 생겼다', () => {
-    for (const skin of pending()) {
-      expect(skin.name).toMatch(/^PACK7_SKIN_\d+$/)
-      // id 도 뜻이 없어야 한다. 뜻을 담으면 진짜 이름이 왔을 때 어긋난다.
-      expect(skin.id).toMatch(/^pack7_\d+$/)
-    }
-  })
-
-  it('이름이 정해진 것에는 자리표 표시가 없다', () => {
-    for (const skin of SKINS.filter((s) => !s.nameMissing)) {
-      expect(skin.name).not.toMatch(/^PACK7_SKIN_/)
-      expect(skin.id).not.toMatch(/^pack7_/)
-    }
-  })
-
-  it('그림은 다 있다 — 없는 건 이름뿐이다', () => {
-    const pub = path.resolve(__dirname, '../../../public')
-    for (const skin of pending()) {
-      expect(existsSync(path.join(pub, `assets/characters/${skin.id}.webp`))).toBe(true)
+  it('자리표 흔적이 이름에도 id 에도 안 남았다', () => {
+    for (const skin of SKINS) {
+      expect(skin.name).not.toMatch(/^PACK\d/)
+      expect(skin.id).not.toMatch(/^pack\d+_/)
     }
   })
 })
@@ -861,6 +844,15 @@ describe('F.5 · 확정명', () => {
       '프렌치 걸 캐주얼', '미니멀 모노톤', '키치 빈티지 데님', '빈티지 북카페 무드',
       '현실적인 발레코어', '소프트 고프코어', '코지 스칸디 무드', '캠퍼스 프레피',
       '레트로 스포티', '시티보이 오버핏', '로맨틱 새틴 무드', '소프트 시크 올블랙',
+    ])
+  })
+
+  it('7묶음 열둘이 확정명 그대로다', () => {
+    expect(skinsInPack(7).map((s) => s.name)).toEqual([
+      '오트밀 맨투맨 데일리', '코랄 티셔츠와 연청 데님', '세이지 체크 셔츠 레이어드',
+      '차콜 카디건과 생지 데님', '더스티블루 워크재킷', '크림 니트 조끼와 롱스커트',
+      '더스티레드 럭비 셔츠', '셔링 블라우스와 카고 스커트', '데님 셔츠 셋업',
+      '라벤더 셔츠 원피스', '도심 바람막이와 와이드 팬츠', '레드 카디건과 크림 팬츠',
     ])
   })
 

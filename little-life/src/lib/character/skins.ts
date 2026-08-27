@@ -560,31 +560,19 @@ const PACK_ROWS: Record<SkinPackId, readonly PackRow[]> = {
     ['all_seasons_spirit', '모든 계절의 정령', '네 계절을 한 벌에 담았다.'],
     ['little_life_lead', 'Little Life의 주인공', '이 이야기의 한가운데 서 있는 모습.'],
   ],
-  /**
-   * 7묶음 — 이름이 아직 없다.
-   *
-   * 그림 열두 장은 왔는데 이름이 확정된 문서가 없다. 리포·시트 파일명 ·
-   * PNG 메타데이터 · 기획 문서 · git 기록(폐기된 레이어 옷장까지) 을
-   * 다 뒤졌지만 나온 게 없었다.
-   *
-   * 그래서 이름을 지어 붙이지 않는다. 한 번 지어두면 나중에 진짜 이름이
-   * 와도 id 가 엉뚱한 뜻을 계속 들고 다닌다 — 실제로 여기서 두 번 그랬다.
-   * id 도 뜻이 없는 자리표(pack7_73)로 둔다. 이름이 오면 id · 이름 ·
-   * 그림 파일을 한 번에 같이 정한다.
-   */
   7: [
-    ['pack7_73', 'PACK7_SKIN_73', '이름이 아직 안 붙은 옷.'],
-    ['pack7_74', 'PACK7_SKIN_74', '이름이 아직 안 붙은 옷.'],
-    ['pack7_75', 'PACK7_SKIN_75', '이름이 아직 안 붙은 옷.'],
-    ['pack7_76', 'PACK7_SKIN_76', '이름이 아직 안 붙은 옷.'],
-    ['pack7_77', 'PACK7_SKIN_77', '이름이 아직 안 붙은 옷.'],
-    ['pack7_78', 'PACK7_SKIN_78', '이름이 아직 안 붙은 옷.'],
-    ['pack7_79', 'PACK7_SKIN_79', '이름이 아직 안 붙은 옷.'],
-    ['pack7_80', 'PACK7_SKIN_80', '이름이 아직 안 붙은 옷.'],
-    ['pack7_81', 'PACK7_SKIN_81', '이름이 아직 안 붙은 옷.'],
-    ['pack7_82', 'PACK7_SKIN_82', '이름이 아직 안 붙은 옷.'],
-    ['pack7_83', 'PACK7_SKIN_83', '이름이 아직 안 붙은 옷.'],
-    ['pack7_84', 'PACK7_SKIN_84', '이름이 아직 안 붙은 옷.'],
+    ['oatmeal_sweatshirt_daily', '오트밀 맨투맨 데일리', '고민하기 싫은 날에 손이 먼저 간다.'],
+    ['coral_tee_light_denim', '코랄 티셔츠와 연청 데님', '한 가지만 밝아도 하루가 가벼워진다.'],
+    ['sage_check_shirt_layered', '세이지 체크 셔츠 레이어드', '단추는 안 잠근다.'],
+    ['charcoal_cardigan_raw_denim', '차콜 카디건과 생지 데님', '어두운 두 벌인데 답답하지 않다.'],
+    ['dusty_blue_work_jacket', '더스티블루 워크재킷', '주머니가 많아서 가방을 덜 든다.'],
+    ['cream_knit_vest_long_skirt', '크림 니트 조끼와 롱스커트', '단정한데 조이지 않는다.'],
+    ['dusty_red_rugby_shirt', '더스티레드 럭비 셔츠', '굵은 줄무늬는 그것만으로 충분하다.'],
+    ['shirring_blouse_cargo_skirt', '셔링 블라우스와 카고 스커트', '위는 얌전하고 아래는 편하게.'],
+    ['denim_shirt_setup', '데님 셔츠 셋업', '위아래를 맞추면 고민할 게 없다.'],
+    ['lavender_shirt_dress', '라벤더 셔츠 원피스', '하나만 입으면 끝나는 날.'],
+    ['city_windbreaker_wide_pants', '도심 바람막이와 와이드 팬츠', '바람이 지나가는데 안 춥다.'],
+    ['red_cardigan_cream_pants', '레드 카디건과 크림 팬츠', '한 군데만 붉으면 눈이 거기 간다.'],
   ],
   8: [
     ['early_spring_trench', '꽃샘추위 트렌치코트', '봄인 줄 알았는데 아니었다.'],
@@ -676,8 +664,6 @@ function packSkins(): CharacterSkin[] {
             ? { kind: 'CONDITION', all: [], price: NEW_SHOP_SKIN_PRICE }
             : { kind: 'GACHA', poolId: pack.poolId! },
         acquisition: pack.acquisition,
-        // 자리표인 묶음은 표시해둔다 — 감사가 세어서 계속 알려준다
-        ...(name.startsWith('PACK') ? { nameMissing: true as const } : {}),
         packId: pack.id,
         wardrobeTag: pack.tag,
         // 조건을 세는 옷이 아니라서 힌트에 적을 "아직 남은 것" 이 없다.

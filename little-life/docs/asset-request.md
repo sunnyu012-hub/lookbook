@@ -359,6 +359,9 @@
 
 ---
 
+
+---
+
 ## UPDATE F.5 — 새 옷 아흔여섯 벌
 
 **96 / 96 도착.** 남은 0장은 아직 없다 —
@@ -460,24 +463,20 @@
 
 일상 · 의상실에서 산다 · 특별할 것 없이, 그냥 오늘 입은 옷.
 
-⚠️ **이 묶음은 이름이 없다.** 그림 열두 장은 다 있지만 확정명을 못 찾았다 —
-리포 · 시트 파일명 · PNG 메타데이터 · 기획 문서 · git 기록을 다 뒤졌다.
-아래 `id` 와 `이름` 은 자리표다. **이름이 오면 셋을 한 번에 같이 정한다.**
-
 | | 파일 | 이름 | 결 |
 | --- | --- | --- | --- |
-| ⚠️ | `pack7_73.webp` | PACK7_SKIN_73 | 이름이 아직 안 붙은 옷. |
-| ⚠️ | `pack7_74.webp` | PACK7_SKIN_74 | 이름이 아직 안 붙은 옷. |
-| ⚠️ | `pack7_75.webp` | PACK7_SKIN_75 | 이름이 아직 안 붙은 옷. |
-| ⚠️ | `pack7_76.webp` | PACK7_SKIN_76 | 이름이 아직 안 붙은 옷. |
-| ⚠️ | `pack7_77.webp` | PACK7_SKIN_77 | 이름이 아직 안 붙은 옷. |
-| ⚠️ | `pack7_78.webp` | PACK7_SKIN_78 | 이름이 아직 안 붙은 옷. |
-| ⚠️ | `pack7_79.webp` | PACK7_SKIN_79 | 이름이 아직 안 붙은 옷. |
-| ⚠️ | `pack7_80.webp` | PACK7_SKIN_80 | 이름이 아직 안 붙은 옷. |
-| ⚠️ | `pack7_81.webp` | PACK7_SKIN_81 | 이름이 아직 안 붙은 옷. |
-| ⚠️ | `pack7_82.webp` | PACK7_SKIN_82 | 이름이 아직 안 붙은 옷. |
-| ⚠️ | `pack7_83.webp` | PACK7_SKIN_83 | 이름이 아직 안 붙은 옷. |
-| ⚠️ | `pack7_84.webp` | PACK7_SKIN_84 | 이름이 아직 안 붙은 옷. |
+| ✅ | `oatmeal_sweatshirt_daily.webp` | 오트밀 맨투맨 데일리 | 고민하기 싫은 날에 손이 먼저 간다. |
+| ✅ | `coral_tee_light_denim.webp` | 코랄 티셔츠와 연청 데님 | 한 가지만 밝아도 하루가 가벼워진다. |
+| ✅ | `sage_check_shirt_layered.webp` | 세이지 체크 셔츠 레이어드 | 단추는 안 잠근다. |
+| ✅ | `charcoal_cardigan_raw_denim.webp` | 차콜 카디건과 생지 데님 | 어두운 두 벌인데 답답하지 않다. |
+| ✅ | `dusty_blue_work_jacket.webp` | 더스티블루 워크재킷 | 주머니가 많아서 가방을 덜 든다. |
+| ✅ | `cream_knit_vest_long_skirt.webp` | 크림 니트 조끼와 롱스커트 | 단정한데 조이지 않는다. |
+| ✅ | `dusty_red_rugby_shirt.webp` | 더스티레드 럭비 셔츠 | 굵은 줄무늬는 그것만으로 충분하다. |
+| ✅ | `shirring_blouse_cargo_skirt.webp` | 셔링 블라우스와 카고 스커트 | 위는 얌전하고 아래는 편하게. |
+| ✅ | `denim_shirt_setup.webp` | 데님 셔츠 셋업 | 위아래를 맞추면 고민할 게 없다. |
+| ✅ | `lavender_shirt_dress.webp` | 라벤더 셔츠 원피스 | 하나만 입으면 끝나는 날. |
+| ✅ | `city_windbreaker_wide_pants.webp` | 도심 바람막이와 와이드 팬츠 | 바람이 지나가는데 안 춥다. |
+| ✅ | `red_cardigan_cream_pants.webp` | 레드 카디건과 크림 팬츠 | 한 군데만 붉으면 눈이 거기 간다. |
 
 ### 묶음 8 — 한국의 사계절 옷장 (85–96) · 12 / 12
 
@@ -539,6 +538,3 @@
 ### 남은 것
 
 **그림은 없다 — 백스무 벌이 다 입었다.**
-
-다만 **이름이 안 정해진 게 12벌** 있다 (7묶음). 확정명을 주면
-id · 이름 · 그림 파일을 한 번에 같이 바꾼다. `npm run assets:audit` 이 계속 센다.
