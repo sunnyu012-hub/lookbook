@@ -101,6 +101,23 @@ LAYOUT = [
         "stripe_tee_wide_denim", "grey_zipup_slacks", "cardigan_denim_skirt",
         "brown_jacket_corduroy",
     ]),
+    # 5차 — 묶음 4 · 7 · 8 · 9 (스무 벌 더)
+    ("skins5-festival-c.png", [
+        "first_snow_angel", "christmas_idol", "new_year_pouch", "starlight_ball",
+    ]),
+    ("skins5-daily-b.png", [
+        "brown_fleece_jeans", "knit_wrap_skirt", "varsity_denim", "collar_knit_cargo_skirt",
+    ]),
+    ("skins5-daily-c.png", [
+        "denim_jacket_chino", "knit_vest_long_skirt", "stripe_tee_washed_jeans",
+        "blouse_cargo_long_skirt",
+    ]),
+    ("skins5-weather.png", [
+        "rainy_season_practical", "heatwave_linen", "aircon_cardigan", "midsummer_long_skirt",
+    ]),
+    ("skins5-taste.png", [
+        "retro_sporty", "cityboy_overfit", "romantic_satin_mood", "soft_chic_all_black",
+    ]),
 ]
 
 # 시트마다 네 명의 키 중앙값을 이 높이에 맞춘다.

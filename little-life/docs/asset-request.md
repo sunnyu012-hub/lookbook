@@ -347,9 +347,12 @@
 
 ---
 
+
+---
+
 ## UPDATE F.5 — 새 옷 아흔여섯 벌
 
-**40 / 96 도착.** 남은 56장은 아직 없다 —
+**60 / 96 도착.** 남은 36장은 아직 없다 —
 지금은 목록에서 기본 모습이 실루엣으로 대신 서 있다. 앱이 안 깨지게 하는
 장치일 뿐이고, 그림이 아니다.
 
@@ -387,7 +390,7 @@
 | ✅ | `treasure_appraiser.webp` | 보물 감정사 | 대부분은 보물이 아니라고 말해주는 일. |
 | ✅ | `neon_dj.webp` | 네온 DJ | 새벽 네 시에 제일 좋은 곡을 튼다. |
 
-### 묶음 4 — 사계절의 축제 (37–48) · 8 / 12
+### 묶음 4 — 사계절의 축제 (37–48) · 12 / 12
 
 판타지 · 작은 옷장에서 나온다 · 한 해에 한 번씩만 돌아오는 날들.
 
@@ -401,10 +404,10 @@
 | ✅ | `autumn_leaf_explorer.webp` | 단풍 탐험가 | 길을 잃어도 예쁜 계절. |
 | ✅ | `halloween_candy_witch.webp` | 핼러윈 캔디 마녀 | 주머니가 사탕으로 무겁다. |
 | ✅ | `ghost_hotel_bellboy.webp` | 유령 호텔 벨보이 | 손님이 안 보여도 짐은 무겁다. |
-| — | `first_snow_angel.webp` | 첫눈의 천사 | 올해 처음 내린 눈만 셀 수 있다. |
-| — | `christmas_idol.webp` | 크리스마스 아이돌 | 일 년에 한 번뿐인 무대. |
-| — | `new_year_pouch.webp` | 새해 복주머니 | 뭐가 들었는지는 열어봐야 안다. |
-| — | `starlight_ball.webp` | 별빛 연말무도회 | 한 해의 마지막 밤에만 열린다. |
+| ✅ | `first_snow_angel.webp` | 첫눈의 천사 | 올해 처음 내린 눈만 셀 수 있다. |
+| ✅ | `christmas_idol.webp` | 크리스마스 아이돌 | 일 년에 한 번뿐인 무대. |
+| ✅ | `new_year_pouch.webp` | 새해 복주머니 | 뭐가 들었는지는 열어봐야 안다. |
+| ✅ | `starlight_ball.webp` | 별빛 연말무도회 | 한 해의 마지막 밤에만 열린다. |
 
 ### 묶음 5 — 생활 길드의 모험가들 (49–60) · 8 / 12
 
@@ -444,7 +447,7 @@
 | ✅ | `all_seasons_spirit.webp` | 모든 계절의 정령 | 네 계절을 한 벌에 담았다. |
 | ✅ | `little_life_lead.webp` | Little Life의 주인공 | 이 이야기의 한가운데 서 있는 모습. |
 
-### 묶음 7 — 오늘 진짜 입고 나간 옷 (73–84) · 4 / 12
+### 묶음 7 — 오늘 진짜 입고 나간 옷 (73–84) · 12 / 12
 
 일상 · 의상실에서 산다 · 특별할 것 없이, 그냥 오늘 입은 옷.
 
@@ -454,16 +457,16 @@
 | ✅ | `grey_zipup_slacks.webp` | 회색 집업과 슬랙스 | 급할 때 손에 제일 먼저 잡히는 조합. |
 | ✅ | `cardigan_denim_skirt.webp` | 가디건과 데님 스커트 | 가디건 하나로 계절이 넘어간다. |
 | ✅ | `brown_jacket_corduroy.webp` | 브라운 재킷과 코듀로이 | 갈색과 카키는 웬만하면 어울린다. |
-| — | `sweatshirt_jogger.webp` | 맨투맨과 조거팬츠 | 집이랑 밖의 중간쯤. |
-| — | `denim_jacket_long_skirt.webp` | 데님 재킷과 롱스커트 | 위아래 무게가 잘 맞는다. |
-| — | `thin_knit_wide_pants.webp` | 얇은 니트와 와이드팬츠 | 편한데 대충 입은 것 같진 않다. |
-| — | `check_shirt_layer.webp` | 체크 셔츠 하나 걸치고 | 단추는 안 잠근다. |
-| — | `tee_and_shorts.webp` | 반팔에 반바지 | 더 줄일 게 없는 차림. |
-| — | `hood_zipup_leggings.webp` | 후드집업과 레깅스 | 잠깐 움직이러 나갈 때. |
-| — | `blouse_slim_jeans.webp` | 블라우스와 슬림 진 | 위만 차려입으면 되는 자리. |
-| — | `sweater_corduroy.webp` | 스웨터와 코듀로이 | 가을 냄새가 나는 조합. |
+| ✅ | `brown_fleece_jeans.webp` | 브라운 플리스와 청바지 | 기모 하나 들어간 게 이렇게 다르다. |
+| ✅ | `knit_wrap_skirt.webp` | 니트 티와 랩 스커트 | 한 번 두르면 선이 정리된다. |
+| ✅ | `varsity_denim.webp` | 바시티 재킷과 데님 | 고등학교 때부터 있던 것 같은 옷. |
+| ✅ | `collar_knit_cargo_skirt.webp` | 카라 니트와 카고 스커트 | 주머니가 많으면 가방을 덜 든다. |
+| ✅ | `denim_jacket_chino.webp` | 데님 재킷과 치노 팬츠 | 봄가을에 제일 오래 손이 가는 조합. |
+| ✅ | `knit_vest_long_skirt.webp` | 니트 베스트와 롱스커트 | 단정한데 답답하지 않다. |
+| ✅ | `stripe_tee_washed_jeans.webp` | 스트라이프 티와 워싱 진 | 많이 빨아 입을수록 편해진다. |
+| ✅ | `blouse_cargo_long_skirt.webp` | 블라우스와 카고 롱스커트 | 위는 얌전하고 아래는 편하게. |
 
-### 묶음 8 — 한국의 사계절 옷장 (85–96) · 0 / 12
+### 묶음 8 — 한국의 사계절 옷장 (85–96) · 4 / 12
 
 일상 · 작은 옷장에서 나온다 · 날씨가 그날 옷을 거의 다 정한다.
 
@@ -473,16 +476,16 @@
 | — | `fine_dust_day.webp` | 미세먼지 있는 날 | 창문을 못 여는 날의 차림. |
 | — | `spring_wedding_guest.webp` | 봄날 하객 코디 | 주인공보다 튀면 안 된다. |
 | — | `early_summer_shirt.webp` | 초여름 셔츠 레이어드 | 낮엔 덥고 저녁엔 서늘하다. |
-| — | `rainy_season_practical.webp` | 장마철 실용 코디 | 젖어도 금방 마르는 것들로. |
-| — | `heatwave_linen.webp` | 폭염의 린넨 셋업 | 가볍고 바람이 지나간다. |
-| — | `aircon_cardigan.webp` | 에어컨 대비 카디건 | 밖보다 안이 더 춥다. |
-| — | `midsummer_long_skirt.webp` | 한여름 롱스커트 | 길어도 시원한 쪽. |
+| ✅ | `rainy_season_practical.webp` | 장마철 실용 코디 | 젖어도 금방 마르는 것들로. |
+| ✅ | `heatwave_linen.webp` | 폭염의 린넨 셋업 | 가볍고 바람이 지나간다. |
+| ✅ | `aircon_cardigan.webp` | 에어컨 대비 카디건 | 밖보다 안이 더 춥다. |
+| ✅ | `midsummer_long_skirt.webp` | 한여름 롱스커트 | 길어도 시원한 쪽. |
 | — | `early_autumn_shirt.webp` | 초가을 셔츠 레이어드 | 아침저녁으로 온도가 다르다. |
 | — | `autumn_suede_jacket.webp` | 가을 스웨이드 재킷 | 일 년에 두 주쯤 딱 맞는 옷. |
 | — | `sudden_cold_day.webp` | 갑자기 추운 날 | 어제까진 이러지 않았다. |
 | — | `midwinter_padding.webp` | 한겨울 패딩 코디 | 멋보다 따뜻한 게 먼저다. |
 
-### 묶음 9 — 나의 추구미 (97–108) · 0 / 12
+### 묶음 9 — 나의 추구미 (97–108) · 4 / 12
 
 일상 · 의상실에서 산다 · 어디 가느냐보다, 어떤 사람으로 보이고 싶은가.
 
@@ -496,10 +499,10 @@
 | — | `soft_gorpcore.webp` | 소프트 고프코어 | 산에 안 가도 되는 등산복. |
 | — | `cozy_scandi_mood.webp` | 코지 스칸디 무드 | 집이 추운 나라의 옷. |
 | — | `campus_preppy.webp` | 캠퍼스 프레피 | 수업에 늦어도 단정해 보인다. |
-| — | `retro_sporty.webp` | 레트로 스포티 | 오래된 운동복이 더 예쁘다. |
-| — | `cityboy_overfit.webp` | 시티보이 오버핏 | 한 치수 크게 입는 게 규칙. |
-| — | `romantic_satin_mood.webp` | 로맨틱 새틴 무드 | 빛을 조금 머금는 천. |
-| — | `soft_chic_all_black.webp` | 소프트 시크 올블랙 | 검정도 부드러울 수 있다. |
+| ✅ | `retro_sporty.webp` | 레트로 스포티 | 오래된 운동복이 더 예쁘다. |
+| ✅ | `cityboy_overfit.webp` | 시티보이 오버핏 | 한 치수 크게 입는 게 규칙. |
+| ✅ | `romantic_satin_mood.webp` | 로맨틱 새틴 무드 | 빛을 조금 머금는 천. |
+| ✅ | `soft_chic_all_black.webp` | 소프트 시크 올블랙 | 검정도 부드러울 수 있다. |
 
 ### 묶음 10 — 오늘은 어디 가는 날? (109–120) · 0 / 12
 
@@ -525,10 +528,8 @@
 | 묶음 | 남음 |
 | --- | --- |
 | 3. 비밀스러운 도시의 사람들 | 4 |
-| 4. 사계절의 축제 | 4 |
 | 5. 생활 길드의 모험가들 | 4 |
-| 7. 오늘 진짜 입고 나간 옷 | 8 |
-| 8. 한국의 사계절 옷장 | 12 |
-| 9. 나의 추구미 | 12 |
+| 8. 한국의 사계절 옷장 | 8 |
+| 9. 나의 추구미 | 8 |
 | 10. 오늘은 어디 가는 날? | 12 |
-| **합계** | **56** |
+| **합계** | **36** |

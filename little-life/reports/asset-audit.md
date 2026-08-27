@@ -17,7 +17,7 @@
 | id 중복 | 0 |
 | 경로 중복 | 0 |
 | 캐릭터 모습 | 120 |
-| 모습 그림 없음 | 56 |
+| 모습 그림 없음 | 36 |
 | 모습 작은 그림 없음 | 0 |
 | 모습 캔버스 다름 | 0 |
 | 모습 id 중복 | 0 |
@@ -51,30 +51,14 @@
 - `vintage_shop_buyer` 빈티지숍 바이어 — 3팩 · 비밀스러운 도시의 사람들
 - `little_theater_actor` 작은 극장의 배우 — 3팩 · 비밀스러운 도시의 사람들
 - `rooftop_gardener` 옥상 정원사 — 3팩 · 비밀스러운 도시의 사람들
-- `first_snow_angel` 첫눈의 천사 — 4팩 · 사계절의 축제
-- `christmas_idol` 크리스마스 아이돌 — 4팩 · 사계절의 축제
-- `new_year_pouch` 새해 복주머니 — 4팩 · 사계절의 축제
-- `starlight_ball` 별빛 연말무도회 — 4팩 · 사계절의 축제
 - `strawberry_farmer` 딸기 농장주 — 5팩 · 생활 길드의 모험가들
 - `herb_witch` 허브 마녀 — 5팩 · 생활 길드의 모험가들
 - `crystal_miner` 수정 광부 — 5팩 · 생활 길드의 모험가들
 - `cave_cartographer` 동굴 지도제작자 — 5팩 · 생활 길드의 모험가들
-- `sweatshirt_jogger` 맨투맨과 조거팬츠 — 7팩 · 오늘 진짜 입고 나간 옷
-- `denim_jacket_long_skirt` 데님 재킷과 롱스커트 — 7팩 · 오늘 진짜 입고 나간 옷
-- `thin_knit_wide_pants` 얇은 니트와 와이드팬츠 — 7팩 · 오늘 진짜 입고 나간 옷
-- `check_shirt_layer` 체크 셔츠 하나 걸치고 — 7팩 · 오늘 진짜 입고 나간 옷
-- `tee_and_shorts` 반팔에 반바지 — 7팩 · 오늘 진짜 입고 나간 옷
-- `hood_zipup_leggings` 후드집업과 레깅스 — 7팩 · 오늘 진짜 입고 나간 옷
-- `blouse_slim_jeans` 블라우스와 슬림 진 — 7팩 · 오늘 진짜 입고 나간 옷
-- `sweater_corduroy` 스웨터와 코듀로이 — 7팩 · 오늘 진짜 입고 나간 옷
 - `early_spring_trench` 꽃샘추위 트렌치코트 — 8팩 · 한국의 사계절 옷장
 - `fine_dust_day` 미세먼지 있는 날 — 8팩 · 한국의 사계절 옷장
 - `spring_wedding_guest` 봄날 하객 코디 — 8팩 · 한국의 사계절 옷장
 - `early_summer_shirt` 초여름 셔츠 레이어드 — 8팩 · 한국의 사계절 옷장
-- `rainy_season_practical` 장마철 실용 코디 — 8팩 · 한국의 사계절 옷장
-- `heatwave_linen` 폭염의 린넨 셋업 — 8팩 · 한국의 사계절 옷장
-- `aircon_cardigan` 에어컨 대비 카디건 — 8팩 · 한국의 사계절 옷장
-- `midsummer_long_skirt` 한여름 롱스커트 — 8팩 · 한국의 사계절 옷장
 - `early_autumn_shirt` 초가을 셔츠 레이어드 — 8팩 · 한국의 사계절 옷장
 - `autumn_suede_jacket` 가을 스웨이드 재킷 — 8팩 · 한국의 사계절 옷장
 - `sudden_cold_day` 갑자기 추운 날 — 8팩 · 한국의 사계절 옷장
@@ -87,10 +71,6 @@
 - `soft_gorpcore` 소프트 고프코어 — 9팩 · 나의 추구미
 - `cozy_scandi_mood` 코지 스칸디 무드 — 9팩 · 나의 추구미
 - `campus_preppy` 캠퍼스 프레피 — 9팩 · 나의 추구미
-- `retro_sporty` 레트로 스포티 — 9팩 · 나의 추구미
-- `cityboy_overfit` 시티보이 오버핏 — 9팩 · 나의 추구미
-- `romantic_satin_mood` 로맨틱 새틴 무드 — 9팩 · 나의 추구미
-- `soft_chic_all_black` 소프트 시크 올블랙 — 9팩 · 나의 추구미
 - `subway_commute` 지하철 출근길 — 10팩 · 오늘은 어디 가는 날?
 - `work_from_home_day` 재택근무하는 날 — 10팩 · 오늘은 어디 가는 날?
 - `convenience_store_run` 편의점 다녀오는 길 — 10팩 · 오늘은 어디 가는 날?
