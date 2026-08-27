@@ -23,8 +23,18 @@ import {
   type UserPerception,
 } from '@/lib/os2/dna'
 import { RARE_BY_ID } from '@/lib/os2/dna/registry/rare'
+import {
+  buildPersonalView,
+  defaultNamingService,
+  evaluatePersonal,
+  monthOf,
+  namePending,
+  type PersonalDiscoveryRecord,
+  type PersonalResult,
+} from '@/lib/os2/dna/personal'
 import { todayKeyOf } from '@/lib/os2/dna/util'
 import { dnaRepository } from '@/lib/repositories/dna'
+import { personalDiscoveryRepository } from '@/lib/repositories/personalDiscovery'
 import type { AuthState } from './useSession'
 
 export interface DnaInput {
@@ -37,8 +47,12 @@ export interface DnaInput {
 export function useDna({ logs, checkins, myTags, authState = 'local' }: DnaInput) {
   const [stored, setStored] = useState<DiscoveryRecord[]>([])
   const [shifts, setShifts] = useState<ShiftRecord[]>([])
+  const [personalStored, setPersonalStored] = useState<PersonalDiscoveryRecord[]>([])
   const [loading, setLoading] = useState(true)
   const saved = useRef(new Set<string>())
+  const personalSaved = useRef(new Set<string>())
+  /** 이번 세션에서 이름을 부르려고 시도한 발견 — 같은 것을 두 번 부르지 않는다 */
+  const naming = useRef(new Set<string>())
 
   const ready = authState === 'local' || authState === 'signed-in'
 
@@ -47,10 +61,12 @@ export function useDna({ logs, checkins, myTags, authState = 'local' }: DnaInput
     Promise.all([
       dnaRepository.list().catch(() => [] as DiscoveryRecord[]),
       dnaRepository.listShifts().catch(() => [] as ShiftRecord[]),
+      personalDiscoveryRepository.list().catch(() => [] as PersonalDiscoveryRecord[]),
     ])
-      .then(([records, found]) => {
+      .then(([records, found, personal]) => {
         setStored(records)
         setShifts(found)
+        setPersonalStored(personal)
       })
       .finally(() => setLoading(false))
   }, [ready])
@@ -110,6 +126,127 @@ export function useDna({ logs, checkins, myTags, authState = 'local' }: DnaInput
 
   const view = useMemo(() => buildView(result.records), [result.records])
 
+  // ─────────────────────────────────────────────
+  // 나만의 발견 (Phase 7)
+  //
+  // 48개 평가가 끝난 뒤에 돈다. 그래야 "이미 말한 이야기" 를 알 수 있다.
+  // 여기서 터져도 위의 48개와 기록은 그대로다.
+  // ─────────────────────────────────────────────
+  const personal: PersonalResult = useMemo(() => {
+    const today = todayKeyOf()
+    const window = evaluationWindow(logs, today)
+    const nameOf = new Map(myTags.map((t) => [t.id, t.name]))
+
+    try {
+      return evaluatePersonal(
+        { logs, checkins, myTags, window, today },
+        {
+          previous: personalStored,
+          dnaRecords: result.records,
+          myTagNameOf: (id) => nameOf.get(id),
+        },
+      )
+    } catch {
+      return {
+        records: personalStored,
+        newlyFound: [],
+        waiting: 0,
+        evaluatedAt: new Date().toISOString(),
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fingerprint, myTags, personalStored, result.records])
+
+  /**
+   * 이름 붙이기. 새로 열린 것에만, 한 번씩만.
+   * 실패해도 조용히 넘어간다 — 그때는 앱이 만든 문장이 그대로 쓰인다.
+   */
+  useEffect(() => {
+    if (loading || !ready) return
+
+    const todo = personal.records.filter(
+      (r) =>
+        r.state !== 'LOCKED'
+        && (r.namingStatus === 'pending' || r.namingStatus === 'skipped')
+        && !naming.current.has(r.fingerprint),
+    )
+    if (!todo.length) return
+    for (const record of todo) naming.current.add(record.fingerprint)
+
+    const month = monthOf(new Date().toISOString())
+    let cancelled = false
+
+    void (async () => {
+      const budget = await personalDiscoveryRepository
+        .readUsage(month)
+        .catch(() => ({ month, used: 0 }))
+
+      const outcome = await namePending(todo, defaultNamingService(), {
+        budget,
+        onBudget: (next) => void personalDiscoveryRepository.writeUsage(next).catch(() => undefined),
+      }).catch(() => null)
+
+      if (cancelled || !outcome) return
+
+      const byFingerprint = new Map(outcome.records.map((r) => [r.fingerprint, r]))
+      setPersonalStored((prev) => {
+        const merged = new Map(prev.map((r) => [r.fingerprint, r]))
+        for (const record of personal.records) {
+          merged.set(record.fingerprint, byFingerprint.get(record.fingerprint) ?? record)
+        }
+        return [...merged.values()]
+      })
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [personal, loading, ready])
+
+  // 나만의 발견을 저장한다. 실패해도 화면은 그대로 돈다
+  useEffect(() => {
+    if (loading || !ready) return
+    const open = personal.records.filter((r) => r.state !== 'LOCKED')
+    if (!open.length) return
+
+    const key = `${personal.evaluatedAt}:${open.length}:${open.map((r) => r.namingStatus).join('')}`
+    if (personalSaved.current.has(key)) return
+    personalSaved.current.add(key)
+
+    void personalDiscoveryRepository
+      .save(open)
+      .then(() => {
+        const fresh = open.flatMap((r) =>
+          r.evidence.filter((e) => e.evaluatedAt === personal.evaluatedAt),
+        )
+        return personalDiscoveryRepository.addEvidence(fresh)
+      })
+      .catch(() => undefined)
+  }, [personal, loading, ready])
+
+  const personalView = useMemo(
+    () => buildPersonalView(personal.records),
+    [personal.records],
+  )
+
+  /** 사용자가 고치는 것들 — 통계는 건드리지 않는다 */
+  const patchPersonal = useCallback(
+    async (
+      fingerprint: string,
+      patch: Partial<Pick<PersonalDiscoveryRecord, 'userTitle' | 'hidden' | 'userPerception'>>,
+    ) => {
+      setPersonalStored((prev) => {
+        const found = prev.some((r) => r.fingerprint === fingerprint)
+        const base = found
+          ? prev
+          : [...prev, ...personal.records.filter((r) => r.fingerprint === fingerprint)]
+        return base.map((r) => (r.fingerprint === fingerprint ? { ...r, ...patch } : r))
+      })
+      await personalDiscoveryRepository.patch(fingerprint, patch).catch(() => undefined)
+    },
+    [personal.records],
+  )
+
   const setPerception = useCallback(
     async (defId: string, perception: UserPerception | null) => {
       setStored((prev) =>
@@ -132,6 +269,9 @@ export function useDna({ logs, checkins, myTags, authState = 'local' }: DnaInput
     loading,
     setPerception,
     definitions: ALL_DNA,
+    personal: personalView,
+    personalRecords: personal.records,
+    patchPersonal,
   }
 }
 

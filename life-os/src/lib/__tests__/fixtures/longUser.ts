@@ -504,6 +504,113 @@ export function buildChangingUser(): UserData {
 }
 
 // ─────────────────────────────────────────────
+// 8. 진짜 조합이 있는 사용자 — 나만의 발견이 하나 열려야 하는 사람
+//
+// 카페도 그냥저냥, 글쓰기도 그냥저냥인데
+// "카페에서 글을 쓴 아침" 에만 집중이 뚜렷하게 높다.
+// 조각 하나만 봐서는 안 보이고 겹쳐야만 보이는 것 — 이게 Personal Discovery 다.
+// ─────────────────────────────────────────────
+
+export function buildPersonalUser(): UserData {
+  const logs: QuickLog[] = []
+  const checkins: Checkin[] = []
+  let index = 0
+
+  for (let day = 0; day < DAYS; day += 1) {
+    const date = addDays(START, day)
+    const noise = (seed: number) => (pseudo(day * 37 + seed) - 0.5) * 0.4
+    const slot = day % 7
+
+    // 카페에서 글을 쓴 아침
+    const cafeWriting = slot === 1 || slot === 4
+    // 카페에는 갔지만 글은 안 쓴 아침
+    const cafeOnly = slot === 2 || slot === 3 || slot === 6
+    // 집에서 글만 쓴 아침
+    const writingOnly = slot === 5 || slot === 0
+
+    checkins.push(makeCheckin(date, 7.2, false))
+
+    const morningTags = cafeWriting
+      ? ['place:cafe', 'creative:writing']
+      : cafeOnly
+        ? ['place:cafe']
+        : writingOnly
+          ? ['creative:writing', 'place:home']
+          : ['place:home']
+
+    logs.push(
+      makeLog(
+        {
+          date,
+          hour: 9,
+          mood: 3.2 + noise(1),
+          energy: (cafeWriting ? 4.6 : 3.0) + noise(2),
+          focus: 3.1 + noise(3),
+          fatigue: 2.8 + noise(4),
+          tags: morningTags,
+        },
+        index++,
+      ),
+    )
+
+    logs.push(
+      makeLog(
+        {
+          date,
+          hour: 14,
+          mood: 3.1 + noise(5),
+          energy: 3.1 + noise(6),
+          focus: 3.1 + noise(7),
+          fatigue: 3.0 + noise(8),
+          tags: ['activity:work', 'place:workplace'],
+        },
+        index++,
+      ),
+    )
+
+    logs.push(
+      makeLog(
+        {
+          date,
+          hour: 20,
+          mood: 3.4 + noise(9),
+          energy: 3.0 + noise(10),
+          focus: 2.9 + noise(11),
+          fatigue: 2.8 + noise(12),
+          tags: ['place:home', 'activity:rest'],
+        },
+        index++,
+      ),
+    )
+  }
+
+  return { logs, checkins, myTags: MY_TAGS }
+}
+
+// ─────────────────────────────────────────────
+// 9. 조합이 있었다가 사라진 사용자
+//
+// 300일까지는 "카페에서 글 쓴 아침" 에 기운이 높았고, 그 뒤로는 아니다.
+// 예전 근거는 남고 단계만 CHANGING 으로 가야 한다.
+// ─────────────────────────────────────────────
+
+export function buildPersonalChangingUser(): UserData {
+  const base = buildPersonalUser()
+  const cutoff = addDays(START, 300)
+
+  const logs = base.logs.map((log) => {
+    if (log.date < cutoff) return log
+    if (log.dayPart !== 'morning') return log
+    const tags = (log.lifeTags ?? []).map((t) => t.tagId)
+    if (!tags.includes('place:cafe') || !tags.includes('creative:writing')) return log
+    // 조합은 그대로 적히는데 기운만 예전 같지 않다
+    return { ...log, energy: 3.0 }
+  })
+
+  return { ...base, logs }
+}
+
+// ─────────────────────────────────────────────
 // 미리 정해 둔 답
 // ─────────────────────────────────────────────
 
@@ -526,4 +633,9 @@ export const GROUND_TRUTH = {
   confounded: { blocked: 'my_person_effect' },
   outlier: { blocked: 'joy_trigger' },
   changing: { was: 'evening_bloom' },
+  personal: {
+    /** 열려야 하는 조합 */
+    shouldOpen: ['place:cafe', 'creative:writing'],
+    metric: 'energy',
+  },
 } as const

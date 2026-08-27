@@ -8,7 +8,7 @@
  * 잠긴 칸은 ??? 로만 보인다. 조건을 보여 주는 순간
  * 사용자는 자기를 알려고가 아니라 칸을 열려고 기록하게 된다.
  */
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import type { Checkin } from '@/types'
 import type { MyTag, QuickLog } from '@/lib/os2/types'
 import { useDna } from '@/hooks/useDna'
@@ -24,6 +24,7 @@ import {
   type UserPerception,
 } from '@/lib/os2/dna'
 import { RARE_BY_ID } from '@/lib/os2/dna/registry/rare'
+import { TITLE_MAX, type PersonalCard } from '@/lib/os2/dna/personal'
 import { METRICS, displayNameOf } from '@/lib/os2/dna/labels'
 import { PixelPanel } from '@/components/pixel/PixelPanel'
 import { icons } from '@/lib/pixelAssets'
@@ -101,6 +102,49 @@ export function MyDnaPage({ logs, checkins, myTags, onClose }: Props) {
               />
             ))}
           </div>
+        </PixelPanel>
+      )}
+
+      {/* 나만의 발견 — 48개와 따로 센다 */}
+      {(dna.personal.cards.length > 0 || dna.personal.hidden.length > 0) && (
+        <PixelPanel title="나만의 발견" icon={icons.log} sparkle>
+          <p className="mb-2 px-0.5 text-[11.5px] leading-relaxed text-inkfaint">
+            48개 목록에는 없지만, 남긴 기록에서만 나온 조합이에요.
+          </p>
+          <div className="space-y-2">
+            {dna.personal.cards.map((card) => (
+              <PersonalDnaCard
+                key={card.fingerprint}
+                card={card}
+                open={openCard === card.fingerprint}
+                onToggle={() => {
+                  haptic()
+                  setOpenCard((v) => (v === card.fingerprint ? null : card.fingerprint))
+                }}
+                onPatch={(patch) => void dna.patchPersonal(card.fingerprint, patch)}
+              />
+            ))}
+          </div>
+
+          {/* 접어 둔 것은 지운 게 아니다. 언제든 다시 펼 수 있다 */}
+          {dna.personal.hidden.length > 0 && (
+            <div className="mt-2 space-y-1.5">
+              {dna.personal.hidden.map((card) => (
+                <button
+                  key={card.fingerprint}
+                  type="button"
+                  onClick={() => {
+                    haptic()
+                    void dna.patchPersonal(card.fingerprint, { hidden: false })
+                  }}
+                  className="press flex min-h-[44px] w-full items-center gap-2 rounded-px3 border-[1.5px] border-dashed border-border bg-ivory px-2.5 text-left text-[12px] text-inkfaint"
+                >
+                  <span className="flex-1 truncate">{card.title}</span>
+                  <span className="font-pixel text-[9px] uppercase">다시 펴기</span>
+                </button>
+              ))}
+            </div>
+          )}
         </PixelPanel>
       )}
 
@@ -378,6 +422,192 @@ function Evidence({ evidence }: { evidence: NonNullable<FoundCard['evidence']> }
   )
 }
 
+/**
+ * 나만의 발견 한 장.
+ *
+ * 48개 카드와 다른 점 셋.
+ *   · 이름 밑에 실제 조각을 언제나 같이 보여 준다 (이름은 근거가 아니다)
+ *   · 이름을 AI 가 지었으면 그렇다고 밝힌다
+ *   · 사용자가 이름을 고칠 수 있고, 접어 둘 수 있다
+ */
+function PersonalDnaCard({
+  card,
+  open,
+  onToggle,
+  onPatch,
+}: {
+  card: PersonalCard
+  open: boolean
+  onToggle: () => void
+  onPatch: (patch: { userTitle?: string; hidden?: boolean; userPerception?: UserPerception }) => void
+}) {
+  const [why, setWhy] = useState(false)
+  const [renaming, setRenaming] = useState(false)
+  const [draft, setDraft] = useState(card.userTitle ?? card.title)
+
+  return (
+    <div className="rounded-px3 border-[1.5px] border-skydeep bg-skysoft">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="press flex min-h-[44px] w-full items-start gap-2.5 px-2.5 py-2.5 text-left"
+      >
+        <span aria-hidden className="text-[20px] leading-none">
+          ✨
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex items-baseline gap-1.5">
+            <b className="text-[14px]">{card.title}</b>
+            <span aria-label={STATE_LABEL[card.state]} className="text-[11px]">
+              {STATE_ICON[card.state]}
+            </span>
+          </span>
+          {/* 이름 밑에는 언제나 실제 조각이 붙는다 */}
+          <span className="mt-1.5 flex flex-wrap gap-1">
+            {card.contexts.map((context) => (
+              <span
+                key={`${context.kind}:${context.key}`}
+                className="rounded-full border-[1.5px] border-border bg-ivory px-2 py-0.5 text-[11px] text-inkdim"
+              >
+                {context.label}
+              </span>
+            ))}
+          </span>
+          <span className="mt-1.5 block text-[12.5px] leading-relaxed text-inkdim">
+            {card.description}
+          </span>
+        </span>
+        <span aria-hidden className="font-pixel text-[12px] text-inkfaint">
+          {open ? '⌄' : '›'}
+        </span>
+      </button>
+
+      {open && (
+        <div className="border-t border-dashed border-border px-2.5 py-2.5">
+          <p className="text-[12.5px] leading-relaxed text-inkdim">
+            {STATE_SENTENCE[card.state]}
+          </p>
+
+          {card.aiNamed && (
+            <p className="mt-1.5 text-[11.5px] leading-relaxed text-inkfaint">
+              이름은 AI가 지었어요. 숫자와 근거는 앱이 직접 센 것이에요.
+            </p>
+          )}
+
+          <button
+            type="button"
+            onClick={() => {
+              haptic()
+              setWhy((v) => !v)
+            }}
+            aria-expanded={why}
+            className="press mt-2 min-h-[44px] w-full text-left text-[11.5px] text-skydeep underline decoration-dotted"
+          >
+            {why ? '근거 숨기기' : '왜 이렇게 분석했어요?'}
+          </button>
+
+          {why && (
+            <div className="mt-1.5">
+              <dl className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-[11.5px] text-inkfaint">
+                <dt>겹쳤을 때</dt>
+                <dd className="text-inkdim">
+                  {card.combinationEffect > 0 ? '+' : ''}
+                  {card.combinationEffect.toFixed(2)}
+                </dd>
+                {/* 조각 하나씩만 봤을 때와 나란히 둔다 — 조합이 무엇을 더했는지 */}
+                {card.componentEffects.map((component) => (
+                  <Fragment key={component.label}>
+                    <dt>{component.label}만</dt>
+                    <dd className="text-inkdim">
+                      {component.effect > 0 ? '+' : ''}
+                      {component.effect.toFixed(2)}
+                    </dd>
+                  </Fragment>
+                ))}
+              </dl>
+              {card.evidence && <Evidence evidence={card.evidence} />}
+            </div>
+          )}
+
+          {/* 이름 고치기 */}
+          {renaming ? (
+            <div className="mt-2 flex gap-1.5">
+              <input
+                value={draft}
+                onChange={(e) => setDraft(e.target.value.slice(0, TITLE_MAX))}
+                aria-label="이 발견의 이름"
+                maxLength={TITLE_MAX}
+                className="min-h-[44px] min-w-0 flex-1 rounded-px3 border-[1.5px] border-border bg-ivory px-2.5 text-[13px]"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  haptic()
+                  onPatch({ userTitle: draft.trim() || undefined })
+                  setRenaming(false)
+                }}
+                className="press min-h-[44px] rounded-px3 border-[1.5px] border-mintdeep bg-mintsoft px-2.5 font-pixel text-[9.5px] uppercase text-mintdeep"
+              >
+                저장
+              </button>
+            </div>
+          ) : (
+            <div className="mt-2 flex gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  haptic()
+                  setDraft(card.userTitle ?? card.title)
+                  setRenaming(true)
+                }}
+                className="press min-h-[44px] flex-1 rounded-px3 border-[1.5px] border-border bg-ivory text-[12px] text-inkdim"
+              >
+                이름 바꾸기
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  haptic()
+                  onPatch({ hidden: true })
+                }}
+                className="press min-h-[44px] flex-1 rounded-px3 border-[1.5px] border-border bg-ivory text-[12px] text-inkdim"
+              >
+                접어 두기
+              </button>
+            </div>
+          )}
+
+          <div className="mt-2">
+            <p className="plabel mb-1.5">어떠세요?</p>
+            <div className="flex flex-wrap gap-1.5">
+              {(Object.keys(PERCEPTION_LABEL) as UserPerception[]).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => {
+                    haptic()
+                    onPatch({ userPerception: card.userPerception === p ? undefined : p })
+                  }}
+                  aria-pressed={card.userPerception === p}
+                  className={cn(
+                    'press min-h-[44px] rounded-px3 border-[1.5px] px-2.5 text-[12px]',
+                    card.userPerception === p
+                      ? 'border-pinkdeep bg-pinksoft text-pinkdeep'
+                      : 'border-border bg-ivory text-inkdim',
+                  )}
+                >
+                  {PERCEPTION_LABEL[p]}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 /** 아직인 BASIC — 이름도 조건도 없다 */
 function LockedDnaCard({ icon, teaser }: { icon: string; teaser: string }) {
   return (
@@ -408,10 +638,14 @@ export function MyDnaPreview({
   const dna = useDna({ logs, checkins, myTags })
   const found = dna.view.foundCount
 
+  const personal = dna.personal.cards.length
+
   const line = useMemo(() => {
-    if (found === 0) return 'Life OS가 기록을 알아가는 중이에요'
-    return `${found} / ${dna.view.totalCount} 발견`
-  }, [found, dna.view.totalCount])
+    // 나만의 발견은 48 안에 세지 않는다. 세면 48이 거짓말이 된다
+    const mine = personal > 0 ? ` · 나만의 발견 ${personal}개` : ''
+    if (found === 0) return `Life OS가 기록을 알아가는 중이에요${mine}`
+    return `${found} / ${dna.view.totalCount} 발견${mine}`
+  }, [found, personal, dna.view.totalCount])
 
   return (
     <button
