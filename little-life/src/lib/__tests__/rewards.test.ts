@@ -26,11 +26,11 @@ const bare = { classId: null, equipped: equipped(), areaId: 'HOME_BASE' as const
 describe('calculateQuestReward — 기본', () => {
   it('아무 보너스가 없으면 난이도 기본값 그대로', () => {
     const r = calculateQuestReward({ ...bare, areaId: 'CAFE_STREET', category: 'BODY', difficulty: 'NORMAL' })
-    expect(r).toMatchObject({ baseExp: 20, baseCoins: 30, exp: 20, coins: 30 })
+    expect(r).toMatchObject({ baseExp: 20, baseCoins: 80, exp: 20, coins: 80 })
   })
 
-  it('난이도별 Coin 은 5 / 10 / 20', () => {
-    expect(DIFFICULTY_COINS).toEqual({ EASY: 15, NORMAL: 30, HARD: 60 })
+  it('난이도별 Coin 은 40 / 80 / 160', () => {
+    expect(DIFFICULTY_COINS).toEqual({ EASY: 40, NORMAL: 80, HARD: 160 })
   })
 
   it('퀘스트에 굳혀둔 EXP 가 있으면 그걸 쓴다', () => {
@@ -53,7 +53,7 @@ describe('calculateQuestReward — 지역 버프', () => {
   it('Training Zone 의 BODY 보상은 EXP 와 Coin 둘 다 오른다', () => {
     const r = calculateQuestReward({ ...bare, areaId: 'TRAINING_ZONE', category: 'BODY', difficulty: 'NORMAL' })
     expect(r.exp).toBe(23) // 20 * 1.15
-    expect(r.coins).toBe(35) // 30 * 1.15 → 34.5 → 35
+    expect(r.coins).toBe(92) // 80 * 1.15
   })
 })
 
@@ -96,7 +96,7 @@ describe('calculateQuestReward — 직업', () => {
 
   it('Explorer 는 Coin 만 오른다', () => {
     const r = calculateQuestReward({ ...bare, classId: 'EXPLORER', category: 'WORK', difficulty: 'NORMAL' })
-    expect(r.coins).toBe(33)
+    expect(r.coins).toBe(88) // 80 * 1.1
     expect(r.exp).toBe(20)
   })
 })
@@ -229,8 +229,14 @@ describe('벌이와 물건값', () => {
    * 그래서 "하루치를 하면 뭘 살 수 있나" 를 여기에 못박아둔다.
    */
   const day = (n: number, d: Difficulty) => DIFFICULTY_COINS[d] * n
-  /** 보통 하루: 보통 둘 + 쉬운 것 하나 */
-  const A_DAY = day(2, 'NORMAL') + day(1, 'EASY')
+  /**
+   * 보통 하루: 쉬운 것 셋.
+   *
+   * 처음에는 "보통 둘 + 쉬운 것 하나" 로 잡았는데, 준비된 목록 142개 중
+   * 119개가 쉬움이라 추천으로 뜨는 건 거의 다 쉬움이다.
+   * 실제보다 후한 하루를 기준으로 삼으면 이 아래 울타리가 다 헐거워진다.
+   */
+  const A_DAY = day(3, 'EASY')
 
   const priced = CATALOG.filter((i) => i.price !== undefined && i.price > 0)
   const cheapest = Math.min(...priced.map((i) => i.price!))
