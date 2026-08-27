@@ -1,11 +1,16 @@
 import { useMemo, useState } from 'react'
-import type { AppState, SkinCategory, SkinView } from '@/types'
-import { SKIN_CATEGORIES } from '@/types'
+import type { AppState, SkinId, SkinPackId, SkinView, SkinWorld, WardrobeTag } from '@/types'
+import { WARDROBE_TAGS } from '@/types'
 import { BottomSheet } from '@/components/ui/BottomSheet'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/components/ui/cn'
-import { SKIN_CATEGORY_LABEL, ownedSkinCount, skinViews, skinsInCategory } from '@/lib/character/skins'
-import { SKINS, skinPrice } from '@/lib/character/skins'
+import { SKINS, packProgress, skinPrice, skinViews, skinWorld } from '@/lib/character/skins'
+import {
+  ACQUISITION_NOTE,
+  SKIN_WORLD_LABEL,
+  WARDROBE_TAG_LABEL,
+  findPack,
+} from '@/lib/character/packs'
 import type { BuySkinResult } from '@/lib/character/derive'
 import { CharacterSkinRenderer } from './CharacterSkinRenderer'
 import { SkinCard } from './SkinCard'
@@ -18,34 +23,85 @@ interface MyLookSheetProps {
   onBuy: (id: string) => BuySkinResult
 }
 
-type Tab = SkinCategory | 'ALL'
-const TABS: Tab[] = ['ALL', ...SKIN_CATEGORIES]
+type Shelf = 'MINE' | 'NEW'
+type WorldTab = 'ALL' | SkinWorld
 
 /**
- * 내 모습.
+ * 의상실.
+ *
+ * ── 백스무 벌을 한 화면에 세우지 않는다 ────────────────
+ *
+ * 스물넷일 때는 분류 다섯 개로 충분했다. 백스무 벌이 되면 "특별" 칸에
+ * 백 벌이 몰려서 분류가 분류 노릇을 못 한다. 그래서 제일 위에
+ * 가진 것과 아직 없는 것부터 가른다 — 옷장 앞에서 실제로 하는 일이 그거다.
+ *
+ * ── 줄을 세 줄 넘게 쓰지 않는다 ────────────────────────
+ *
+ * 폰에서 목록보다 거르는 칸이 더 커지면 옷을 고르는 화면이 아니다.
+ * 내 옷/새 옷 · 세계 · 결 세 줄이고, 결 줄은 옆으로 흐른다.
+ * 묶음 여덟 개를 위에 늘어놓지 않는다 — 묶음은 카드에 붙은 이름표다.
  *
  * ── 한 번 누르면 끝 ────────────────────────────────────
  *
  * 고르기 → 적용 → 저장 같은 단계를 두지 않는다. 가진 것을 누르면
  * 그 자리에서 위 미리보기가 바뀌고, 홈에도 이미 바뀌어 있다.
- * "적용" 버튼을 만들면 사람들은 그걸 안 누르고 나가서 왜 안 바뀌냐고 한다.
  *
  * ── 시트 높이를 붙잡아 둔다 ────────────────────────────
  *
- * 분류를 옮길 때마다 칸 수가 달라지는데, 높이를 내용에 맡기면
- * 탭을 누를 때마다 시트가 손가락 밑에서 오르내린다.
+ * 거르는 걸 바꿀 때마다 칸 수가 달라지는데, 높이를 내용에 맡기면
+ * 누를 때마다 시트가 손가락 밑에서 오르내린다.
  */
 export function MyLookSheet({ open, state, onClose, onSelect, onBuy }: MyLookSheetProps) {
-  const [tab, setTab] = useState<Tab>('ALL')
+  const [shelf, setShelf] = useState<Shelf>('MINE')
+  const [world, setWorld] = useState<WorldTab>('ALL')
+  const [tag, setTag] = useState<WardrobeTag | null>(null)
+  const [pack, setPack] = useState<SkinPackId | null>(null)
   const [note, setNote] = useState<string | null>(null)
+  /**
+   * 방금 데려온 것.
+   *
+   * 사자마자 목록에서 빼면 뒤에 있던 칸들이 앞으로 당겨진다. 손가락은
+   * 아직 그 자리에 있으니까, 한 번 더 눌렀을 때 고른 적 없는 옷이 팔린다.
+   * 실제로 그렇게 480 코인이 두 번 나갔다.
+   *
+   * 그래서 거르는 걸 바꾸기 전까지는 그 자리에 그대로 둔다.
+   * "한 번 더 누르면 입어봐" 라고 해놓고 칸이 사라지지도 않는다.
+   */
+  const [justBought, setJustBought] = useState<SkinId[]>([])
 
-  const views = useMemo(() => skinViews(state), [state])
-  const shown = useMemo(() => skinsInCategory(views, tab), [views, tab])
+  /**
+   * 닫혀 있으면 세지 않는다.
+   *
+   * 이 계산은 백스무 벌마다 조건을 다시 세고, 그중 몇 개는 도감 240개와
+   * 세트 스물일곱을 훑는다. 예전에는 시트가 닫혀 있어도 상태가 바뀔 때마다
+   * 돌았다 — 스물넷일 때는 티가 안 났지만 백스무 벌에서는 아니다.
+   * 훅 순서를 지켜야 해서 useMemo 는 늘 부르고, 안에서만 건너뛴다.
+   */
+  const views = useMemo(() => (open ? skinViews(state) : []), [open, state])
+
+  const shown = useMemo(() => {
+    let list = views.filter((v) =>
+      shelf === 'MINE' ? v.owned : !v.owned || justBought.includes(v.def.id),
+    )
+    if (pack !== null) return list.filter((v) => v.def.packId === pack)
+    // 처음 스물넷은 묶음이 없어서 세계도 없다. 억지로 나누느니 늘 보여준다.
+    if (world !== 'ALL') list = list.filter((v) => (skinWorld(v.def) ?? world) === world)
+    if (tag !== null) list = list.filter((v) => v.def.wardrobeTag === tag)
+    return list
+  }, [views, shelf, world, tag, pack, justBought])
+
   const current = views.find((v) => v.active) ?? views[0]
-
   if (!open || !current) return null
 
-  const owned = ownedSkinCount(state)
+  const owned = views.filter((v) => v.owned).length
+  const packDef = findPack(pack ?? undefined)
+  const packSeen = pack === null ? null : packProgress(state, pack)
+
+  /** 거르는 걸 바꾸면 목록을 새로 그린다 — 그때 방금 산 것도 제자리로 간다 */
+  const reset = () => {
+    setNote(null)
+    setJustBought([])
+  }
 
   const tap = (view: SkinView) => {
     setNote(null)
@@ -59,73 +115,173 @@ export function MyLookSheet({ open, state, onClose, onSelect, onBuy }: MyLookShe
     if (view.forSale) {
       const result = onBuy(view.def.id)
       if (result.ok) {
-        setNote(`${result.skin.name}를 데려왔어. 한 번 더 누르면 입어봐.`)
+        setJustBought((prev) => [...prev, view.def.id])
+        setNote(`새 옷이 옷장에 들어왔다. 한 번 더 누르면 입어봐.`)
       } else if (result.reason === 'NOT_ENOUGH_COINS') {
         setNote(`코인이 조금 모자라. ${skinPrice(view.def) ?? 0} 코인이 필요해.`)
       }
       return
     }
 
-    // 못 가진 것은 왜 아직인지만 말해준다. 숫자는 말하지 않는다.
-    setNote(view.hidden ? '아직 모르는 모습이야.' : view.def.hint)
+    if (view.hidden) {
+      setNote('아직 모르는 모습이야.')
+      return
+    }
+
+    // 못 가진 것은 어디서 만나는지만 말해준다. 남은 숫자는 말하지 않는다.
+    const where = ACQUISITION_NOTE[view.def.acquisition]
+    setNote([view.def.hint, where].filter(Boolean).join(' ') || '아직은 만날 수 없어.')
+  }
+
+  const openPack = (id: SkinPackId | undefined) => {
+    if (id === undefined) return
+    reset()
+    setPack(id)
   }
 
   return (
-    <BottomSheet open onClose={onClose} title="내 모습" fill>
+    <BottomSheet open onClose={onClose} title="의상실" fill>
       <div className="flex h-full flex-col">
-        {/* 지금 입고 있는 모습 */}
+        {/* 지금 입고 있는 모습.
+            시트의 title 은 화면에 안 보이는 이름표(aria-label)라서
+            여기 한 줄이 없으면 열었을 때 무슨 화면인지 안 적혀 있다. */}
         <div className="shrink-0">
-          <h2 className="mb-2 text-[20px] font-semibold text-ink">내 모습</h2>
+          <div className="mb-2 flex items-baseline justify-between">
+            <h2 className="text-[19px] font-semibold text-ink">의상실</h2>
+            <span className="font-game text-[11.5px] text-inkfaint">
+              {owned} / {SKINS.length}
+            </span>
+          </div>
           <div className="flex items-end gap-3 rounded-card bg-canvas px-4 pb-3 pt-2">
-            <div className="h-[148px] w-[110px] shrink-0">
+            <div className="h-[124px] w-[92px] shrink-0">
               <CharacterSkinRenderer skinId={current.def.id} />
             </div>
             <div className="min-w-0 flex-1 pb-2">
-              <p className="text-[17px] font-semibold text-ink">{current.def.name}</p>
-              <p className="mt-1 text-[12.5px] leading-relaxed text-inkdim">
+              <p className="text-[16px] font-semibold text-ink">{current.def.name}</p>
+              <p className="mt-1 line-clamp-3 text-[12.5px] leading-relaxed text-inkdim">
                 {current.def.description}
-              </p>
-              <p className="mt-2 font-game text-[11px] text-inkfaint">
-                {owned} / {SKINS.length}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="mt-3 flex shrink-0 gap-1 overflow-x-auto rounded-pill bg-sunken p-1">
-          {TABS.map((key) => (
+        {/* 내 옷 · 새 옷 */}
+        <div className="mt-3 flex shrink-0 gap-1 rounded-pill bg-sunken p-1">
+          {(['MINE', 'NEW'] as Shelf[]).map((key) => (
             <button
               key={key}
               type="button"
-              aria-pressed={tab === key}
+              aria-pressed={shelf === key}
               onClick={() => {
-                setTab(key)
-                setNote(null)
+                setShelf(key)
+                reset()
               }}
               className={cn(
-                'min-h-[34px] flex-1 whitespace-nowrap rounded-pill px-3 text-[12px] font-medium transition-colors duration-200',
-                tab === key ? 'bg-surface text-ink shadow-soft' : 'text-inkdim',
+                'min-h-[36px] flex-1 rounded-pill px-3 text-[13px] font-medium transition-colors duration-200',
+                shelf === key ? 'bg-surface text-ink shadow-soft' : 'text-inkdim',
               )}
             >
-              {key === 'ALL' ? '전체' : SKIN_CATEGORY_LABEL[key]}
+              {key === 'MINE' ? '내 옷' : '새 옷'}
             </button>
           ))}
         </div>
 
+        {pack !== null && packDef ? (
+          /* 묶음 하나만 보는 중 */
+          <button
+            type="button"
+            onClick={() => {
+              setPack(null)
+              reset()
+            }}
+            className="mt-2 flex shrink-0 items-center gap-2 rounded-pill bg-coral-soft/40 px-3 py-1.5 text-[11.5px] text-coral-deep ring-1 ring-coral/40"
+          >
+            <span className="min-w-0 flex-1 truncate text-left">
+              {packDef.id}팩 · {packDef.name}
+            </span>
+            {packSeen && (
+              <span className="shrink-0 font-game text-[10px]">
+                {packSeen.found} / {packSeen.total}
+              </span>
+            )}
+            <span className="shrink-0 text-[12px] leading-none">✕</span>
+          </button>
+        ) : (
+          <>
+            {/* 어느 세계 옷인지 */}
+            <div className="mt-2 flex shrink-0 gap-1">
+              {(['ALL', 'DAILY', 'FANTASY'] as WorldTab[]).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  aria-pressed={world === key}
+                  onClick={() => {
+                    setWorld(key)
+                    reset()
+                  }}
+                  className={cn(
+                    'min-h-[30px] flex-1 rounded-pill px-2 text-[12px] transition-colors duration-200',
+                    world === key
+                      ? 'bg-ink/[0.06] font-medium text-ink'
+                      : 'text-inkdim ring-1 ring-line',
+                  )}
+                >
+                  {key === 'ALL' ? '전체' : SKIN_WORLD_LABEL[key]}
+                </button>
+              ))}
+            </div>
+
+            {/* 결. 옆으로 흐른다 — 화면을 두 줄 넘게 먹지 않는다. */}
+            <div className="-mx-1 mt-1.5 flex shrink-0 gap-1 overflow-x-auto px-1 pb-0.5">
+              {WARDROBE_TAGS.map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  aria-pressed={tag === key}
+                  onClick={() => {
+                    setTag(tag === key ? null : key)
+                    reset()
+                  }}
+                  className={cn(
+                    'min-h-[26px] shrink-0 whitespace-nowrap rounded-pill px-2.5 text-[11px] transition-colors duration-200',
+                    tag === key
+                      ? 'bg-coral text-surface'
+                      : 'bg-surface text-inkdim ring-1 ring-line',
+                  )}
+                >
+                  {WARDROBE_TAG_LABEL[key]}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
         {note && (
-          <p className="mt-2.5 shrink-0 rounded-btn bg-sunken px-3.5 py-2.5 text-[12px] leading-relaxed text-inkdim">
+          <p className="mt-2 shrink-0 rounded-btn bg-sunken px-3.5 py-2.5 text-[12px] leading-relaxed text-inkdim">
             {note}
           </p>
         )}
 
-        <div className="mt-3 min-h-0 flex-1 overflow-y-auto">
-          <ul className="grid grid-cols-3 gap-2">
-            {shown.map((view) => (
-              <li key={view.def.id}>
-                <SkinCard view={view} onSelect={() => tap(view)} />
-              </li>
-            ))}
-          </ul>
+        <div className="mt-2.5 min-h-0 flex-1 overflow-y-auto">
+          {shown.length === 0 ? (
+            <p className="mt-8 text-center text-[12px] leading-relaxed text-inkfaint">
+              {shelf === 'MINE'
+                ? '여기 해당하는 옷은 아직 없어.'
+                : '이 갈래는 다 가지고 있어.'}
+            </p>
+          ) : (
+            <ul className="grid grid-cols-3 gap-2">
+              {shown.map((view) => (
+                <li key={view.def.id}>
+                  <SkinCard
+                    view={view}
+                    onSelect={() => tap(view)}
+                    onPack={() => openPack(view.def.packId)}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
 
           {/* 살 수 있는 게 있으면 값을 여기서 한 번에 알려준다.
               칸마다 가격을 박아두면 목록이 가게처럼 보인다. */}

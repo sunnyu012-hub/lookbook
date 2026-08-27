@@ -51,6 +51,110 @@ export const SKIN_IDS = [
   'navy_star_idol',
   'white_encore',
   'aurora_pop',
+  // 3팩 — 비밀스러운 도시의 사람들
+  'night_bookkeeper',
+  'starlight_patissier',
+  'alley_detective',
+  'magic_postal',
+  'city_archivist',
+  'vintage_shop_buyer',
+  'little_theater_actor',
+  'rooftop_gardener',
+  'dream_mender',
+  'night_market_trader',
+  'treasure_appraiser',
+  'neon_dj',
+  // 4팩 — 사계절의 축제
+  'cherry_blossom_picnic',
+  'spring_rain_walker',
+  'summer_firework_keeper',
+  'marine_vacance',
+  'peach_holiday',
+  'autumn_leaf_explorer',
+  'halloween_candy_witch',
+  'ghost_hotel_bellboy',
+  'first_snow_angel',
+  'christmas_idol',
+  'new_year_pouch',
+  'starlight_ball',
+  // 5팩 — 생활 길드의 모험가들
+  'strawberry_farmer',
+  'herb_witch',
+  'crystal_miner',
+  'cave_cartographer',
+  'monster_chef',
+  'dessert_alchemist',
+  'mushroom_forager',
+  'moonlight_angler',
+  'treasure_hunter',
+  'slime_researcher',
+  'dungeon_idol',
+  'legendary_guildmaster',
+  // 6팩 — 또 다른 세계의 나
+  'dawn_black_cat',
+  'moonlight_rockstar',
+  'dream_ballerina',
+  'neon_angel',
+  'rose_garden_ghost',
+  'star_thief_mage',
+  'time_traveler',
+  'mirror_world_me',
+  'city_guardian',
+  'golden_slime_queen',
+  'all_seasons_spirit',
+  'little_life_lead',
+  // 7팩 — 오늘 진짜 입고 나간 옷
+  'hoodie_and_jeans',
+  'white_tee_slacks',
+  'knit_cardigan_cotton_pants',
+  'shirt_dress_day',
+  'sweatshirt_jogger',
+  'denim_jacket_long_skirt',
+  'thin_knit_wide_pants',
+  'check_shirt_layer',
+  'tee_and_shorts',
+  'hood_zipup_leggings',
+  'blouse_slim_jeans',
+  'sweater_corduroy',
+  // 8팩 — 한국의 사계절 옷장
+  'early_spring_trench',
+  'fine_dust_day',
+  'spring_wedding_guest',
+  'early_summer_shirt',
+  'rainy_season_practical',
+  'heatwave_linen',
+  'aircon_cardigan',
+  'midsummer_long_skirt',
+  'early_autumn_shirt',
+  'autumn_suede_jacket',
+  'sudden_cold_day',
+  'midwinter_padding',
+  // 9팩 — 나의 추구미
+  'french_girl_casual',
+  'minimal_monotone',
+  'kitsch_vintage_denim',
+  'vintage_bookcafe_mood',
+  'real_balletcore',
+  'soft_gorpcore',
+  'cozy_scandi_mood',
+  'campus_preppy',
+  'retro_sporty',
+  'cityboy_overfit',
+  'romantic_satin_mood',
+  'soft_chic_all_black',
+  // 10팩 — 오늘은 어디 가는 날?
+  'subway_commute',
+  'work_from_home_day',
+  'convenience_store_run',
+  'after_work_meetup',
+  'new_cafe_hunt',
+  'exhibition_day',
+  'baseball_cheer',
+  'hangang_picnic',
+  'popup_openrun',
+  'concert_day',
+  'airport_day',
+  'interview_day',
 ] as const
 export type SkinId = (typeof SKIN_IDS)[number]
 
@@ -124,17 +228,54 @@ export type SkinItemGroup = (typeof SKIN_ITEM_GROUPS)[number]
 export type SkinUnlock =
   | { kind: 'DEFAULT' }
   | { kind: 'CONDITION'; all: SkinCondition[]; price?: number }
+  /**
+   * 작은 옷장에서 만나는 것.
+   *
+   * 조건이 아니다. 그래서 CONDITION 으로 쓰면 안 된다 —
+   * `all: []` 은 "채울 게 없다" 라서 진행률 1 로 읽히고,
+   * 다음에 앱을 여는 순간 마흔여덟 벌이 공짜로 들어온다.
+   * 갈래를 따로 두면 조건 계산이 아예 이쪽으로 오지 않는다.
+   */
+  | { kind: 'GACHA'; poolId: SkinGachaPoolId }
 
-/** 어떤 길로 얻는지 — 화면과 보고서에서 한 마디로 부르려고 둔다 */
-export type SkinUnlockType =
-  | 'DEFAULT'
-  | 'SHOP'
-  | 'QUEST'
-  | 'COLLECTION'
-  | 'NPC_STORY'
-  | 'SECRET_AREA'
-  | 'SEASON'
-  | 'EVENT'
+/**
+ * 어떤 길로 얻는지.
+ *
+ * 실제 판정은 unlock 이 한다. 이건 "어디서 만나는지" 를 한 마디로 부르는 이름이고,
+ * 의상실이 획득처를 말할 때만 읽는다. 둘을 섞지 않는다 —
+ * 예전에 이 자리에 있던 라벨은 값이 실제 동작과 어긋나 있었고,
+ * 아무도 안 읽어서 어긋난 줄도 몰랐다.
+ */
+export const SKIN_ACQUISITIONS = ['LEGACY_UNLOCK', 'SHOP', 'GACHA', 'REWARD'] as const
+export type SkinAcquisition = (typeof SKIN_ACQUISITIONS)[number]
+
+/** 묶음 번호. 처음 스물넷은 묶음이 없다 — 묶음이라는 말이 생기기 전에 나왔다. */
+export const SKIN_PACK_IDS = [3, 4, 5, 6, 7, 8, 9, 10] as const
+export type SkinPackId = (typeof SKIN_PACK_IDS)[number]
+
+/** 이 세계의 옷인지, 저쪽 세계의 옷인지 */
+export type SkinWorld = 'DAILY' | 'FANTASY'
+
+/**
+ * 의상실에서 찾을 때 쓰는 결.
+ *
+ * 기존 SkinCategory(일상 · 활동 · 기분 · 계절 · 특별)를 지우지 않는다.
+ * 그건 스물넷이 쓰고 있고, 이건 백스무 벌을 훑을 때 쓰는 다른 축이다.
+ */
+export const WARDROBE_TAGS = [
+  'DAILY',
+  'WEATHER',
+  'TASTE',
+  'OUTING',
+  'JOB',
+  'FESTIVAL',
+  'MAGIC',
+] as const
+export type WardrobeTag = (typeof WARDROBE_TAGS)[number]
+
+/** 작은 옷장 넷. 마흔여덟을 한 통에 넣지 않는다 — 원하는 묶음을 고를 수 있어야 한다. */
+export const SKIN_GACHA_POOL_IDS = ['PACK_4', 'PACK_6', 'PACK_8', 'PACK_10'] as const
+export type SkinGachaPoolId = (typeof SKIN_GACHA_POOL_IDS)[number]
 
 /**
  * 얻는 순간 한 번 나오는 말.
@@ -163,7 +304,11 @@ export interface CharacterSkin {
   tags: string[]
   unlock: SkinUnlock
   /** 어떤 길로 얻는지 */
-  unlockType: SkinUnlockType
+  acquisition: SkinAcquisition
+  /** 어느 묶음에서 나왔는지. 처음 스물넷은 없다. */
+  packId?: SkinPackId
+  /** 의상실에서 찾을 때 쓰는 결. 처음 스물넷은 없다. */
+  wardrobeTag?: WardrobeTag
   /** 아직 못 얻었을 때 흘리는 말. 조건을 숫자로 말하지 않는다. */
   hint: string
   /** 얻은 순간에 나오는 말 */

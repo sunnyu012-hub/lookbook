@@ -34,6 +34,26 @@ def edge_alpha(im):
     return float(border.mean())
 
 
+# ── 캐릭터 모습 ────────────────────────────────────────
+# 의상실 한 칸도 폰에서 86px 다. 백스무 벌을 367x508 원본으로 받으면
+# 시트를 여는 순간 4MB 가 넘는다. 여기는 매니페스트를 안 거치고
+# 파일 이름이 곧 스킨 id 라서 폴더를 그대로 훑는다.
+CHARACTERS = os.path.join(ROOT, "public/assets/characters")
+CHAR_THUMBS = os.path.join(THUMBS, "characters")
+
+char_made = 0
+if os.path.isdir(CHARACTERS):
+    os.makedirs(CHAR_THUMBS, exist_ok=True)
+    for name in sorted(os.listdir(CHARACTERS)):
+        if not name.endswith(".webp"):
+            continue
+        im = Image.open(os.path.join(CHARACTERS, name)).convert("RGBA")
+        im.thumbnail((MAX, MAX), Image.LANCZOS)
+        im.save(os.path.join(CHAR_THUMBS, name), "WEBP", quality=82, method=6)
+        char_made += 1
+    print(f"캐릭터 모습 작은 그림 {char_made}장")
+
+
 with open(MANIFEST, encoding="utf-8") as f:
     manifest = json.load(f)
 

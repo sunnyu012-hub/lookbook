@@ -18,7 +18,14 @@ import {
   skinPrice,
   skinProgress,
   skinViews,
+  NEW_SHOP_SKIN_PRICE,
+  packProgress,
+  skinWorld,
+  skinsInPack,
+  skinsInPool,
 } from '@/lib/character/skins'
+import { SKIN_PACKS } from '@/lib/character/packs'
+import { SKIN_GACHA_POOL_IDS } from '@/types'
 import { discoveredInGroup, groupSize, itemIdsInGroup } from '@/lib/character/groups'
 import { SKIN_ITEM_GROUPS } from '@/types'
 import { applySkinUnlocks, buySkin, skinCollectionProgress, wearSkin } from '@/lib/character/derive'
@@ -51,8 +58,13 @@ describe('열두 모습', () => {
     }
   })
 
-  it('스물넷이다 — 1차 열둘 + 2차 열둘', () => {
-    expect(SKINS.length).toBe(24)
+  it('백스무 벌이다 — 처음 스물넷 + 묶음 여덟 × 열둘', () => {
+    expect(SKINS.length).toBe(120)
+    expect(SKINS.filter((s) => s.acquisition === 'LEGACY_UNLOCK')).toHaveLength(24)
+  })
+
+  it('처음 스물넷이 그대로 앞자리에 있다', () => {
+    expect(SKINS.slice(0, 24).map((s) => s.id)).toEqual([...SKIN_IDS].slice(0, 24))
   })
 
   it('2차 열둘이 다 들어 있고 전부 특별 분류다', () => {
@@ -100,9 +112,21 @@ describe('열두 모습', () => {
     }
   })
 
-  it('스물네 장이 실제로 다 있다', () => {
+  it('처음 스물네 장은 실제로 다 있다', () => {
     const pub = path.resolve(__dirname, '../../../public')
-    const missing = SKINS.filter((s) => !existsSync(path.join(pub, `assets/characters/${s.id}.webp`)))
+    const legacy = SKINS.filter((s) => s.acquisition === 'LEGACY_UNLOCK')
+    const missing = legacy.filter(
+      (s) => !existsSync(path.join(pub, `assets/characters/${s.id}.webp`)),
+    )
+    expect(missing.map((s) => s.id)).toEqual([])
+  })
+
+  it('스물네 장의 작은 그림도 다 있다', () => {
+    const pub = path.resolve(__dirname, '../../../public')
+    const legacy = SKINS.filter((s) => s.acquisition === 'LEGACY_UNLOCK')
+    const missing = legacy.filter(
+      (s) => !existsSync(path.join(pub, `assets/thumbs/characters/${s.id}.webp`)),
+    )
     expect(missing.map((s) => s.id)).toEqual([])
   })
 
@@ -433,5 +457,301 @@ describe('기존 저장', () => {
     if (!result.ok) return
     expect(result.state.user.selectedSkinId).toBe('night_owl')
     expect(result.state.user.ownedSkinIds).toContain('night_owl')
+  })
+})
+
+// ── UPDATE F.5 — 의상실과 아흔여섯 벌 ────────────────────
+
+/**
+ * 여기서 붙잡는 것 —
+ * 처음 스물넷이 하나도 안 흔들리고, 작은 옷장 마흔여덟이
+ * 어떤 경로로도 저절로 들어오지 않는다.
+ */
+
+describe('F.5 · 묶음 여덟', () => {
+  it('묶음마다 정확히 열두 벌이다', () => {
+    for (const pack of SKIN_PACKS) {
+      expect(skinsInPack(pack.id)).toHaveLength(12)
+    }
+    expect(SKIN_PACKS).toHaveLength(8)
+  })
+
+  it('묶음 번호는 3에서 10까지다', () => {
+    expect(SKIN_PACKS.map((p) => p.id)).toEqual([3, 4, 5, 6, 7, 8, 9, 10])
+  })
+
+  it('홀수 묶음은 의상실, 짝수 묶음은 작은 옷장이다', () => {
+    for (const pack of SKIN_PACKS) {
+      expect(pack.acquisition).toBe(pack.id % 2 === 1 ? 'SHOP' : 'GACHA')
+    }
+  })
+
+  it('의상실 마흔여덟 · 작은 옷장 마흔여덟', () => {
+    expect(SKINS.filter((s) => s.acquisition === 'SHOP')).toHaveLength(48)
+    expect(SKINS.filter((s) => s.acquisition === 'GACHA')).toHaveLength(48)
+  })
+
+  it('신규 아흔여섯은 전부 묶음과 결을 가진다', () => {
+    const fresh = SKINS.filter((s) => s.acquisition !== 'LEGACY_UNLOCK')
+    expect(fresh).toHaveLength(96)
+    for (const skin of fresh) {
+      expect(skin.packId).toBeDefined()
+      expect(skin.wardrobeTag).toBeDefined()
+    }
+  })
+
+  it('처음 스물넷은 묶음이 없다 — 늘 전체에서 보인다', () => {
+    for (const skin of SKINS.filter((s) => s.acquisition === 'LEGACY_UNLOCK')) {
+      expect(skin.packId).toBeUndefined()
+      expect(skinWorld(skin)).toBeNull()
+    }
+  })
+
+  it('작은 옷장 넷에 열두 벌씩 들어 있다', () => {
+    for (const poolId of SKIN_GACHA_POOL_IDS) {
+      expect(skinsInPool(poolId)).toHaveLength(12)
+    }
+    // 마흔여덟을 한 통에 넣지 않았다
+    expect(SKIN_GACHA_POOL_IDS).toHaveLength(4)
+  })
+
+  it('묶음 진행도는 저장이 아니라 계산이다', () => {
+    const [first, second] = skinsInPack(9)
+    const state = withUser({ ownedSkinIds: ['basic_day', first.id, second.id] })
+    expect(packProgress(state, 9)).toEqual({ found: 2, total: 12 })
+    expect(packProgress(state, 10)).toEqual({ found: 0, total: 12 })
+  })
+})
+
+describe('F.5 · 작은 옷장 마흔여덟은 저절로 안 들어온다', () => {
+  const gacha = () => SKINS.filter((s) => s.unlock.kind === 'GACHA')
+
+  it('갈래가 조건이 아니다 — 빈 조건으로 표현하지 않았다', () => {
+    for (const skin of gacha()) {
+      expect(skin.unlock.kind).toBe('GACHA')
+    }
+    expect(gacha()).toHaveLength(48)
+  })
+
+  it('처음부터 가진 것에 안 들어간다', () => {
+    expect(defaultOwnedSkinIds()).toEqual([DEFAULT_SKIN_ID])
+  })
+
+  it('진행률이 늘 0 이다 — 조건이 아니니 채울 수도 없다', () => {
+    const rich = withUser({ ownedSkinIds: SKINS.map((s) => s.id) })
+    for (const skin of gacha()) {
+      expect(skinProgress(rich, skin.unlock)).toBe(0)
+    }
+  })
+
+  it('아무리 많이 해도 새로 열리지 않는다', () => {
+    const base = createDefaultState()
+    const busy: AppState = {
+      ...base,
+      categoryCompleted: { LIFE: 999, WORK: 999, BODY: 999, MIND: 999, PLAY: 999, HEART: 999 },
+      reputation: { ...base.reputation, CAFE_STREET: 999, CREATIVE_DISTRICT: 999, NIGHT_TOWN: 999 },
+      bossClears: 99,
+      discovery: {
+        ...base.discovery,
+        foundSecretIds: [...base.discovery.foundSecretIds],
+        readChapterIds: [...base.discovery.readChapterIds],
+      },
+    }
+    const opened = newlyUnlocked(busy).map((s) => s.id)
+    for (const skin of gacha()) {
+      expect(opened).not.toContain(skin.id)
+    }
+    const after = applySkinUnlocks(busy)
+    for (const skin of gacha()) {
+      expect(after.state.user.ownedSkinIds).not.toContain(skin.id)
+    }
+  })
+
+  it('코인으로도 못 산다', () => {
+    const rich = withUser({ coins: 99999 })
+    for (const skin of gacha().slice(0, 6)) {
+      expect(skinPrice(skin)).toBeNull()
+      const { state, result } = buySkin(rich, skin.id)
+      expect(result).toEqual({ ok: false, reason: 'NOT_FOR_SALE' })
+      expect(state).toBe(rich)
+    }
+  })
+
+  it('목록에서도 살 수 있는 걸로 안 나온다', () => {
+    const views = skinViews(withUser({ coins: 99999 }))
+    for (const view of views.filter((v) => v.def.unlock.kind === 'GACHA')) {
+      expect(view.forSale).toBe(false)
+      expect(view.owned).toBe(false)
+      expect(view.progress).toBe(0)
+    }
+  })
+})
+
+describe('F.5 · 의상실에서 사는 마흔여덟', () => {
+  const shop = () => SKINS.filter((s) => s.acquisition === 'SHOP')
+
+  it('값이 다 같다 — 능력치가 없으니 값을 나눌 근거가 없다', () => {
+    expect([...new Set(shop().map(skinPrice))]).toEqual([NEW_SHOP_SKIN_PRICE])
+    expect(NEW_SHOP_SKIN_PRICE).toBe(480)
+  })
+
+  it('조건이 없어서 코인만 있으면 바로 산다', () => {
+    for (const skin of shop().slice(0, 8)) {
+      const rich = withUser({ coins: 1000 })
+      const { state, result } = buySkin(rich, skin.id)
+      expect(result.ok).toBe(true)
+      expect(state.user.coins).toBe(1000 - NEW_SHOP_SKIN_PRICE)
+      expect(state.user.ownedSkinIds).toContain(skin.id)
+    }
+  })
+
+  it('코인이 모자라면 안 팔고 코인도 안 준다', () => {
+    const skin = shop()[0]
+    const poor = withUser({ coins: 479 })
+    const { state, result } = buySkin(poor, skin.id)
+    expect(result).toEqual({ ok: false, reason: 'NOT_ENOUGH_COINS' })
+    expect(state.user.coins).toBe(479)
+  })
+
+  it('두 번 눌러도 한 번만 빠진다', () => {
+    const skin = shop()[0]
+    let state = withUser({ coins: 1000 })
+    state = buySkin(state, skin.id).state
+    const second = buySkin(state, skin.id)
+    expect(second.result).toEqual({ ok: false, reason: 'ALREADY_OWNED' })
+    expect(second.state.user.coins).toBe(520)
+    expect(second.state.user.ownedSkinIds.filter((id) => id === skin.id)).toHaveLength(1)
+  })
+
+  it('사도 저절로 입혀지지 않는다', () => {
+    const skin = shop()[0]
+    const bought = buySkin(withUser({ coins: 1000 }), skin.id).state
+    expect(bought.user.selectedSkinId).toBe(DEFAULT_SKIN_ID)
+  })
+
+  it('네 묶음에서 한 벌씩 다 사진다', () => {
+    for (const packId of [3, 5, 7, 9] as const) {
+      const skin = skinsInPack(packId)[0]
+      const { result } = buySkin(withUser({ coins: 1000 }), skin.id)
+      expect(result.ok).toBe(true)
+    }
+  })
+})
+
+describe('F.5 · 처음 스물넷을 안 건드렸다', () => {
+  const legacy = () => SKINS.filter((s) => s.acquisition === 'LEGACY_UNLOCK')
+
+  it('id 스물네 개가 그대로다', () => {
+    expect(legacy().map((s) => s.id)).toEqual([
+      'basic_day', 'cozy_home', 'weekend_casual', 'cafe_work', 'climbing_day', 'creative_day',
+      'rainy_day', 'night_owl', 'date_day', 'spring_picnic', 'winter_cozy', 'moon_alley',
+      'strawberry_bonbon', 'milky_ballet', 'toy_candy_pop', 'angel_picnic',
+      'soft_rock_chic', 'pink_punk', 'vintage_band_girl', 'midnight_leather',
+      'pink_idol_stage', 'navy_star_idol', 'white_encore', 'aurora_pop',
+    ])
+  })
+
+  it('기본 지급은 여전히 하나뿐이다', () => {
+    expect(legacy().filter((s) => s.unlock.kind === 'DEFAULT').map((s) => s.id)).toEqual([
+      'basic_day',
+    ])
+  })
+
+  it('예전 다섯 벌의 값이 그대로다', () => {
+    const prices = Object.fromEntries(legacy().map((s) => [s.id, skinPrice(s)]))
+    expect(prices.weekend_casual).toBe(400)
+    expect(prices.strawberry_bonbon).toBe(420)
+    expect(prices.milky_ballet).toBe(480)
+    expect(prices.vintage_band_girl).toBe(520)
+    expect(prices.soft_rock_chic).toBe(750)
+    expect(legacy().filter((s) => skinPrice(s) !== null)).toHaveLength(5)
+  })
+
+  it('감춘 넷이 그대로다', () => {
+    expect(legacy().filter((s) => s.hiddenUntilOwned).map((s) => s.id)).toEqual([
+      'moon_alley', 'midnight_leather', 'white_encore', 'aurora_pop',
+    ])
+  })
+
+  it('"귀한 모습" 으로 세는 등급이 안 늘었다 — 오로라 팝이 쉬워지지 않는다', () => {
+    const rare = new Set(['EPIC', 'LEGENDARY', 'SECRET'])
+    const fresh = SKINS.filter((s) => s.acquisition !== 'LEGACY_UNLOCK')
+    expect(fresh.filter((s) => rare.has(s.rarity))).toEqual([])
+    // 예전 그대로 다섯 벌 이상이 필요하다
+    expect(legacy().filter((s) => rare.has(s.rarity)).length).toBeGreaterThanOrEqual(5)
+  })
+
+  it('묶음 열둘이 늘어도 예전 조건은 같은 결과를 낸다', () => {
+    const state = withUser({})
+    const done = withUser({})
+    done.categoryCompleted = { ...done.categoryCompleted, LIFE: 10 }
+    expect(newlyUnlocked(state).map((s) => s.id)).not.toContain('cozy_home')
+    expect(newlyUnlocked(done).map((s) => s.id)).toContain('cozy_home')
+  })
+})
+
+describe('F.5 · 기존 저장 (Case A~G)', () => {
+  it('A. 새로 시작한 사람은 기본 모습 하나뿐이다', () => {
+    const fresh = createDefaultState()
+    expect(fresh.user.ownedSkinIds).toEqual(['basic_day'])
+    const after = applySkinUnlocks(fresh)
+    expect(after.state.user.ownedSkinIds).toEqual(['basic_day'])
+  })
+
+  it('B. 조건으로 연 것들이 그대로 남는다', () => {
+    const saved = ['basic_day', 'cozy_home', 'climbing_day', 'night_owl', 'moon_alley']
+    expect(sanitizeOwnedSkins(saved)).toEqual(saved)
+  })
+
+  it('C. 사둔 유료 다섯이 그대로 남는다', () => {
+    const saved = ['basic_day', 'weekend_casual', 'soft_rock_chic']
+    expect(sanitizeOwnedSkins(saved)).toEqual(saved)
+  })
+
+  it('D. 사둔 걸 입고 있었으면 그대로 입고 있다', () => {
+    expect(sanitizeSelectedSkin('soft_rock_chic', ['basic_day', 'soft_rock_chic'])).toBe(
+      'soft_rock_chic',
+    )
+  })
+
+  it('E. 감춘 모습을 가지고 있었으면 그대로다', () => {
+    expect(sanitizeOwnedSkins(['basic_day', 'aurora_pop'])).toContain('aurora_pop')
+  })
+
+  it('F. 아흔여섯이 늘어도 예전 저장이 그대로 열린다', () => {
+    const saved = ['basic_day', 'cozy_home', 'weekend_casual', 'midnight_leather']
+    const state = withUser({ ownedSkinIds: sanitizeOwnedSkins(saved), selectedSkinId: 'cozy_home' })
+    expect(state.user.ownedSkinIds).toEqual(saved)
+    expect(sanitizeSelectedSkin('cozy_home', saved)).toBe('cozy_home')
+    // 새로 늘어난 아흔여섯 중 하나도 딸려 들어오지 않는다
+    const fresh = SKINS.filter((s) => s.acquisition !== 'LEGACY_UNLOCK').map((s) => s.id)
+    for (const id of fresh) expect(state.user.ownedSkinIds).not.toContain(id)
+  })
+
+  it('G. 상태가 아무리 변해도 작은 옷장 마흔여덟은 0벌이다', () => {
+    let state: AppState = createDefaultState()
+    // 퀘스트 · 도감 · 이야기 · 보스 · 평판을 전부 끝까지 밀어본다
+    state = {
+      ...state,
+      categoryCompleted: { LIFE: 500, WORK: 500, BODY: 500, MIND: 500, PLAY: 500, HEART: 500 },
+      bossClears: 50,
+      user: { ...state.user, coins: 999999 },
+    }
+    for (let i = 0; i < 3; i++) state = applySkinUnlocks(state).state
+
+    const gachaIds = SKINS.filter((s) => s.unlock.kind === 'GACHA').map((s) => s.id)
+    const got = state.user.ownedSkinIds.filter((id) => gachaIds.includes(id))
+    expect(got).toEqual([])
+  })
+})
+
+describe('F.5 · 도감', () => {
+  it('분모가 백스물이 된다', () => {
+    expect(skinCollectionProgress(withUser({})).total).toBe(120)
+  })
+
+  it('가진 만큼 센다', () => {
+    const state = withUser({ ownedSkinIds: ['basic_day', 'cozy_home', 'french_girl_casual'] })
+    expect(skinCollectionProgress(state)).toEqual({ found: 3, total: 120 })
   })
 })
