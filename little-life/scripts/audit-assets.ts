@@ -135,6 +135,8 @@ for (const item of ALL_COLLECTION_ITEMS) {
  * 그건 앱이 안 깨지게 하는 장치지 "있다" 는 뜻이 아니다.
  */
 const skinMissing: Row[] = []
+/** 그림은 있는데 이름이 아직 안 정해진 것 */
+const skinNoName: Row[] = []
 const skinNoThumb: Row[] = []
 const skinOddSize: Row[] = []
 let skinCanvas = ''
@@ -142,6 +144,8 @@ let skinCanvas = ''
 for (const skin of SKINS) {
   const pack = findPack(skin.packId)
   const where = pack ? `${pack.id}팩 · ${pack.name}` : '처음 스물넷'
+
+  if (skin.nameMissing) skinNoName.push({ id: skin.id, name: skin.name, note: where })
   const file = path.join(PUBLIC, skinArt(skin).replace(/^\//, ''))
 
   if (!existsSync(file)) {
@@ -223,6 +227,7 @@ const lines = [
   `| 경로 중복 | ${dupPaths.length} |`,
   `| 캐릭터 모습 | ${SKINS.length} |`,
   `| 모습 그림 없음 | ${skinMissing.length} |`,
+  `| 모습 이름 없음 (자리표) | ${skinNoName.length} |`,
   `| 모습 작은 그림 없음 | ${skinNoThumb.length} |`,
   `| 모습 캔버스 다름 | ${skinOddSize.length} |`,
   `| 모습 id 중복 | ${dupSkinIds.length} |`,
@@ -247,6 +252,12 @@ const lines = [
   `캔버스 기준 ${skinCanvas || '알 수 없음'}. fallback 이 있어도 여기 남은 건 없는 것이다.`,
   '',
   table(skinMissing),
+  '## 이름이 아직 안 정해진 캐릭터 모습',
+  '',
+  '그림은 있는데 확정된 이름이 없는 것. `name` 에 든 건 자리표지 이름이 아니다.',
+  '이름이 오면 id · 이름 · 그림 파일을 한 번에 같이 정한다.',
+  '',
+  table(skinNoName),
   '## 작은 그림이 없는 캐릭터 모습',
   '',
   '`npm run assets:thumbs` 로 만든다. 없으면 목록에서 원본을 그대로 받는다.',
@@ -297,7 +308,7 @@ console.log(`도감 ${CATALOG.length} · 연결 ${mapped} · 이모지 ${emojiOn
 console.log(`깨진 경로 ${brokenPath.length} · 주인 없는 파일 ${orphans.length} · 중복 ${dupIds.length + dupPaths.length}`)
 console.log(`볼 것: 테두리 꽉 참 ${possibleCrop.length} · 촘촘함 ${styleReview.length}`)
 console.log(
-  `모습 ${SKINS.length} · 그림 없음 ${skinMissing.length} · 작은 그림 없음 ${skinNoThumb.length} · 캔버스 다름 ${skinOddSize.length}`,
+  `모습 ${SKINS.length} · 그림 없음 ${skinMissing.length} · 이름 없음 ${skinNoName.length} · 작은 그림 없음 ${skinNoThumb.length} · 캔버스 다름 ${skinOddSize.length}`,
 )
 console.log(`리포트: reports/asset-audit.md`)
 

@@ -98,19 +98,19 @@ LAYOUT = [
         "city_guardian", "golden_slime_queen", "all_seasons_spirit", "little_life_lead",
     ]),
     ("skins4-daily.png", [
-        "stripe_tee_wide_denim", "grey_zipup_slacks", "cardigan_denim_skirt",
-        "brown_jacket_corduroy",
+        "pack7_73", "pack7_74", "pack7_75",
+        "pack7_76",
     ]),
     # 5차 — 묶음 4 · 7 · 8 · 9 (스무 벌 더)
     ("skins5-festival-c.png", [
         "first_snow_angel", "christmas_idol", "new_year_pouch", "starlight_ball",
     ]),
     ("skins5-daily-b.png", [
-        "brown_fleece_jeans", "knit_wrap_skirt", "varsity_denim", "collar_knit_cargo_skirt",
+        "pack7_77", "pack7_78", "pack7_79", "pack7_80",
     ]),
     ("skins5-daily-c.png", [
-        "denim_jacket_chino", "knit_vest_long_skirt", "stripe_tee_washed_jeans",
-        "blouse_cargo_long_skirt",
+        "pack7_81", "pack7_82", "pack7_83",
+        "pack7_84",
     ]),
     ("skins5-weather.png", [
         "rainy_season_practical", "heatwave_linen", "aircon_cardigan", "midsummer_long_skirt",
@@ -126,7 +126,7 @@ LAYOUT = [
         "early_spring_trench", "fine_dust_day", "spring_wedding_guest", "early_summer_shirt",
     ]),
     ("skins6-weather-c.png", [
-        "early_autumn_shirt", "autumn_suede_jacket", "sudden_cold_day", "midwinter_padding",
+        "early_autumn_shirt", "autumn_suede_jacket", "sudden_cold_day", "cold_wave_long_padding",
     ]),
     ("skins6-taste-b.png", [
         "real_balletcore", "soft_gorpcore", "cozy_scandi_mood", "campus_preppy",

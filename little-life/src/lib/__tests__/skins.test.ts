@@ -801,3 +801,74 @@ describe('F.5 · 그림 캔버스', () => {
     expect(box.w / box.h).toBeLessThanOrEqual(0.95)
   })
 })
+
+describe('F.5 · 이름이 아직 안 정해진 것', () => {
+  /**
+   * 7묶음 열둘은 그림만 왔고 이름이 없다.
+   *
+   * 리포·시트 파일명 · PNG 메타데이터 · 기획 문서 · git 기록(폐기된
+   * 레이어 옷장까지) 어디에도 확정명이 없어서 자리표로 뒀다.
+   * 여기가 붙잡는 건 하나다 — **자리표가 조용히 이름이 되어 굳지 않는 것.**
+   * 이름이 오면 이 테스트가 빨개지고, 그때 id · 이름 · 그림 파일을
+   * 한 번에 같이 정하면 된다.
+   */
+  const pending = () => SKINS.filter((s) => s.nameMissing)
+
+  it('7묶음 열둘만 자리표다', () => {
+    expect(pending().map((s) => s.packId)).toEqual(Array(12).fill(7))
+  })
+
+  it('자리표는 자리표처럼 생겼다 — 이름처럼 안 생겼다', () => {
+    for (const skin of pending()) {
+      expect(skin.name).toMatch(/^PACK7_SKIN_\d+$/)
+      // id 도 뜻이 없어야 한다. 뜻을 담으면 진짜 이름이 왔을 때 어긋난다.
+      expect(skin.id).toMatch(/^pack7_\d+$/)
+    }
+  })
+
+  it('이름이 정해진 것에는 자리표 표시가 없다', () => {
+    for (const skin of SKINS.filter((s) => !s.nameMissing)) {
+      expect(skin.name).not.toMatch(/^PACK7_SKIN_/)
+      expect(skin.id).not.toMatch(/^pack7_/)
+    }
+  })
+
+  it('그림은 다 있다 — 없는 건 이름뿐이다', () => {
+    const pub = path.resolve(__dirname, '../../../public')
+    for (const skin of pending()) {
+      expect(existsSync(path.join(pub, `assets/characters/${skin.id}.webp`))).toBe(true)
+    }
+  })
+})
+
+describe('F.5 · 확정명', () => {
+  const nameOf = (id: string) => findSkin(id)?.name
+
+  it('8묶음 열둘이 확정명 그대로다', () => {
+    expect([
+      'early_spring_trench', 'fine_dust_day', 'spring_wedding_guest', 'early_summer_shirt',
+      'rainy_season_practical', 'heatwave_linen', 'aircon_cardigan', 'midsummer_long_skirt',
+      'early_autumn_shirt', 'autumn_suede_jacket', 'sudden_cold_day', 'cold_wave_long_padding',
+    ].map(nameOf)).toEqual([
+      '꽃샘추위 트렌치코트', '미세먼지 있는 날', '봄날 하객 코디', '초여름 셔츠 레이어드',
+      '장마철 실용 코디', '폭염의 린넨 셋업', '에어컨 대비 카디건', '한여름 롱스커트',
+      '초가을 셔츠 레이어드', '가을 스웨이드 재킷', '갑자기 추운 날 플리스', '한파의 롱패딩',
+    ])
+  })
+
+  it('9묶음 열둘도 확정명 그대로다', () => {
+    expect(skinsInPack(9).map((s) => s.name)).toEqual([
+      '프렌치 걸 캐주얼', '미니멀 모노톤', '키치 빈티지 데님', '빈티지 북카페 무드',
+      '현실적인 발레코어', '소프트 고프코어', '코지 스칸디 무드', '캠퍼스 프레피',
+      '레트로 스포티', '시티보이 오버핏', '로맨틱 새틴 무드', '소프트 시크 올블랙',
+    ])
+  })
+
+  it('10묶음 열둘도 확정명 그대로다', () => {
+    expect(skinsInPack(10).map((s) => s.name)).toEqual([
+      '지하철 출근길', '재택근무하는 날', '편의점 다녀오는 길', '퇴근 후 약속',
+      '카페 신상 탐방', '전시회 보러 가는 날', '야구장 응원룩', '한강 피크닉',
+      '팝업스토어 오픈런', '콘서트 가는 날', '공항 가는 날', '면접 보러 가는 날',
+    ])
+  })
+})

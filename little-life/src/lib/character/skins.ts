@@ -560,19 +560,31 @@ const PACK_ROWS: Record<SkinPackId, readonly PackRow[]> = {
     ['all_seasons_spirit', '모든 계절의 정령', '네 계절을 한 벌에 담았다.'],
     ['little_life_lead', 'Little Life의 주인공', '이 이야기의 한가운데 서 있는 모습.'],
   ],
+  /**
+   * 7묶음 — 이름이 아직 없다.
+   *
+   * 그림 열두 장은 왔는데 이름이 확정된 문서가 없다. 리포·시트 파일명 ·
+   * PNG 메타데이터 · 기획 문서 · git 기록(폐기된 레이어 옷장까지) 을
+   * 다 뒤졌지만 나온 게 없었다.
+   *
+   * 그래서 이름을 지어 붙이지 않는다. 한 번 지어두면 나중에 진짜 이름이
+   * 와도 id 가 엉뚱한 뜻을 계속 들고 다닌다 — 실제로 여기서 두 번 그랬다.
+   * id 도 뜻이 없는 자리표(pack7_73)로 둔다. 이름이 오면 id · 이름 ·
+   * 그림 파일을 한 번에 같이 정한다.
+   */
   7: [
-    ['stripe_tee_wide_denim', '스트라이프 티와 와이드 데님', '줄무늬 하나면 대충 입어도 정리돼 보인다.'],
-    ['grey_zipup_slacks', '회색 집업과 슬랙스', '급할 때 손에 제일 먼저 잡히는 조합.'],
-    ['cardigan_denim_skirt', '가디건과 데님 스커트', '가디건 하나로 계절이 넘어간다.'],
-    ['brown_jacket_corduroy', '브라운 재킷과 코듀로이', '갈색과 카키는 웬만하면 어울린다.'],
-    ['brown_fleece_jeans', '브라운 플리스와 청바지', '기모 하나 들어간 게 이렇게 다르다.'],
-    ['knit_wrap_skirt', '니트 티와 랩 스커트', '한 번 두르면 선이 정리된다.'],
-    ['varsity_denim', '바시티 재킷과 데님', '고등학교 때부터 있던 것 같은 옷.'],
-    ['collar_knit_cargo_skirt', '카라 니트와 카고 스커트', '주머니가 많으면 가방을 덜 든다.'],
-    ['denim_jacket_chino', '데님 재킷과 치노 팬츠', '봄가을에 제일 오래 손이 가는 조합.'],
-    ['knit_vest_long_skirt', '니트 베스트와 롱스커트', '단정한데 답답하지 않다.'],
-    ['stripe_tee_washed_jeans', '스트라이프 티와 워싱 진', '많이 빨아 입을수록 편해진다.'],
-    ['blouse_cargo_long_skirt', '블라우스와 카고 롱스커트', '위는 얌전하고 아래는 편하게.'],
+    ['pack7_73', 'PACK7_SKIN_73', '이름이 아직 안 붙은 옷.'],
+    ['pack7_74', 'PACK7_SKIN_74', '이름이 아직 안 붙은 옷.'],
+    ['pack7_75', 'PACK7_SKIN_75', '이름이 아직 안 붙은 옷.'],
+    ['pack7_76', 'PACK7_SKIN_76', '이름이 아직 안 붙은 옷.'],
+    ['pack7_77', 'PACK7_SKIN_77', '이름이 아직 안 붙은 옷.'],
+    ['pack7_78', 'PACK7_SKIN_78', '이름이 아직 안 붙은 옷.'],
+    ['pack7_79', 'PACK7_SKIN_79', '이름이 아직 안 붙은 옷.'],
+    ['pack7_80', 'PACK7_SKIN_80', '이름이 아직 안 붙은 옷.'],
+    ['pack7_81', 'PACK7_SKIN_81', '이름이 아직 안 붙은 옷.'],
+    ['pack7_82', 'PACK7_SKIN_82', '이름이 아직 안 붙은 옷.'],
+    ['pack7_83', 'PACK7_SKIN_83', '이름이 아직 안 붙은 옷.'],
+    ['pack7_84', 'PACK7_SKIN_84', '이름이 아직 안 붙은 옷.'],
   ],
   8: [
     ['early_spring_trench', '꽃샘추위 트렌치코트', '봄인 줄 알았는데 아니었다.'],
@@ -585,8 +597,8 @@ const PACK_ROWS: Record<SkinPackId, readonly PackRow[]> = {
     ['midsummer_long_skirt', '한여름 롱스커트', '길어도 시원한 쪽.'],
     ['early_autumn_shirt', '초가을 셔츠 레이어드', '아침저녁으로 온도가 다르다.'],
     ['autumn_suede_jacket', '가을 스웨이드 재킷', '일 년에 두 주쯤 딱 맞는 옷.'],
-    ['sudden_cold_day', '갑자기 추운 날', '어제까진 이러지 않았다.'],
-    ['midwinter_padding', '한겨울 패딩 코디', '멋보다 따뜻한 게 먼저다.'],
+    ['sudden_cold_day', '갑자기 추운 날 플리스', '어제까진 이러지 않았다.'],
+    ['cold_wave_long_padding', '한파의 롱패딩', '멋보다 따뜻한 게 먼저다.'],
   ],
   9: [
     ['french_girl_casual', '프렌치 걸 캐주얼', '애쓴 티가 안 나는 게 핵심.'],
@@ -664,6 +676,8 @@ function packSkins(): CharacterSkin[] {
             ? { kind: 'CONDITION', all: [], price: NEW_SHOP_SKIN_PRICE }
             : { kind: 'GACHA', poolId: pack.poolId! },
         acquisition: pack.acquisition,
+        // 자리표인 묶음은 표시해둔다 — 감사가 세어서 계속 알려준다
+        ...(name.startsWith('PACK') ? { nameMissing: true as const } : {}),
         packId: pack.id,
         wardrobeTag: pack.tag,
         // 조건을 세는 옷이 아니라서 힌트에 적을 "아직 남은 것" 이 없다.

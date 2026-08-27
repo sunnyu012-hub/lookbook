@@ -104,18 +104,18 @@ export const SKIN_IDS = [
   'all_seasons_spirit',
   'little_life_lead',
   // 7팩 — 오늘 진짜 입고 나간 옷
-  'stripe_tee_wide_denim',
-  'grey_zipup_slacks',
-  'cardigan_denim_skirt',
-  'brown_jacket_corduroy',
-  'brown_fleece_jeans',
-  'knit_wrap_skirt',
-  'varsity_denim',
-  'collar_knit_cargo_skirt',
-  'denim_jacket_chino',
-  'knit_vest_long_skirt',
-  'stripe_tee_washed_jeans',
-  'blouse_cargo_long_skirt',
+  'pack7_73',
+  'pack7_74',
+  'pack7_75',
+  'pack7_76',
+  'pack7_77',
+  'pack7_78',
+  'pack7_79',
+  'pack7_80',
+  'pack7_81',
+  'pack7_82',
+  'pack7_83',
+  'pack7_84',
   // 8팩 — 한국의 사계절 옷장
   'early_spring_trench',
   'fine_dust_day',
@@ -128,7 +128,7 @@ export const SKIN_IDS = [
   'early_autumn_shirt',
   'autumn_suede_jacket',
   'sudden_cold_day',
-  'midwinter_padding',
+  'cold_wave_long_padding',
   // 9팩 — 나의 추구미
   'french_girl_casual',
   'minimal_monotone',
@@ -305,6 +305,15 @@ export interface CharacterSkin {
   unlock: SkinUnlock
   /** 어떤 길로 얻는지 */
   acquisition: SkinAcquisition
+  /**
+   * 이름이 아직 안 정해진 옷.
+   *
+   * 그림은 왔는데 확정된 이름이 없을 때 켠다. name 에 들어 있는 건
+   * 자리표(PACK7_SKIN_73)지 이름이 아니고, id 도 뜻이 없는 자리표다.
+   * 켜져 있는 동안은 `npm run assets:audit` 이 세어서 보고한다 —
+   * 안 그러면 자리표가 그대로 이름이 되어 굳는다.
+   */
+  nameMissing?: true
   /** 어느 묶음에서 나왔는지. 처음 스물넷은 없다. */
   packId?: SkinPackId
   /** 의상실에서 찾을 때 쓰는 결. 처음 스물넷은 없다. */
