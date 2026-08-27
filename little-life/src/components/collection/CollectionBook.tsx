@@ -169,8 +169,8 @@ export function CollectionBook({
         onClick={onOpenLook}
         className="mt-3 flex w-full items-center gap-3 rounded-card border border-line/70 bg-surface px-4 py-3 text-left shadow-soft active:scale-[0.99]"
       >
-        <span className="h-10 w-8 shrink-0">
-          <CharacterSkinRenderer skinId={state.user.selectedSkinId} animated={false} />
+        <span className="h-10 w-10 shrink-0">
+          <CharacterSkinRenderer skinId={state.user.selectedSkinId} animated={false} small />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block text-[13.5px] font-medium text-ink">캐릭터 모습</span>

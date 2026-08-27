@@ -43,7 +43,7 @@ export function NewSkinOverlay({ skins, onWear, onClose }: NewSkinOverlayProps) 
         <div className="relative w-full max-w-[320px] animate-pop rounded-card border border-line bg-surface px-6 pb-6 pt-5 text-center shadow-lift">
           <p className="font-game text-[11px] tracking-[0.12em] text-coral-deep">NEW LOOK ✦</p>
 
-          <div className="mx-auto mt-3 h-[176px] w-[132px]">
+          <div className="mx-auto mt-3 h-[176px] w-[158px]">
             <CharacterSkinRenderer skinId={skin.id} />
           </div>
 

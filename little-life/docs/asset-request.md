@@ -338,3 +338,203 @@
 | K. 안쪽의 큰 방 | 1 |
 | L. 돌잠이의 돌 | 1 |
 | **합계** | **6** |
+
+---
+
+
+---
+
+
+---
+
+
+---
+
+
+---
+
+
+---
+
+
+---
+
+
+---
+
+## UPDATE F.5 — 새 옷 아흔여섯 벌
+
+**96 / 96 도착.** 남은 0장은 아직 없다 —
+지금은 목록에서 기본 모습이 실루엣으로 대신 서 있다. 앱이 안 깨지게 하는
+장치일 뿐이고, 그림이 아니다.
+
+### 지켜야 하는 것
+
+| | |
+| --- | --- |
+| 원본 시트 | **1254 × 1254 · 투명 PNG · 2×2 로 네 명** (지금 받은 것과 같게) |
+| 자르고 나면 | 433 × 508 — 스크립트가 알아서 맞춘다 |
+| 발 위치 · 중심 · 키 | 스크립트가 맞춘다. 손으로 안 해도 된다 |
+
+시트를 `assets/source-sheets/` 에 넣고 `extract-skins.py` 의 `LAYOUT` 에 덧붙인 뒤
+`npm run assets:skins` → `npm run assets:thumbs` → `npm run assets:audit`.
+**한 번에 전체를 돌린다** — 새 시트만 돌리면 그것들만 다른 캔버스에 올라간다.
+
+레이어(상의/하의/머리)로 나누지 않는다. **완성된 한 장 = 한 벌**이다.
+색만 바꾼 같은 옷을 다른 벌로 세지 않는다.
+
+### 묶음 3 — 비밀스러운 도시의 사람들 (25–36) · 12 / 12
+
+판타지 · 의상실에서 산다 · 이 도시 어딘가에서 매일 일하고 있는 사람들.
+
+| | 파일 | 이름 | 결 |
+| --- | --- | --- | --- |
+| ✅ | `night_bookkeeper.webp` | 심야 서점지기 | 새벽 두 시에도 불이 켜져 있는 서점. |
+| ✅ | `starlight_patissier.webp` | 별빛 파티시에 | 반죽에 별을 조금 섞는다는 소문. |
+| ✅ | `alley_detective.webp` | 골목 탐정 | 잃어버린 고양이를 주로 찾는다. |
+| ✅ | `magic_postal.webp` | 마법 우편배달부 | 주소가 없는 편지도 어떻게든 간다. |
+| ✅ | `city_archivist.webp` | 도시 기록가 | 아무도 안 적는 것들을 적어둔다. |
+| ✅ | `vintage_shop_buyer.webp` | 빈티지숍 바이어 | 남의 옷장에서 하루를 보내는 일. |
+| ✅ | `little_theater_actor.webp` | 작은 극장의 배우 | 객석이 스무 자리인 무대. |
+| ✅ | `rooftop_gardener.webp` | 옥상 정원사 | 엘리베이터 없는 건물 옥상까지 물을 이고 간다. |
+| ✅ | `dream_mender.webp` | 꿈 수선사 | 찢어진 데를 티 안 나게 꿰맨다. |
+| ✅ | `night_market_trader.webp` | 야시장 상인 | 해가 져야 문을 여는 가게. |
+| ✅ | `treasure_appraiser.webp` | 보물 감정사 | 대부분은 보물이 아니라고 말해주는 일. |
+| ✅ | `neon_dj.webp` | 네온 DJ | 새벽 네 시에 제일 좋은 곡을 튼다. |
+
+### 묶음 4 — 사계절의 축제 (37–48) · 12 / 12
+
+판타지 · 작은 옷장에서 나온다 · 한 해에 한 번씩만 돌아오는 날들.
+
+| | 파일 | 이름 | 결 |
+| --- | --- | --- | --- |
+| ✅ | `cherry_blossom_picnic.webp` | 벚꽃 피크닉 | 꽃잎이 도시락에도 들어간다. |
+| ✅ | `spring_rain_walker.webp` | 봄비 산책자 | 우산을 써도 안 써도 괜찮은 비. |
+| ✅ | `summer_firework_keeper.webp` | 여름밤 불꽃지기 | 터지기 전까지가 제일 조용하다. |
+| ✅ | `marine_vacance.webp` | 마린 바캉스 | 짐은 적을수록 좋다. |
+| ✅ | `peach_holiday.webp` | 복숭아빛 휴일 | 아무 일도 안 하기로 정한 날. |
+| ✅ | `autumn_leaf_explorer.webp` | 단풍 탐험가 | 길을 잃어도 예쁜 계절. |
+| ✅ | `halloween_candy_witch.webp` | 핼러윈 캔디 마녀 | 주머니가 사탕으로 무겁다. |
+| ✅ | `ghost_hotel_bellboy.webp` | 유령 호텔 벨보이 | 손님이 안 보여도 짐은 무겁다. |
+| ✅ | `first_snow_angel.webp` | 첫눈의 천사 | 올해 처음 내린 눈만 셀 수 있다. |
+| ✅ | `christmas_idol.webp` | 크리스마스 아이돌 | 일 년에 한 번뿐인 무대. |
+| ✅ | `new_year_pouch.webp` | 새해 복주머니 | 뭐가 들었는지는 열어봐야 안다. |
+| ✅ | `starlight_ball.webp` | 별빛 연말무도회 | 한 해의 마지막 밤에만 열린다. |
+
+### 묶음 5 — 생활 길드의 모험가들 (49–60) · 12 / 12
+
+판타지 · 의상실에서 산다 · 싸우러 가는 게 아니라 뭔가를 만들고 캐고 기르는 사람들.
+
+| | 파일 | 이름 | 결 |
+| --- | --- | --- | --- |
+| ✅ | `strawberry_farmer.webp` | 딸기 농장주 | 아침에 제일 단 걸 먼저 먹는 특권. |
+| ✅ | `herb_witch.webp` | 허브 마녀 | 주로 감기에 좋은 걸 만든다. |
+| ✅ | `crystal_miner.webp` | 수정 광부 | 깊이 들어갈수록 조용해진다. |
+| ✅ | `cave_cartographer.webp` | 동굴 지도제작자 | 길을 그려두면 다음 사람이 안 헤맨다. |
+| ✅ | `monster_chef.webp` | 몬스터 요리사 | 무섭게 생긴 재료일수록 맛있다. |
+| ✅ | `dessert_alchemist.webp` | 디저트 연금술사 | 설탕과 불의 비율이 전부다. |
+| ✅ | `mushroom_forager.webp` | 버섯 채집가 | 먹어도 되는 것만 골라 담는다. |
+| ✅ | `moonlight_angler.webp` | 달빛 낚시꾼 | 안 잡혀도 상관없는 밤낚시. |
+| ✅ | `treasure_hunter.webp` | 보물 사냥꾼 | 지도에 그려둔 자리는 보통 틀렸다. |
+| ✅ | `slime_researcher.webp` | 슬라임 연구원 | 아직도 뭘 먹는지 모른다. |
+| ✅ | `dungeon_idol.webp` | 던전 아이돌 | 관객이 대부분 몬스터다. |
+| ✅ | `legendary_guildmaster.webp` | 전설의 길드장 | 요즘은 서류 일이 더 많다. |
+
+### 묶음 6 — 또 다른 세계의 나 (61–72) · 12 / 12
+
+판타지 · 작은 옷장에서 나온다 · 어딘가에서 다르게 살고 있을 나.
+
+| | 파일 | 이름 | 결 |
+| --- | --- | --- | --- |
+| ✅ | `dawn_black_cat.webp` | 새벽의 검은 고양이 | 아무도 안 깬 시간에만 보인다. |
+| ✅ | `moonlight_rockstar.webp` | 달빛 록스타 | 달이 뜬 밤에만 소리가 커진다. |
+| ✅ | `dream_ballerina.webp` | 꿈속의 발레리나 | 바닥에 닿지 않고 도는 춤. |
+| ✅ | `neon_angel.webp` | 네온 천사 | 날개가 도시 불빛 색이다. |
+| ✅ | `rose_garden_ghost.webp` | 장미 정원의 유령 | 나쁜 뜻은 없는 쪽. |
+| ✅ | `star_thief_mage.webp` | 별을 훔친 마법사 | 하나쯤은 없어져도 모를 줄 알았다. |
+| ✅ | `time_traveler.webp` | 시간 여행자 | 어제로 돌아가도 같은 옷을 입는다. |
+| ✅ | `mirror_world_me.webp` | 거울세계의 나 | 가르마가 반대다. |
+| ✅ | `city_guardian.webp` | 도시의 수호자 | 아무도 모르게 하는 편이 편하다. |
+| ✅ | `golden_slime_queen.webp` | 황금 슬라임 퀸 | 왕관이 자꾸 흘러내린다. |
+| ✅ | `all_seasons_spirit.webp` | 모든 계절의 정령 | 네 계절을 한 벌에 담았다. |
+| ✅ | `little_life_lead.webp` | Little Life의 주인공 | 이 이야기의 한가운데 서 있는 모습. |
+
+### 묶음 7 — 오늘 진짜 입고 나간 옷 (73–84) · 12 / 12
+
+일상 · 의상실에서 산다 · 특별할 것 없이, 그냥 오늘 입은 옷.
+
+| | 파일 | 이름 | 결 |
+| --- | --- | --- | --- |
+| ✅ | `oatmeal_sweatshirt_daily.webp` | 오트밀 맨투맨 데일리 | 고민하기 싫은 날에 손이 먼저 간다. |
+| ✅ | `coral_tee_light_denim.webp` | 코랄 티셔츠와 연청 데님 | 한 가지만 밝아도 하루가 가벼워진다. |
+| ✅ | `sage_check_shirt_layered.webp` | 세이지 체크 셔츠 레이어드 | 단추는 안 잠근다. |
+| ✅ | `charcoal_cardigan_raw_denim.webp` | 차콜 카디건과 생지 데님 | 어두운 두 벌인데 답답하지 않다. |
+| ✅ | `dusty_blue_work_jacket.webp` | 더스티블루 워크재킷 | 주머니가 많아서 가방을 덜 든다. |
+| ✅ | `cream_knit_vest_long_skirt.webp` | 크림 니트 조끼와 롱스커트 | 단정한데 조이지 않는다. |
+| ✅ | `dusty_red_rugby_shirt.webp` | 더스티레드 럭비 셔츠 | 굵은 줄무늬는 그것만으로 충분하다. |
+| ✅ | `shirring_blouse_cargo_skirt.webp` | 셔링 블라우스와 카고 스커트 | 위는 얌전하고 아래는 편하게. |
+| ✅ | `denim_shirt_setup.webp` | 데님 셔츠 셋업 | 위아래를 맞추면 고민할 게 없다. |
+| ✅ | `lavender_shirt_dress.webp` | 라벤더 셔츠 원피스 | 하나만 입으면 끝나는 날. |
+| ✅ | `city_windbreaker_wide_pants.webp` | 도심 바람막이와 와이드 팬츠 | 바람이 지나가는데 안 춥다. |
+| ✅ | `red_cardigan_cream_pants.webp` | 레드 카디건과 크림 팬츠 | 한 군데만 붉으면 눈이 거기 간다. |
+
+### 묶음 8 — 한국의 사계절 옷장 (85–96) · 12 / 12
+
+일상 · 작은 옷장에서 나온다 · 날씨가 그날 옷을 거의 다 정한다.
+
+| | 파일 | 이름 | 결 |
+| --- | --- | --- | --- |
+| ✅ | `early_spring_trench.webp` | 꽃샘추위 트렌치코트 | 봄인 줄 알았는데 아니었다. |
+| ✅ | `fine_dust_day.webp` | 미세먼지 있는 날 | 창문을 못 여는 날의 차림. |
+| ✅ | `spring_wedding_guest.webp` | 봄날 하객 코디 | 주인공보다 튀면 안 된다. |
+| ✅ | `early_summer_shirt.webp` | 초여름 셔츠 레이어드 | 낮엔 덥고 저녁엔 서늘하다. |
+| ✅ | `rainy_season_practical.webp` | 장마철 실용 코디 | 젖어도 금방 마르는 것들로. |
+| ✅ | `heatwave_linen.webp` | 폭염의 린넨 셋업 | 가볍고 바람이 지나간다. |
+| ✅ | `aircon_cardigan.webp` | 에어컨 대비 카디건 | 밖보다 안이 더 춥다. |
+| ✅ | `midsummer_long_skirt.webp` | 한여름 롱스커트 | 길어도 시원한 쪽. |
+| ✅ | `early_autumn_shirt.webp` | 초가을 셔츠 레이어드 | 아침저녁으로 온도가 다르다. |
+| ✅ | `autumn_suede_jacket.webp` | 가을 스웨이드 재킷 | 일 년에 두 주쯤 딱 맞는 옷. |
+| ✅ | `sudden_cold_day.webp` | 갑자기 추운 날 플리스 | 어제까진 이러지 않았다. |
+| ✅ | `cold_wave_long_padding.webp` | 한파의 롱패딩 | 멋보다 따뜻한 게 먼저다. |
+
+### 묶음 9 — 나의 추구미 (97–108) · 12 / 12
+
+일상 · 의상실에서 산다 · 어디 가느냐보다, 어떤 사람으로 보이고 싶은가.
+
+| | 파일 | 이름 | 결 |
+| --- | --- | --- | --- |
+| ✅ | `french_girl_casual.webp` | 프렌치 걸 캐주얼 | 애쓴 티가 안 나는 게 핵심. |
+| ✅ | `minimal_monotone.webp` | 미니멀 모노톤 | 색을 두 개 넘게 안 쓴다. |
+| ✅ | `kitsch_vintage_denim.webp` | 키치 빈티지 데님 | 어울리는지는 나중에 생각한다. |
+| ✅ | `vintage_bookcafe_mood.webp` | 빈티지 북카페 무드 | 오래된 종이 냄새가 나는 쪽. |
+| ✅ | `real_balletcore.webp` | 현실적인 발레코어 | 실제로 걸어 다닐 수 있는 쪽으로. |
+| ✅ | `soft_gorpcore.webp` | 소프트 고프코어 | 산에 안 가도 되는 등산복. |
+| ✅ | `cozy_scandi_mood.webp` | 코지 스칸디 무드 | 집이 추운 나라의 옷. |
+| ✅ | `campus_preppy.webp` | 캠퍼스 프레피 | 수업에 늦어도 단정해 보인다. |
+| ✅ | `retro_sporty.webp` | 레트로 스포티 | 오래된 운동복이 더 예쁘다. |
+| ✅ | `cityboy_overfit.webp` | 시티보이 오버핏 | 한 치수 크게 입는 게 규칙. |
+| ✅ | `romantic_satin_mood.webp` | 로맨틱 새틴 무드 | 빛을 조금 머금는 천. |
+| ✅ | `soft_chic_all_black.webp` | 소프트 시크 올블랙 | 검정도 부드러울 수 있다. |
+
+### 묶음 10 — 오늘은 어디 가는 날? (109–120) · 12 / 12
+
+일상 · 작은 옷장에서 나온다 · 옷보다 오늘의 일정이 먼저 보이는 날.
+
+| | 파일 | 이름 | 결 |
+| --- | --- | --- | --- |
+| ✅ | `subway_commute.webp` | 지하철 출근길 | 손잡이를 잡고 서서 가는 삼십 분. |
+| ✅ | `work_from_home_day.webp` | 재택근무하는 날 | 위만 갖춰 입으면 된다. |
+| ✅ | `convenience_store_run.webp` | 편의점 다녀오는 길 | 삼 분이면 돌아온다. |
+| ✅ | `after_work_meetup.webp` | 퇴근 후 약속 | 아침에 미리 정해두고 나온 옷. |
+| ✅ | `new_cafe_hunt.webp` | 카페 신상 탐방 | 사진이 잘 나오는 자리를 먼저 본다. |
+| ✅ | `exhibition_day.webp` | 전시회 보러 가는 날 | 조용한 데서 오래 서 있는다. |
+| ✅ | `baseball_cheer.webp` | 야구장 응원룩 | 이기든 지든 목이 쉰다. |
+| ✅ | `hangang_picnic.webp` | 한강 피크닉 | 돗자리와 바람만 있으면 된다. |
+| ✅ | `popup_openrun.webp` | 팝업스토어 오픈런 | 아침 일찍 줄 서는 날. |
+| ✅ | `concert_day.webp` | 콘서트 가는 날 | 두 시간을 위해 하루를 비운다. |
+| ✅ | `airport_day.webp` | 공항 가는 날 | 벗기 쉽고 입기 쉬운 게 최고다. |
+| ✅ | `interview_day.webp` | 면접 보러 가는 날 | 거울을 세 번 본다. |
+
+### 남은 것
+
+**그림은 없다 — 백스무 벌이 다 입었다.**

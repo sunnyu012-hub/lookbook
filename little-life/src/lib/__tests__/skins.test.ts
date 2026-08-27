@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { AppState } from '@/types'
@@ -18,7 +18,14 @@ import {
   skinPrice,
   skinProgress,
   skinViews,
+  NEW_SHOP_SKIN_PRICE,
+  packProgress,
+  skinWorld,
+  skinsInPack,
+  skinsInPool,
 } from '@/lib/character/skins'
+import { SKIN_PACKS } from '@/lib/character/packs'
+import { SKIN_GACHA_POOL_IDS } from '@/types'
 import { discoveredInGroup, groupSize, itemIdsInGroup } from '@/lib/character/groups'
 import { SKIN_ITEM_GROUPS } from '@/types'
 import { applySkinUnlocks, buySkin, skinCollectionProgress, wearSkin } from '@/lib/character/derive'
@@ -51,8 +58,13 @@ describe('열두 모습', () => {
     }
   })
 
-  it('스물넷이다 — 1차 열둘 + 2차 열둘', () => {
-    expect(SKINS.length).toBe(24)
+  it('백스무 벌이다 — 처음 스물넷 + 묶음 여덟 × 열둘', () => {
+    expect(SKINS.length).toBe(120)
+    expect(SKINS.filter((s) => s.acquisition === 'LEGACY_UNLOCK')).toHaveLength(24)
+  })
+
+  it('처음 스물넷이 그대로 앞자리에 있다', () => {
+    expect(SKINS.slice(0, 24).map((s) => s.id)).toEqual([...SKIN_IDS].slice(0, 24))
   })
 
   it('2차 열둘이 다 들어 있고 전부 특별 분류다', () => {
@@ -100,9 +112,26 @@ describe('열두 모습', () => {
     }
   })
 
-  it('스물네 장이 실제로 다 있다', () => {
+  /**
+   * 백스무 장이 다 있다.
+   *
+   * 렌더러에 fallback 이 있다고 해서 없는 걸 통과시키지 않는다 —
+   * 그건 배포가 반쯤 갈렸을 때 화면이 안 깨지게 하는 장치지,
+   * 그림이 있다는 뜻이 아니다. 여기가 빨개지면 진짜로 없는 것이다.
+   */
+  it('백스무 장이 실제로 다 있다', () => {
     const pub = path.resolve(__dirname, '../../../public')
-    const missing = SKINS.filter((s) => !existsSync(path.join(pub, `assets/characters/${s.id}.webp`)))
+    const missing = SKINS.filter(
+      (s) => !existsSync(path.join(pub, `assets/characters/${s.id}.webp`)),
+    )
+    expect(missing.map((s) => s.id)).toEqual([])
+  })
+
+  it('작은 그림도 백스무 장 다 있다', () => {
+    const pub = path.resolve(__dirname, '../../../public')
+    const missing = SKINS.filter(
+      (s) => !existsSync(path.join(pub, `assets/thumbs/characters/${s.id}.webp`)),
+    )
     expect(missing.map((s) => s.id)).toEqual([])
   })
 
@@ -433,5 +462,405 @@ describe('기존 저장', () => {
     if (!result.ok) return
     expect(result.state.user.selectedSkinId).toBe('night_owl')
     expect(result.state.user.ownedSkinIds).toContain('night_owl')
+  })
+})
+
+// ── UPDATE F.5 — 의상실과 아흔여섯 벌 ────────────────────
+
+/**
+ * 여기서 붙잡는 것 —
+ * 처음 스물넷이 하나도 안 흔들리고, 작은 옷장 마흔여덟이
+ * 어떤 경로로도 저절로 들어오지 않는다.
+ */
+
+describe('F.5 · 묶음 여덟', () => {
+  it('묶음마다 정확히 열두 벌이다', () => {
+    for (const pack of SKIN_PACKS) {
+      expect(skinsInPack(pack.id)).toHaveLength(12)
+    }
+    expect(SKIN_PACKS).toHaveLength(8)
+  })
+
+  it('묶음 번호는 3에서 10까지다', () => {
+    expect(SKIN_PACKS.map((p) => p.id)).toEqual([3, 4, 5, 6, 7, 8, 9, 10])
+  })
+
+  it('홀수 묶음은 의상실, 짝수 묶음은 작은 옷장이다', () => {
+    for (const pack of SKIN_PACKS) {
+      expect(pack.acquisition).toBe(pack.id % 2 === 1 ? 'SHOP' : 'GACHA')
+    }
+  })
+
+  it('의상실 마흔여덟 · 작은 옷장 마흔여덟', () => {
+    expect(SKINS.filter((s) => s.acquisition === 'SHOP')).toHaveLength(48)
+    expect(SKINS.filter((s) => s.acquisition === 'GACHA')).toHaveLength(48)
+  })
+
+  it('신규 아흔여섯은 전부 묶음과 결을 가진다', () => {
+    const fresh = SKINS.filter((s) => s.acquisition !== 'LEGACY_UNLOCK')
+    expect(fresh).toHaveLength(96)
+    for (const skin of fresh) {
+      expect(skin.packId).toBeDefined()
+      expect(skin.wardrobeTag).toBeDefined()
+    }
+  })
+
+  it('처음 스물넷은 묶음이 없다 — 늘 전체에서 보인다', () => {
+    for (const skin of SKINS.filter((s) => s.acquisition === 'LEGACY_UNLOCK')) {
+      expect(skin.packId).toBeUndefined()
+      expect(skinWorld(skin)).toBeNull()
+    }
+  })
+
+  it('작은 옷장 넷에 열두 벌씩 들어 있다', () => {
+    for (const poolId of SKIN_GACHA_POOL_IDS) {
+      expect(skinsInPool(poolId)).toHaveLength(12)
+    }
+    // 마흔여덟을 한 통에 넣지 않았다
+    expect(SKIN_GACHA_POOL_IDS).toHaveLength(4)
+  })
+
+  it('묶음 진행도는 저장이 아니라 계산이다', () => {
+    const [first, second] = skinsInPack(9)
+    const state = withUser({ ownedSkinIds: ['basic_day', first.id, second.id] })
+    expect(packProgress(state, 9)).toEqual({ found: 2, total: 12 })
+    expect(packProgress(state, 10)).toEqual({ found: 0, total: 12 })
+  })
+})
+
+describe('F.5 · 작은 옷장 마흔여덟은 저절로 안 들어온다', () => {
+  const gacha = () => SKINS.filter((s) => s.unlock.kind === 'GACHA')
+
+  it('갈래가 조건이 아니다 — 빈 조건으로 표현하지 않았다', () => {
+    for (const skin of gacha()) {
+      expect(skin.unlock.kind).toBe('GACHA')
+    }
+    expect(gacha()).toHaveLength(48)
+  })
+
+  it('처음부터 가진 것에 안 들어간다', () => {
+    expect(defaultOwnedSkinIds()).toEqual([DEFAULT_SKIN_ID])
+  })
+
+  it('진행률이 늘 0 이다 — 조건이 아니니 채울 수도 없다', () => {
+    const rich = withUser({ ownedSkinIds: SKINS.map((s) => s.id) })
+    for (const skin of gacha()) {
+      expect(skinProgress(rich, skin.unlock)).toBe(0)
+    }
+  })
+
+  it('아무리 많이 해도 새로 열리지 않는다', () => {
+    const base = createDefaultState()
+    const busy: AppState = {
+      ...base,
+      categoryCompleted: { LIFE: 999, WORK: 999, BODY: 999, MIND: 999, PLAY: 999, HEART: 999 },
+      reputation: { ...base.reputation, CAFE_STREET: 999, CREATIVE_DISTRICT: 999, NIGHT_TOWN: 999 },
+      bossClears: 99,
+      discovery: {
+        ...base.discovery,
+        foundSecretIds: [...base.discovery.foundSecretIds],
+        readChapterIds: [...base.discovery.readChapterIds],
+      },
+    }
+    const opened = newlyUnlocked(busy).map((s) => s.id)
+    for (const skin of gacha()) {
+      expect(opened).not.toContain(skin.id)
+    }
+    const after = applySkinUnlocks(busy)
+    for (const skin of gacha()) {
+      expect(after.state.user.ownedSkinIds).not.toContain(skin.id)
+    }
+  })
+
+  it('코인으로도 못 산다', () => {
+    const rich = withUser({ coins: 99999 })
+    for (const skin of gacha().slice(0, 6)) {
+      expect(skinPrice(skin)).toBeNull()
+      const { state, result } = buySkin(rich, skin.id)
+      expect(result).toEqual({ ok: false, reason: 'NOT_FOR_SALE' })
+      expect(state).toBe(rich)
+    }
+  })
+
+  it('목록에서도 살 수 있는 걸로 안 나온다', () => {
+    const views = skinViews(withUser({ coins: 99999 }))
+    for (const view of views.filter((v) => v.def.unlock.kind === 'GACHA')) {
+      expect(view.forSale).toBe(false)
+      expect(view.owned).toBe(false)
+      expect(view.progress).toBe(0)
+    }
+  })
+})
+
+describe('F.5 · 의상실에서 사는 마흔여덟', () => {
+  const shop = () => SKINS.filter((s) => s.acquisition === 'SHOP')
+
+  it('값이 다 같다 — 능력치가 없으니 값을 나눌 근거가 없다', () => {
+    expect([...new Set(shop().map(skinPrice))]).toEqual([NEW_SHOP_SKIN_PRICE])
+    expect(NEW_SHOP_SKIN_PRICE).toBe(480)
+  })
+
+  it('조건이 없어서 코인만 있으면 바로 산다', () => {
+    for (const skin of shop().slice(0, 8)) {
+      const rich = withUser({ coins: 1000 })
+      const { state, result } = buySkin(rich, skin.id)
+      expect(result.ok).toBe(true)
+      expect(state.user.coins).toBe(1000 - NEW_SHOP_SKIN_PRICE)
+      expect(state.user.ownedSkinIds).toContain(skin.id)
+    }
+  })
+
+  it('코인이 모자라면 안 팔고 코인도 안 준다', () => {
+    const skin = shop()[0]
+    const poor = withUser({ coins: 479 })
+    const { state, result } = buySkin(poor, skin.id)
+    expect(result).toEqual({ ok: false, reason: 'NOT_ENOUGH_COINS' })
+    expect(state.user.coins).toBe(479)
+  })
+
+  it('두 번 눌러도 한 번만 빠진다', () => {
+    const skin = shop()[0]
+    let state = withUser({ coins: 1000 })
+    state = buySkin(state, skin.id).state
+    const second = buySkin(state, skin.id)
+    expect(second.result).toEqual({ ok: false, reason: 'ALREADY_OWNED' })
+    expect(second.state.user.coins).toBe(520)
+    expect(second.state.user.ownedSkinIds.filter((id) => id === skin.id)).toHaveLength(1)
+  })
+
+  it('사도 저절로 입혀지지 않는다', () => {
+    const skin = shop()[0]
+    const bought = buySkin(withUser({ coins: 1000 }), skin.id).state
+    expect(bought.user.selectedSkinId).toBe(DEFAULT_SKIN_ID)
+  })
+
+  it('네 묶음에서 한 벌씩 다 사진다', () => {
+    for (const packId of [3, 5, 7, 9] as const) {
+      const skin = skinsInPack(packId)[0]
+      const { result } = buySkin(withUser({ coins: 1000 }), skin.id)
+      expect(result.ok).toBe(true)
+    }
+  })
+})
+
+describe('F.5 · 처음 스물넷을 안 건드렸다', () => {
+  const legacy = () => SKINS.filter((s) => s.acquisition === 'LEGACY_UNLOCK')
+
+  it('id 스물네 개가 그대로다', () => {
+    expect(legacy().map((s) => s.id)).toEqual([
+      'basic_day', 'cozy_home', 'weekend_casual', 'cafe_work', 'climbing_day', 'creative_day',
+      'rainy_day', 'night_owl', 'date_day', 'spring_picnic', 'winter_cozy', 'moon_alley',
+      'strawberry_bonbon', 'milky_ballet', 'toy_candy_pop', 'angel_picnic',
+      'soft_rock_chic', 'pink_punk', 'vintage_band_girl', 'midnight_leather',
+      'pink_idol_stage', 'navy_star_idol', 'white_encore', 'aurora_pop',
+    ])
+  })
+
+  it('기본 지급은 여전히 하나뿐이다', () => {
+    expect(legacy().filter((s) => s.unlock.kind === 'DEFAULT').map((s) => s.id)).toEqual([
+      'basic_day',
+    ])
+  })
+
+  it('예전 다섯 벌의 값이 그대로다', () => {
+    const prices = Object.fromEntries(legacy().map((s) => [s.id, skinPrice(s)]))
+    expect(prices.weekend_casual).toBe(400)
+    expect(prices.strawberry_bonbon).toBe(420)
+    expect(prices.milky_ballet).toBe(480)
+    expect(prices.vintage_band_girl).toBe(520)
+    expect(prices.soft_rock_chic).toBe(750)
+    expect(legacy().filter((s) => skinPrice(s) !== null)).toHaveLength(5)
+  })
+
+  it('감춘 넷이 그대로다', () => {
+    expect(legacy().filter((s) => s.hiddenUntilOwned).map((s) => s.id)).toEqual([
+      'moon_alley', 'midnight_leather', 'white_encore', 'aurora_pop',
+    ])
+  })
+
+  it('"귀한 모습" 으로 세는 등급이 안 늘었다 — 오로라 팝이 쉬워지지 않는다', () => {
+    const rare = new Set(['EPIC', 'LEGENDARY', 'SECRET'])
+    const fresh = SKINS.filter((s) => s.acquisition !== 'LEGACY_UNLOCK')
+    expect(fresh.filter((s) => rare.has(s.rarity))).toEqual([])
+    // 예전 그대로 다섯 벌 이상이 필요하다
+    expect(legacy().filter((s) => rare.has(s.rarity)).length).toBeGreaterThanOrEqual(5)
+  })
+
+  it('묶음 열둘이 늘어도 예전 조건은 같은 결과를 낸다', () => {
+    const state = withUser({})
+    const done = withUser({})
+    done.categoryCompleted = { ...done.categoryCompleted, LIFE: 10 }
+    expect(newlyUnlocked(state).map((s) => s.id)).not.toContain('cozy_home')
+    expect(newlyUnlocked(done).map((s) => s.id)).toContain('cozy_home')
+  })
+})
+
+describe('F.5 · 기존 저장 (Case A~G)', () => {
+  it('A. 새로 시작한 사람은 기본 모습 하나뿐이다', () => {
+    const fresh = createDefaultState()
+    expect(fresh.user.ownedSkinIds).toEqual(['basic_day'])
+    const after = applySkinUnlocks(fresh)
+    expect(after.state.user.ownedSkinIds).toEqual(['basic_day'])
+  })
+
+  it('B. 조건으로 연 것들이 그대로 남는다', () => {
+    const saved = ['basic_day', 'cozy_home', 'climbing_day', 'night_owl', 'moon_alley']
+    expect(sanitizeOwnedSkins(saved)).toEqual(saved)
+  })
+
+  it('C. 사둔 유료 다섯이 그대로 남는다', () => {
+    const saved = ['basic_day', 'weekend_casual', 'soft_rock_chic']
+    expect(sanitizeOwnedSkins(saved)).toEqual(saved)
+  })
+
+  it('D. 사둔 걸 입고 있었으면 그대로 입고 있다', () => {
+    expect(sanitizeSelectedSkin('soft_rock_chic', ['basic_day', 'soft_rock_chic'])).toBe(
+      'soft_rock_chic',
+    )
+  })
+
+  it('E. 감춘 모습을 가지고 있었으면 그대로다', () => {
+    expect(sanitizeOwnedSkins(['basic_day', 'aurora_pop'])).toContain('aurora_pop')
+  })
+
+  it('F. 아흔여섯이 늘어도 예전 저장이 그대로 열린다', () => {
+    const saved = ['basic_day', 'cozy_home', 'weekend_casual', 'midnight_leather']
+    const state = withUser({ ownedSkinIds: sanitizeOwnedSkins(saved), selectedSkinId: 'cozy_home' })
+    expect(state.user.ownedSkinIds).toEqual(saved)
+    expect(sanitizeSelectedSkin('cozy_home', saved)).toBe('cozy_home')
+    // 새로 늘어난 아흔여섯 중 하나도 딸려 들어오지 않는다
+    const fresh = SKINS.filter((s) => s.acquisition !== 'LEGACY_UNLOCK').map((s) => s.id)
+    for (const id of fresh) expect(state.user.ownedSkinIds).not.toContain(id)
+  })
+
+  it('G. 상태가 아무리 변해도 작은 옷장 마흔여덟은 0벌이다', () => {
+    let state: AppState = createDefaultState()
+    // 퀘스트 · 도감 · 이야기 · 보스 · 평판을 전부 끝까지 밀어본다
+    state = {
+      ...state,
+      categoryCompleted: { LIFE: 500, WORK: 500, BODY: 500, MIND: 500, PLAY: 500, HEART: 500 },
+      bossClears: 50,
+      user: { ...state.user, coins: 999999 },
+    }
+    for (let i = 0; i < 3; i++) state = applySkinUnlocks(state).state
+
+    const gachaIds = SKINS.filter((s) => s.unlock.kind === 'GACHA').map((s) => s.id)
+    const got = state.user.ownedSkinIds.filter((id) => gachaIds.includes(id))
+    expect(got).toEqual([])
+  })
+})
+
+describe('F.5 · 도감', () => {
+  it('분모가 백스물이 된다', () => {
+    expect(skinCollectionProgress(withUser({})).total).toBe(120)
+  })
+
+  it('가진 만큼 센다', () => {
+    const state = withUser({ ownedSkinIds: ['basic_day', 'cozy_home', 'french_girl_casual'] })
+    expect(skinCollectionProgress(state)).toEqual({ found: 3, total: 120 })
+  })
+})
+
+describe('F.5 · 그림 캔버스', () => {
+  /**
+   * 캔버스 하나에 다 올라가 있어야 한다.
+   *
+   * extract-skins.py 가 판에 들어온 조각 전부에서 캔버스를 계산한다.
+   * 새 시트만 따로 돌리면 그것들만 다른 크기가 되고, 화면에서
+   * 새 옷만 몸 크기가 달라 보인다.
+   */
+  function canvasOf(id: string): { w: number; h: number } | null {
+    const file = path.resolve(__dirname, '../../../public', `assets/characters/${id}.webp`)
+    if (!existsSync(file)) return null
+    const buf = readFileSync(file)
+    // VP8L 만 다룬다 — 이 폴더는 전부 무손실이 아니라 VP8 이라 헤더에서 읽는다
+    const tag = buf.subarray(12, 16).toString('ascii')
+    if (tag === 'VP8 ') {
+      return { w: buf.readUInt16LE(26) & 0x3fff, h: buf.readUInt16LE(28) & 0x3fff }
+    }
+    if (tag === 'VP8X') {
+      return { w: buf.readUIntLE(24, 3) + 1, h: buf.readUIntLE(27, 3) + 1 }
+    }
+    return null
+  }
+
+  const made = SKINS.map((s) => ({ id: s.id, box: canvasOf(s.id) })).filter((r) => r.box !== null)
+
+  it('그림이 있는 것들은 캔버스가 하나다', () => {
+    const boxes = new Set(made.map((r) => `${r.box!.w}x${r.box!.h}`))
+    expect([...boxes]).toHaveLength(1)
+  })
+
+  /**
+   * 홈 카드의 idle 자리(45% 폭 · 62% 높이)가 폭이 아니라 높이로 재도록.
+   * 여기를 넘기는 그림이 들어오면 홈에서 캐릭터가 조금 작아진다 —
+   * 그때는 그림이 아니라 PLACEMENT.idle 을 손봐야 한다.
+   */
+  it('캔버스가 홈 카드가 버티는 비율 안에 있다', () => {
+    const box = made[0].box!
+    expect(box.w / box.h).toBeLessThanOrEqual(0.95)
+  })
+})
+
+describe('F.5 · 이름 자리표', () => {
+  /**
+   * 한때 7묶음 열둘이 자리표였다.
+   *
+   * 그림은 왔는데 확정명을 못 찾아서 PACK7_SKIN_73 으로 세워뒀다가,
+   * 확정명을 받고 id · 이름 · 그림 파일을 한 번에 정했다.
+   * 장치는 남겨둔다 — 다음에 또 그림이 이름보다 먼저 올 수 있다.
+   *
+   * 여기가 붙잡는 건 하나다: **자리표가 조용히 이름이 되어 굳지 않는 것.**
+   */
+  it('지금은 자리표가 하나도 없다', () => {
+    expect(SKINS.filter((s) => s.nameMissing).map((s) => s.id)).toEqual([])
+  })
+
+  it('자리표 흔적이 이름에도 id 에도 안 남았다', () => {
+    for (const skin of SKINS) {
+      expect(skin.name).not.toMatch(/^PACK\d/)
+      expect(skin.id).not.toMatch(/^pack\d+_/)
+    }
+  })
+})
+
+describe('F.5 · 확정명', () => {
+  const nameOf = (id: string) => findSkin(id)?.name
+
+  it('8묶음 열둘이 확정명 그대로다', () => {
+    expect([
+      'early_spring_trench', 'fine_dust_day', 'spring_wedding_guest', 'early_summer_shirt',
+      'rainy_season_practical', 'heatwave_linen', 'aircon_cardigan', 'midsummer_long_skirt',
+      'early_autumn_shirt', 'autumn_suede_jacket', 'sudden_cold_day', 'cold_wave_long_padding',
+    ].map(nameOf)).toEqual([
+      '꽃샘추위 트렌치코트', '미세먼지 있는 날', '봄날 하객 코디', '초여름 셔츠 레이어드',
+      '장마철 실용 코디', '폭염의 린넨 셋업', '에어컨 대비 카디건', '한여름 롱스커트',
+      '초가을 셔츠 레이어드', '가을 스웨이드 재킷', '갑자기 추운 날 플리스', '한파의 롱패딩',
+    ])
+  })
+
+  it('9묶음 열둘도 확정명 그대로다', () => {
+    expect(skinsInPack(9).map((s) => s.name)).toEqual([
+      '프렌치 걸 캐주얼', '미니멀 모노톤', '키치 빈티지 데님', '빈티지 북카페 무드',
+      '현실적인 발레코어', '소프트 고프코어', '코지 스칸디 무드', '캠퍼스 프레피',
+      '레트로 스포티', '시티보이 오버핏', '로맨틱 새틴 무드', '소프트 시크 올블랙',
+    ])
+  })
+
+  it('7묶음 열둘이 확정명 그대로다', () => {
+    expect(skinsInPack(7).map((s) => s.name)).toEqual([
+      '오트밀 맨투맨 데일리', '코랄 티셔츠와 연청 데님', '세이지 체크 셔츠 레이어드',
+      '차콜 카디건과 생지 데님', '더스티블루 워크재킷', '크림 니트 조끼와 롱스커트',
+      '더스티레드 럭비 셔츠', '셔링 블라우스와 카고 스커트', '데님 셔츠 셋업',
+      '라벤더 셔츠 원피스', '도심 바람막이와 와이드 팬츠', '레드 카디건과 크림 팬츠',
+    ])
+  })
+
+  it('10묶음 열둘도 확정명 그대로다', () => {
+    expect(skinsInPack(10).map((s) => s.name)).toEqual([
+      '지하철 출근길', '재택근무하는 날', '편의점 다녀오는 길', '퇴근 후 약속',
+      '카페 신상 탐방', '전시회 보러 가는 날', '야구장 응원룩', '한강 피크닉',
+      '팝업스토어 오픈런', '콘서트 가는 날', '공항 가는 날', '면접 보러 가는 날',
+    ])
   })
 })
