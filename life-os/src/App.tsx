@@ -13,6 +13,7 @@ import { MePage } from '@/pages/MePage'
 import { SettingsPage } from '@/pages/SettingsPage'
 import { LearningPage } from '@/pages/LearningPage'
 import { MyRhythmPage } from '@/pages/MyRhythmPage'
+import { MyDnaPage } from '@/pages/MyDnaPage'
 import { ArchivePage } from '@/pages/ArchivePage'
 import { NightPage } from '@/pages/NightPage'
 import { QuickLogPage } from '@/pages/QuickLogPage'
@@ -81,6 +82,7 @@ export default function App() {
     | 'balance'
     | 'learning'
     | 'myrhythm'
+    | 'mydna'
     | null
   >(null)
   const [result, setResult] = useState<'start' | 'complete' | null>(null)
@@ -477,6 +479,13 @@ export default function App() {
           myTags={myTagStore.active}
           onClose={() => setOverlay(null)}
         />
+      ) : overlay === 'mydna' ? (
+        <MyDnaPage
+          logs={quickLogStore.logs}
+          checkins={store.checkins}
+          myTags={myTagStore.active}
+          onClose={() => setOverlay(null)}
+        />
       ) : overlay === 'learning' ? (
         <LearningPage store={learningStore} onClose={() => setOverlay(null)} />
       ) : overlay === 'manual' ? (
@@ -610,6 +619,7 @@ export default function App() {
               onOpenSettings={() => setSettingsOpen(true)}
               quickLogDays={quickLogStore.byDate.size}
               onOpenRhythm={() => setOverlay('myrhythm')}
+              onOpenDna={() => setOverlay('mydna')}
             />
           )}
 

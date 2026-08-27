@@ -59,9 +59,24 @@ export function activeTagIds(log: QuickLog): string[] {
   return kept.map((tag) => tag.tagId)
 }
 
-/** 조상까지 펼친 것. 같은 기록 안에서는 중복 없이 한 번씩만 */
-export const expandedTagIds = (log: QuickLog): string[] =>
-  expandForAnalysis(activeTagIds(log))
+/**
+ * 조상까지 펼친 것. 같은 기록 안에서는 중복 없이 한 번씩만.
+ *
+ * 기록 하나당 한 번만 계산해서 들고 있는다.
+ * Phase 6 의 평가자 48개가 같은 기록을 수천 번씩 훑는데,
+ * 그때마다 조상을 다시 펼치면 그 비용이 전부 화면 지연이 된다.
+ *
+ * 기록 객체가 바뀌면(수정되면) 새 객체가 되므로 캐시도 자연히 갈린다.
+ */
+const expandedCache = new WeakMap<QuickLog, string[]>()
+
+export const expandedTagIds = (log: QuickLog): string[] => {
+  const cached = expandedCache.get(log)
+  if (cached) return cached
+  const expanded = expandForAnalysis(activeTagIds(log))
+  expandedCache.set(log, expanded)
+  return expanded
+}
 
 export const hasTag = (log: QuickLog, tagId: string): boolean =>
   expandedTagIds(log).includes(tagId)

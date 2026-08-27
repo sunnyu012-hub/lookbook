@@ -44,6 +44,7 @@ interface Props {
   /** 최근 기록 수 — My Rhythm 한 줄에 쓴다 */
   quickLogDays: number
   onOpenRhythm: () => void
+  onOpenDna: () => void
 }
 
 /**
@@ -69,6 +70,7 @@ export function LifePage({
   onOpenSettings,
   quickLogDays,
   onOpenRhythm,
+  onOpenDna,
 }: Props) {
   if (section) {
     return (
@@ -131,6 +133,7 @@ export function LifePage({
       onOpenSettings={onOpenSettings}
       quickLogDays={quickLogDays}
       onOpenRhythm={onOpenRhythm}
+      onOpenDna={onOpenDna}
     />
   )
 }
@@ -153,6 +156,7 @@ function Hub({
   onOpenSettings,
   quickLogDays,
   onOpenRhythm,
+  onOpenDna,
 }: {
   prefs: Preferences
   checkins: Checkin[]
@@ -163,6 +167,7 @@ function Hub({
   onOpenSettings: () => void
   quickLogDays: number
   onOpenRhythm: () => void
+  onOpenDna: () => void
 }) {
   const today = todayKey()
   const modules = buildLifeModules({ prefs, checkins, weights, mounjaro, ddays })
@@ -261,6 +266,24 @@ function Hub({
             {quickLogDays >= 3
               ? `${quickLogDays}일치 기록에서 시간대별 흐름을 봐요`
               : '기록이 조금 더 쌓이면 볼 수 있어요'}
+          </span>
+        </span>
+        <span className="text-[12px] text-inkfaint">›</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => {
+          haptic()
+          onOpenDna()
+        }}
+        className="press flex w-full items-center gap-3 rounded-px4 border-[1.5px] border-border bg-mintsoft px-3.5 py-3 text-left shadow-hard"
+      >
+        <PixelImage asset={icons.xp} height={24} />
+        <span className="min-w-0 flex-1">
+          <span className="block text-[13.5px] font-medium leading-tight">My DNA</span>
+          <span className="mt-1 block truncate text-[11.5px] leading-tight text-inkdim">
+            지금까지 관찰된 나의 패턴
           </span>
         </span>
         <span className="text-[12px] text-inkfaint">›</span>
