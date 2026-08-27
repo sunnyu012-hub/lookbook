@@ -17,7 +17,9 @@ import {
   sanitizeSkills,
   sanitizeStats,
   withSkillPoints,
+  STATE_VERSION,
 } from '@/store/migrate'
+import { sanitizeState } from '@/store/localStorage'
 import { CATEGORIES } from '@/types'
 import { findBattleDef } from '@/lib/rpg/content'
 
@@ -303,5 +305,84 @@ describe('밸런스 보정', () => {
 
   it('새로 시작하는 사람은 대상이 아니다', () => {
     expect(createDefaultState().coinRebalanceGiven).toBe(true)
+  })
+})
+
+describe('완료 기록 sanitize', () => {
+  const savedQuest = (reward: unknown) => ({
+    id: 'q1',
+    title: '설거지 끝내기',
+    category: 'LIFE',
+    difficulty: 'NORMAL',
+    exp: 20,
+    completed: true,
+    createdAt: '2026-08-24T09:00:00.000Z',
+    completedAt: '2026-08-24T10:00:00.000Z',
+    reward,
+  })
+
+  const loadReward = (reward: unknown) =>
+    sanitizeState({ version: 17, quests: [savedQuest(reward)] })!.quests[0].reward!
+
+  it('되돌리기에 필요한 것들이 새로고침 뒤에도 남아 있다', () => {
+    // 여기서 흘리면 새로고침한 사람만 되돌리기로 도감·씨앗·에너지를 공짜로 갖는다
+    const reward = loadReward({
+      exp: 20,
+      coins: 80,
+      statKey: 'ENERGY',
+      collectDrops: [{ itemId: 'wood', wasNew: true }],
+      gardenDrops: [{ itemId: 'seed_basil', wasNew: false }],
+      adventureEnergy: 3,
+      growthBonus: [{ plotId: 'p1', plantedAt: '2026-08-24T08:00:00.000Z', seconds: 120 }],
+      battleTicks: [{ battleId: 'b1', actionId: 'b1-0' }],
+    })
+
+    expect(reward.collectDrops).toEqual([{ itemId: 'wood', wasNew: true }])
+    expect(reward.gardenDrops).toEqual([{ itemId: 'seed_basil', wasNew: false }])
+    expect(reward.adventureEnergy).toBe(3)
+    expect(reward.growthBonus).toHaveLength(1)
+    expect(reward.battleTicks).toEqual([{ battleId: 'b1', actionId: 'b1-0' }])
+  })
+
+  it('모양이 깨진 줄은 조용히 버린다', () => {
+    const reward = loadReward({
+      exp: 20,
+      coins: 80,
+      collectDrops: [{ wasNew: true }, 'nope', null],
+      battleTicks: [{ battleId: 'b1' }, { actionId: 'a' }, 7],
+      growthBonus: [{ plotId: 'p1' }],
+    })
+
+    expect(reward.collectDrops).toBeUndefined()
+    expect(reward.battleTicks).toBeUndefined()
+    expect(reward.growthBonus).toBeUndefined()
+  })
+
+  it('예전 저장에는 없던 항목이라 없어도 그냥 넘어간다', () => {
+    const reward = loadReward({ exp: 20, coins: 80, statKey: 'ENERGY' })
+    expect(reward.battleTicks).toBeUndefined()
+    expect(reward.exp).toBe(20)
+  })
+})
+
+describe('새로 추가된 몬스터·보스', () => {
+  it('예전 저장이 그대로 열린다', () => {
+    // 정의가 늘어난 것뿐이라 저장 판본을 올릴 이유가 없다
+    const state = sanitizeState({
+      version: 17,
+      battles: [{ id: 'b1', defId: 'dish_slime', kind: 'MONSTER', hp: 20, maxHp: 40 }],
+    })
+    expect(state?.battles).toHaveLength(1)
+    expect(state?.version).toBe(STATE_VERSION)
+  })
+
+  it('새 몬스터도 저장에서 되살아난다', () => {
+    const [b] = sanitizeBattles([{ id: 'b9', defId: 'photo_cloud' }], CATEGORIES)
+    expect(b.name).toBe('사진구름')
+    expect(b.kind).toBe('MONSTER')
+  })
+
+  it('모르는 id 는 예전처럼 버린다', () => {
+    expect(sanitizeBattles([{ id: 'b1', defId: '없는것' }], CATEGORIES)).toHaveLength(0)
   })
 })

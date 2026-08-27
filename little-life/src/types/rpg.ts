@@ -112,6 +112,16 @@ export type BattleKind = 'MONSTER' | 'BOSS'
 export interface BattleActionDef {
   label: string
   damage: number
+  /**
+   * 이 행동과 같은 일을 가리키는 말들.
+   *
+   * 퀘스트를 완료했을 때 제목에 이 말이 들어 있으면 이 행동도 같이 끝난다.
+   * 현실에서 설거지를 하고 앱에서 또 체크하게 만들 이유가 없다.
+   *
+   * 한 배틀 안에서는 겹치지 않게 적는다 — 겹치면 어느 쪽이 끝나는지가
+   * 목록 순서에 달리게 되고, 그건 읽는 사람이 알 수 없는 규칙이다.
+   */
+  match?: string[]
 }
 
 export interface BattleDef {

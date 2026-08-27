@@ -155,15 +155,19 @@ export function CharacterRoomCard({
         {overlay}
       </div>
 
-      <div className="relative px-4 pb-4 pt-1">
-        {/* 레벨 배지는 방 그림 위로 살짝 걸친다 */}
-        <div className="absolute -top-7 left-4">
-          <LevelBadge level={user.level} />
-        </div>
+      {/*
+        장면 아래 정보 한 줄.
 
-        <div className="ml-[74px] min-h-[34px]">
-          <p className="truncate text-[15px] font-semibold text-ink">{user.name}</p>
-          <p className="text-[12px] text-inkdim">{titleForLevel(user.level)}</p>
+        예전에는 큰 레벨 배지가 방 그림 위로 반쯤 걸쳐 있어서, 방을 꾸며놓고
+        봐도 제일 먼저 눈에 들어오는 게 분홍 동그라미였다. 홈에서 제일 큰
+        시각 요소는 방과 캐릭터여야 한다. 배지는 작게 줄이고 한 줄로 붙였다.
+      */}
+      <div className="px-4 pb-4 pt-3.5">
+        <div className="flex items-center gap-2">
+          <LevelBadge level={user.level} size="xs" className="shadow-none ring-0" />
+          <p className="min-w-0 truncate text-[15px] font-semibold text-ink">{user.name}</p>
+          <span className="shrink-0 text-[11px] text-inkfaint">·</span>
+          <p className="shrink-0 text-[12px] text-inkdim">{titleForLevel(user.level)}</p>
         </div>
 
         <div className="mt-3">

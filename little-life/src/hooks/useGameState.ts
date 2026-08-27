@@ -9,6 +9,8 @@ import type {
   CompleteResult,
   DayStat,
   DropResult,
+  GrowthSnapshot,
+  StatKey,
   EquipSlot,
   NpcId,
   NpcQuestChainDef,
@@ -119,6 +121,7 @@ import {
   STAT_BY_CATEGORY,
 } from '@/lib/rpg/rewards'
 import { applyBattleAction, clearRarities, createBattle, undoBattleAction } from '@/lib/rpg/battle'
+import { linkQuestToBattles, unlinkQuestFromBattles } from '@/lib/rpg/link'
 import { activeEvents } from '@/lib/city/events'
 import { emptyNpcState, giftGainForTags, talkGain } from '@/lib/city/friendship'
 import { FRIENDSHIP_MAX, findNpc, friendshipLevel } from '@/lib/city/npcs'
@@ -144,7 +147,7 @@ import {
 } from '@/store/migrate'
 import { createDefaultState } from '@/store/defaultState'
 import { repository } from '@/store/localStorage'
-import { applyExp, levelFromTotalExp } from '@/lib/level'
+import { applyExp, levelFromTotalExp, requiredExp } from '@/lib/level'
 import { expForDifficulty } from '@/lib/difficulty'
 import { todayKey, toDayKey } from '@/lib/date'
 import { isUsableRule, matchesToday, spawnDueQuests } from '@/lib/routines'
@@ -406,6 +409,121 @@ function removeFromInventory(
   return inventory
     .map((e) => (e.itemId === itemId ? { ...e, quantity: e.quantity - 1 } : e))
     .filter((e) => e.quantity > 0)
+}
+
+interface BattleClearGrant {
+  state: AppState
+  exp: number
+  coins: number
+  leveledUp: boolean
+  newLevel: number
+  drops: DropResult[]
+  collected: DiscoveryResult[]
+}
+
+/**
+ * 쓰러뜨린 몬스터·보스의 보상을 상태에 얹는다.
+ *
+ * 시트에서 마지막 행동을 직접 눌렀을 때와, 퀘스트를 완료해서 대신 눌린 때가
+ * 같은 길을 지나야 한다. 두 군데에 같은 계산이 있으면 한쪽만 고쳐지는 날이 온다.
+ *
+ * 도감 파생(applyCollectionDerived)은 여기서 돌리지 않는다 — 퀘스트 완료 쪽은
+ * 어차피 마지막에 한 번 돌리고, 두 번 돌리면 발견 연출이 두 번 뜬다.
+ */
+function grantBattleClear(state: AppState, battle: Battle, now: Date): BattleClearGrant {
+  const isBoss = battle.kind === 'BOSS'
+
+  // 보장 등급을 먼저 주고, 보너스 등급이 있으면 하나 더 굴린다
+  const drops: DropResult[] = []
+  let inventory = state.inventory
+
+  for (const rarity of clearRarities(battle)) {
+    const pool = itemsByRarity(rarity)
+    if (pool.length === 0) continue
+    const itemId = pool[Math.floor(Math.random() * pool.length)]
+    drops.push({ itemId, rarity })
+    inventory = addToInventory(inventory, itemId, `${battle.name} 클리어`, now)
+  }
+
+  const outcome = applyExp(state.user.level, state.user.currentExp, battle.rewardExp)
+
+  // 보스를 넘으면 도감 물건도 하나 나온다. 몬스터는 기존 드롭만.
+  let collection = state.collection
+  const collected: DiscoveryResult[] = []
+  if (isBoss) {
+    const itemId = rollBossDrop()
+    if (itemId) {
+      const added = addItem(collection, itemId, now)
+      collection = added.collection
+      collected.push({ itemId, isNew: added.isNew, source: `${battle.name} 클리어` })
+    }
+  }
+
+  // 보스를 넘으면 씨앗도 반쯤 확률로 나온다. 몬스터는 기존 드롭만.
+  for (const itemId of rollGardenDrops(state, {
+    category: battle.category,
+    difficulty: 'HARD',
+    boss: isBoss,
+  })) {
+    const added = addItem(collection, itemId, now)
+    collection = added.collection
+    collected.push({ itemId, isNew: added.isNew, source: `${battle.name} 클리어` })
+  }
+
+  const cleared: AppState = {
+    ...state,
+    inventory,
+    collection,
+    bossClears: state.bossClears + (isBoss ? 1 : 0),
+    user: {
+      ...state.user,
+      level: outcome.level,
+      currentExp: outcome.currentExp,
+      totalExp: state.user.totalExp + battle.rewardExp,
+      coins: state.user.coins + battle.rewardCoins,
+      adventureEnergy:
+        state.user.adventureEnergy +
+        gainEnergy(
+          state.user.adventureEnergy,
+          isBoss ? ENERGY_BOSS : ENERGY_BY_DIFFICULTY.NORMAL,
+          state.user.maxAdventureEnergy,
+        ),
+    },
+    categoryStats: {
+      ...state.categoryStats,
+      [battle.category]: state.categoryStats[battle.category] + battle.rewardExp,
+    },
+  }
+
+  // 큰 걸 하나 넘었으면 정원의 것들도 그만큼 앞당겨진다
+  const grown = applyGrowthBonus(cleared, isBoss ? GROWTH_BONUS_BOSS : GROWTH_BONUS_SECONDS.HARD, now)
+
+  return {
+    state: grown.state,
+    exp: battle.rewardExp,
+    coins: battle.rewardCoins,
+    leveledUp: outcome.leveledUp,
+    newLevel: outcome.level,
+    drops,
+    collected,
+  }
+}
+
+/**
+ * 지금 내가 어디까지 와 있는지 한 장.
+ *
+ * 완료 직전과 직후에 한 번씩 떠서, 화면이 "1,240 → 1,320" 을 그릴 수 있게 한다.
+ * 저장하지 않는다 — 전부 state 에 이미 있는 값을 읽기만 한다.
+ */
+function snapshot(state: AppState, statKey: StatKey): GrowthSnapshot {
+  return {
+    level: state.user.level,
+    currentExp: state.user.currentExp,
+    requiredExp: requiredExp(state.user.level),
+    totalExp: state.user.totalExp,
+    coins: state.user.coins,
+    stat: state.user.stats[statKey],
+  }
 }
 
 /** 사용 기록에 넘길 묶음. 퀘스트 하나에서 그대로 뽑는다. */
@@ -770,6 +888,8 @@ export function useGameState(): GameState {
       const outcome = applyExp(prev.user.level, prev.user.currentExp, reward.exp)
       const statKey = STAT_BY_CATEGORY[target.category]
       const drop = rollDrop(sources, itemsByRarity)
+      /** 이번 완료로 몬스터·보스가 쓰러지면서 같이 나온 것들 */
+      const battleDrops: DropResult[] = []
 
       // 평판은 NPC 의뢰면 그 사람의 동네에, 아니면 지금 있는 동네에 쌓인다
       const npc = target.npcId ? findNpc(target.npcId) : null
@@ -889,7 +1009,34 @@ export function useGameState(): GameState {
         next = advanceChain(next, target, now)
       }
 
-      const gainedSkillPoints = outcome.level - prev.user.level
+      // ── 몬스터·보스 연동 ────────────────────────────────
+      //
+      // 현실에서 한 일이 앱 안에서도 한 번만 눌리게 한다. 마지막 행동이 걸리면
+      // 그 자리에서 쓰러지고, 보상은 시트에서 직접 눌렀을 때와 같은 길로 나간다.
+      const linked = linkQuestToBattles(next.battles, target, now)
+      const battleProgress = linked.progress
+      next = { ...next, battles: linked.battles }
+
+      for (const cleared of linked.clearedBattles) {
+        const grant = grantBattleClear(next, cleared, now)
+        next = grant.state
+        battleDrops.push(...grant.drops)
+        collected.push(...grant.collected)
+      }
+
+      // 되돌리기용 기록. 쓰러뜨린 것은 적지 않는다 (클리어는 못 되돌린다)
+      const battleTicks = battleProgress
+        .filter((b) => !b.cleared)
+        .map((b) => ({ battleId: b.battleId, actionId: b.actionId }))
+
+      if (battleTicks.length > 0) {
+        next = {
+          ...next,
+          quests: next.quests.map((q) =>
+            q.id === id && q.reward ? { ...q, reward: { ...q.reward, battleTicks } } : q,
+          ),
+        }
+      }
 
       // 정원에서 자라는 중인 것들이 조금 앞당겨진다. 어디까지나 덤이다 —
       // 퀘스트를 안 해도 작물은 제 시간에 다 자란다.
@@ -905,6 +1052,9 @@ export function useGameState(): GameState {
         }
       }
 
+      // 배틀까지 넘고 나서야 이번에 오른 레벨이 확정된다
+      const gainedSkillPoints = next.user.level - prev.user.level
+
       // 평판이 오르거나 세트가 완성되면 여기서 따라온다
       const derived = applyCollectionDerived(next, now)
       // 이번 퀘스트로 새로 열린 발견이 있으면 같이 챙긴다.
@@ -919,12 +1069,15 @@ export function useGameState(): GameState {
       if (skinned.unlocked.length > 0) setNewSkins(skinned.unlocked)
       commit(skinned.state)
 
+      const final = skinned.state
+
       return {
         gainedExp: reward.exp,
         gainedCoins: reward.coins,
         bonusExp: reward.bonusExp,
-        leveledUp: outcome.leveledUp,
-        newLevel: outcome.level,
+        // 배틀을 같이 넘겼으면 그쪽 EXP 로 레벨이 더 올랐을 수 있다
+        leveledUp: final.user.level > prev.user.level,
+        newLevel: final.user.level,
         statKey,
         drop,
         areaId,
@@ -936,6 +1089,10 @@ export function useGameState(): GameState {
         collected: [...collected, ...derived.discoveries],
         gainedEnergy,
         growthBonusSeconds: grown.applied.length > 0 ? bonusSeconds : 0,
+        before: snapshot(prev, statKey),
+        after: snapshot(final, statKey),
+        battleProgress,
+        battleDrops,
       }
     },
     [commit],
@@ -1002,8 +1159,13 @@ export function useGameState(): GameState {
       // 앞당겨줬던 밭은 도로 민다. 그 사이 거두고 다시 심은 칸은 건너뛴다.
       const pushedBack = revertGrowthBonus(prev, gained.growthBonus ?? [])
 
+      // 대신 눌러줬던 몬스터·보스 행동도 도로 푼다.
+      // 그 사이 쓰러진 것은 그대로 둔다 — 클리어는 이 앱 어디서도 안 되돌아간다.
+      const battles = unlinkQuestFromBattles(pushedBack.battles, gained.battleTicks ?? [])
+
       commit({
         ...pushedBack,
+        battles,
         collection,
         categoryCompleted: {
           ...prev.categoryCompleted,
@@ -1259,84 +1421,18 @@ export function useGameState(): GameState {
         }
       }
 
-      // 클리어 — 보장 등급을 먼저 주고, 보너스 등급이 있으면 하나 더 굴린다
-      const drops: DropResult[] = []
-      let inventory = prev.inventory
-
-      for (const rarity of clearRarities(battle)) {
-        const pool = itemsByRarity(rarity)
-        if (pool.length === 0) continue
-        const itemId = pool[Math.floor(Math.random() * pool.length)]
-        drops.push({ itemId, rarity })
-        inventory = addToInventory(inventory, itemId, `${battle.name} 클리어`, now)
-      }
-
-      const outcome = applyExp(prev.user.level, prev.user.currentExp, battle.rewardExp)
-
-      // 보스를 넘으면 도감 물건도 하나 나온다. 몬스터는 기존 드롭만.
-      let collection = prev.collection
-      const collected: DiscoveryResult[] = []
-      if (battle.kind === 'BOSS') {
-        const itemId = rollBossDrop()
-        if (itemId) {
-          const added = addItem(collection, itemId, now)
-          collection = added.collection
-          collected.push({ itemId, isNew: added.isNew, source: `${battle.name} 클리어` })
-        }
-      }
-
-      // 보스를 넘으면 씨앗도 반쯤 확률로 나온다. 몬스터는 기존 드롭만.
-      const isBoss = battle.kind === 'BOSS'
-      for (const itemId of rollGardenDrops(prev, {
-        category: battle.category,
-        difficulty: 'HARD',
-        boss: isBoss,
-      })) {
-        const added = addItem(collection, itemId, now)
-        collection = added.collection
-        collected.push({ itemId, isNew: added.isNew, source: `${battle.name} 클리어` })
-      }
-
-      const cleared: AppState = {
-        ...prev,
-        battles,
-        inventory,
-        collection,
-        bossClears: prev.bossClears + (isBoss ? 1 : 0),
-        user: {
-          ...prev.user,
-          level: outcome.level,
-          currentExp: outcome.currentExp,
-          totalExp: prev.user.totalExp + battle.rewardExp,
-          coins: prev.user.coins + battle.rewardCoins,
-          adventureEnergy:
-            prev.user.adventureEnergy +
-            gainEnergy(
-              prev.user.adventureEnergy,
-              isBoss ? ENERGY_BOSS : ENERGY_BY_DIFFICULTY.NORMAL,
-              prev.user.maxAdventureEnergy,
-            ),
-        },
-        categoryStats: {
-          ...prev.categoryStats,
-          [battle.category]: prev.categoryStats[battle.category] + battle.rewardExp,
-        },
-      }
-
-      // 큰 걸 하나 넘었으면 정원의 것들도 그만큼 앞당겨진다
-      const grown = applyGrowthBonus(cleared, isBoss ? GROWTH_BONUS_BOSS : GROWTH_BONUS_SECONDS.HARD, now)
-
-      const derived = applyCollectionDerived(grown.state, now)
+      const grant = grantBattleClear({ ...prev, battles }, battle, now)
+      const derived = applyCollectionDerived(grant.state, now)
       commit(derived.state)
 
       return {
         cleared: true,
-        exp: battle.rewardExp,
-        coins: battle.rewardCoins,
-        leveledUp: outcome.leveledUp,
-        newLevel: outcome.level,
-        drops,
-        collected: [...collected, ...derived.discoveries],
+        exp: grant.exp,
+        coins: grant.coins,
+        leveledUp: grant.leveledUp,
+        newLevel: grant.newLevel,
+        drops: grant.drops,
+        collected: [...grant.collected, ...derived.discoveries],
       }
     },
     [commit],

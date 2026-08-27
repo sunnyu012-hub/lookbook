@@ -153,6 +153,10 @@ function sanitizeRoutine(raw: unknown): Routine | null {
 function sanitizeReward(raw: unknown): Quest['reward'] {
   const r = (raw ?? {}) as Record<string, unknown>
   const buffs = sanitizeBuffs(r.usedBuff ? [r.usedBuff] : [])
+  const collectDrops = sanitizeItemDrops(r.collectDrops)
+  const gardenDrops = sanitizeItemDrops(r.gardenDrops)
+  const growthBonus = sanitizeGrowthBonus(r.growthBonus) ?? []
+  const battleTicks = sanitizeBattleTicks(r.battleTicks)
 
   return {
     exp: numberOr(r.exp, 0),
@@ -169,7 +173,48 @@ function sanitizeReward(raw: unknown): Quest['reward'] {
       : {}),
     ...(typeof r.friendship === 'number' ? { friendship: numberOr(r.friendship, 0) } : {}),
     ...(buffs.length > 0 ? { usedBuff: buffs[0] } : {}),
+    // 되돌리기가 정확히 반대로 돌리려면 그때 무엇이 따라 나왔는지도 남아야 한다.
+    // 여기서 흘리면 새로고침 뒤에 되돌린 사람만 도감·씨앗·에너지를 공짜로 갖는다.
+    ...(collectDrops.length > 0 ? { collectDrops } : {}),
+    ...(gardenDrops.length > 0 ? { gardenDrops } : {}),
+    ...(typeof r.adventureEnergy === 'number'
+      ? { adventureEnergy: numberOr(r.adventureEnergy, 0) }
+      : {}),
+    ...(growthBonus.length > 0 ? { growthBonus } : {}),
+    ...(battleTicks.length > 0 ? { battleTicks } : {}),
   }
+}
+
+/** `[{ itemId, wasNew }]` 모양만 남긴다 */
+function sanitizeItemDrops(raw: unknown): Array<{ itemId: string; wasNew: boolean }> {
+  if (!Array.isArray(raw)) return []
+  return raw.flatMap((v) => {
+    if (!v || typeof v !== 'object') return []
+    const d = v as Record<string, unknown>
+    return typeof d.itemId === 'string' ? [{ itemId: d.itemId, wasNew: d.wasNew === true }] : []
+  })
+}
+
+function sanitizeGrowthBonus(raw: unknown): NonNullable<Quest['reward']>['growthBonus'] {
+  if (!Array.isArray(raw)) return []
+  return raw.flatMap((v) => {
+    if (!v || typeof v !== 'object') return []
+    const g = v as Record<string, unknown>
+    if (typeof g.plotId !== 'string' || typeof g.plantedAt !== 'string') return []
+    return [{ plotId: g.plotId, plantedAt: g.plantedAt, seconds: numberOr(g.seconds, 0) }]
+  })
+}
+
+/** 퀘스트가 대신 눌러줬던 몬스터·보스 행동 */
+function sanitizeBattleTicks(raw: unknown): Array<{ battleId: string; actionId: string }> {
+  if (!Array.isArray(raw)) return []
+  return raw.flatMap((v) => {
+    if (!v || typeof v !== 'object') return []
+    const t = v as Record<string, unknown>
+    return typeof t.battleId === 'string' && typeof t.actionId === 'string'
+      ? [{ battleId: t.battleId, actionId: t.actionId }]
+      : []
+  })
 }
 
 function sanitizeCategoryStats(raw: unknown): CategoryStats {

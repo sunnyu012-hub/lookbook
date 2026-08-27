@@ -19,6 +19,38 @@ export function todaySummary(log: DailyLog, now: Date = new Date()): TodaySummar
   return { completed: entry?.completed ?? 0, earnedExp: entry?.exp ?? 0 }
 }
 
+/**
+ * 오늘 실제로 받은 것.
+ *
+ * dailyLog 에도 완료 수와 EXP 가 쌓이지만 그건 **보너스 붙기 전 값**이라
+ * 화면에 뜬 "+21 EXP" 와 숫자가 안 맞는다. 완료한 퀘스트에는 그때 실제로
+ * 받은 값이 quest.reward 로 굳어 있으니 그걸 그대로 센다.
+ *
+ * 이걸 위해 저장 필드를 새로 만들지 않았다 — 이미 되돌리기용으로 적어두던 값이다.
+ * 몬스터·보스를 넘겨서 받은 몫은 여기 안 들어온다. 오늘 **퀘스트로** 받은 것이다.
+ */
+export interface TodayResults {
+  completed: number
+  exp: number
+  coins: number
+}
+
+export function todayResults(quests: Quest[], now: Date = new Date()): TodayResults {
+  let completed = 0
+  let exp = 0
+  let coins = 0
+
+  for (const quest of quests) {
+    if (!quest.completed || !quest.completedAt) continue
+    if (!isToday(quest.completedAt, now)) continue
+    completed += 1
+    exp += quest.reward?.exp ?? quest.exp
+    coins += quest.reward?.coins ?? 0
+  }
+
+  return { completed, exp, coins }
+}
+
 export function weekCompletedCount(log: DailyLog, now: Date = new Date()): number {
   return weekDayKeys(now).reduce((sum, key) => sum + (log[key]?.completed ?? 0), 0)
 }

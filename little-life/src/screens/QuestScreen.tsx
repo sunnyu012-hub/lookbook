@@ -5,10 +5,12 @@ import { RoutineList } from '@/components/quest/RoutineList'
 import { CategoryFilter, type CategoryFilterValue } from '@/components/quest/CategoryFilter'
 import { QuestModeTabs, type QuestMode } from '@/components/quest/QuestModeTabs'
 import { BattleCard, BattleDefCard } from '@/components/rpg/BattleCard'
+import { BattleLibrarySheet } from '@/components/rpg/BattleLibrarySheet'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { CountPill, ScreenHeader, SectionHeader } from '@/components/layout/ScreenHeader'
 import { BOSSES, MONSTERS } from '@/lib/rpg/content'
+import { startableDefs, todaysLineup } from '@/lib/rpg/lineup'
 import { CHARACTER_FACE, UI } from '@/lib/assets'
 import {
   filterByCategory,
@@ -238,21 +240,32 @@ interface BattleSectionProps {
 /**
  * 미뤄둔 일(Monster)과 큰 목표(Boss).
  *
- * 진행 중인 것을 위에, 아직 시작하지 않은 것을 아래에 둔다.
+ * 진행 중인 것을 위에, 지금 하기 좋은 것 몇 개를 그 아래에 둔다.
+ * 나머지는 "다른 몬스터 보기" 안에 전부 있다 — 몬스터가 23종이 되면서
+ * 전부 펼치면 스무 장이 이어졌고, 그 길이 자체가 고르는 걸 미루게 만들었다.
+ *
+ * 앞에 몇 개만 보인다고 나머지를 못 하는 게 아니다. 하루 제한도, 재추첨도 없다.
  * 시작은 언제나 사용자가 직접 누를 때만 일어난다 — 저절로 생겨서 쌓이면 그것도 잔소리다.
+ *
+ * 진행 중인 개수는 막지 않는다. 생활의 여러 갈래를 조금씩 밀어두는 게
+ * 이 화면이 원래 하려던 일이다.
  */
 function BattleSection({ kind, battles, defs, onStart, onOpen }: BattleSectionProps) {
+  const [libraryOpen, setLibraryOpen] = useState(false)
+
   const mine = useMemo(() => battles.filter((b) => b.kind === kind), [battles, kind])
-  const active = mine.filter((b) => b.status === 'ACTIVE')
-  const cleared = mine.filter((b) => b.status === 'CLEARED')
-  const startedDefIds = new Set(active.map((b) => b.defId))
-  const available = defs.filter((d) => !startedDefIds.has(d.id))
+  const active = useMemo(() => mine.filter((b) => b.status === 'ACTIVE'), [mine])
+  const cleared = useMemo(() => mine.filter((b) => b.status === 'CLEARED'), [mine])
+
+  const lineup = useMemo(() => todaysLineup(defs, battles, kind), [defs, battles, kind])
+  // 전체 보기에 실제로 뭐가 남아 있는지 — 하나도 없으면 진입점을 만들지 않는다
+  const startable = useMemo(() => startableDefs(defs, battles), [defs, battles])
 
   const isBoss = kind === 'BOSS'
 
   return (
     <div className="mt-1 space-y-6">
-      {active.length > 0 && (
+      {active.length > 0 ? (
         <section>
           <SectionHeader title="진행 중" trailing={<CountPill value={active.length} />} />
           <ul className="space-y-2.5">
@@ -263,9 +276,7 @@ function BattleSection({ kind, battles, defs, onStart, onOpen }: BattleSectionPr
             ))}
           </ul>
         </section>
-      )}
-
-      {active.length === 0 && (
+      ) : (
         <EmptyState
           face={CHARACTER_FACE.idle}
           title={isBoss ? '지금 붙잡고 있는 큰 일은 없어.' : '지금 쫓고 있는 건 없어.'}
@@ -277,17 +288,28 @@ function BattleSection({ kind, battles, defs, onStart, onOpen }: BattleSectionPr
         />
       )}
 
-      {available.length > 0 && (
+      {lineup.length > 0 && (
         <section>
-          <SectionHeader title={isBoss ? '만날 수 있는 보스' : '동네에 있는 몬스터'} />
+          <SectionHeader title={isBoss ? '지금 만날 수 있는 보스' : '지금 하기 좋은 몬스터'} />
           <ul className="space-y-2.5">
-            {available.map((def) => (
+            {lineup.map((def) => (
               <li key={def.id}>
                 <BattleDefCard def={def} onStart={onStart} />
               </li>
             ))}
           </ul>
         </section>
+      )}
+
+      {startable.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setLibraryOpen(true)}
+          className="flex w-full items-center justify-center gap-1 rounded-btn py-2.5 text-[13px] font-medium text-inkdim active:scale-[0.98]"
+        >
+          {isBoss ? '다른 보스 보기' : '다른 몬스터 보기'}
+          <span className="text-[12px] leading-none text-inkfaint">›</span>
+        </button>
       )}
 
       {cleared.length > 0 && (
@@ -305,6 +327,15 @@ function BattleSection({ kind, battles, defs, onStart, onOpen }: BattleSectionPr
           </ul>
         </section>
       )}
+
+      <BattleLibrarySheet
+        open={libraryOpen}
+        kind={kind}
+        defs={defs}
+        battles={battles}
+        onClose={() => setLibraryOpen(false)}
+        onStart={onStart}
+      />
     </div>
   )
 }

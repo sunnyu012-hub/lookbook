@@ -124,14 +124,14 @@ export function BattleSheet({ battle, onClose, onAction, onUndo, onRemove }: Bat
 
         {!cleared && left < battle.hp && (
           <p className="mt-2 text-[12px] leading-relaxed text-inkfaint">
-            남은 것만으로는 다 못 잡아. 되돌리기로 되살릴 수 있고, 그냥 두고 가도 괜찮아.
+            남은 것만으로는 다 해결이 안 돼. 되돌리기로 되살릴 수 있고, 그냥 두고 가도 괜찮아.
           </p>
         )}
       </div>
 
       <div className="mt-5 rounded-card bg-coral-soft/50 px-4 py-3.5">
         <p className="text-[12px] font-medium text-coral-deep">
-          {cleared ? '받은 보상' : '다 잡으면'}
+          {cleared ? '받은 보상' : '다 해결하면'}
         </p>
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5">
           <span className="font-game text-[13px] text-ink">+{battle.rewardExp} EXP</span>
@@ -142,7 +142,7 @@ export function BattleSheet({ battle, onClose, onAction, onUndo, onRemove }: Bat
           </span>
         </div>
         <p className="mt-1.5 text-[12px] text-inkdim">
-          {cleared ? '이미 받았어.' : '다 잡으면 아이템도 하나 확실히 나와.'}
+          {cleared ? '이미 받았어.' : '끝까지 해결하면 아이템도 하나 확실히 나와.'}
         </p>
       </div>
 

@@ -1,5 +1,6 @@
 import type {
   Category,
+  Difficulty,
   Quest,
   QuestPackDef,
   QuestUsageProfile,
@@ -9,11 +10,12 @@ import type {
   TimeBand,
   UsageProfiles,
 } from '@/types'
+import { DIFFICULTIES } from '@/types'
 import { toDayKey, todayKey } from '@/lib/date'
 import { timeBand } from '@/lib/rpg/time'
 import { isUsableRule, matchesToday, weekdayIndex } from '@/lib/routines'
 import { normalizeTitle } from '@/lib/suggest'
-import { ALL_PRESETS, QUEST_PACKS } from './packs'
+import { ALL_PRESETS, QUEST_PACKS, type PresetEntry } from './packs'
 import { FRESH_SLOTS, pickFresh } from './fresh'
 import { questKeyOf } from './usage'
 
@@ -29,6 +31,8 @@ import { questKeyOf } from './usage'
 export const RECOMMEND_COUNT = 6
 /** 한 분야가 추천을 통째로 가져가지 않게 */
 export const MAX_PER_CATEGORY = 4
+/** 쉬움이 추천을 통째로 가져가지 않게. 다른 난이도가 모자라면 도로 채운다. */
+export const MAX_EASY_SHARE = 0.4
 /** 이 정도는 쌓여야 "내 패턴" 이라 부를 만하다 */
 export const PERSONALIZED_THRESHOLD = 5
 
@@ -50,6 +54,64 @@ export function makeContext(now: Date = new Date()): RecommendContext {
     dayKey: toDayKey(now.toISOString()),
     weekend: day >= 5,
   }
+}
+
+// ── 난이도 ──────────────────────────────────────────────
+
+/**
+ * 추천이 목표로 하는 난이도 체감.
+ *
+ * 준비된 퀘스트 자체는 쉬움이 여전히 제일 많다 (하루가 무너진 날에 내밀 게
+ * 있어야 해서 지우지 않았다). 그래서 그냥 점수순으로 세우면 여섯 칸이 전부
+ * "물 마시기 · 창문 열기" 가 된다. 정작 몇 주째 미뤄둔 일은 한 번도 안 올라온다.
+ *
+ * 비율을 강제로 맞추지는 않는다. 여기 적힌 건 목표가 아니라 **기울기**다.
+ */
+export const BASE_DIFFICULTY_MIX: Record<Difficulty, number> = {
+  EASY: 0.25,
+  NORMAL: 0.5,
+  HARD: 0.25,
+}
+
+/** 난이도 점수의 최대치. 자주 하는 것(20)보다는 작게 둔다 — 기울기지 명령이 아니다. */
+export const DIFFICULTY_WEIGHT = 8
+
+/**
+ * 내가 실제로 끝낸 난이도를 기울기에 얹는다.
+ *
+ * 어려움을 자주 끝내는 사람에게는 어려움이 더 잘 올라오고,
+ * 한 번도 안 해본 난이도라고 0 이 되지는 않는다 — 안 해봤다는 게
+ * 앞으로도 싫다는 뜻은 아니다. 계속 밀어내고 싶으면 "덜 보기" 가 따로 있다.
+ */
+export function difficultyMix(profiles: UsageProfiles): Record<Difficulty, number> {
+  const completed: Record<Difficulty, number> = { EASY: 0, NORMAL: 0, HARD: 0 }
+  let total = 0
+
+  for (const p of Object.values(profiles)) {
+    completed[p.difficulty] += p.totalCompleted
+    total += p.totalCompleted
+  }
+
+  const mix = {} as Record<Difficulty, number>
+  let sum = 0
+  for (const d of DIFFICULTIES) {
+    const share = total > 0 ? completed[d] / total : 0
+    mix[d] = BASE_DIFFICULTY_MIX[d] * (1 + share)
+    sum += mix[d]
+  }
+  for (const d of DIFFICULTIES) mix[d] /= sum
+
+  return mix
+}
+
+/** 지금 기울기에서 이 난이도가 얼마나 반가운지 (0 ~ DIFFICULTY_WEIGHT) */
+export function difficultyScore(
+  difficulty: Difficulty,
+  mix: Record<Difficulty, number> = BASE_DIFFICULTY_MIX,
+): number {
+  const top = Math.max(...DIFFICULTIES.map((d) => mix[d]))
+  if (top <= 0) return 0
+  return DIFFICULTY_WEIGHT * (mix[difficulty] / top)
 }
 
 // ── 점수 ────────────────────────────────────────────────
@@ -134,6 +196,8 @@ export interface ScoreInput {
   routineDue: boolean
   /** 지금 시간대·요일에 어울리는 세트에 든 항목이면 */
   packFit: boolean
+  /** 지금의 난이도 기울기. 안 주면 기본 기울기를 쓴다. */
+  mix?: Record<Difficulty, number>
 }
 
 export function scoreProfile(input: ScoreInput): { score: number; parts: Record<string, number> } {
@@ -148,6 +212,7 @@ export function scoreProfile(input: ScoreInput): { score: number; parts: Record<
     favorite: favoriteScore(p),
     routine: input.routineDue ? 30 : 0,
     context: input.packFit ? 4 : 0,
+    difficulty: difficultyScore(p.difficulty, input.mix),
     dismiss: -dismissPenalty(p),
   }
 
@@ -208,6 +273,7 @@ export function recommendQuests(input: RecommendInput): Recommendation[] {
   const taken = todayKeys(input.quests, ctx)
   const routineDueKeys = dueRoutineKeys(input.routines, input.quests, ctx)
   const packFitKeys = fittingPackKeys(ctx)
+  const mix = difficultyMix(personalized ? input.profiles : {})
 
   const scored: Recommendation[] = []
 
@@ -224,6 +290,7 @@ export function recommendQuests(input: RecommendInput): Recommendation[] {
         ctx,
         routineDue: routineDueKeys.has(key),
         packFit: packFitKeys.has(key),
+        mix,
       })
       if (score <= 0) continue
 
@@ -256,7 +323,7 @@ export function recommendQuests(input: RecommendInput): Recommendation[] {
   const already = new Set(picked.map((r) => r.questKey))
   if (freshWanted > 0) {
     const skip = new Set([...already, ...taken])
-    for (const fresh of pickFresh(profilesFor(input, personalized), ctx, skip, freshWanted)) {
+    for (const fresh of pickFresh(profilesFor(input, personalized), ctx, skip, freshWanted, mix)) {
       if (taken.has(normalizeTitle(fresh.title))) continue
       picked.push(fresh)
       already.add(fresh.questKey)
@@ -265,7 +332,7 @@ export function recommendQuests(input: RecommendInput): Recommendation[] {
 
   // 모자라면 지금 시간대에 어울리는 준비된 퀘스트로 채운다 (첫 사용자 포함)
   if (picked.length < count) {
-    for (const entry of coldStartEntries(ctx)) {
+    for (const entry of coldStartEntries(ctx, mix)) {
       if (picked.length >= count) break
       if (taken.has(entry.key) || already.has(entry.key)) continue
       // 다듬은 제목이 이미 오늘 목록에 있으면 그것도 중복이다
@@ -298,13 +365,41 @@ function profilesFor(input: RecommendInput, personalized: boolean): UsageProfile
   return personalized ? input.profiles : {}
 }
 
-/** 한 분야가 다 차지하지 않게 살짝만 섞는다. 억지로 만들지는 않는다. */
+/**
+ * 쉬움이 앞줄을 다 차지하고 있으면 정원 밖으로 물린다.
+ *
+ * 거르지는 않는다. 순서만 바꾼다 — 그날 후보가 죄다 쉬움뿐일 수도 있고,
+ * 그때 빈칸을 내놓는 건 아무에게도 도움이 안 된다.
+ */
+function sinkExtraEasy(items: Recommendation[], count: number): Recommendation[] {
+  const maxEasy = Math.max(1, Math.round(count * MAX_EASY_SHARE))
+  const front: Recommendation[] = []
+  const back: Recommendation[] = []
+  let easyUsed = 0
+
+  for (const item of items) {
+    if (item.difficulty === 'EASY' && easyUsed >= maxEasy) {
+      back.push(item)
+      continue
+    }
+    if (item.difficulty === 'EASY') easyUsed += 1
+    front.push(item)
+  }
+  return [...front, ...back]
+}
+
+/**
+ * 한 분야가 다 차지하지 않게 살짝만 섞는다. 억지로 만들지는 않는다.
+ *
+ * 난이도도 같은 결로 한 번 물린다. 쉬움이 여섯 칸을 다 가져가면 그날 목록은
+ * 또 "물 마시기 · 창문 열기" 가 되고, 정작 미뤄둔 일은 안 보인다.
+ */
 export function diversify(items: Recommendation[], count: number): Recommendation[] {
   const picked: Recommendation[] = []
   const perCategory = new Map<Category, number>()
   const skipped: Recommendation[] = []
 
-  for (const item of items) {
+  for (const item of sinkExtraEasy(items, count)) {
     if (picked.length >= count) break
     const used = perCategory.get(item.category) ?? 0
     if (used >= MAX_PER_CATEGORY) {
@@ -397,14 +492,85 @@ export function fittingPackKeys(ctx: RecommendContext): Set<string> {
  * (준비된 퀘스트 112개 중 65개) 라서, 그것들이 추천에 **한 번도** 안 나왔다.
  * 밤에는 112개 중 7개만 후보였다. 그게 "퀘스트가 다 비슷비슷하다" 의 절반이었다.
  */
-export function coldStartEntries(ctx: RecommendContext) {
+export function coldStartEntries(
+  ctx: RecommendContext,
+  mix: Record<Difficulty, number> = BASE_DIFFICULTY_MIX,
+) {
   const fitting = QUEST_PACKS.filter((p) => fitsNow(p, ctx)).map((p) => p.id)
   const rest = QUEST_PACKS.filter((p) => anytime(p)).map((p) => p.id)
   const order = new Map([...fitting, ...rest].map((id, i) => [id, i]))
 
-  return ALL_PRESETS.filter((e) => order.has(e.pack.id)).sort(
+  const byPack = ALL_PRESETS.filter((e) => order.has(e.pack.id)).sort(
     (a, b) => order.get(a.pack.id)! - order.get(b.pack.id)!,
   )
+
+  return interleaveByDifficulty(byPack, mix)
+}
+
+/**
+ * 세트 순서를 지키되 난이도를 번갈아 꺼낸다.
+ *
+ * 기록이 없는 사람은 이 목록의 앞부분만 본다. 그런데 세트 순서대로면 앞쪽이
+ * 통째로 쉬움이라, 첫날 화면에 "미뤄둔 서류 처리" 같은 건 아예 안 올라온다.
+ * 첫 화면이 그 사람이 이 앱을 뭐 하는 것으로 이해할지를 정한다.
+ *
+ * 기울기에서 뽑은 순서(보통 → 쉬움 → 보통 → 어려움)대로 한 칸씩 가져가고,
+ * 그 난이도가 동나면 그냥 남은 것을 이어붙인다. 아무것도 버리지 않는다.
+ */
+/** 한 바퀴를 몇 칸으로 볼지. 4칸이면 0.25 단위까지 표현된다. */
+const CYCLE_SLOTS = 4
+
+/**
+ * 기울기를 꺼내는 순서로 바꾼다.
+ *
+ * 기본 기울기(쉬움 .25 / 보통 .5 / 어려움 .25)면 보통 → 쉬움 → 보통 → 어려움 이 된다.
+ * 큰 쪽이 연달아 나오지 않고 흩어지도록, 이미 가져간 만큼 뒤로 밀면서 고른다.
+ */
+function difficultyCycle(mix: Record<Difficulty, number>): Difficulty[] {
+  const used: Record<Difficulty, number> = { EASY: 0, NORMAL: 0, HARD: 0 }
+  const cycle: Difficulty[] = []
+
+  for (let i = 0; i < CYCLE_SLOTS; i += 1) {
+    let best: Difficulty = DIFFICULTIES[0]
+    let bestScore = -Infinity
+    for (const d of DIFFICULTIES) {
+      const score = mix[d] / (used[d] + 1)
+      if (score > bestScore) {
+        bestScore = score
+        best = d
+      }
+    }
+    cycle.push(best)
+    used[best] += 1
+  }
+  return cycle
+}
+
+function interleaveByDifficulty(
+  entries: PresetEntry[],
+  mix: Record<Difficulty, number>,
+): PresetEntry[] {
+  const buckets = new Map<Difficulty, PresetEntry[]>(
+    DIFFICULTIES.map((d) => [d, entries.filter((e) => e.preset.difficulty === d)]),
+  )
+  const cycle = difficultyCycle(mix)
+
+  const out: PresetEntry[] = []
+  let i = 0
+  while (out.length < entries.length) {
+    const bucket = buckets.get(cycle[i % cycle.length])!
+    if (bucket.length > 0) {
+      out.push(bucket.shift()!)
+      i += 1
+      continue
+    }
+    // 이 난이도가 동났으면 남은 것 중 제일 앞을 가져온다
+    const next = DIFFICULTIES.map((d) => buckets.get(d)!).find((b) => b.length > 0)
+    if (!next) break
+    out.push(next.shift()!)
+    i += 1
+  }
+  return out
 }
 
 /** 개인화가 돌기 시작했는지 — 화면 문구를 고르는 데 쓴다 */

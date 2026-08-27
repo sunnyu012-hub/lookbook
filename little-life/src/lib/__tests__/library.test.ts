@@ -25,6 +25,10 @@ import {
   quickAdd,
   recencyScore,
   recommendQuests,
+  scoreProfile,
+  difficultyMix,
+  difficultyScore,
+  DIFFICULTY_WEIGHT,
   timeOfDayScore,
   weekdayScore,
 } from '@/lib/library/recommend'
@@ -53,9 +57,9 @@ const quest = (over: Partial<Quest> = {}): Quest => ({
 
 // ── 세트 ────────────────────────────────────────────────
 describe('퀘스트 세트', () => {
-  it('23개가 있고 id 가 겹치지 않는다', () => {
-    expect(QUEST_PACKS).toHaveLength(23)
-    expect(new Set(QUEST_PACKS.map((p) => p.id)).size).toBe(23)
+  it('27개가 있고 id 가 겹치지 않는다', () => {
+    expect(QUEST_PACKS).toHaveLength(27)
+    expect(new Set(QUEST_PACKS.map((p) => p.id)).size).toBe(27)
   })
 
   it('모든 세트가 항목을 가지고 있다', () => {
@@ -81,6 +85,34 @@ describe('퀘스트 세트', () => {
     const low = findPack('low_energy')!
     // 다른 세트와 같은 난이도 체계를 쓴다 — 쉬운 날이라고 보상을 줄이지 않는다
     expect(low.items.every((i) => DIFFICULTIES.includes(i.difficulty))).toBe(true)
+  })
+
+  it('쉬움에만 몰려 있지 않다', () => {
+    // 예전에는 142개 중 119개(84%)가 쉬움이었다. 그래서 무엇을 골라도 하루가
+    // "물 마시기 · 창문 열기" 로 채워졌고, 정작 미뤄둔 일은 앱 밖에 남았다.
+    const by = { EASY: 0, NORMAL: 0, HARD: 0 }
+    for (const { preset } of ALL_PRESETS) by[preset.difficulty] += 1
+
+    expect(by.NORMAL).toBeGreaterThanOrEqual(70)
+    expect(by.HARD).toBeGreaterThanOrEqual(40)
+    // 쉬움도 여전히 남아 있어야 한다 — 하루가 무너진 날에 내밀 게 있어야 한다
+    expect(by.EASY).toBeGreaterThan(30)
+    expect(by.EASY / ALL_PRESETS.length).toBeLessThan(0.5)
+  })
+
+  it('아무것도 하기 싫은 날 세트는 전부 쉬움으로 남아 있다', () => {
+    const low = findPack('low_energy')!
+    expect(low.items.every((i) => i.difficulty === 'EASY')).toBe(true)
+  })
+
+  it('미뤄둔 일과 하면 좋은 것을 다루는 세트가 있다', () => {
+    // 이 앱을 만든 이유가 여기 있다. 하루를 잘 굴리는 세트만 있으면
+    // "몇 주째 그대로인 것" 은 영영 목록에 안 올라온다.
+    for (const id of ['backlog', 'good_for_me', 'organize', 'finish_it']) {
+      expect(findPack(id), id).not.toBeNull()
+    }
+    const backlog = findPack('backlog')!
+    expect(backlog.items.filter((i) => i.difficulty === 'HARD').length).toBeGreaterThanOrEqual(4)
   })
 
   it('key 로 다시 찾을 수 있다', () => {
@@ -671,5 +703,58 @@ describe('sanitizeUsageProfiles 의 key 바로잡기', () => {
       },
     })
     expect(Object.keys(out)).toEqual(['wellness:water'])
+  })
+})
+
+// ── 추천 난이도 ─────────────────────────────────────────
+describe('추천 난이도 기울기', () => {
+  const profileOf = (difficulty: 'EASY' | 'NORMAL' | 'HARD', completed: number) => ({
+    ...emptyProfile({ questKey: `k-${difficulty}-${completed}`, title: 't', category: 'LIFE' as const, difficulty }),
+    totalCompleted: completed,
+  })
+
+  it('기록이 없으면 보통이 제일 반갑다', () => {
+    const mix = difficultyMix({})
+    expect(mix.NORMAL).toBeGreaterThan(mix.EASY)
+    expect(mix.NORMAL).toBeGreaterThan(mix.HARD)
+    expect(difficultyScore('NORMAL', mix)).toBe(DIFFICULTY_WEIGHT)
+  })
+
+  it('자주 끝낸 난이도가 더 잘 올라온다', () => {
+    const mix = difficultyMix({ a: profileOf('HARD', 20) })
+    expect(difficultyScore('HARD', mix)).toBeGreaterThan(difficultyScore('EASY', mix))
+  })
+
+  it('한 번도 안 해본 난이도라도 0 이 되지는 않는다', () => {
+    // 안 해봤다는 게 앞으로도 싫다는 뜻은 아니다.
+    // 계속 밀어내고 싶은 사람에게는 "덜 보기" 가 따로 있다.
+    const mix = difficultyMix({ a: profileOf('EASY', 50) })
+    expect(difficultyScore('HARD', mix)).toBeGreaterThan(0)
+  })
+
+  it('처음 쓰는 사람 화면이 쉬움으로만 차지 않는다', () => {
+    const picked = recommendQuests({
+      profiles: {},
+      quests: [],
+      routines: [],
+      now: new Date('2026-08-24T09:00:00'),
+    })
+    const easy = picked.filter((r) => r.difficulty === 'EASY').length
+    expect(picked).toHaveLength(6)
+    expect(easy).toBeLessThanOrEqual(3)
+    expect(picked.some((r) => r.difficulty === 'HARD')).toBe(true)
+    expect(picked.some((r) => r.difficulty === 'NORMAL')).toBe(true)
+  })
+
+  it('덜 보기는 난이도 기울기보다 세다 — 밀어낸 건 밀려나야 한다', () => {
+    const p = emptyProfile({ questKey: 'x', title: '싫은 것', category: 'LIFE', difficulty: 'NORMAL' })
+    const pushed = { ...p, totalAdded: 3, dismissCount: 4 }
+    const { score } = scoreProfile({
+      profile: pushed,
+      ctx: makeContext(new Date('2026-08-24T09:00:00')),
+      routineDue: false,
+      packFit: false,
+    })
+    expect(score).toBeLessThanOrEqual(0)
   })
 })
