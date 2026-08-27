@@ -118,6 +118,22 @@ LAYOUT = [
     ("skins5-taste.png", [
         "retro_sporty", "cityboy_overfit", "romantic_satin_mood", "soft_chic_all_black",
     ]),
+    # 6차 — 묶음 5 · 8 · 9 · 10 (스무 벌 더)
+    ("skins6-guild-c.png", [
+        "strawberry_farmer", "herb_witch", "crystal_miner", "cave_cartographer",
+    ]),
+    ("skins6-weather-a.png", [
+        "early_spring_trench", "fine_dust_day", "spring_wedding_guest", "early_summer_shirt",
+    ]),
+    ("skins6-weather-c.png", [
+        "early_autumn_shirt", "autumn_suede_jacket", "sudden_cold_day", "midwinter_padding",
+    ]),
+    ("skins6-taste-b.png", [
+        "real_balletcore", "soft_gorpcore", "cozy_scandi_mood", "campus_preppy",
+    ]),
+    ("skins6-outing.png", [
+        "popup_openrun", "concert_day", "airport_day", "interview_day",
+    ]),
 ]
 
 # 시트마다 네 명의 키 중앙값을 이 높이에 맞춘다.

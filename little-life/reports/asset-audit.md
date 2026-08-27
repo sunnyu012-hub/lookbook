@@ -17,7 +17,7 @@
 | id 중복 | 0 |
 | 경로 중복 | 0 |
 | 캐릭터 모습 | 120 |
-| 모습 그림 없음 | 36 |
+| 모습 그림 없음 | 16 |
 | 모습 작은 그림 없음 | 0 |
 | 모습 캔버스 다름 | 0 |
 | 모습 id 중복 | 0 |
@@ -51,26 +51,10 @@
 - `vintage_shop_buyer` 빈티지숍 바이어 — 3팩 · 비밀스러운 도시의 사람들
 - `little_theater_actor` 작은 극장의 배우 — 3팩 · 비밀스러운 도시의 사람들
 - `rooftop_gardener` 옥상 정원사 — 3팩 · 비밀스러운 도시의 사람들
-- `strawberry_farmer` 딸기 농장주 — 5팩 · 생활 길드의 모험가들
-- `herb_witch` 허브 마녀 — 5팩 · 생활 길드의 모험가들
-- `crystal_miner` 수정 광부 — 5팩 · 생활 길드의 모험가들
-- `cave_cartographer` 동굴 지도제작자 — 5팩 · 생활 길드의 모험가들
-- `early_spring_trench` 꽃샘추위 트렌치코트 — 8팩 · 한국의 사계절 옷장
-- `fine_dust_day` 미세먼지 있는 날 — 8팩 · 한국의 사계절 옷장
-- `spring_wedding_guest` 봄날 하객 코디 — 8팩 · 한국의 사계절 옷장
-- `early_summer_shirt` 초여름 셔츠 레이어드 — 8팩 · 한국의 사계절 옷장
-- `early_autumn_shirt` 초가을 셔츠 레이어드 — 8팩 · 한국의 사계절 옷장
-- `autumn_suede_jacket` 가을 스웨이드 재킷 — 8팩 · 한국의 사계절 옷장
-- `sudden_cold_day` 갑자기 추운 날 — 8팩 · 한국의 사계절 옷장
-- `midwinter_padding` 한겨울 패딩 코디 — 8팩 · 한국의 사계절 옷장
 - `french_girl_casual` 프렌치 걸 캐주얼 — 9팩 · 나의 추구미
 - `minimal_monotone` 미니멀 모노톤 — 9팩 · 나의 추구미
 - `kitsch_vintage_denim` 키치 빈티지 데님 — 9팩 · 나의 추구미
 - `vintage_bookcafe_mood` 빈티지 북카페 무드 — 9팩 · 나의 추구미
-- `real_balletcore` 현실적인 발레코어 — 9팩 · 나의 추구미
-- `soft_gorpcore` 소프트 고프코어 — 9팩 · 나의 추구미
-- `cozy_scandi_mood` 코지 스칸디 무드 — 9팩 · 나의 추구미
-- `campus_preppy` 캠퍼스 프레피 — 9팩 · 나의 추구미
 - `subway_commute` 지하철 출근길 — 10팩 · 오늘은 어디 가는 날?
 - `work_from_home_day` 재택근무하는 날 — 10팩 · 오늘은 어디 가는 날?
 - `convenience_store_run` 편의점 다녀오는 길 — 10팩 · 오늘은 어디 가는 날?
@@ -79,10 +63,6 @@
 - `exhibition_day` 전시회 보러 가는 날 — 10팩 · 오늘은 어디 가는 날?
 - `baseball_cheer` 야구장 응원룩 — 10팩 · 오늘은 어디 가는 날?
 - `hangang_picnic` 한강 피크닉 — 10팩 · 오늘은 어디 가는 날?
-- `popup_openrun` 팝업스토어 오픈런 — 10팩 · 오늘은 어디 가는 날?
-- `concert_day` 콘서트 가는 날 — 10팩 · 오늘은 어디 가는 날?
-- `airport_day` 공항 가는 날 — 10팩 · 오늘은 어디 가는 날?
-- `interview_day` 면접 보러 가는 날 — 10팩 · 오늘은 어디 가는 날?
 
 ## 작은 그림이 없는 캐릭터 모습
 

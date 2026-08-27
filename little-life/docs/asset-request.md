@@ -350,9 +350,12 @@
 
 ---
 
+
+---
+
 ## UPDATE F.5 — 새 옷 아흔여섯 벌
 
-**60 / 96 도착.** 남은 36장은 아직 없다 —
+**80 / 96 도착.** 남은 16장은 아직 없다 —
 지금은 목록에서 기본 모습이 실루엣으로 대신 서 있다. 앱이 안 깨지게 하는
 장치일 뿐이고, 그림이 아니다.
 
@@ -409,16 +412,16 @@
 | ✅ | `new_year_pouch.webp` | 새해 복주머니 | 뭐가 들었는지는 열어봐야 안다. |
 | ✅ | `starlight_ball.webp` | 별빛 연말무도회 | 한 해의 마지막 밤에만 열린다. |
 
-### 묶음 5 — 생활 길드의 모험가들 (49–60) · 8 / 12
+### 묶음 5 — 생활 길드의 모험가들 (49–60) · 12 / 12
 
 판타지 · 의상실에서 산다 · 싸우러 가는 게 아니라 뭔가를 만들고 캐고 기르는 사람들.
 
 | | 파일 | 이름 | 결 |
 | --- | --- | --- | --- |
-| — | `strawberry_farmer.webp` | 딸기 농장주 | 아침에 제일 단 걸 먼저 먹는 특권. |
-| — | `herb_witch.webp` | 허브 마녀 | 주로 감기에 좋은 걸 만든다. |
-| — | `crystal_miner.webp` | 수정 광부 | 깊이 들어갈수록 조용해진다. |
-| — | `cave_cartographer.webp` | 동굴 지도제작자 | 길을 그려두면 다음 사람이 안 헤맨다. |
+| ✅ | `strawberry_farmer.webp` | 딸기 농장주 | 아침에 제일 단 걸 먼저 먹는 특권. |
+| ✅ | `herb_witch.webp` | 허브 마녀 | 주로 감기에 좋은 걸 만든다. |
+| ✅ | `crystal_miner.webp` | 수정 광부 | 깊이 들어갈수록 조용해진다. |
+| ✅ | `cave_cartographer.webp` | 동굴 지도제작자 | 길을 그려두면 다음 사람이 안 헤맨다. |
 | ✅ | `monster_chef.webp` | 몬스터 요리사 | 무섭게 생긴 재료일수록 맛있다. |
 | ✅ | `dessert_alchemist.webp` | 디저트 연금술사 | 설탕과 불의 비율이 전부다. |
 | ✅ | `mushroom_forager.webp` | 버섯 채집가 | 먹어도 되는 것만 골라 담는다. |
@@ -466,26 +469,26 @@
 | ✅ | `stripe_tee_washed_jeans.webp` | 스트라이프 티와 워싱 진 | 많이 빨아 입을수록 편해진다. |
 | ✅ | `blouse_cargo_long_skirt.webp` | 블라우스와 카고 롱스커트 | 위는 얌전하고 아래는 편하게. |
 
-### 묶음 8 — 한국의 사계절 옷장 (85–96) · 4 / 12
+### 묶음 8 — 한국의 사계절 옷장 (85–96) · 12 / 12
 
 일상 · 작은 옷장에서 나온다 · 날씨가 그날 옷을 거의 다 정한다.
 
 | | 파일 | 이름 | 결 |
 | --- | --- | --- | --- |
-| — | `early_spring_trench.webp` | 꽃샘추위 트렌치코트 | 봄인 줄 알았는데 아니었다. |
-| — | `fine_dust_day.webp` | 미세먼지 있는 날 | 창문을 못 여는 날의 차림. |
-| — | `spring_wedding_guest.webp` | 봄날 하객 코디 | 주인공보다 튀면 안 된다. |
-| — | `early_summer_shirt.webp` | 초여름 셔츠 레이어드 | 낮엔 덥고 저녁엔 서늘하다. |
+| ✅ | `early_spring_trench.webp` | 꽃샘추위 트렌치코트 | 봄인 줄 알았는데 아니었다. |
+| ✅ | `fine_dust_day.webp` | 미세먼지 있는 날 | 창문을 못 여는 날의 차림. |
+| ✅ | `spring_wedding_guest.webp` | 봄날 하객 코디 | 주인공보다 튀면 안 된다. |
+| ✅ | `early_summer_shirt.webp` | 초여름 셔츠 레이어드 | 낮엔 덥고 저녁엔 서늘하다. |
 | ✅ | `rainy_season_practical.webp` | 장마철 실용 코디 | 젖어도 금방 마르는 것들로. |
 | ✅ | `heatwave_linen.webp` | 폭염의 린넨 셋업 | 가볍고 바람이 지나간다. |
 | ✅ | `aircon_cardigan.webp` | 에어컨 대비 카디건 | 밖보다 안이 더 춥다. |
 | ✅ | `midsummer_long_skirt.webp` | 한여름 롱스커트 | 길어도 시원한 쪽. |
-| — | `early_autumn_shirt.webp` | 초가을 셔츠 레이어드 | 아침저녁으로 온도가 다르다. |
-| — | `autumn_suede_jacket.webp` | 가을 스웨이드 재킷 | 일 년에 두 주쯤 딱 맞는 옷. |
-| — | `sudden_cold_day.webp` | 갑자기 추운 날 | 어제까진 이러지 않았다. |
-| — | `midwinter_padding.webp` | 한겨울 패딩 코디 | 멋보다 따뜻한 게 먼저다. |
+| ✅ | `early_autumn_shirt.webp` | 초가을 셔츠 레이어드 | 아침저녁으로 온도가 다르다. |
+| ✅ | `autumn_suede_jacket.webp` | 가을 스웨이드 재킷 | 일 년에 두 주쯤 딱 맞는 옷. |
+| ✅ | `sudden_cold_day.webp` | 갑자기 추운 날 | 어제까진 이러지 않았다. |
+| ✅ | `midwinter_padding.webp` | 한겨울 패딩 코디 | 멋보다 따뜻한 게 먼저다. |
 
-### 묶음 9 — 나의 추구미 (97–108) · 4 / 12
+### 묶음 9 — 나의 추구미 (97–108) · 8 / 12
 
 일상 · 의상실에서 산다 · 어디 가느냐보다, 어떤 사람으로 보이고 싶은가.
 
@@ -495,16 +498,16 @@
 | — | `minimal_monotone.webp` | 미니멀 모노톤 | 색을 두 개 넘게 안 쓴다. |
 | — | `kitsch_vintage_denim.webp` | 키치 빈티지 데님 | 어울리는지는 나중에 생각한다. |
 | — | `vintage_bookcafe_mood.webp` | 빈티지 북카페 무드 | 오래된 종이 냄새가 나는 쪽. |
-| — | `real_balletcore.webp` | 현실적인 발레코어 | 실제로 걸어 다닐 수 있는 쪽으로. |
-| — | `soft_gorpcore.webp` | 소프트 고프코어 | 산에 안 가도 되는 등산복. |
-| — | `cozy_scandi_mood.webp` | 코지 스칸디 무드 | 집이 추운 나라의 옷. |
-| — | `campus_preppy.webp` | 캠퍼스 프레피 | 수업에 늦어도 단정해 보인다. |
+| ✅ | `real_balletcore.webp` | 현실적인 발레코어 | 실제로 걸어 다닐 수 있는 쪽으로. |
+| ✅ | `soft_gorpcore.webp` | 소프트 고프코어 | 산에 안 가도 되는 등산복. |
+| ✅ | `cozy_scandi_mood.webp` | 코지 스칸디 무드 | 집이 추운 나라의 옷. |
+| ✅ | `campus_preppy.webp` | 캠퍼스 프레피 | 수업에 늦어도 단정해 보인다. |
 | ✅ | `retro_sporty.webp` | 레트로 스포티 | 오래된 운동복이 더 예쁘다. |
 | ✅ | `cityboy_overfit.webp` | 시티보이 오버핏 | 한 치수 크게 입는 게 규칙. |
 | ✅ | `romantic_satin_mood.webp` | 로맨틱 새틴 무드 | 빛을 조금 머금는 천. |
 | ✅ | `soft_chic_all_black.webp` | 소프트 시크 올블랙 | 검정도 부드러울 수 있다. |
 
-### 묶음 10 — 오늘은 어디 가는 날? (109–120) · 0 / 12
+### 묶음 10 — 오늘은 어디 가는 날? (109–120) · 4 / 12
 
 일상 · 작은 옷장에서 나온다 · 옷보다 오늘의 일정이 먼저 보이는 날.
 
@@ -518,18 +521,16 @@
 | — | `exhibition_day.webp` | 전시회 보러 가는 날 | 조용한 데서 오래 서 있는다. |
 | — | `baseball_cheer.webp` | 야구장 응원룩 | 이기든 지든 목이 쉰다. |
 | — | `hangang_picnic.webp` | 한강 피크닉 | 돗자리와 바람만 있으면 된다. |
-| — | `popup_openrun.webp` | 팝업스토어 오픈런 | 아침 일찍 줄 서는 날. |
-| — | `concert_day.webp` | 콘서트 가는 날 | 두 시간을 위해 하루를 비운다. |
-| — | `airport_day.webp` | 공항 가는 날 | 벗기 쉽고 입기 쉬운 게 최고다. |
-| — | `interview_day.webp` | 면접 보러 가는 날 | 거울을 세 번 본다. |
+| ✅ | `popup_openrun.webp` | 팝업스토어 오픈런 | 아침 일찍 줄 서는 날. |
+| ✅ | `concert_day.webp` | 콘서트 가는 날 | 두 시간을 위해 하루를 비운다. |
+| ✅ | `airport_day.webp` | 공항 가는 날 | 벗기 쉽고 입기 쉬운 게 최고다. |
+| ✅ | `interview_day.webp` | 면접 보러 가는 날 | 거울을 세 번 본다. |
 
 ### 남은 것
 
 | 묶음 | 남음 |
 | --- | --- |
 | 3. 비밀스러운 도시의 사람들 | 4 |
-| 5. 생활 길드의 모험가들 | 4 |
-| 8. 한국의 사계절 옷장 | 8 |
-| 9. 나의 추구미 | 8 |
-| 10. 오늘은 어디 가는 날? | 12 |
-| **합계** | **36** |
+| 9. 나의 추구미 | 4 |
+| 10. 오늘은 어디 가는 날? | 8 |
+| **합계** | **16** |
