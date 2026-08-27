@@ -13,6 +13,8 @@ import {
 } from '@/lib/dungeon/derive'
 import { DUNGEON_ROOMS } from '@/lib/dungeon/rooms'
 import { blockedPathSeen } from '@/lib/quarry/derive'
+import { CREATURES, STEPS_BY_CREATURE } from '@/lib/dungeon/creatures'
+import { creatureStage, isInnerDoorOpen, nextStep } from '@/lib/dungeon/creatureDerive'
 
 interface DungeonLabProps {
   state: AppState
@@ -51,8 +53,35 @@ export function DungeonLab({ state, onRun }: DungeonLabProps) {
         <Lab onClick={() => onRun({ kind: 'ENERGY' })}>에너지 채우기</Lab>
         <Lab onClick={() => onRun({ kind: 'OPEN_ALL' })}>다섯 구역 다 가본 걸로</Lab>
         <Lab onClick={() => onRun({ kind: 'FIND_ALL' })}>발견물 전부</Lab>
+        <Lab onClick={() => onRun({ kind: 'FRIENDLY_THREE' })}>셋과 친해진 걸로</Lab>
         <Lab onClick={() => onRun({ kind: 'RESET' })}>걸어간 자취만 초기화</Lab>
       </div>
+
+      <p className="mt-0.5 text-[12px] text-inkdim">
+        생명체 {CREATURES.filter((c) => creatureStage(state, c.id) !== 'UNKNOWN').length}/
+        {CREATURES.length} · 문 {isInnerDoorOpen(state) ? '열림' : '닫힘'} · 걸음{' '}
+        {state.dungeon.creatureLog.length}
+      </p>
+
+      <h2 className="mt-6 font-game text-[11px] tracking-[0.12em] text-inkdim">생명체</h2>
+      <ul className="mt-2 space-y-1">
+        {CREATURES.map((c) => (
+          <li key={c.id} className="rounded-btn bg-surface px-3 py-2 text-[11.5px]">
+            <p className="font-medium">
+              {c.icon} {c.name}
+              <span className="ml-1 font-game text-[10px] text-inkfaint">
+                {c.id} · {creatureStage(state, c.id)}
+              </span>
+            </p>
+            <p className="mt-0.5 text-[10.5px] text-inkfaint">
+              {STEPS_BY_CREATURE[c.id].map((s) =>
+                state.dungeon.creatureLog.includes(s.id) ? '●' : '○',
+              ).join(' ')}{' '}
+              — 다음: {nextStep(state, c.id)?.id ?? '없음'}
+            </p>
+          </li>
+        ))}
+      </ul>
 
       <h2 className="mt-6 font-game text-[11px] tracking-[0.12em] text-inkdim">단서</h2>
       <ul className="mt-2 space-y-1">

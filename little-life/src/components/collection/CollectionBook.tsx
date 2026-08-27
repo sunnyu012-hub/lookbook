@@ -9,6 +9,7 @@ import {
   CATALOG,
   CATALOG_CATEGORIES,
   CRAFTED_CATALOG,
+  CREATURE_CATALOG,
   EXPLORED_CATALOG,
   CROP_CATALOG,
   FOOD_CATALOG,
@@ -49,6 +50,7 @@ type Tab =
   | 'RECIPES'
   | 'CRAFTED'
   | 'EXPLORED'
+  | 'CREATURE'
 
 const PAGE = 60
 
@@ -84,6 +86,8 @@ export function CollectionBook({
     if (tab === 'CRAFTED') return CRAFTED_CATALOG
     // 채석장·던전에서 주워 온 것도 240칸 밖이다. 같은 이유로 자기 칸을 가진다.
     if (tab === 'EXPLORED') return EXPLORED_CATALOG
+    // 생명체는 주워 온 것이 아니라 만난 상대다. 탐험 칸과 따로 둔다.
+    if (tab === 'CREATURE') return CREATURE_CATALOG
     if (tab === 'ALL') return CATALOG
     if (tab === 'SETS') return []
     return CATALOG.filter((i) => i.category === tab)
@@ -102,6 +106,7 @@ export function CollectionBook({
   const cropFound = CROP_CATALOG.filter((c) => isDiscovered(collection, c.id)).length
   const craftedFound = CRAFTED_CATALOG.filter((c) => isDiscovered(collection, c.id)).length
   const exploredFound = EXPLORED_CATALOG.filter((c) => isDiscovered(collection, c.id)).length
+  const creatureFound = CREATURE_CATALOG.filter((c) => isDiscovered(collection, c.id)).length
   // 요리는 "만들어본 적이 있는지" 로 센다. 다 먹어 없어져도 도감에는 남는다.
   const recipeFound = recipeCollectionProgress(state).found
   // 아직 감춰둔 세트는 세지도 않는다. 안 보이는 것이 분모에 들어가면
@@ -150,6 +155,9 @@ export function CollectionBook({
           </span>
           <span className="rounded-pill bg-sunken px-2.5 py-1">
             탐험 {exploredFound} / {EXPLORED_CATALOG.length}
+          </span>
+          <span className="rounded-pill bg-sunken px-2.5 py-1">
+            생명체 {creatureFound} / {CREATURE_CATALOG.length}
           </span>
         </div>
       </Card>
@@ -222,6 +230,9 @@ export function CollectionBook({
           </Chip>
           <Chip on={tab === 'EXPLORED'} onClick={() => switchTab('EXPLORED')}>
             탐험
+          </Chip>
+          <Chip on={tab === 'CREATURE'} onClick={() => switchTab('CREATURE')}>
+            생명체
           </Chip>
           <Chip on={tab === 'SETS'} onClick={() => switchTab('SETS')}>
             세트

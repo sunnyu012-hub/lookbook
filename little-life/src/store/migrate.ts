@@ -62,6 +62,7 @@ import { emptyQuarry, DAILY_ATTEMPTS } from '@/lib/quarry/derive'
 import { isMineral } from '@/lib/quarry/minerals'
 import { emptyDungeon } from '@/lib/dungeon/derive'
 import { findRoomDef, findSpotDef } from '@/lib/dungeon/rooms'
+import { findCreatureStep } from '@/lib/dungeon/creatures'
 import { findKitchenRecipe } from '@/lib/kitchen/recipes'
 import { AUTO_COLLECTION_IDS, COMPANION_IDS, SECRET_IDS, SKIN_IDS } from '@/types'
 import { findChapter } from '@/lib/discovery/stories'
@@ -74,7 +75,7 @@ import { findRoom } from '@/lib/collection/rooms'
  * 없는 항목만 기본값으로 채우고, 있는 값은 손대지 않는다.
  */
 
-export const STATE_VERSION = 16
+export const STATE_VERSION = 17
 
 /** 구매 기록을 며칠치까지 남길지 */
 export const PURCHASE_DAYS_KEPT = 7
@@ -939,9 +940,10 @@ export function sanitizeDungeon(raw: unknown): DungeonState {
 
   return {
     tutorialSeenAt: typeof d.tutorialSeenAt === 'string' ? d.tutorialSeenAt : null,
-    // 없어진 구역·자리가 적혀 있으면 조용히 버린다
+    // 없어진 구역·자리·걸음이 적혀 있으면 조용히 버린다
     discoveredRoomIds: ids(d.discoveredRoomIds, (id) => findRoomDef(id) !== null),
     searchedSpotIds: ids(d.searchedSpotIds, (id) => findSpotDef(id) !== null),
+    creatureLog: ids(d.creatureLog, (id) => findCreatureStep(id) !== null),
   }
 }
 

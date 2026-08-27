@@ -120,6 +120,25 @@ export const DUNGEON_ROOMS: DungeonRoomDef[] = [
       },
     ],
   },
+  {
+    // 셋과 친해지면 문이 열리고 여기가 나온다.
+    // 열렸는지는 저장하지 않는다 — 셋의 단계에서 계산한다.
+    id: 'INNER_HALL',
+    name: '안쪽의 큰 방',
+    icon: '🕳️',
+    description: '안쪽은 생각보다 넓다.',
+    spots: [
+      {
+        id: 'hall_floor',
+        roomId: 'INNER_HALL',
+        name: '눌린 자국',
+        icon: '🪨',
+        teaser: '바닥에 오래 눌려 있던 자국이 있다',
+        itemId: 'dungeon_round_stone',
+        found: '손바닥에 들어올 만큼 작은 돌이다. 표면이 이상할 정도로 매끈하다.',
+      },
+    ],
+  },
 ]
 
 /**
@@ -150,6 +169,9 @@ export function findSpotDef(id: string) {
   }
   return null
 }
+
+/** 안쪽 문 너머. 셋과 친해져야 열린다. */
+export const INNER_HALL_ID = 'INNER_HALL'
 
 /** 처음 들어서면 여기다. 돌문 앞은 공짜로 들어온다. */
 export const FIRST_ROOM_ID = DUNGEON_ROOMS[0].id

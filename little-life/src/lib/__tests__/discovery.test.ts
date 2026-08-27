@@ -112,9 +112,9 @@ describe('예전 기록이 그대로 반영된다', () => {
     expect(back).toEqual(emptyDiscovery())
   })
 
-  it('스키마 버전이 16 이다', () => {
-    expect(STATE_VERSION).toBe(16)
-    expect(createDefaultState().version).toBe(16)
+  it('스키마 버전이 17 이다', () => {
+    expect(STATE_VERSION).toBe(17)
+    expect(createDefaultState().version).toBe(17)
   })
 })
 

@@ -7,6 +7,7 @@ import { hintedCompanions, newlyMeetable } from './companions'
 import { applyGardenUnlock, applyRareSeeds } from '@/lib/garden/derive'
 import { applyQuarryUnlock } from '@/lib/quarry/derive'
 import { applyOldKey, isGateFound } from '@/lib/dungeon/derive'
+import { isDungeonStoryDone } from '@/lib/dungeon/creatureDerive'
 import { applyKitchenUnlock, newlyDiscovered } from '@/lib/kitchen/derive'
 
 /**
@@ -179,6 +180,32 @@ export function applyDiscovery(state: AppState, now: Date = new Date()): Discove
       icon: '🚪',
       title: '잠든 돌문',
       text: '돌무더기 너머에 문이 하나 있었다. 오래 닫혀 있었던 것 같다.',
+    })
+  }
+
+  // ── 첫 던전 이야기가 끝났다 ──────────────────────────
+  // 돌잠이와 마지막 걸음까지 갔으면 한 번만 뜬다.
+  // 보상은 없다 — 달라진 건 그 방의 공기지 받은 물건이 아니다.
+  if (isDungeonStoryDone(next)) {
+    pending.push({
+      key: 'dungeon:story-done',
+      kind: 'DUNGEON',
+      icon: '🕳️',
+      title: '잠든 돌문',
+      text: '처음에는 안쪽에 무서운 게 있을 줄 알았다. 조금 오래 들여다보니 전혀 다른 모습이었다. 이제 이곳의 조용함이 전과는 조금 다르게 느껴진다.',
+    })
+  }
+
+  // ── 다음 이야기 ──────────────────────────────────────
+  // 이야기가 끝난 뒤 한 번. 무엇이 열렸다고 말하지 않는다 —
+  // 돌콩이가 입구까지 따라와서 바깥을 본 것뿐이다.
+  if (isDungeonStoryDone(next)) {
+    pending.push({
+      key: 'dungeon:follow',
+      kind: 'DUNGEON',
+      icon: '🪨',
+      title: '입구 가까이',
+      text: '뒤에서 작은 돌 굴러가는 소리가 났다. 돌콩이가 입구 가까이까지 따라와 있다. 바깥쪽을 한참 바라봤다. 그러다 다시 안쪽으로 돌아갔다.',
     })
   }
 

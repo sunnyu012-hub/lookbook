@@ -10,11 +10,13 @@ import { seededRandom } from '@/lib/city/seed'
 import { todayKey } from '@/lib/date'
 import { blockedPathSeen, strangeFragmentFound } from '@/lib/quarry/derive'
 import { OLD_KEY_ID, findDungeonItem } from './items'
+import { isInnerDoorOpen } from './creatureDerive'
 import {
   DUNGEON_ROOMS,
   ENERGY_PER_ROOM,
   ENERGY_PER_SEARCH,
   FIRST_ROOM_ID,
+  INNER_HALL_ID,
   SIDE_COINS,
   SIDE_DROPS,
   findRoomDef,
@@ -34,6 +36,7 @@ export function emptyDungeon(): DungeonState {
     tutorialSeenAt: null,
     discoveredRoomIds: [],
     searchedSpotIds: [],
+    creatureLog: [],
   }
 }
 
@@ -196,7 +199,7 @@ export function deepestRoomId(state: AppState): string | null {
 
 export type GoDeeperResult =
   | { ok: true; state: AppState; roomId: string }
-  | { ok: false; reason: 'NO_MORE' | 'NO_ENERGY' | 'LOCKED' }
+  | { ok: false; reason: 'NO_MORE' | 'NO_ENERGY' | 'LOCKED' | 'DOOR_SHUT' }
 
 /**
  * 안쪽으로 한 구역 더 들어간다.
@@ -212,6 +215,9 @@ export function goDeeper(state: AppState, fromRoomId: string): GoDeeperResult {
   if (!next) return { ok: false, reason: 'NO_MORE' }
   // 이미 가본 데면 그냥 걸어간다. 값을 다시 받지 않는다.
   if (isRoomDiscovered(state, next)) return { ok: true, state, roomId: next }
+  // 안쪽 방은 문이 열려야 간다. 열렸는지는 저장하지 않는다 —
+  // 세 생명체와 친해졌으면 열린 것이다 (creatureDerive.ts).
+  if (next === INNER_HALL_ID && !isInnerDoorOpen(state)) return { ok: false, reason: 'DOOR_SHUT' }
 
   if (state.user.adventureEnergy < ENERGY_PER_ROOM) return { ok: false, reason: 'NO_ENERGY' }
 

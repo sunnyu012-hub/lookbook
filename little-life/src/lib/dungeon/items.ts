@@ -43,6 +43,54 @@ export const DUNGEON_FINDS: CollectionItemDef[] = [
     '🐾',
     '누가 여기서 잠깐 쉬어간 것 같다. 그게 누군지는 아직 모른다.',
   ),
+  find(
+    'dungeon_round_stone',
+    '돌잠이의 작은 돌',
+    '⚪',
+    '돌잠이가 오래 있던 자리에 남아 있던 둥근 돌.',
+  ),
+]
+
+/**
+ * 잠든 돌문에 사는 것들.
+ *
+ * 물건이 아니다. 가방에 안 들어가고, 방에 못 놓고, 재료도 아니고,
+ * 어디서 살 수도 만들 수도 없다 — 오래된 열쇠와 같은 자리다.
+ * 도감 카드 하나를 빌려 쓸 뿐이고, 그 카드의 설명은 지나온 걸음에
+ * 따라 매번 다시 만들어진다 (creatureDerive.ts).
+ *
+ * 여기 적힌 description 은 처음 만났을 때의 한 줄이다.
+ */
+function creature(id: string, name: string, icon: string, description: string): CollectionItemDef {
+  return {
+    id,
+    nameKo: name,
+    icon,
+    category: 'MAGIC',
+    subcategory: '생명체',
+    rarity: 'EPIC',
+    description,
+    hasPlaceableAsset: true,
+    placeable: false,
+    footprint: { width: 9, height: 9 },
+    acquisitionSources: [],
+    collectionSetIds: [],
+    tags: ['생명체'],
+    stackable: false,
+    unique: true,
+  }
+}
+
+export const CREATURE_ITEMS: CollectionItemDef[] = [
+  creature('stone_bean', '돌콩이', '🪨', '돌처럼 웅크리고 있는 작은 생명체.'),
+  creature('moss_dream', '이끼몽', '🌿', '이끼 사이에 가만히 섞여 있던 작은 생명체.'),
+  creature('glow_pebble', '반딧돌', '✨', '어두운 곳에서 희미하게 빛나는 작은 생명체.'),
+  creature(
+    'stone_sleeper',
+    '돌잠이',
+    '🗿',
+    '안쪽의 큰 방에서 오래 움직이지 못하고 있던 커다란 생명체.',
+  ),
 ]
 
 /**
@@ -77,7 +125,9 @@ export const STORY_ITEMS: CollectionItemDef[] = [
   },
 ]
 
-const BY_ID = new Map([...DUNGEON_FINDS, ...STORY_ITEMS].map((i) => [i.id, i]))
+const BY_ID = new Map(
+  [...DUNGEON_FINDS, ...STORY_ITEMS, ...CREATURE_ITEMS].map((i) => [i.id, i]),
+)
 
 export function findDungeonItem(id: string): CollectionItemDef | null {
   return BY_ID.get(id) ?? null
