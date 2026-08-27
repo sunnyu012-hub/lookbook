@@ -84,6 +84,23 @@ LAYOUT = [
     ("skins3-other-b.png", [
         "rose_garden_ghost", "star_thief_mage", "time_traveler", "mirror_world_me",
     ]),
+    # 4차 — 묶음 3 · 5 · 6 · 7 (스무 벌 더)
+    ("skins4-city-a.png", [
+        "night_bookkeeper", "starlight_patissier", "alley_detective", "magic_postal",
+    ]),
+    ("skins4-city-b.png", [
+        "dream_mender", "night_market_trader", "treasure_appraiser", "neon_dj",
+    ]),
+    ("skins4-guild-b.png", [
+        "monster_chef", "dessert_alchemist", "mushroom_forager", "moonlight_angler",
+    ]),
+    ("skins4-other-c.png", [
+        "city_guardian", "golden_slime_queen", "all_seasons_spirit", "little_life_lead",
+    ]),
+    ("skins4-daily.png", [
+        "stripe_tee_wide_denim", "grey_zipup_slacks", "cardigan_denim_skirt",
+        "brown_jacket_corduroy",
+    ]),
 ]
 
 # 시트마다 네 명의 키 중앙값을 이 높이에 맞춘다.

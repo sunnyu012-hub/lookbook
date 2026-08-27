@@ -17,7 +17,7 @@
 | id 중복 | 0 |
 | 경로 중복 | 0 |
 | 캐릭터 모습 | 120 |
-| 모습 그림 없음 | 76 |
+| 모습 그림 없음 | 56 |
 | 모습 작은 그림 없음 | 0 |
 | 모습 캔버스 다름 | 0 |
 | 모습 id 중복 | 0 |
@@ -47,18 +47,10 @@
 
 캔버스 기준 433x508. fallback 이 있어도 여기 남은 건 없는 것이다.
 
-- `night_bookkeeper` 심야 서점지기 — 3팩 · 비밀스러운 도시의 사람들
-- `starlight_patissier` 별빛 파티시에 — 3팩 · 비밀스러운 도시의 사람들
-- `alley_detective` 골목 탐정 — 3팩 · 비밀스러운 도시의 사람들
-- `magic_postal` 마법 우편배달부 — 3팩 · 비밀스러운 도시의 사람들
 - `city_archivist` 도시 기록가 — 3팩 · 비밀스러운 도시의 사람들
 - `vintage_shop_buyer` 빈티지숍 바이어 — 3팩 · 비밀스러운 도시의 사람들
 - `little_theater_actor` 작은 극장의 배우 — 3팩 · 비밀스러운 도시의 사람들
 - `rooftop_gardener` 옥상 정원사 — 3팩 · 비밀스러운 도시의 사람들
-- `dream_mender` 꿈 수선사 — 3팩 · 비밀스러운 도시의 사람들
-- `night_market_trader` 야시장 상인 — 3팩 · 비밀스러운 도시의 사람들
-- `treasure_appraiser` 보물 감정사 — 3팩 · 비밀스러운 도시의 사람들
-- `neon_dj` 네온 DJ — 3팩 · 비밀스러운 도시의 사람들
 - `first_snow_angel` 첫눈의 천사 — 4팩 · 사계절의 축제
 - `christmas_idol` 크리스마스 아이돌 — 4팩 · 사계절의 축제
 - `new_year_pouch` 새해 복주머니 — 4팩 · 사계절의 축제
@@ -67,18 +59,6 @@
 - `herb_witch` 허브 마녀 — 5팩 · 생활 길드의 모험가들
 - `crystal_miner` 수정 광부 — 5팩 · 생활 길드의 모험가들
 - `cave_cartographer` 동굴 지도제작자 — 5팩 · 생활 길드의 모험가들
-- `monster_chef` 몬스터 요리사 — 5팩 · 생활 길드의 모험가들
-- `dessert_alchemist` 디저트 연금술사 — 5팩 · 생활 길드의 모험가들
-- `mushroom_forager` 버섯 채집가 — 5팩 · 생활 길드의 모험가들
-- `moonlight_angler` 달빛 낚시꾼 — 5팩 · 생활 길드의 모험가들
-- `city_guardian` 도시의 수호자 — 6팩 · 또 다른 세계의 나
-- `golden_slime_queen` 황금 슬라임 퀸 — 6팩 · 또 다른 세계의 나
-- `all_seasons_spirit` 모든 계절의 정령 — 6팩 · 또 다른 세계의 나
-- `little_life_lead` Little Life의 주인공 — 6팩 · 또 다른 세계의 나
-- `hoodie_and_jeans` 후드티와 청바지 — 7팩 · 오늘 진짜 입고 나간 옷
-- `white_tee_slacks` 흰 티에 검정 슬랙스 — 7팩 · 오늘 진짜 입고 나간 옷
-- `knit_cardigan_cotton_pants` 니트 가디건과 면바지 — 7팩 · 오늘 진짜 입고 나간 옷
-- `shirt_dress_day` 셔츠 원피스 하나 — 7팩 · 오늘 진짜 입고 나간 옷
 - `sweatshirt_jogger` 맨투맨과 조거팬츠 — 7팩 · 오늘 진짜 입고 나간 옷
 - `denim_jacket_long_skirt` 데님 재킷과 롱스커트 — 7팩 · 오늘 진짜 입고 나간 옷
 - `thin_knit_wide_pants` 얇은 니트와 와이드팬츠 — 7팩 · 오늘 진짜 입고 나간 옷
