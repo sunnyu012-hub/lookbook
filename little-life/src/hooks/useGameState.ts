@@ -68,6 +68,7 @@ import {
 import { pendingDelivery } from '@/lib/collection/delivery'
 import { applyDiscovery } from '@/lib/discovery/derive'
 import { applySkinUnlocks, buySkin as buySkinIn, grantAllSkins, wearSkin } from '@/lib/character/derive'
+import { markSkinsSeen } from '@/lib/character/skins'
 import {
   harvestPlot as harvestPlotIn,
   isGardenUnlocked,
@@ -243,6 +244,8 @@ interface GameState {
   // ── 캐릭터 모습 ──
   /** 가진 모습 중 하나를 입는다. 누르는 즉시 바뀌고 즉시 저장된다. */
   selectSkin: (id: string) => void
+  /** 의상실에서 한 벌을 들춰봤다 — 도감이 기억한다 */
+  seeSkin: (id: string) => void
   /** 코인으로 하나 데려온다 */
   buySkin: (id: string) => BuySkinResult
   /** 개발용 — 모습을 전부 지급한다 (?dev=skins 갤러리에서만 부른다) */
@@ -2139,6 +2142,25 @@ export function useGameState(): GameState {
     [commit],
   )
 
+  /**
+   * 의상실에서 한 벌을 들춰봤다고 적어둔다.
+   *
+   * 도감이 실루엣 대신 진짜 그림을 보여줄지 정하는 값이다. 사는 것과는
+   * 상관없다 — 들춰본 것과 가진 것은 각각 다른 줄을 담당한다.
+   *
+   * 이미 적힌 것이면 markSkinsSeen 이 같은 상태를 돌려주고, 여기서
+   * 걸러서 commit 을 안 한다. 시트를 열 때마다 저장이 도는 걸 막는다.
+   */
+  const seeSkin = useCallback(
+    (id: string) => {
+      const prev = stateRef.current
+      const next = markSkinsSeen(prev, [id])
+      if (next === prev) return
+      commit(next)
+    },
+    [commit],
+  )
+
   const buySkin = useCallback(
     (id: string): BuySkinResult => {
       const prev = stateRef.current
@@ -2567,6 +2589,7 @@ export function useGameState(): GameState {
       setRoomEffect,
       markGuideSeen,
       selectSkin,
+      seeSkin,
       buySkin,
       devGrantAllSkins,
       enterGarden,
@@ -2643,6 +2666,7 @@ export function useGameState(): GameState {
       setRoomEffect,
       markGuideSeen,
       selectSkin,
+      seeSkin,
       buySkin,
       devGrantAllSkins,
       enterGarden,

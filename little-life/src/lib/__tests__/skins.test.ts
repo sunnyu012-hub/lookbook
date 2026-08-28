@@ -923,6 +923,17 @@ describe('가게에서 본 것을 기억한다', () => {
     expect(sanitizeSeenSkins([priced.id, 'no_such_skin', 7])).toEqual([priced.id])
   })
 
+  it('감춘 옷은 들춰봐도 적지 않는다', () => {
+    // 화면에서 hidden 인 것은 onSee 를 안 부른다. 들춰봐도 ??? 였으니
+    // "봤다" 고 적으면 다음부터 이름과 그림이 공짜로 열린다.
+    const secret = SKINS.filter((sk) => sk.hiddenUntilOwned === true)
+    expect(secret.length).toBeGreaterThan(0)
+    // markSkinsSeen 자체는 막지 않는다 — 가게가 실제로 보여줬다면 그건 본 것이다.
+    // 막는 자리는 화면이다 (MyLookSheet.tap).
+    const s = markSkinsSeen(createDefaultState(), [secret[0].id])
+    expect(s.user.seenSkinIds).toContain(secret[0].id)
+  })
+
   it('저장을 한 바퀴 돌려도 살아남는다', () => {
     const s = markSkinsSeen(createDefaultState(), [priced.id])
     const back = sanitizeState(JSON.parse(JSON.stringify(s)))

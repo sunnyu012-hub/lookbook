@@ -20,6 +20,8 @@ interface MyLookSheetProps {
   state: AppState
   onClose: () => void
   onSelect: (id: string) => void
+  /** 한 벌을 들춰봤다고 적어둔다 — 도감이 기억한다 */
+  onSee: (id: string) => void
   onBuy: (id: string) => BuySkinResult
 }
 
@@ -55,7 +57,7 @@ type WorldTab = 'ALL' | SkinWorld
  * 거르는 걸 바꿀 때마다 칸 수가 달라지는데, 높이를 내용에 맡기면
  * 누를 때마다 시트가 손가락 밑에서 오르내린다.
  */
-export function MyLookSheet({ open, state, onClose, onSelect, onBuy }: MyLookSheetProps) {
+export function MyLookSheet({ open, state, onClose, onSelect, onSee, onBuy }: MyLookSheetProps) {
   const [shelf, setShelf] = useState<Shelf>('MINE')
   const [world, setWorld] = useState<WorldTab>('ALL')
   const [tag, setTag] = useState<WardrobeTag | null>(null)
@@ -119,10 +121,17 @@ export function MyLookSheet({ open, state, onClose, onSelect, onBuy }: MyLookShe
     setJustBought([])
   }
 
-  /** 무엇을 누르든 상세 시트를 열 뿐이다. 여기서 코인은 안 움직인다. */
+  /**
+   * 무엇을 누르든 상세 시트를 열 뿐이다. 여기서 코인은 안 움직인다.
+   *
+   * 여는 순간 "들춰봤다" 로 적힌다. 그래서 다음에 목록으로 돌아오면
+   * 그 칸은 실루엣이 아니라 진짜 그림이다 — 도감이 채워지는 자리다.
+   * 아직 이름도 못 본 옷(hidden)은 적지 않는다. 들춰봐도 ??? 였으니까.
+   */
   const tap = (view: SkinView) => {
     setNote(null)
     setOpenId(view.def.id)
+    if (!view.hidden) onSee(view.def.id)
   }
 
   const closeDetail = () => {

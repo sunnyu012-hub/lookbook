@@ -125,6 +125,7 @@ export default function App() {
     setRoomEffect,
     markGuideSeen,
     selectSkin,
+    seeSkin,
     buySkin,
     devGrantAllSkins,
     newSkins,
@@ -1031,6 +1032,7 @@ export default function App() {
         state={state}
         onClose={() => setLookOpen(false)}
         onSelect={selectSkin}
+        onSee={seeSkin}
         onBuy={buySkin}
       />
 
