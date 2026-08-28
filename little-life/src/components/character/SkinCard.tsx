@@ -19,13 +19,15 @@ interface SkinCardProps {
  * ── 네 가지 상태 ───────────────────────────────────────
  *
  * 가진 것    그림 그대로.
- * 본 것      그림 그대로. 안 샀어도 한 번 본 건 기억한다 —
- *            봤는데 다음에 다시 실루엣이 되면 그건 도감이 아니다.
  * 오늘 걸린 것 값이 붙는다. 이것만 살 수 있다 (가구 가게와 같다).
  * 가끔 걸리는 것 🏷️. 값은 안 적는다 — 지금 사면 되는 줄 안다.
  * 작은 옷장  자물쇠. 값을 안 보여준다 — 650 은 한 번 여는 값이지
  *            이 옷 한 벌의 값이 아니다. 여기서 값을 적으면 살 수 있는 줄 안다.
  * 감춘 것    실루엣과 ???. 이름도 그림도 안 보여준다.
+ *
+ * **본 것은 따로 표시하지 않는다.** 색이 표시다 — 한 번 걸렸던 옷은
+ * 그림 그대로고, 아직 안 걸린 옷은 회색이다. 배지를 따로 달아뒀었는데
+ * 진열대에 걸리는 옷은 늘 🪙 아니면 🏷️ 를 달고 있어서 나올 자리가 없었다.
  *
  * 어느 칸을 눌러도 여기서 무슨 일이 일어나지는 않는다. 상세 시트가 열린다.
  *
@@ -114,11 +116,6 @@ export function SkinCard({ view, onSelect, onPack }: SkinCardProps) {
             // 값부터 보여주면 지금 사면 되는 줄 안다.
             <span className="absolute right-1.5 top-1.5 text-[12px] leading-none text-inkfaint">
               🏷️
-            </span>
-          ) : seen ? (
-            // 본 적은 있지만 아직 만날 수 없는 것. 값 대신 봤다는 표시만.
-            <span className="absolute right-1 top-1 rounded-pill bg-sunken px-1.5 py-0.5 font-game text-[9px] text-inkdim">
-              봤음
             </span>
           ) : (
             <span className="absolute right-1.5 top-1.5 text-[12px] leading-none text-inkfaint">
