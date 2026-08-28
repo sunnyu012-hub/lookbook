@@ -31,8 +31,14 @@ import { isQuarryUnlocked } from '@/lib/quarry/derive'
  * 픽셀로 적으면 작은 폰에서 라벨이 건물 밖으로 나간다.
  */
 
-/** 배경 그림. 이 경로에 파일이 없으면 지도 대신 예전 카드 목록이 뜬다. */
-export const CITY_MAP_BASE_SRC = '/assets/city/city_map_base.png'
+/**
+ * 배경 그림. 이 경로에 파일이 없으면 지도 대신 예전 카드 목록이 뜬다.
+ *
+ * 요청서에는 png 로 적었는데 webp 로 넣었다 — 같은 그림이 png 3MB,
+ * webp 392KB 다. 이건 첫 실행에 미리 받는 파일이라 그 차이가
+ * 그대로 폰에서 기다리는 시간이 된다.
+ */
+export const CITY_MAP_BASE_SRC = '/assets/city/city_map_base.webp'
 
 /** 시안을 그린 기준 캔버스. 좌표를 다시 잴 때 쓰는 값이다. */
 export const MAP_CANVAS = { width: 1024, height: 1536 } as const
@@ -74,6 +80,10 @@ export interface CityMapRegionDef {
   statusAnchorPct: PctPoint
   /** 사람 얼굴을 놓을 자리. 사람이 안 오는 곳은 null */
   npcAnchorPct: PctPoint | null
+  //
+  // 상태와 얼굴은 이름표 밑에 차례로 쌓인다 (`CityMap` 쪽 주석 참고).
+  // 그래서 이 둘에서 실제로 읽는 건 **가로(x)** 뿐이고, y 는 이름표와
+  // 같이 적어둔다 — 다르게 적어두면 안 쓰는 값이 진짜처럼 보인다.
   /**
    * 지도에서 바로 누르라고 권하는 자리인지.
    *
@@ -86,77 +96,92 @@ export interface CityMapRegionDef {
 /**
  * 동네 자리표.
  *
- * 시안(1024 × 1536)에서 잰 초안이라 최종 그림이 오면 미세 조정이 필요하다.
- * 구조는 그대로 두고 숫자만 고친다.
+ * `public/assets/city/city_map_base.webp` 를 보고 잰 값이다. 그림이 바뀌면
+ * 여기 숫자도 같이 바뀐다 — `?dev=map` 으로 누르는 자리를 켜고 맞춘다.
  *
- * 순서가 곧 겹칠 때의 우선순위다 — 뒤에 오는 것이 위에 깔린다.
- * 채석장이 맨 뒤인 이유: 공원 상자 **안에** 있는 작은 자리라
- * 앞에 두면 공원이 통째로 덮어버린다.
+ * ── 상자는 그림보다 조금 작게 ───────────────────────────
+ *
+ * 동네 사이 길과 다리는 어디에도 안 넣었다. 상자를 그림 끝까지 넓히면
+ * 길 한가운데를 눌러도 옆 동네가 열리는데, 그건 잘못 눌린 것처럼 느껴진다.
+ * 빈 데를 눌러 아무 일도 안 일어나는 쪽이 낫다.
+ *
+ * ── 순서가 곧 우선순위 ──────────────────────────────────
+ *
+ * 겹치면 뒤에 오는 것이 위에 깔린다. 채석장이 맨 뒤인 이유는 공원 바로
+ * 위에 붙은 작은 자리라서다 — 앞에 두면 공원이 통째로 덮어버린다.
  */
 export const CITY_MAP_REGIONS: CityMapRegionDef[] = [
   {
+    // 정자 · 연못 · 벚나무가 있는 왼쪽 위 전부
     id: 'GREEN_PARK',
     targetAreaId: 'GREEN_PARK',
-    hitBoxPct: { x: 0.02, y: 0.026, w: 0.391, h: 0.339 },
-    labelAnchorPct: { x: 0.221, y: 0.086 },
-    statusAnchorPct: { x: 0.221, y: 0.114 },
-    npcAnchorPct: { x: 0.223, y: 0.135 },
+    hitBoxPct: { x: 0.0, y: 0.12, w: 0.46, h: 0.25 },
+    labelAnchorPct: { x: 0.22, y: 0.145 },
+    statusAnchorPct: { x: 0.22, y: 0.145 },
+    npcAnchorPct: { x: 0.22, y: 0.145 },
     directTap: true,
   },
   {
+    // COFFEE · CAFE 간판이 걸린 오른쪽 위 블록
     id: 'CAFE_STREET',
     targetAreaId: 'CAFE_STREET',
-    hitBoxPct: { x: 0.547, y: 0.059, w: 0.342, h: 0.228 },
-    labelAnchorPct: { x: 0.711, y: 0.104 },
-    statusAnchorPct: { x: 0.711, y: 0.134 },
-    npcAnchorPct: { x: 0.711, y: 0.163 },
+    hitBoxPct: { x: 0.47, y: 0.06, w: 0.53, h: 0.28 },
+    labelAnchorPct: { x: 0.74, y: 0.075 },
+    statusAnchorPct: { x: 0.74, y: 0.075 },
+    npcAnchorPct: { x: 0.72, y: 0.075 },
     directTap: true,
   },
   {
+    // STUDIO 두 채와 벽화가 있는 가운데 블록
     id: 'CREATIVE_DISTRICT',
     targetAreaId: 'CREATIVE_DISTRICT',
-    hitBoxPct: { x: 0.342, y: 0.28, w: 0.332, h: 0.215 },
-    labelAnchorPct: { x: 0.5, y: 0.352 },
-    statusAnchorPct: { x: 0.5, y: 0.381 },
-    npcAnchorPct: { x: 0.447, y: 0.409 },
+    hitBoxPct: { x: 0.33, y: 0.38, w: 0.45, h: 0.17 },
+    labelAnchorPct: { x: 0.55, y: 0.395 },
+    statusAnchorPct: { x: 0.55, y: 0.395 },
+    npcAnchorPct: { x: 0.52, y: 0.395 },
     directTap: true,
   },
   {
+    // 초록 지붕 이층집. 마당 울타리까지가 우리 집이다.
     id: 'HOME_BASE',
     targetAreaId: 'HOME_BASE',
-    hitBoxPct: { x: 0.347, y: 0.449, w: 0.313, h: 0.215 },
-    labelAnchorPct: { x: 0.5, y: 0.537 },
-    statusAnchorPct: { x: 0.5, y: 0.564 },
-    npcAnchorPct: { x: 0.5, y: 0.587 },
+    hitBoxPct: { x: 0.36, y: 0.56, w: 0.33, h: 0.14 },
+    labelAnchorPct: { x: 0.52, y: 0.575 },
+    statusAnchorPct: { x: 0.52, y: 0.575 },
+    npcAnchorPct: { x: 0.52, y: 0.575 },
     directTap: true,
   },
   {
+    // DINER · BAR 네온과 야식 트럭이 있는 왼쪽 아래
     id: 'NIGHT_TOWN',
     targetAreaId: 'NIGHT_TOWN',
-    hitBoxPct: { x: 0.02, y: 0.596, w: 0.342, h: 0.228 },
-    labelAnchorPct: { x: 0.156, y: 0.673 },
-    statusAnchorPct: { x: 0.156, y: 0.703 },
-    npcAnchorPct: { x: 0.156, y: 0.729 },
+    hitBoxPct: { x: 0.0, y: 0.6, w: 0.35, h: 0.27 },
+    labelAnchorPct: { x: 0.17, y: 0.625 },
+    statusAnchorPct: { x: 0.17, y: 0.625 },
+    npcAnchorPct: { x: 0.2, y: 0.625 },
     directTap: true,
   },
   {
+    // GYM · 트랙 · 클라이밍 벽이 있는 오른쪽 아래
     id: 'TRAINING_ZONE',
     targetAreaId: 'TRAINING_ZONE',
-    hitBoxPct: { x: 0.605, y: 0.586, w: 0.352, h: 0.221 },
-    labelAnchorPct: { x: 0.771, y: 0.674 },
-    statusAnchorPct: { x: 0.771, y: 0.702 },
-    npcAnchorPct: { x: 0.771, y: 0.726 },
+    hitBoxPct: { x: 0.57, y: 0.71, w: 0.43, h: 0.23 },
+    labelAnchorPct: { x: 0.79, y: 0.725 },
+    statusAnchorPct: { x: 0.79, y: 0.725 },
+    npcAnchorPct: { x: 0.75, y: 0.725 },
     directTap: true,
   },
   {
+    // 왼쪽 맨 위 바위산의 동굴 입구.
+    //
     // 눌러도 채석장이 바로 열리지 않는다. 공원 시트가 열리고 거기
     // "공원 바깥쪽 길" 로 들어간다 — 가는 길을 건너뛰면 이 자리가
-    // 왜 공원 옆에 붙어 있는지가 사라진다.
+    // 왜 공원 위에 붙어 있는지가 사라진다.
     id: 'OLD_QUARRY',
     targetAreaId: 'GREEN_PARK',
-    hitBoxPct: { x: 0.008, y: 0.005, w: 0.151, h: 0.085 },
-    labelAnchorPct: { x: 0.072, y: 0.038 },
-    statusAnchorPct: { x: 0.072, y: 0.06 },
+    hitBoxPct: { x: 0.05, y: 0.02, w: 0.28, h: 0.1 },
+    labelAnchorPct: { x: 0.19, y: 0.03 },
+    statusAnchorPct: { x: 0.19, y: 0.03 },
     npcAnchorPct: null,
     directTap: false,
   },
