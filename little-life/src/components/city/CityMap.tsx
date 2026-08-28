@@ -1,5 +1,5 @@
 import type { CityMapRegionView, PctPoint } from '@/lib/city/map'
-import { CITY_MAP_BASE_SRC, clampAnchor } from '@/lib/city/map'
+import { CITY_MAP_BASE_SRC, MAP_CANVAS, clampAnchor } from '@/lib/city/map'
 import { cn } from '@/components/ui/cn'
 
 interface CityMapProps {
@@ -34,7 +34,12 @@ interface CityMapProps {
  */
 export function CityMap({ views, debug = false, onSelect, onBaseMissing }: CityMapProps) {
   return (
-    <div className="relative mx-auto aspect-[2/3] w-full overflow-hidden rounded-card bg-canvas ring-1 ring-line">
+    // 비율은 그림에서 읽는다. 여기에 숫자를 박아두면 그림을 바꿨을 때
+    // 잘리고, 잘린 만큼 누르는 자리가 건물과 어긋난다.
+    <div
+      className="relative mx-auto w-full overflow-hidden rounded-card bg-canvas ring-1 ring-line"
+      style={{ aspectRatio: `${MAP_CANVAS.width} / ${MAP_CANVAS.height}` }}
+    >
       <img
         src={CITY_MAP_BASE_SRC}
         alt=""
