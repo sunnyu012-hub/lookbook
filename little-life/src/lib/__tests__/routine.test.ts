@@ -66,6 +66,21 @@ describe('하루 동선 — 정해진 자리', () => {
 })
 
 describe('하루 동선 — 놓치는 게 없다', () => {
+  it('동선표가 없는 사람은 없다', () => {
+    // 표를 안 적어두면 그 사람은 조용히 OFFSCREEN 이 된다.
+    // 화면에는 아무 오류도 안 뜨고, 그냥 도시에서 사라진다.
+    for (const npc of NPCS) expect(findRoutine(npc.id), npc.id).not.toBeNull()
+  })
+
+  it('낮에도 도시에 사람이 여럿 있다', () => {
+    // 스물넷이 됐는데 다들 같은 시간에 같은 데 몰리면 늘어난 뜻이 없다.
+    for (const hour of [9, 13, 19]) {
+      const spread = AREAS.map((a) => npcsHere(a.id, at(MON, hour)).length).filter((n) => n > 0)
+      expect(spread.length, `${hour}시`).toBeGreaterThanOrEqual(4)
+    }
+  })
+
+
   it('세라를 뺀 다섯은 어느 시간대에도 도시 어딘가에 있다', () => {
     for (const npc of NPCS) {
       if (npc.nightOnly) continue
@@ -237,7 +252,9 @@ describe('지도와 동네 화면', () => {
     for (const area of AREAS) {
       const names = areaHighlights(area, 3, now)
       const here = npcsHere(area.id, now).map((n) => n.name)
-      for (const name of here) expect(names).toContain(name)
+
+      // 사람이 먼저다. 세 칸이 다 차면 가게 이름은 밀린다.
+      expect(names.slice(0, Math.min(3, here.length))).toEqual(here.slice(0, 3))
       // 자리를 비운 사람 이름은 카드에 안 뜬다
       for (const npc of npcsAway(area.id, now)) expect(names).not.toContain(npc.name)
     }

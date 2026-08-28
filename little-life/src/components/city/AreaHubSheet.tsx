@@ -74,6 +74,18 @@ export function AreaHubSheet({
     () => (area ? eventsForArea(area.id, events) : []),
     [area, events],
   )
+  /**
+   * 사람과 장소를 갈라 놓는다.
+   *
+   * 예전에는 둘을 한 격자에 같이 깔았다. 여섯 명일 때는 괜찮았는데
+   * 스물넷이 되니 아침 카페 거리에 사람 칸이 열두 개 쌓이고, 정작
+   * 가게는 그 아래로 밀려서 스크롤을 한참 내려야 나왔다.
+   *
+   * 사람은 이름만 있으면 알아보니까 칩 한 줄로 접고, 칸은 갈 수 있는
+   * 곳에만 준다. 사람이 늘어도 시트 길이는 거의 그대로다.
+   */
+  const people = useMemo(() => actions.filter((a) => a.kind === 'NPC'), [actions])
+  const places = useMemo(() => actions.filter((a) => a.kind !== 'NPC'), [actions])
 
   if (!area) return null
 
@@ -146,17 +158,26 @@ export function AreaHubSheet({
         )}
       </div>
 
-      {actions.length > 0 && (
+      {people.length > 0 && (
+        <div className="mt-5">
+          <p className="mb-2.5 text-[13px] font-medium text-inkdim">지금 여기</p>
+          <ul className="flex flex-wrap gap-2">
+            {people.map((action) => (
+              <li key={action.key}>
+                <PersonChip action={action} onSelect={() => run(action)} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {places.length > 0 && (
         <div className="mt-5">
           <p className="mb-2.5 text-[13px] font-medium text-inkdim">이곳에서</p>
           <ul className="grid grid-cols-2 gap-2">
-            {actions.map((action) => (
+            {places.map((action) => (
               <li key={action.key}>
-                <ActionTile
-                  action={action}
-                  friendship={action.npc ? (npcs[action.npc.id]?.friendship ?? 0) : null}
-                  onSelect={() => run(action)}
-                />
+                <ActionTile action={action} friendship={null} onSelect={() => run(action)} />
               </li>
             ))}
           </ul>
@@ -178,6 +199,50 @@ export function AreaHubSheet({
         <p className="mt-2 text-right text-[12px] text-inkfaint">밤 9시가 지나면 열려.</p>
       )}
     </BottomSheet>
+  )
+}
+
+/**
+ * 사람 한 칩.
+ *
+ * 자리를 비운 사람도 지운다는 뜻이 아니라 흐리게만 둔다 — 원래 이 동네
+ * 사람이 소리 없이 사라지면 "나갔구나" 가 아니라 "없어졌나?" 로 읽힌다.
+ * 어디 있는지는 길게 안 적는다. 칩에 문장을 넣으면 그건 칩이 아니다.
+ */
+function PersonChip({ action, onSelect }: { action: HubAction; onSelect: () => void }) {
+  const inside = (
+    <>
+      <span className="text-[17px] leading-none">{action.icon}</span>
+      <span className="text-[13.5px] font-medium">{action.title}</span>
+    </>
+  )
+
+  const shell = 'inline-flex items-center gap-1.5 rounded-pill border px-3 py-2'
+
+  if (action.disabled) {
+    return (
+      <span
+        className={cn(shell, 'border-line bg-canvas text-inkfaint')}
+        title={action.subtitle}
+      >
+        {inside}
+      </span>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      title={action.subtitle}
+      className={cn(
+        shell,
+        'border-line bg-surface text-ink shadow-soft',
+        'transition-transform duration-150 ease-out active:scale-[0.97]',
+      )}
+    >
+      {inside}
+    </button>
   )
 }
 

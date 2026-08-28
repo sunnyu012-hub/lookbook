@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ActiveBuff, EquippedItems, NpcState } from '@/types'
-import { CATEGORIES, EQUIP_SLOTS } from '@/types'
+import { CATEGORIES, EQUIP_SLOTS, NPC_IDS } from '@/types'
 import { pickCount, pickSome, seededRandom } from '@/lib/city/seed'
 import { CITY_EVENTS, activeEvents, eventsForArea, eventsForDay } from '@/lib/city/events'
 import { SHOPS, findShop, isShopOpen, shopInArea, shopStock } from '@/lib/city/shops'
@@ -42,7 +42,7 @@ import {
   spentSkillPoints,
 } from '@/lib/city/skills'
 import { calculateQuestReward, emptyBonuses, pickBuff } from '@/lib/rpg/rewards'
-import { findItem } from '@/lib/rpg/content'
+import { AREAS, findItem } from '@/lib/rpg/content'
 
 const empty = (): EquippedItems =>
   EQUIP_SLOTS.reduce((acc, slot) => {
@@ -228,9 +228,12 @@ describe('상점', () => {
 
 // ── NPC ─────────────────────────────────────────────────
 describe('NPC', () => {
-  it('여섯 명이 있고 id 가 겹치지 않는다', () => {
-    expect(NPCS).toHaveLength(6)
-    expect(new Set(NPCS.map((n) => n.id)).size).toBe(6)
+  it('스물넷이 있고 id 가 겹치지 않는다', () => {
+    expect(NPCS).toHaveLength(24)
+    expect(new Set(NPCS.map((n) => n.id)).size).toBe(24)
+    // 자리표(NPC_IDS)와 실제 사람이 어긋나면 저장이 사람을 못 찾는다
+    expect(new Set(NPC_IDS).size).toBe(NPCS.length)
+    for (const npc of NPCS) expect(NPC_IDS, npc.id).toContain(npc.id)
   })
 
   it('모두 일반 대화를 다섯 줄 이상 가지고 있다', () => {
@@ -277,8 +280,20 @@ describe('NPC', () => {
   })
 
   it('지역으로 NPC 를 찾을 수 있다', () => {
-    expect(npcsInArea('CREATIVE_DISTRICT').map((n) => n.id)).toEqual(['LULU', 'JUNE'])
+    expect(npcsInArea('CREATIVE_DISTRICT').map((n) => n.id)).toEqual([
+      'LULU',
+      'JUNE',
+      'JAEHUI',
+      'RAON',
+      'JIHO',
+    ])
+    // 우리 집은 내 자리다. 여기 사는 사람은 없다.
     expect(npcsInArea('HOME_BASE')).toEqual([])
+    // 동네마다 최소 둘은 산다 — 한 명짜리 동네는 들어가도 볼 게 없다
+    for (const area of AREAS) {
+      if (area.id === 'HOME_BASE') continue
+      expect(npcsInArea(area.id).length, area.id).toBeGreaterThanOrEqual(2)
+    }
   })
 
   it('없는 NPC 는 null 이다', () => {

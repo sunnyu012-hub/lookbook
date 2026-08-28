@@ -14,7 +14,39 @@ import type { AreaId, Bonuses, Rarity } from './rpg'
 // MINA=윤하루 · HARU=윤태오 · LULU=오미래 · JUNE=서이안 · RIO=한도윤 · NOA=차세라.
 // 저장이 친밀도 · 읽은 이야기 · 비밀 장소 · 던전 입구를 전부 이 id 로 붙잡고
 // 있어서 이름을 따라 바꾸면 하던 사람들이 그걸 잃는다. 이름은 `city/npcs.ts` 에 있다.
-export const NPC_IDS = ['MINA', 'HARU', 'LULU', 'JUNE', 'RIO', 'NOA'] as const
+//
+// 뒤의 열여덟은 처음부터 이름이 확정돼 있어서 id 에 이름을 그대로 썼다.
+export const NPC_IDS = [
+  'MINA',
+  'HARU',
+  'LULU',
+  'JUNE',
+  'RIO',
+  'NOA',
+  // 카페 거리
+  'EUNCHAE',
+  'MINJI',
+  'JUN',
+  'HYUNWOO',
+  'HARIN',
+  // 창작 골목
+  'JAEHUI',
+  'RAON',
+  'JIHO',
+  // 초록 공원
+  'WOOSIK',
+  'HAEIN',
+  'SUA',
+  'SUNJAE',
+  'YEONJU',
+  // 운동 구역
+  'YUNA',
+  // 밤의 거리
+  'SIWOO',
+  'SORA',
+  'JEONGWON',
+  'YUHYEON',
+] as const
 export type NpcId = (typeof NPC_IDS)[number]
 
 /** 친밀도 단계. 5단계에서 멈춘다. */
