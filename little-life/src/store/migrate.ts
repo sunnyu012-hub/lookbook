@@ -722,6 +722,19 @@ export function sanitizeOwnedSkins(raw: unknown): SkinId[] {
 }
 
 /**
+ * 가게에서 본 적 있는 모습.
+ *
+ * 예전 저장에는 없다. 없으면 빈 배열로 시작한다 — 가진 것을 여기 채워주지
+ * 않는다. "봤다" 와 "가졌다" 는 도감에서 각각 다른 줄을 담당하고,
+ * 화면은 둘 중 하나만 참이어도 그림을 보여준다.
+ */
+export function sanitizeSeenSkins(raw: unknown): SkinId[] {
+  const known = new Set<string>(SKIN_IDS)
+  if (!Array.isArray(raw)) return []
+  return [...new Set(raw.filter((v): v is SkinId => typeof v === 'string' && known.has(v)))]
+}
+
+/**
  * 지금 입고 있는 모습.
  *
  * 안 가진 것이나 모르는 것이 저장돼 있으면 기본으로 돌린다.

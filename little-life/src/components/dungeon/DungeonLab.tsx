@@ -44,7 +44,7 @@ export function DungeonLab({ state, onRun }: DungeonLabProps) {
         흔적 {traceFound(state) ? '찾음' : '아직'}
       </p>
       <p className="mt-0.5 text-[12px] text-inkdim">
-        탐험 에너지 {state.user.adventureEnergy}/{state.user.maxAdventureEnergy} · 진입{' '}
+        등불 {state.user.adventureEnergy}/{state.user.maxAdventureEnergy} · 진입{' '}
         {ENERGY_PER_ROOM} · 조사 {ENERGY_PER_SEARCH}
       </p>
 

@@ -5,7 +5,7 @@ import type { AppState } from '@/types'
 import { SKIN_IDS } from '@/types'
 import { createDefaultState } from '@/store/defaultState'
 import { sanitizeState } from '@/store/localStorage'
-import { sanitizeOwnedSkins, sanitizeSelectedSkin } from '@/store/migrate'
+import { sanitizeOwnedSkins, sanitizeSeenSkins, sanitizeSelectedSkin } from '@/store/migrate'
 import {
   DEFAULT_SKIN_ID,
   SKINS,
@@ -23,8 +23,10 @@ import {
   skinWorld,
   skinsInPack,
   skinsInPool,
+  markSkinsSeen,
 } from '@/lib/character/skins'
 import { SKIN_PACKS } from '@/lib/character/packs'
+import { RACK_COUNT, isOnRack, rackPool, todayRack, todayRackIds } from '@/lib/character/rack'
 import { SKIN_GACHA_POOL_IDS } from '@/types'
 import { discoveredInGroup, groupSize, itemIdsInGroup } from '@/lib/character/groups'
 import { SKIN_ITEM_GROUPS } from '@/types'
@@ -41,6 +43,24 @@ import { emptyProfile } from '@/lib/library/usage'
 function withUser(patch: Partial<AppState['user']>): AppState {
   const base = createDefaultState()
   return { ...base, user: { ...base.user, ...patch } }
+}
+
+
+/**
+ * 이 옷이 진열대에 걸린 날 하나.
+ *
+ * 이제 사는 것은 오늘 걸린 것만 된다 (가구 가게와 같은 규칙).
+ * 그래서 구매 테스트는 "그 옷이 걸린 날" 을 찾아서 그 날짜로 부른다.
+ */
+function dayOnRack(skinId: string): string {
+  const start = new Date('2026-01-01')
+  for (let i = 0; i < 400; i += 1) {
+    const d = new Date(start)
+    d.setDate(start.getDate() + i)
+    const key = d.toISOString().slice(0, 10)
+    if (isOnRack(skinId, key)) return key
+  }
+  throw new Error(`${skinId} 는 400일 안에 한 번도 안 걸린다`)
 }
 
 describe('열두 모습', () => {
@@ -245,12 +265,23 @@ describe('조건은 이미 있는 기록에서 센다', () => {
     expect(skinProgress(found, moon.unlock)).toBe(1)
   })
 
-  it('조건 없이 값만 붙은 건 처음부터 살 수 있다', () => {
+  it('조건 없이 값만 붙은 건 걸린 날 바로 살 수 있다', () => {
     const weekend = findSkin('weekend_casual')!
     expect(skinPrice(weekend)).toBe(400)
-    const view = skinViews(createDefaultState()).find((v) => v.def.id === 'weekend_casual')!
+    const day = dayOnRack('weekend_casual')
+    const view = skinViews(createDefaultState(), todayRackIds(day)).find(
+      (v) => v.def.id === 'weekend_casual',
+    )!
     expect(view.forSale).toBe(true)
+    expect(view.onRack).toBe(true)
     expect(view.owned).toBe(false)
+  })
+
+  it('안 걸린 날에는 값이 붙어 있어도 못 산다', () => {
+    // 아무것도 안 걸린 날로 본다 (rackIds 를 안 넘기면 빈 집합)
+    const view = skinViews(createDefaultState()).find((v) => v.def.id === 'weekend_casual')!
+    expect(view.forSale).toBe(false)
+    expect(view.onRack).toBe(false)
   })
 
   it('조건이 남은 유료 모습은 아직 못 산다', () => {
@@ -336,7 +367,7 @@ describe('새로 얻기', () => {
 describe('코인으로 데려오기', () => {
   it('코인이 모자라면 안 된다', () => {
     const state = withUser({ coins: 100 })
-    const { state: next, result } = buySkin(state, 'weekend_casual')
+    const { state: next, result } = buySkin(state, 'weekend_casual', dayOnRack('weekend_casual'))
     expect(result.ok).toBe(false)
     if (!result.ok) expect(result.reason).toBe('NOT_ENOUGH_COINS')
     expect(next).toBe(state)
@@ -344,7 +375,7 @@ describe('코인으로 데려오기', () => {
 
   it('되면 코인이 줄고 목록에 들어온다', () => {
     const state = withUser({ coins: 1000 })
-    const { state: next, result } = buySkin(state, 'weekend_casual')
+    const { state: next, result } = buySkin(state, 'weekend_casual', dayOnRack('weekend_casual'))
     expect(result.ok).toBe(true)
     if (!result.ok) return
     expect(result.price).toBe(400)
@@ -361,9 +392,19 @@ describe('코인으로 데려오기', () => {
     if (!result.ok) expect(result.reason).toBe('NOT_FOR_SALE')
   })
 
+  it('오늘 안 걸린 옷은 코인이 넘쳐도 안 판다', () => {
+    // 화면만 믿으면 자정 언저리에 열어둔 시트로 어제 것을 살 수 있다.
+    const state = withUser({ coins: 99999 })
+    const { state: next, result } = buySkin(state, 'weekend_casual', '1999-01-01')
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.reason).toBe('NOT_TODAY')
+    expect(next).toBe(state)
+    expect(next.user.coins).toBe(99999)
+  })
+
   it('이미 가진 건 또 안 판다', () => {
     const state = withUser({ coins: 99999, ownedSkinIds: ['basic_day', 'weekend_casual'] })
-    const { state: next, result } = buySkin(state, 'weekend_casual')
+    const { state: next, result } = buySkin(state, 'weekend_casual', dayOnRack('weekend_casual'))
     expect(result.ok).toBe(false)
     expect(next.user.coins).toBe(99999)
   })
@@ -603,7 +644,7 @@ describe('F.5 · 의상실에서 사는 마흔여덟', () => {
   it('조건이 없어서 코인만 있으면 바로 산다', () => {
     for (const skin of shop().slice(0, 8)) {
       const rich = withUser({ coins: 1000 })
-      const { state, result } = buySkin(rich, skin.id)
+      const { state, result } = buySkin(rich, skin.id, dayOnRack(skin.id))
       expect(result.ok).toBe(true)
       expect(state.user.coins).toBe(1000 - NEW_SHOP_SKIN_PRICE)
       expect(state.user.ownedSkinIds).toContain(skin.id)
@@ -613,16 +654,17 @@ describe('F.5 · 의상실에서 사는 마흔여덟', () => {
   it('코인이 모자라면 안 팔고 코인도 안 준다', () => {
     const skin = shop()[0]
     const poor = withUser({ coins: 479 })
-    const { state, result } = buySkin(poor, skin.id)
+    const { state, result } = buySkin(poor, skin.id, dayOnRack(skin.id))
     expect(result).toEqual({ ok: false, reason: 'NOT_ENOUGH_COINS' })
     expect(state.user.coins).toBe(479)
   })
 
   it('두 번 눌러도 한 번만 빠진다', () => {
     const skin = shop()[0]
+    const day = dayOnRack(skin.id)
     let state = withUser({ coins: 1000 })
-    state = buySkin(state, skin.id).state
-    const second = buySkin(state, skin.id)
+    state = buySkin(state, skin.id, day).state
+    const second = buySkin(state, skin.id, day)
     expect(second.result).toEqual({ ok: false, reason: 'ALREADY_OWNED' })
     expect(second.state.user.coins).toBe(520)
     expect(second.state.user.ownedSkinIds.filter((id) => id === skin.id)).toHaveLength(1)
@@ -630,14 +672,14 @@ describe('F.5 · 의상실에서 사는 마흔여덟', () => {
 
   it('사도 저절로 입혀지지 않는다', () => {
     const skin = shop()[0]
-    const bought = buySkin(withUser({ coins: 1000 }), skin.id).state
+    const bought = buySkin(withUser({ coins: 1000 }), skin.id, dayOnRack(skin.id)).state
     expect(bought.user.selectedSkinId).toBe(DEFAULT_SKIN_ID)
   })
 
   it('네 묶음에서 한 벌씩 다 사진다', () => {
     for (const packId of [3, 5, 7, 9] as const) {
       const skin = skinsInPack(packId)[0]
-      const { result } = buySkin(withUser({ coins: 1000 }), skin.id)
+      const { result } = buySkin(withUser({ coins: 1000 }), skin.id, dayOnRack(skin.id))
       expect(result.ok).toBe(true)
     }
   })
@@ -862,5 +904,186 @@ describe('F.5 · 확정명', () => {
       '카페 신상 탐방', '전시회 보러 가는 날', '야구장 응원룩', '한강 피크닉',
       '팝업스토어 오픈런', '콘서트 가는 날', '공항 가는 날', '면접 보러 가는 날',
     ])
+  })
+})
+
+describe('가게에서 본 것을 기억한다', () => {
+  /**
+   * 도감은 기억하는 곳이다.
+   *
+   * 진열은 저장하지 않는다 — 날짜 씨앗으로 다시 만든다. 그러면 어제 본 옷이
+   * 오늘 진열에서 빠졌을 때 도감에서 다시 실루엣이 된다. 봤다는 사실만은 남아야 한다.
+   */
+  const priced = SKINS.find((s) => skinPrice(s) !== null)
+  if (!priced) throw new Error('값이 붙은 모습이 하나도 없다')
+
+  it('처음에는 아무것도 안 봤다', () => {
+    const s = createDefaultState()
+    expect(s.user.seenSkinIds).toEqual([])
+    expect(skinViews(s).every((v) => !v.seen)).toBe(true)
+  })
+
+  it('본 것으로 적으면 도감이 그림을 보여준다', () => {
+    const s = markSkinsSeen(createDefaultState(), [priced.id])
+    const view = skinViews(s).find((v) => v.def.id === priced.id)
+    expect(view?.seen).toBe(true)
+    expect(view?.owned).toBe(false)
+  })
+
+  it('감춘 모습도 한 번 보면 안 감춘다', () => {
+    const secret = SKINS.find((sk) => sk.hiddenUntilOwned === true)
+    if (!secret) return
+    expect(skinViews(createDefaultState()).find((v) => v.def.id === secret.id)?.hidden).toBe(true)
+    const s = markSkinsSeen(createDefaultState(), [secret.id])
+    expect(skinViews(s).find((v) => v.def.id === secret.id)?.hidden).toBe(false)
+  })
+
+  it('두 번 적어도 한 번만 남고 순서는 그대로다', () => {
+    let s = markSkinsSeen(createDefaultState(), [priced.id])
+    const other = SKINS.find((sk) => sk.id !== priced.id)!
+    s = markSkinsSeen(s, [other.id, priced.id])
+    expect(s.user.seenSkinIds).toEqual([priced.id, other.id])
+  })
+
+  it('모르는 id 는 안 적는다', () => {
+    expect(markSkinsSeen(createDefaultState(), ['no_such_skin']).user.seenSkinIds).toEqual([])
+  })
+
+  it('사도 본 기록은 안 사라진다', () => {
+    let s = markSkinsSeen(createDefaultState(), [priced.id])
+    s = { ...s, user: { ...s.user, coins: 99999 } }
+    const bought = buySkin(s, priced.id, dayOnRack(priced.id))
+    expect(bought.result.ok).toBe(true)
+    expect(bought.state.user.seenSkinIds).toContain(priced.id)
+    expect(bought.state.user.ownedSkinIds).toContain(priced.id)
+  })
+
+  it('예전 저장에는 이 칸이 없다 — 빈 배열로 연다', () => {
+    expect(sanitizeSeenSkins(undefined)).toEqual([])
+    expect(sanitizeSeenSkins('아무거나')).toEqual([])
+    expect(sanitizeSeenSkins([priced.id, 'no_such_skin', 7])).toEqual([priced.id])
+  })
+
+  it('감춘 옷은 들춰봐도 적지 않는다', () => {
+    // 화면에서 hidden 인 것은 onSee 를 안 부른다. 들춰봐도 ??? 였으니
+    // "봤다" 고 적으면 다음부터 이름과 그림이 공짜로 열린다.
+    const secret = SKINS.filter((sk) => sk.hiddenUntilOwned === true)
+    expect(secret.length).toBeGreaterThan(0)
+    // markSkinsSeen 자체는 막지 않는다 — 가게가 실제로 보여줬다면 그건 본 것이다.
+    // 막는 자리는 화면이다 (MyLookSheet.tap).
+    const s = markSkinsSeen(createDefaultState(), [secret[0].id])
+    expect(s.user.seenSkinIds).toContain(secret[0].id)
+  })
+
+  it('저장을 한 바퀴 돌려도 살아남는다', () => {
+    const s = markSkinsSeen(createDefaultState(), [priced.id])
+    const back = sanitizeState(JSON.parse(JSON.stringify(s)))
+    expect(back?.user.seenSkinIds).toEqual([priced.id])
+  })
+})
+
+describe('누르는 것만으로는 안 사진다', () => {
+  /**
+   * 의상실에서 옷을 누르면 그 자리에서 코인이 빠져나갔다. 물어보지도 않았다.
+   * 화면은 이제 상세 시트를 열 뿐이고, 코인이 움직이는 길은 buySkin 하나다.
+   * 여기서는 그 하나가 제대로 잠겨 있는지만 못 박는다.
+   */
+  const priced = SKINS.find((s) => skinPrice(s) !== null)!
+
+  it('코인이 모자라면 아무것도 안 변한다', () => {
+    const base = createDefaultState()
+    const s = { ...base, user: { ...base.user, coins: 0 } }
+    const r = buySkin(s, priced.id)
+    expect(r.result.ok).toBe(false)
+    expect(r.state).toBe(s)
+    expect(r.state.user.ownedSkinIds).not.toContain(priced.id)
+  })
+
+  it('값이 없는 모습은 코인으로 살 수 없다', () => {
+    const free = SKINS.find((sk) => skinPrice(sk) === null && sk.unlock.kind !== 'DEFAULT')
+    if (!free) return
+    const base = createDefaultState()
+    const s = { ...base, user: { ...base.user, coins: 99999 } }
+    expect(buySkin(s, free.id).result.ok).toBe(false)
+  })
+
+  it('산 만큼만 정확히 빠진다', () => {
+    const base = createDefaultState()
+    const price = skinPrice(priced)!
+    const s = { ...base, user: { ...base.user, coins: price + 37 } }
+    const r = buySkin(s, priced.id, dayOnRack(priced.id))
+    expect(r.result.ok).toBe(true)
+    expect(r.state.user.coins).toBe(37)
+  })
+})
+
+describe('오늘 걸린 옷', () => {
+  /**
+   * 의상실이 백스무 벌을 한 번에 다 보여줘서, 도감의 실루엣이
+   * "아직 가게에 안 나온 옷" 이 아니라 "아직 안 눌러본 옷" 이었다.
+   * 하루에 다섯 벌만 걸리면 도감이 며칠에 걸쳐 찬다.
+   */
+  it('날짜가 같으면 늘 같은 다섯 벌이다', () => {
+    const a = todayRack('2026-08-28').map((s) => s.id)
+    const b = todayRack('2026-08-28').map((s) => s.id)
+    expect(a).toEqual(b)
+    expect(a).toHaveLength(RACK_COUNT)
+  })
+
+  it('날짜가 바뀌면 바뀐다', () => {
+    const days = ['2026-08-28', '2026-08-29', '2026-08-30', '2026-08-31', '2026-09-01']
+    const sets = days.map((d) => todayRack(d).map((s) => s.id).join(','))
+    // 다섯 날이 전부 같으면 그건 진열이 아니다
+    expect(new Set(sets).size).toBeGreaterThan(1)
+  })
+
+  it('값이 붙은 옷만 걸린다 — 못 사는 옷을 걸어두면 광고다', () => {
+    for (const day of ['2026-01-05', '2026-06-06', '2026-11-20']) {
+      for (const skin of todayRack(day)) {
+        expect(skinPrice(skin)).not.toBeNull()
+      }
+    }
+  })
+
+  it('한 날에 같은 옷이 두 번 걸리지 않는다', () => {
+    for (const day of ['2026-02-02', '2026-07-17', '2026-12-25']) {
+      const ids = todayRack(day).map((s) => s.id)
+      expect(new Set(ids).size).toBe(ids.length)
+    }
+  })
+
+  it('오래 돌리면 결국 여러 벌이 돌아온다', () => {
+    // 한두 벌만 계속 걸리면 도감이 안 찬다
+    const seen = new Set<string>()
+    const start = new Date('2026-01-01')
+    for (let i = 0; i < 60; i += 1) {
+      const d = new Date(start)
+      d.setDate(start.getDate() + i)
+      for (const s of todayRack(d.toISOString().slice(0, 10))) seen.add(s.id)
+    }
+    expect(seen.size).toBeGreaterThan(RACK_COUNT * 4)
+  })
+
+  it('걸린 옷은 살 수 있는 풀 안에 있다', () => {
+    const pool = new Set(rackPool().map((s) => s.id))
+    for (const s of todayRack('2026-03-03')) expect(pool.has(s.id)).toBe(true)
+  })
+
+  it('isOnRack 이 그날 목록과 어긋나지 않는다', () => {
+    const day = '2026-04-04'
+    const ids = todayRack(day).map((s) => s.id)
+    for (const id of ids) expect(isOnRack(id, day)).toBe(true)
+    const off = rackPool().find((s) => !ids.includes(s.id))
+    if (off) expect(isOnRack(off.id, day)).toBe(false)
+  })
+
+  it('저장을 건드리지 않는다 — 날짜에서 다시 만든다', () => {
+    // 진열을 저장하면 기기마다 다른 진열이 남는다. 그래서 이 파일은
+    // AppState 도 저장 계층도 아예 안 부른다. 인자는 날짜 하나뿐이다.
+    const src = readFileSync(
+      path.join(process.cwd(), 'src/lib/character/rack.ts'),
+      'utf-8',
+    )
+    expect(src).not.toMatch(/AppState|localStorage|@\/store\//)
   })
 })

@@ -3,9 +3,9 @@ import { addItem } from '@/lib/collection/progress'
 import { AUTO_COLLECTIONS, autoProgress, claimableCollections, newlyRevealed } from './collections'
 import { SECRETS, newlyFound, newlyHinted, secretProgress } from './secrets'
 import { unreadChapters } from './stories'
-import { hintedCompanions, newlyMeetable } from './companions'
-import { applyGardenUnlock, applyRareSeeds } from '@/lib/garden/derive'
-import { applyQuarryUnlock } from '@/lib/quarry/derive'
+import { COMPANIONS, hasMet, hintedCompanions, newlyMeetable } from './companions'
+import { applyGardenUnlock, applyRareSeeds, isGardenUnlocked } from '@/lib/garden/derive'
+import { applyQuarryUnlock, isQuarryUnlocked } from '@/lib/quarry/derive'
 import { applyOldKey, isGateFound } from '@/lib/dungeon/derive'
 import { isDungeonStoryDone } from '@/lib/dungeon/creatureDerive'
 import { applyKitchenUnlock, newlyDiscovered } from '@/lib/kitchen/derive'
@@ -26,6 +26,51 @@ import { applyKitchenUnlock, newlyDiscovered } from '@/lib/kitchen/derive'
 
 /** 하루에 화면으로 올릴 수 있는 최대 */
 export const NOTES_PER_DAY = 3
+
+/**
+ * ── 알림은 조건이 아니라 **기록**을 보고 낸다 ───────────
+ *
+ * 예전에는 "이번에 새로 열린 것" 만 pending 에 넣었다. 그런데 그 판단이
+ * 곧 상태 쓰기이기도 했다 — newlyMeetable 로 보리를 찾으면 그 자리에서
+ * companions 에 넣어버린다. 그래서 그 알림이 하루 세 개 제한에 밀리면,
+ * **보리는 이미 만난 걸로 저장됐는데 알림은 영영 못 뜬다.**
+ * 방에 강아지가 갑자기 나타나 있고 만났다는 말은 어디에도 없다.
+ * 실제로 그렇게 됐다.
+ *
+ * 그래서 조건과 알림을 갈라놨다. 상태를 바꾸는 쪽은 그대로 두고,
+ * pending 에는 **지금 참인 것을 전부** 넣는다 (이미 만난 동료 전부,
+ * 이미 찾은 비밀 전부). 무엇을 이미 말해줬는지는 seenNoteKeys 하나가
+ * 정한다 — 그게 원래 그 필드가 하려던 일이다.
+ *
+ * 밀려서 못 띄운 알림은 seenNoteKeys 에 안 들어가니 다음에 다시 온다.
+ * 조용해지는 것도 그대로다 — 한 번 띄우면 그때 적힌다.
+ *
+ * (알림 열쇠는 전부 합쳐도 백 개가 안 되고 SEEN_KEYS_KEPT 는 200 이라,
+ *  다 말해준 사람의 열쇠가 밀려나서 다시 뜨는 일은 없다.)
+ *
+ * 새 장소 알림은 **가볼 때까지 안 사라진다.**
+ *
+ * 나머지 알림은 한 번 띄우면 seenNoteKeys 에 들어가고 다시 안 뜬다.
+ * 읽고 지우는 게 전부인 것들이라 그래도 됐다. 그런데 정원·채석장·부엌·
+ * 돌문은 다르다 — **영구히 늘어난 장소**인데, 알려주는 건 홈에 잠깐
+ * 얹혔다 사라지는 카드 한 장뿐이었다. 그 순간에 화면을 안 보고 있었으면
+ * 새 장소가 생긴 줄도 모르고 지나간다. 실제로 부엌이 그렇게 됐다.
+ *
+ * 그래서 이 넷은 seenNoteKeys 를 안 쓴다. 대신 **거기 첫 안내를 봤는지**로
+ * 판단한다 — 들어가 봤으면 안 띄우고, 아직이면 계속 띄운다.
+ * 새로 저장할 것이 없다. 이미 있는 값이다.
+ */
+const PLACE_VISITED: Record<string, (s: AppState) => boolean> = {
+  'garden:opened': (s) => s.garden.tutorialSeenAt !== null,
+  'quarry:opened': (s) => s.quarry.tutorialSeenAt !== null,
+  'kitchen:opened': (s) => s.kitchen.tutorialSeenAt !== null,
+  'dungeon:gate': (s) => s.dungeon.tutorialSeenAt !== null,
+}
+
+/** 이 알림이 "아직 안 가본 새 장소" 인가 */
+export function isPlaceNote(key: string): boolean {
+  return key in PLACE_VISITED
+}
 
 /** 알림 열쇠를 몇 개까지 기억할지 */
 const SEEN_KEYS_KEPT = 200
@@ -69,7 +114,9 @@ export function applyDiscovery(state: AppState, now: Date = new Date()): Discove
   // 그동안 초록 공원을 다녀온 사람에게는 바로 열린다.
   const garden = applyGardenUnlock(next, now)
   next = garden.state
-  if (garden.opened) {
+  // 여는 **순간**이 아니라 **열려 있는 동안** 낸다. 실제로 띄울지는
+  // 아래 PLACE_VISITED 가 정한다 — 가봤으면 그때 조용해진다.
+  if (isGardenUnlocked(next)) {
     pending.push({
       key: 'garden:opened',
       kind: 'GARDEN',
@@ -92,15 +139,17 @@ export function applyDiscovery(state: AppState, now: Date = new Date()): Discove
         ],
       },
     }
-    for (const def of revealed) {
-      pending.push({
-        key: `collection:${def.id}`,
-        kind: 'AUTO_COLLECTION',
-        icon: def.icon,
-        title: def.name,
-        text: def.description,
-      })
-    }
+  }
+  // 조건이 아니라 **기록**을 보고 낸다. 아래 ANNOUNCED_BY_KEY 참고.
+  for (const def of AUTO_COLLECTIONS) {
+    if (!next.discovery.revealedCollectionIds.includes(def.id)) continue
+    pending.push({
+      key: `collection:${def.id}`,
+      kind: 'AUTO_COLLECTION',
+      icon: def.icon,
+      title: def.name,
+      text: def.description,
+    })
   }
 
   // ── 다 채운 컬렉션의 보상 ────────────────────────────
@@ -144,7 +193,7 @@ export function applyDiscovery(state: AppState, now: Date = new Date()): Discove
   // 그래서 이 업데이트를 켜는 순간 그동안 해온 사람에게는 바로 열린다.
   const quarry = applyQuarryUnlock(next, now)
   next = quarry.state
-  if (quarry.opened) {
+  if (isQuarryUnlocked(next)) {
     pending.push({
       key: 'quarry:opened',
       kind: 'QUARRY',
@@ -212,7 +261,7 @@ export function applyDiscovery(state: AppState, now: Date = new Date()): Discove
   // ── 작은 부엌 ────────────────────────────────────────
   const kitchen = applyKitchenUnlock(next, now)
   next = kitchen.state
-  if (kitchen.opened) {
+  if (next.kitchen.unlockedAt !== null) {
     pending.push({
       key: 'kitchen:opened',
       kind: 'KITCHEN',
@@ -246,15 +295,18 @@ export function applyDiscovery(state: AppState, now: Date = new Date()): Discove
         hintedSecretIds: [...next.discovery.hintedSecretIds, ...hinted.map((s) => s.id)],
       },
     }
-    for (const def of hinted) {
-      pending.push({
-        key: `secret-hint:${def.id}`,
-        kind: 'SECRET',
-        icon: def.icon,
-        title: '뭔가 더 있는 것 같다',
-        text: def.hint,
-      })
-    }
+  }
+  for (const def of SECRETS) {
+    // 이미 찾은 곳에 낌새 얘기를 다시 꺼내지 않는다
+    if (next.discovery.foundSecretIds.includes(def.id)) continue
+    if (!next.discovery.hintedSecretIds.includes(def.id)) continue
+    pending.push({
+      key: `secret-hint:${def.id}`,
+      kind: 'SECRET',
+      icon: def.icon,
+      title: '뭔가 더 있는 것 같다',
+      text: def.hint,
+    })
   }
 
   const found = newlyFound(next)
@@ -266,15 +318,16 @@ export function applyDiscovery(state: AppState, now: Date = new Date()): Discove
         foundSecretIds: [...next.discovery.foundSecretIds, ...found.map((s) => s.id)],
       },
     }
-    for (const def of found) {
-      pending.push({
-        key: `secret:${def.id}`,
-        kind: 'SECRET',
-        icon: def.icon,
-        title: def.name,
-        text: def.reveal,
-      })
-    }
+  }
+  for (const def of SECRETS) {
+    if (!next.discovery.foundSecretIds.includes(def.id)) continue
+    pending.push({
+      key: `secret:${def.id}`,
+      kind: 'SECRET',
+      icon: def.icon,
+      title: def.name,
+      text: def.reveal,
+    })
   }
 
   // ── 읽을 수 있게 된 이야기 ───────────────────────────
@@ -314,23 +367,45 @@ export function applyDiscovery(state: AppState, now: Date = new Date()): Discove
         activeCompanionId: next.discovery.activeCompanionId ?? met[0].id,
       },
     }
-    for (const def of met) {
-      pending.push({
-        key: `companion:${def.id}`,
-        kind: 'COMPANION',
-        icon: def.avatar,
-        title: `${def.name}를 만났다`,
-        text: def.reveal,
-      })
-    }
+  }
+  // 여기가 제일 아팠던 자리다 — 보리가 방에 나타났는데 만났다는 말이 없었다.
+  for (const def of COMPANIONS) {
+    if (!hasMet(next, def.id)) continue
+    pending.push({
+      key: `companion:${def.id}`,
+      kind: 'COMPANION',
+      icon: def.avatar,
+      title: `${def.name}를 만났다`,
+      text: def.reveal,
+    })
   }
 
   // ── 화면에 올릴 것만 고른다 ──────────────────────────
-  const unseen = pending.filter((n) => !next.discovery.seenNoteKeys.includes(n.key))
-  const shown = unseen.slice(0, NOTES_PER_DAY)
+  const unseen = pending.filter((n) => {
+    const visited = PLACE_VISITED[n.key]
+    // 새 장소는 seenNoteKeys 가 아니라 "가봤는지" 로 가른다
+    if (visited) return !visited(next)
+    return !next.discovery.seenNoteKeys.includes(n.key)
+  })
 
-  if (shown.length > 0) {
-    const keys = [...next.discovery.seenNoteKeys, ...shown.map((n) => n.key)]
+  /**
+   * 새 장소는 하루 세 개 제한 밖에 둔다.
+   *
+   * 제한은 "축하 카드를 열 장 쏟지 않는다" 는 뜻이었다. 안 가본 장소
+   * 알림은 축하가 아니라 이정표다 — 계속 떠 있어야 제 일을 한다.
+   * 안에 넣으면 레시피 알림 셋에 매일 가려져서, 안 사라지게 만든 의미가 없다.
+   *
+   * 넷뿐이고 가보는 순간 사라지니 쌓일 걱정도 없다.
+   */
+  const places = unseen.filter((n) => isPlaceNote(n.key))
+  const rest = unseen.filter((n) => !isPlaceNote(n.key)).slice(0, NOTES_PER_DAY)
+  const shown = [...places, ...rest]
+
+  // 새 장소 열쇠는 안 적는다. 적으면 다음부터 위 filter 와 상관없이
+  // 한 번 뜨고 끝나는 것으로 되돌아간다.
+  const burn = shown.filter((n) => !isPlaceNote(n.key)).map((n) => n.key)
+  if (burn.length > 0) {
+    const keys = [...next.discovery.seenNoteKeys, ...burn]
     next = {
       ...next,
       discovery: {

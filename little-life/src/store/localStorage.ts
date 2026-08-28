@@ -33,6 +33,7 @@ import {
   sanitizeCollection,
   sanitizeDiscovery,
   sanitizeOwnedSkins,
+  sanitizeSeenSkins,
   sanitizeSelectedSkin,
   sanitizeGarden,
   sanitizeEnergy,
@@ -305,6 +306,7 @@ export function sanitizeState(raw: unknown): AppState | null {
       // v10 에는 없던 항목들. 없으면 기본 모습 하나만 가진 것으로 본다.
       selectedSkinId: sanitizeSelectedSkin(user.selectedSkinId, user.ownedSkinIds),
       ownedSkinIds: sanitizeOwnedSkins(user.ownedSkinIds),
+      seenSkinIds: sanitizeSeenSkins(user.seenSkinIds),
       // v11 에는 없던 항목들. 없으면 0 부터 쌓기 시작한다 —
       // 지난 퀘스트만큼 소급해서 채워주지 않는다. 쓰는 곳이 아직 없어서
       // 채워줘봐야 의미가 없고, 나중에 쓰는 곳이 생겼을 때

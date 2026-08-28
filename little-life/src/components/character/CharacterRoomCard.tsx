@@ -140,15 +140,21 @@ export function CharacterRoomCard({
           아래 내비게이션에 버튼을 하나 더 다는 대신 방 안에 둔다 —
           부엌은 매일 들르는 곳이 아니라 생각났을 때 들르는 곳이다.
           아직 못 열었으면 아무것도 안 보인다.
+
+          예전에는 🍳 하나만 있는 동그라미였다. 위쪽 모습·도감·꾸미기는
+          전부 글자가 있는데 여기만 그림이라, 열려 있어도 그게 부엌인 줄
+          모르고 지나갔다. 같은 모양의 알약으로 바꾸고 이름을 적는다.
         */}
         {kitchenOpen && onOpenKitchen && (
           <button
             type="button"
             onClick={onOpenKitchen}
-            aria-label="작은 부엌"
-            className="absolute bottom-2.5 left-2.5 flex h-11 w-11 items-center justify-center rounded-full bg-surface/90 text-[20px] shadow-soft backdrop-blur-sm active:scale-[0.94]"
+            className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5 rounded-pill bg-surface/90 px-3 py-1.5 text-[11.5px] font-medium text-inkdim shadow-soft backdrop-blur-sm active:scale-[0.96]"
           >
-            🍳
+            <span aria-hidden className="text-[14px] leading-none">
+              🍳
+            </span>
+            부엌
           </button>
         )}
 

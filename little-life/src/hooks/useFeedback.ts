@@ -129,6 +129,7 @@ export function useFeedback(): Feedback {
         drops,
         collected: result.collected,
         battles: result.battleProgress,
+        lanternKnown: result.lanternKnown,
       })
 
       setMood(result.leveledUp ? 'levelUp' : 'questClear')

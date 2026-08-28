@@ -11,16 +11,31 @@ interface DiscoveryCardsProps {
   onOpenQuarry?: () => void
 }
 
+/** 새 장소로 가는 길. 카드를 닫아도 이 문장이 기억에 남아야 한다. */
+const WAY_IN: Record<string, string> = {
+  'garden:opened': '지도 › 초록 공원 › 작은 정원',
+  'quarry:opened': '지도 › 초록 공원 › 공원 바깥쪽 길',
+  'dungeon:gate': '지도 › 초록 공원 › 잠든 돌문',
+  'kitchen:opened': '홈 › 방 그림 왼쪽 아래 🍳 부엌',
+}
+
 /**
  * 새로 발견한 것 알림.
  *
  * 화면을 덮는 팝업이 아니다. 홈 위쪽에 작은 카드로 얹히고,
  * 누르면 사라진다. 안 눌러도 다음에 열면 없다.
  *
+ * **새 장소만 예외다.** 정원·채석장·부엌·돌문은 실제로 가볼 때까지
+ * 계속 뜬다 (lib/discovery/derive.ts 의 PLACE_VISITED). 한 번 뜨고
+ * 사라지는 카드 한 장으로 알리기에는 너무 큰 것이라서 그렇다.
+ * 그래서 여기서는 **어디로 가면 되는지**까지 적는다 — 카드를 닫은
+ * 다음에도 혼자 찾아갈 수 있어야 한다.
+ *
  * 업데이트 직후에는 예전 기록 덕에 여러 개가 한꺼번에 열리는데,
  * 그걸 다 띄우면 축하가 아니라 사고다. 그래서 위에서 세 개까지만 넘어온다.
  * (나머지는 발견함에 쌓인다 — lib/discovery/derive.ts)
  */
+
 export function DiscoveryCards({
   notes,
   onDismiss,
@@ -40,6 +55,7 @@ export function DiscoveryCards({
           note.kind === 'KITCHEN' && note.key === 'kitchen:opened' && onOpenKitchen !== undefined
         const opensQuarry = note.kind === 'QUARRY' && onOpenQuarry !== undefined
         const place = opensGarden || opensKitchen || opensQuarry
+        const wayIn = WAY_IN[note.key]
 
         return (
           <button
@@ -74,9 +90,18 @@ export function DiscoveryCards({
               >
                 {note.text}
               </span>
+              {/* 길 안내는 눌러서 갈 수 있든 없든 적는다 — 돌문처럼 여기서
+                  바로 못 가는 곳도 어디 있는지는 알아야 한다. */}
+              {wayIn && (
+                <span className="mt-1 block text-[11px] text-inkfaint">{wayIn}</span>
+              )}
               {place && (
                 <span className="mt-1 block text-[11.5px] font-medium text-sage-deep">
-                  {opensKitchen ? '주방 열기 ›' : '정원에 들어가기 ›'}
+                  {opensKitchen
+                    ? '부엌 열기 ›'
+                    : opensQuarry
+                      ? '채석장 가기 ›'
+                      : '정원에 들어가기 ›'}
                 </span>
               )}
             </span>

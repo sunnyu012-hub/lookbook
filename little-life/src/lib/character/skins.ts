@@ -880,24 +880,62 @@ export function newlyUnlocked(state: AppState): CharacterSkin[] {
 
 // ── 화면에서 보는 모양 ───────────────────────────────────
 
-export function skinViews(state: AppState): SkinView[] {
+const EMPTY_RACK: ReadonlySet<string> = new Set()
+
+/**
+ * 화면에서 보는 백스무 벌.
+ *
+ * `rackIds` 는 오늘 의상실 진열대에 걸린 것이다 (lib/character/rack.ts).
+ * 여기서 직접 부르지 않고 받는다 — rack.ts 가 이미 이 파일을 부르고 있어서
+ * 반대로 부르면 서로 물린다. 안 넘기면 아무것도 안 걸린 날로 본다.
+ */
+export function skinViews(state: AppState, rackIds: ReadonlySet<string> = EMPTY_RACK): SkinView[] {
   const owned = new Set(state.user.ownedSkinIds)
+  const seen = new Set(state.user.seenSkinIds)
 
   return [...SKINS]
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .map((def) => {
       const has = owned.has(def.id)
+      const wasSeen = seen.has(def.id)
       const price = skinPrice(def)
+      const onRack = rackIds.has(def.id)
       return {
         def,
         owned: has,
         active: state.user.selectedSkinId === def.id,
         progress: has ? 1 : skinProgress(state, def.unlock),
-        // 조건을 다 채웠고 값이 붙어 있으면, 이제 코인만 있으면 된다
-        forSale: !has && price !== null && conditionsMet(state, def.unlock),
-        hidden: !has && def.hiddenUntilOwned === true,
+        // 조건을 다 채웠고 값이 붙어 있고 오늘 걸려 있으면, 이제 코인만 있으면 된다.
+        // 가구 가게와 같다 — 오늘 깔린 것만 산다.
+        forSale: !has && price !== null && onRack && conditionsMet(state, def.unlock),
+        onRack,
+        // 가게에서 이미 본 옷은 감추지 않는다. 본 걸 다시 감추면
+        // 도감이 기억을 못 하는 셈이고, 그건 도감이 아니다.
+        hidden: !has && !wasSeen && def.hiddenUntilOwned === true,
+        seen: wasSeen,
       }
     })
+}
+
+/**
+ * 가게에서 봤다고 적어둔다.
+ *
+ * 진열은 저장하지 않는다(날짜 씨앗으로 다시 만든다). 하지만 **봤다는 사실**은
+ * 남아야 한다 — 어제 본 옷이 오늘 진열에서 빠졌다고 도감에서 다시
+ * 실루엣이 되면, 그건 기억을 잃는 것이다.
+ *
+ * 이미 적힌 것은 그대로 둔다. 순서도 안 바꾼다 — 처음 본 순서가 곧 기록이다.
+ */
+export function markSkinsSeen(state: AppState, ids: readonly string[]): AppState {
+  const known = new Set(SKINS.map((s) => s.id as string))
+  const already = new Set<string>(state.user.seenSkinIds)
+  const fresh = ids.filter((id) => known.has(id) && !already.has(id)) as SkinId[]
+  if (fresh.length === 0) return state
+
+  return {
+    ...state,
+    user: { ...state.user, seenSkinIds: [...state.user.seenSkinIds, ...fresh] },
+  }
 }
 
 export function ownedSkinCount(state: AppState): number {

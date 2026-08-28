@@ -2,6 +2,7 @@ import type { KitchenRecipeDef } from '@/types'
 import { Portal } from '@/components/ui/Portal'
 import { Button } from '@/components/ui/Button'
 import { useOverlay } from '@/hooks/useOverlay'
+import { DishIcon } from './DishIcon'
 
 export interface CookedNote {
   def: KitchenRecipeDef
@@ -46,7 +47,9 @@ export function CookedOverlay({ note, onClose, onOpenBook }: CookedOverlayProps)
             {firstTime ? 'NEW RECIPE ✦' : 'COOKED ✦'}
           </p>
 
-          <span className="mt-3 block animate-bouncesm text-[48px] leading-none">{def.icon}</span>
+          <span className="mt-3 flex animate-bouncesm justify-center">
+            <DishIcon def={def} size="xl" className="bg-transparent" />
+          </span>
 
           <p className="mt-2 text-[17px] font-semibold text-ink">{def.name}</p>
           <p className="mt-1 text-[13px] leading-relaxed text-inkdim">{def.description}</p>

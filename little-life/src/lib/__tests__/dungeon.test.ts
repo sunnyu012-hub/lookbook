@@ -17,7 +17,7 @@ import { isDiscovered, ownedCount } from '@/lib/collection/progress'
 import { applyDiscovery } from '@/lib/discovery/derive'
 import { STORY_CHAPTERS } from '@/lib/discovery/stories'
 import { conditionProgress } from '@/lib/discovery/secrets'
-import { STRANGE_FRAGMENT_ID } from '@/lib/quarry/derive'
+import { DAILY_ATTEMPTS, STRANGE_FRAGMENT_ID, attemptsLeft } from '@/lib/quarry/derive'
 import { DUNGEON_FINDS, OLD_KEY_ID, STORY_ITEMS } from '@/lib/dungeon/items'
 import {
   DUNGEON_ROOMS,
@@ -861,5 +861,52 @@ describe('X. 금지한 것이 실제로 없다', () => {
       expect(step.choices.length, step.id).toBe(2)
       for (const c of step.choices) expect(c.lines.length, step.id).toBeGreaterThan(0)
     }
+  })
+})
+
+describe('Y. 등불과 채석장의 하루 몫은 다른 것이다', () => {
+  /**
+   * 실제로 헷갈렸던 지점이다.
+   *
+   * 채석장은 하루 3번이라 자정이 지나면 다시 찬다. 등불은 퀘스트 완료로만
+   * 오르고 날짜와 아무 상관이 없다. 그런데 던전 화면이 등불이 떨어졌을 때
+   * "오늘은 여기까지" 라고 말했다 — 그래서 아침에 다시 열어보고
+   * 그대로 0 인 걸 보면 앱이 고장 난 것처럼 보였다.
+   *
+   * 문구는 고쳤고, 두 규칙이 실제로 다르다는 것만 여기서 못 박아둔다.
+   */
+  it('자정을 넘기면 채석장은 다시 차고 등불은 그대로다', () => {
+    const s = withClues({
+      quarry: {
+        ...createDefaultState().quarry,
+        unlockedAt: '2026-01-01T00:00:00.000Z',
+        attempts: DAILY_ATTEMPTS,
+        attemptsOn: '2026-03-10',
+        foundMineralCounts: { [STRANGE_FRAGMENT_ID]: 1, [OLD_METAL_ID]: 1 },
+        blockedPathSeen: true,
+      },
+      user: { ...createDefaultState().user, adventureEnergy: 0 },
+    })
+
+    const lateNight = new Date('2026-03-10T23:59:00')
+    const nextMorning = new Date('2026-03-11T08:00:00')
+
+    // 채석장: 날짜만 바뀌면 다시 찬다
+    expect(attemptsLeft(s, lateNight)).toBe(0)
+    expect(attemptsLeft(s, nextMorning)).toBe(DAILY_ATTEMPTS)
+
+    // 등불: 아무 일도 안 일어난다. 시간으로 차오르는 코드가 없다 —
+    // 애초에 enterDungeon 도 goDeeper 도 now 를 받지 않는다.
+    expect(dungeonView(s).energy).toBe(0)
+    expect(enterDungeon(s).user.adventureEnergy).toBe(0)
+    expect(goDeeper(s, FIRST_ROOM_ID).ok).toBe(false)
+  })
+
+  it('등불은 저장에 날짜를 남기지 않는다 — 남길 게 없다', () => {
+    const keys = Object.keys(createDefaultState().user)
+    expect(keys).toContain('adventureEnergy')
+    // energyOn / lanternOn 같은 "언제 찼는지" 필드가 있으면
+    // 하루마다 리셋되는 것처럼 다시 읽히기 시작한다.
+    expect(keys.some((k) => /energy(On|Date|Day)|lantern/i.test(k))).toBe(false)
   })
 })
