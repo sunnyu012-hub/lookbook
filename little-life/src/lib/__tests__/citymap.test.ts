@@ -10,6 +10,7 @@ import {
   type CityMapRegionDef,
   type PctPoint,
 } from '@/lib/city/map'
+import type { AreaId } from '@/types'
 import { npcsHere } from '@/lib/city/routine'
 import { AREAS } from '@/lib/rpg/content'
 import { createDefaultState } from '@/store/defaultState'
@@ -30,7 +31,7 @@ function withQuarry() {
   return { ...state, quarry: { ...state.quarry, unlockedAt: `${MON}T09:00:00.000Z` } }
 }
 
-function views(state = base(), now = at(10), currentAreaId = 'HOME_BASE' as const) {
+function views(state = base(), now = at(10), currentAreaId: AreaId = 'HOME_BASE') {
   return cityMapViews({ state, events: [], currentAreaId, now })
 }
 
@@ -151,6 +152,22 @@ describe('C 상태 한 줄', () => {
     const home = views(base(), at(10), 'HOME_BASE').find((v) => v.area?.id === 'HOME_BASE')
     expect(home?.statusLine).toBe('지금 여기')
     expect(home?.tone).toBe('CURRENT')
+  })
+
+  it('C1-2 "지금 여기" 는 딱 한 곳에만 뜬다 — 내가 있는 동네', () => {
+    for (const area of AREAS) {
+      const all = views(base(), at(10), area.id)
+      const marked = all.filter((v) => v.current)
+      expect(marked.map((v) => v.def.id), area.id).toEqual([area.id])
+      expect(marked[0].statusLine).toBe('지금 여기')
+      expect(marked[0].tone).toBe('CURRENT')
+
+      // 나머지는 자기 상태를 그대로 말한다 — 우리 집에도 안 뜬다
+      for (const other of all.filter((v) => !v.current)) {
+        expect(other.statusLine, `${area.id} → ${other.label}`).not.toBe('지금 여기')
+        expect(other.tone).not.toBe('CURRENT')
+      }
+    }
   })
 
   it('C2 밤에만 여는 동네는 낮에 "밤에 열려"', () => {
