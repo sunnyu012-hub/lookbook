@@ -666,3 +666,78 @@ describe('새 장소는 가볼 때까지 계속 알려준다', () => {
     expect(isPlaceNote('collection:ACTIVE_DAYS')).toBe(false)
   })
 })
+
+describe('만난 걸 말 안 하고 넘어가지 않는다', () => {
+  /**
+   * 보리가 방에 갑자기 나타나 있었고, 만났다는 말은 어디에도 없었다.
+   *
+   * 알림을 "이번에 새로 참이 된 것" 으로 뽑았던 게 원인이다. 그 판단이
+   * 곧 상태 쓰기였다 — newlyMeetable 이 보리를 집으면 그 자리에서
+   * companions 에 넣어버린다. 그러니 그 알림이 하루 세 개 제한에 밀리면
+   * 보리는 만난 걸로 저장됐는데 알림은 영영 안 온다.
+   *
+   * 지금은 조건이 아니라 기록을 보고 낸다. 밀린 알림은 다음 차례에 온다.
+   */
+  // 보리는 초록 공원 평판으로 만난다. veteran 은 이미 그걸 넘겼고,
+  // 컬렉션·비밀 알림도 잔뜩 밀려 있어서 첫 판에서 반드시 밀린다.
+  const busy = () => veteran()
+
+  it('첫 판에 밀려도 결국 온다', () => {
+    let s = busy()
+    const first = applyDiscovery(s)
+    s = first.state
+    // 이 테스트가 뜻이 있으려면 첫 판에서 실제로 밀려야 한다.
+    // 그런데 저장에는 이미 만난 걸로 적힌다 — 예전에는 여기서 끝이었다.
+    expect(first.notes.map((n) => n.key)).not.toContain('companion:BORI')
+    expect(s.discovery.companions.BORI).toBeDefined()
+
+    const said: string[] = []
+    for (let i = 0; i < 12; i += 1) {
+      const r = applyDiscovery(s)
+      s = r.state
+      said.push(...r.notes.map((n) => n.key))
+      if (r.notes.every((n) => isPlaceNote(n.key))) break
+    }
+    expect(said).toContain('companion:BORI')
+  })
+
+  it('만난 걸로 저장됐는데 알림만 없는 상태가 안 생긴다', () => {
+    let s = busy()
+    for (let i = 0; i < 12; i += 1) {
+      const r = applyDiscovery(s)
+      s = r.state
+      if (r.notes.every((n) => isPlaceNote(n.key))) break
+    }
+    for (const id of Object.keys(s.discovery.companions)) {
+      expect(s.discovery.seenNoteKeys).toContain(`companion:${id}`)
+    }
+  })
+
+  it('찾은 비밀도 마찬가지다', () => {
+    let s = busy()
+    for (let i = 0; i < 12; i += 1) {
+      const r = applyDiscovery(s)
+      s = r.state
+      if (r.notes.every((n) => isPlaceNote(n.key))) break
+    }
+    for (const id of s.discovery.foundSecretIds) {
+      expect(s.discovery.seenNoteKeys).toContain(`secret:${id}`)
+    }
+    for (const id of s.discovery.revealedCollectionIds) {
+      expect(s.discovery.seenNoteKeys).toContain(`collection:${id}`)
+    }
+  })
+
+  it('한 번 말해준 건 두 번 말하지 않는다', () => {
+    let s = visitedEverywhere(busy())
+    const said: string[] = []
+    for (let i = 0; i < 15; i += 1) {
+      const r = applyDiscovery(s)
+      s = r.state
+      said.push(...r.notes.map((n) => n.key))
+      if (r.notes.length === 0) break
+    }
+    expect(new Set(said).size).toBe(said.length)
+    expect(applyDiscovery(s).notes).toEqual([])
+  })
+})
