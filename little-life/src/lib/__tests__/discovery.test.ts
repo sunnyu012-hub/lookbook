@@ -30,10 +30,28 @@ import {
   unlockedMemories,
 } from '@/lib/discovery/companions'
 import { hintFor, hintLevelOf } from '@/lib/discovery/hints'
-import { NOTES_PER_DAY, applyDiscovery, discoveryInbox, emptyDiscovery } from '@/lib/discovery/derive'
+import {
+  NOTES_PER_DAY,
+  applyDiscovery,
+  discoveryInbox,
+  emptyDiscovery,
+  isPlaceNote,
+} from '@/lib/discovery/derive'
 import { findCollectionItem } from '@/lib/collection/catalog'
 import { createDefaultState } from '@/store/defaultState'
 import { sanitizeDiscovery, STATE_VERSION } from '@/store/migrate'
+
+/** 열린 곳에 이미 다 가본 사람. 새 장소 알림이 조용해진 상태다. */
+function visitedEverywhere(s: AppState): AppState {
+  const seen = '2026-01-01T00:00:00.000Z'
+  return {
+    ...s,
+    garden: { ...s.garden, tutorialSeenAt: seen },
+    quarry: { ...s.quarry, tutorialSeenAt: seen },
+    kitchen: { ...s.kitchen, tutorialSeenAt: seen },
+    dungeon: { ...s.dungeon, tutorialSeenAt: seen },
+  }
+}
 
 /** 오래 써온 사람 */
 function veteran(over: Partial<AppState> = {}): AppState {
@@ -527,17 +545,29 @@ describe('발견 힌트', () => {
 // ── 알림 조절 ───────────────────────────────────────────
 
 describe('한꺼번에 쏟지 않는다', () => {
-  it('한 번에 세 개까지만 띄운다', () => {
+  it('읽고 지우는 알림은 한 번에 세 개까지만 띄운다', () => {
     // 오래 쓴 사람은 업데이트 직후 열 개 넘게 동시에 열린다
     const r = applyDiscovery(veteran())
-    expect(r.notes.length).toBeLessThanOrEqual(NOTES_PER_DAY)
+    const rest = r.notes.filter((n) => !isPlaceNote(n.key))
+    expect(rest.length).toBeLessThanOrEqual(NOTES_PER_DAY)
   })
 
-  it('띄운 것은 다시 안 띄운다', () => {
+  it('새 장소는 제한 밖이지만 넷을 넘을 수 없다', () => {
+    // 제한은 축하 카드를 쏟지 않으려는 것이고, 안 가본 장소는 이정표다.
+    // 장소는 넷뿐이라 이 줄이 그대로 상한이 된다.
+    const r = applyDiscovery(veteran())
+    expect(r.notes.filter((n) => isPlaceNote(n.key)).length).toBeLessThanOrEqual(4)
+  })
+
+  it('읽고 지우는 알림은 다시 안 띄운다', () => {
     const first = applyDiscovery(veteran())
     const second = applyDiscovery(first.state)
     const firstKeys = new Set(first.notes.map((n) => n.key))
-    for (const n of second.notes) expect(firstKeys.has(n.key)).toBe(false)
+    // 새 장소는 예외다 — 가볼 때까지 계속 뜬다 (아래 describe 참고)
+    for (const n of second.notes) {
+      if (isPlaceNote(n.key)) continue
+      expect(firstKeys.has(n.key)).toBe(false)
+    }
   })
 
   it('안 띄운 것도 발견함에서는 다 볼 수 있다', () => {
@@ -547,7 +577,7 @@ describe('한꺼번에 쏟지 않는다', () => {
   })
 
   it('여러 번 돌려도 결국은 조용해진다', () => {
-    let s = veteran()
+    let s = visitedEverywhere(veteran())
     let rounds = 0
     for (let i = 0; i < 20; i += 1) {
       const r = applyDiscovery(s)
@@ -579,5 +609,60 @@ describe('혼내지 않는다', () => {
   it('쉬어간 날을 낮춰 말하지 않는다', () => {
     const soft = AUTO_COLLECTIONS.find((c) => c.id === 'SOFT_DAYS')!
     expect(soft.description).not.toMatch(/못|안 했|게으/)
+  })
+})
+
+describe('새 장소는 가볼 때까지 계속 알려준다', () => {
+  /**
+   * 실제로 놓친 일이다.
+   *
+   * 부엌이 열렸다는 알림은 홈에 카드 한 장으로 한 번 떴다가 사라졌다.
+   * 그 순간에 화면을 안 보고 있었으면 새 장소가 생긴 줄도 모르고 지나간다.
+   * 방 그림 구석의 🍳 버튼도 글자가 없어서 눈에 안 들어왔다.
+   *
+   * 다른 알림과 달리 장소는 **영구히 늘어난 것**이라 한 번 놓치면
+   * 되돌릴 방법이 없었다. 그래서 이 넷만 규칙이 다르다.
+   */
+  it('안 가봤으면 며칠이 지나도 계속 뜬다', () => {
+    let s = veteran()
+    for (let i = 0; i < 5; i += 1) {
+      const r = applyDiscovery(s)
+      s = r.state
+      expect(r.notes.some((n) => n.key === 'garden:opened')).toBe(true)
+    }
+  })
+
+  it('가보면 그때 조용해진다', () => {
+    const before = applyDiscovery(veteran())
+    expect(before.notes.some((n) => n.key === 'garden:opened')).toBe(true)
+
+    const after = applyDiscovery({
+      ...before.state,
+      garden: { ...before.state.garden, tutorialSeenAt: '2026-01-01T00:00:00.000Z' },
+    })
+    expect(after.notes.some((n) => n.key === 'garden:opened')).toBe(false)
+  })
+
+  it('하루 세 개 제한에 밀려나지 않는다', () => {
+    // 새 장소가 뒤로 밀리면 안 사라지게 만든 의미가 없다
+    const r = applyDiscovery(veteran())
+    const places = r.notes.filter((n) => isPlaceNote(n.key))
+    expect(places.length).toBeGreaterThan(0)
+    expect(isPlaceNote(r.notes[0].key)).toBe(true)
+  })
+
+  it('새 장소 열쇠는 본 것으로 적어두지 않는다', () => {
+    // 적어두면 다음부터 한 번 뜨고 끝나는 것으로 되돌아간다
+    const r = applyDiscovery(veteran())
+    for (const key of r.state.discovery.seenNoteKeys) {
+      expect(isPlaceNote(key)).toBe(false)
+    }
+  })
+
+  it('네 곳 다 같은 규칙이다', () => {
+    for (const key of ['garden:opened', 'quarry:opened', 'kitchen:opened', 'dungeon:gate']) {
+      expect(isPlaceNote(key)).toBe(true)
+    }
+    expect(isPlaceNote('collection:ACTIVE_DAYS')).toBe(false)
   })
 })
