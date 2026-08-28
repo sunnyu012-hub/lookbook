@@ -53,6 +53,8 @@ type WorldTab = 'ALL' | SkinWorld
  * 거기 각자 버튼이 있다. 목록의 한 칸은 "고르는 곳" 이지
  * "결제하는 곳" 이 아니다.
  *
+ * 누른다고 도감에 "봤음" 으로 적히지도 않는다 — 그건 진열대만 한다.
+ *
  * ── 시트 높이를 붙잡아 둔다 ────────────────────────────
  *
  * 거르는 걸 바꿀 때마다 칸 수가 달라지는데, 높이를 내용에 맡기면
@@ -77,13 +79,6 @@ export function MyLookSheet({ open, state, onClose, onSelect, onSee, onBuy }: My
   const [justBought, setJustBought] = useState<SkinId[]>([])
   /** 자세히 보는 중인 옷 */
   const [openId, setOpenId] = useState<string | null>(null)
-  /**
-   * 미리 입어보는 중인 옷.
-   *
-   * 저장하지 않는다. 시트가 닫히면 사라지고 홈에도 안 나간다 —
-   * 안 산 옷이 홈 화면에 남아 있으면 그건 미리보기가 아니라 버그다.
-   */
-  const [tryOnId, setTryOnId] = useState<string | null>(null)
 
   /**
    * 닫혀 있으면 세지 않는다.
@@ -138,10 +133,8 @@ export function MyLookSheet({ open, state, onClose, onSelect, onSee, onBuy }: My
     return list
   }, [views, shelf, world, tag, pack, justBought])
 
-  const worn = views.find((v) => v.active) ?? views[0]
+  const current = views.find((v) => v.active) ?? views[0]
   const detail = openId ? (views.find((v) => v.def.id === openId) ?? null) : null
-  // 위 미리보기는 입어보는 중이면 그쪽을, 아니면 실제로 입은 것을 그린다
-  const current = tryOnId ? (views.find((v) => v.def.id === tryOnId) ?? worn) : worn
   if (!open || !current) return null
 
   const owned = views.filter((v) => v.owned).length
@@ -157,21 +150,19 @@ export function MyLookSheet({ open, state, onClose, onSelect, onSee, onBuy }: My
   /**
    * 무엇을 누르든 상세 시트를 열 뿐이다. 여기서 코인은 안 움직인다.
    *
-   * 여는 순간 "들춰봤다" 로 적힌다. 그래서 다음에 목록으로 돌아오면
-   * 그 칸은 실루엣이 아니라 진짜 그림이다 — 도감이 채워지는 자리다.
-   * 아직 이름도 못 본 옷(hidden)은 적지 않는다. 들춰봐도 ??? 였으니까.
+   * **여기서는 "봤음" 으로 적지 않는다.** 한때 여는 순간 적었는데,
+   * 그러면 목록을 순서대로 눌러가며 백스무 칸을 하루에 다 열 수 있다.
+   * 실루엣의 뜻이 "아직 가게에 안 나온 옷" 이 아니라 그냥
+   * "아직 안 눌러본 옷" 이 된다 — 진열대를 만든 이유가 없어진다.
+   *
+   * 적히는 자리는 진열대 하나뿐이다 (아래 useEffect).
    */
   const tap = (view: SkinView) => {
     setNote(null)
     setOpenId(view.def.id)
-    if (!view.hidden) onSee([view.def.id])
   }
 
-  const closeDetail = () => {
-    setOpenId(null)
-    // 시트를 닫으면 미리보기도 같이 끝난다
-    setTryOnId(null)
-  }
+  const closeDetail = () => setOpenId(null)
 
   const buy = (view: SkinView) => {
     const result = onBuy(view.def.id)
@@ -222,11 +213,6 @@ export function MyLookSheet({ open, state, onClose, onSelect, onSee, onBuy }: My
             </div>
             <div className="min-w-0 flex-1 pb-2">
               <p className="text-[16px] font-semibold text-ink">{current.def.name}</p>
-              {tryOnId && (
-                <p className="mt-0.5 font-game text-[9.5px] tracking-[0.12em] text-coral-deep">
-                  입어보는 중
-                </p>
-              )}
               <p className="mt-1 line-clamp-3 text-[12.5px] leading-relaxed text-inkdim">
                 {current.def.description}
               </p>
@@ -387,7 +373,7 @@ export function MyLookSheet({ open, state, onClose, onSelect, onSee, onBuy }: My
               칸마다 가격을 박아두면 목록이 가게처럼 보인다. */}
           {shown.some((v) => v.forSale) && (
             <p className="mt-3 text-center text-[11.5px] leading-relaxed text-inkfaint">
-              🪙 는 오늘 걸린 옷이야. 눌러서 자세히 보고, 입어보고, 살 수 있어.
+              🪙 는 오늘 걸린 옷이야. 눌러서 자세히 보고 살 수 있어.
               <br />
               🏷️ 는 의상실에 가끔 걸리는 옷 · 지금 가진 코인{' '}
               {state.user.coins.toLocaleString()}
@@ -409,10 +395,7 @@ export function MyLookSheet({ open, state, onClose, onSelect, onSee, onBuy }: My
       <SkinDetailSheet
         view={detail}
         coins={state.user.coins}
-        tryingOn={detail !== null && tryOnId === detail.def.id}
         onClose={closeDetail}
-        onTryOn={() => detail && setTryOnId(detail.def.id)}
-        onStopTryOn={() => setTryOnId(null)}
         onWear={() => {
           if (!detail) return
           onSelect(detail.def.id)

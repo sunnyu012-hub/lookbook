@@ -54,6 +54,7 @@ import { findCollectionItem } from '@/lib/collection/catalog'
 import { emptyCollection } from '@/lib/collection/progress'
 import { emptyDiscovery } from '@/lib/discovery/derive'
 import { DEFAULT_SKIN_ID, defaultOwnedSkinIds } from '@/lib/character/skins'
+import { rackPool } from '@/lib/character/rack'
 import { MAX_PLOTS, emptyGarden, emptyPlots } from '@/lib/garden/derive'
 import { MAX_ADVENTURE_ENERGY } from '@/lib/garden/quest'
 import { findCrop } from '@/lib/garden/crops'
@@ -727,11 +728,28 @@ export function sanitizeOwnedSkins(raw: unknown): SkinId[] {
  * 예전 저장에는 없다. 없으면 빈 배열로 시작한다 — 가진 것을 여기 채워주지
  * 않는다. "봤다" 와 "가졌다" 는 도감에서 각각 다른 줄을 담당하고,
  * 화면은 둘 중 하나만 참이어도 그림을 보여준다.
+ *
+ * ── 진열대에 걸릴 수 있는 것만 남긴다 ──────────────────
+ *
+ * 이 칸에 적는 곳은 의상실 진열대 하나뿐이고(MyLookSheet), 진열대에는
+ * 값이 붙은 옷만 걸린다(rack.ts). 그래서 값이 없는 옷의 id 가 여기 있으면
+ * 그건 어떤 경로로도 적힐 수 없는 값이다.
+ *
+ * 만드는 중에 한 번 그렇게 됐다. 상세 시트를 여는 것만으로 적던 판이 있었고,
+ * 그때 눌러본 옷들이 저장에 남았다. 화면에서는 "봤음" 으로 보이는데
+ * 실제로 가게에서 본 적은 없는 옷들이다. 여기서 조용히 걸러낸다.
+ *
+ * 나중에 작은 옷장이 "본 것" 을 적기 시작하면 그때 이 집합을 넓힌다.
  */
 export function sanitizeSeenSkins(raw: unknown): SkinId[] {
-  const known = new Set<string>(SKIN_IDS)
   if (!Array.isArray(raw)) return []
-  return [...new Set(raw.filter((v): v is SkinId => typeof v === 'string' && known.has(v)))]
+  const known = new Set<string>(SKIN_IDS)
+  const canBeSeen = new Set<string>(rackPool().map((s) => s.id))
+  return [
+    ...new Set(
+      raw.filter((v): v is SkinId => typeof v === 'string' && known.has(v) && canBeSeen.has(v)),
+    ),
+  ]
 }
 
 /**

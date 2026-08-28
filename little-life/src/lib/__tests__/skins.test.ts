@@ -964,6 +964,41 @@ describe('가게에서 본 것을 기억한다', () => {
     expect(sanitizeSeenSkins([priced.id, 'no_such_skin', 7])).toEqual([priced.id])
   })
 
+  it('진열대에 걸릴 수 없는 옷은 걸러낸다', () => {
+    // 만드는 중에 상세 시트를 여는 것만으로 적던 판이 있었고, 그때 눌러본
+    // 옷들이 저장에 남았다. 값이 없는 옷은 진열대에 안 걸리니 적힐 수가 없다.
+    const free = SKINS.find((sk) => skinPrice(sk) === null)!
+    expect(sanitizeSeenSkins([free.id])).toEqual([])
+    expect(sanitizeSeenSkins([priced.id, free.id])).toEqual([priced.id])
+  })
+
+  it('예전 판이 남긴 기록은 저장을 한 바퀴 돌면 사라진다', () => {
+    const free = SKINS.find((sk) => skinPrice(sk) === null)!
+    const dirty = createDefaultState()
+    const stale = {
+      ...dirty,
+      user: { ...dirty.user, seenSkinIds: [free.id, priced.id] },
+    }
+    const back = sanitizeState(JSON.parse(JSON.stringify(stale)))
+    expect(back?.user.seenSkinIds).toEqual([priced.id])
+  })
+
+  it('적히는 자리는 진열대 하나뿐이다', () => {
+    // 상세 시트를 여는 것만으로 적히면, 목록을 순서대로 눌러가며
+    // 백스무 칸을 하루에 다 열 수 있다. 그러면 실루엣의 뜻이
+    // "아직 가게에 안 나온 옷" 이 아니라 "아직 안 눌러본 옷" 이 된다.
+    const src = readFileSync(
+      path.join(process.cwd(), 'src/components/character/MyLookSheet.tsx'),
+      'utf-8',
+    )
+    // onSee 를 부르는 곳은 진열대 useEffect 한 군데
+    expect(src.match(/onSee\(/g) ?? []).toHaveLength(1)
+    expect(src).toMatch(/onSee\(rackIds\)/)
+    // 누르는 자리(tap)에서는 안 부른다
+    const tap = src.slice(src.indexOf('const tap ='), src.indexOf('const closeDetail'))
+    expect(tap).not.toMatch(/onSee/)
+  })
+
   it('감춘 옷은 들춰봐도 적지 않는다', () => {
     // 화면에서 hidden 인 것은 onSee 를 안 부른다. 들춰봐도 ??? 였으니
     // "봤다" 고 적으면 다음부터 이름과 그림이 공짜로 열린다.
@@ -1085,5 +1120,37 @@ describe('오늘 걸린 옷', () => {
       'utf-8',
     )
     expect(src).not.toMatch(/AppState|localStorage|@\/store\//)
+  })
+})
+
+describe('입어보기는 없다', () => {
+  /**
+   * 안 가진 옷도 미리 입어보게 했었다. 그런데 미리보기가 그려지는 자리는
+   * 의상실 맨 위인데 상세 시트가 그 위를 덮는다 — 입어봐도 볼 수가 없었다.
+   * 볼 수 없는 미리보기는 기능이 아니라서 걷어냈다.
+   */
+  it('상세 시트에 입어보기 버튼이 없다', () => {
+    const src = readFileSync(
+      path.join(process.cwd(), 'src/components/character/SkinDetailSheet.tsx'),
+      'utf-8',
+    )
+    expect(src).not.toMatch(/onTryOn|tryingOn|>입어보기</)
+  })
+
+  it('"봤음" 배지는 없다 — 색이 표시다', () => {
+    // 진열대에 걸리는 옷은 늘 🪙 아니면 🏷️ 를 달고 있어서 배지가 나올 자리가 없었다.
+    const src = readFileSync(
+      path.join(process.cwd(), 'src/components/character/SkinCard.tsx'),
+      'utf-8',
+    )
+    expect(src).not.toMatch(/봤음/)
+  })
+
+  it('의상실이 미리보기 상태를 들고 있지 않다', () => {
+    const src = readFileSync(
+      path.join(process.cwd(), 'src/components/character/MyLookSheet.tsx'),
+      'utf-8',
+    )
+    expect(src).not.toMatch(/tryOnId|setTryOnId/)
   })
 })
