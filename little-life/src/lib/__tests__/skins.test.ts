@@ -26,6 +26,7 @@ import {
   markSkinsSeen,
 } from '@/lib/character/skins'
 import { SKIN_PACKS } from '@/lib/character/packs'
+import { RACK_COUNT, isOnRack, rackPool, todayRack } from '@/lib/character/rack'
 import { SKIN_GACHA_POOL_IDS } from '@/types'
 import { discoveredInGroup, groupSize, itemIdsInGroup } from '@/lib/character/groups'
 import { SKIN_ITEM_GROUPS } from '@/types'
@@ -973,5 +974,76 @@ describe('누르는 것만으로는 안 사진다', () => {
     const r = buySkin(s, priced.id)
     expect(r.result.ok).toBe(true)
     expect(r.state.user.coins).toBe(37)
+  })
+})
+
+describe('오늘 걸린 옷', () => {
+  /**
+   * 의상실이 백스무 벌을 한 번에 다 보여줘서, 도감의 실루엣이
+   * "아직 가게에 안 나온 옷" 이 아니라 "아직 안 눌러본 옷" 이었다.
+   * 하루에 다섯 벌만 걸리면 도감이 며칠에 걸쳐 찬다.
+   */
+  it('날짜가 같으면 늘 같은 다섯 벌이다', () => {
+    const a = todayRack('2026-08-28').map((s) => s.id)
+    const b = todayRack('2026-08-28').map((s) => s.id)
+    expect(a).toEqual(b)
+    expect(a).toHaveLength(RACK_COUNT)
+  })
+
+  it('날짜가 바뀌면 바뀐다', () => {
+    const days = ['2026-08-28', '2026-08-29', '2026-08-30', '2026-08-31', '2026-09-01']
+    const sets = days.map((d) => todayRack(d).map((s) => s.id).join(','))
+    // 다섯 날이 전부 같으면 그건 진열이 아니다
+    expect(new Set(sets).size).toBeGreaterThan(1)
+  })
+
+  it('값이 붙은 옷만 걸린다 — 못 사는 옷을 걸어두면 광고다', () => {
+    for (const day of ['2026-01-05', '2026-06-06', '2026-11-20']) {
+      for (const skin of todayRack(day)) {
+        expect(skinPrice(skin)).not.toBeNull()
+      }
+    }
+  })
+
+  it('한 날에 같은 옷이 두 번 걸리지 않는다', () => {
+    for (const day of ['2026-02-02', '2026-07-17', '2026-12-25']) {
+      const ids = todayRack(day).map((s) => s.id)
+      expect(new Set(ids).size).toBe(ids.length)
+    }
+  })
+
+  it('오래 돌리면 결국 여러 벌이 돌아온다', () => {
+    // 한두 벌만 계속 걸리면 도감이 안 찬다
+    const seen = new Set<string>()
+    const start = new Date('2026-01-01')
+    for (let i = 0; i < 60; i += 1) {
+      const d = new Date(start)
+      d.setDate(start.getDate() + i)
+      for (const s of todayRack(d.toISOString().slice(0, 10))) seen.add(s.id)
+    }
+    expect(seen.size).toBeGreaterThan(RACK_COUNT * 4)
+  })
+
+  it('걸린 옷은 살 수 있는 풀 안에 있다', () => {
+    const pool = new Set(rackPool().map((s) => s.id))
+    for (const s of todayRack('2026-03-03')) expect(pool.has(s.id)).toBe(true)
+  })
+
+  it('isOnRack 이 그날 목록과 어긋나지 않는다', () => {
+    const day = '2026-04-04'
+    const ids = todayRack(day).map((s) => s.id)
+    for (const id of ids) expect(isOnRack(id, day)).toBe(true)
+    const off = rackPool().find((s) => !ids.includes(s.id))
+    if (off) expect(isOnRack(off.id, day)).toBe(false)
+  })
+
+  it('저장을 건드리지 않는다 — 날짜에서 다시 만든다', () => {
+    // 진열을 저장하면 기기마다 다른 진열이 남는다. 그래서 이 파일은
+    // AppState 도 저장 계층도 아예 안 부른다. 인자는 날짜 하나뿐이다.
+    const src = readFileSync(
+      path.join(process.cwd(), 'src/lib/character/rack.ts'),
+      'utf-8',
+    )
+    expect(src).not.toMatch(/AppState|localStorage|@\/store\//)
   })
 })

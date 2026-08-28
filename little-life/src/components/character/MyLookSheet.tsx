@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { AppState, SkinId, SkinPackId, SkinView, SkinWorld, WardrobeTag } from '@/types'
 import { WARDROBE_TAGS } from '@/types'
 import { BottomSheet } from '@/components/ui/BottomSheet'
@@ -11,6 +11,7 @@ import {
   findPack,
 } from '@/lib/character/packs'
 import type { BuySkinResult } from '@/lib/character/derive'
+import { todayRack } from '@/lib/character/rack'
 import { CharacterSkinRenderer } from './CharacterSkinRenderer'
 import { SkinCard } from './SkinCard'
 import { SkinDetailSheet } from './SkinDetailSheet'
@@ -20,8 +21,8 @@ interface MyLookSheetProps {
   state: AppState
   onClose: () => void
   onSelect: (id: string) => void
-  /** 한 벌을 들춰봤다고 적어둔다 — 도감이 기억한다 */
-  onSee: (id: string) => void
+  /** 의상실에서 본 옷들을 적어둔다 — 도감이 기억한다 */
+  onSee: (ids: readonly string[]) => void
   onBuy: (id: string) => BuySkinResult
 }
 
@@ -94,6 +95,34 @@ export function MyLookSheet({ open, state, onClose, onSelect, onSee, onBuy }: My
    */
   const views = useMemo(() => (open ? skinViews(state) : []), [open, state])
 
+  /**
+   * 오늘 걸린 다섯 벌.
+   *
+   * 날짜만으로 정해진다 — 저장하지 않고, 상태가 바뀌어도 안 흔들린다.
+   * 시트가 닫혀 있으면 계산하지 않는다.
+   */
+  const rackIds = useMemo(
+    () => (open ? todayRack().map((s) => s.id) : []),
+    // 하루 안에서는 같은 값이다. 자정을 넘겨 다시 열면 그때 새로 뽑힌다.
+    [open],
+  )
+  const rack = useMemo(
+    () => rackIds.map((id) => views.find((v) => v.def.id === id)).filter((v): v is SkinView => !!v),
+    [rackIds, views],
+  )
+
+  /**
+   * 진열대에 걸린 것은 **들어오자마자 본 것**이다.
+   *
+   * 눌러야 적히는 게 아니다 — 가게에 들어서면 걸린 옷은 다 눈에 들어온다.
+   * 그래서 도감이 하루에 다섯 칸씩 채워진다. 눌러서 채우는 것과 달리
+   * 하루 만에 백스무 칸을 다 열 수는 없다.
+   */
+  useEffect(() => {
+    if (!open || rackIds.length === 0) return
+    onSee(rackIds)
+  }, [open, rackIds, onSee])
+
   const shown = useMemo(() => {
     let list = views.filter((v) =>
       shelf === 'MINE' ? v.owned : !v.owned || justBought.includes(v.def.id),
@@ -131,7 +160,7 @@ export function MyLookSheet({ open, state, onClose, onSelect, onSee, onBuy }: My
   const tap = (view: SkinView) => {
     setNote(null)
     setOpenId(view.def.id)
-    if (!view.hidden) onSee(view.def.id)
+    if (!view.hidden) onSee([view.def.id])
   }
 
   const closeDetail = () => {
@@ -296,6 +325,37 @@ export function MyLookSheet({ open, state, onClose, onSelect, onSee, onBuy }: My
         )}
 
         <div className="mt-2.5 min-h-0 flex-1 overflow-y-auto">
+          {/* 오늘 걸린 것.
+              거르는 중일 때는 안 보여준다 — "직업" 을 골라놓고 봤는데
+              위에 상관없는 다섯 벌이 있으면 그건 거르기가 아니다. */}
+          {shelf === 'NEW' && pack === null && world === 'ALL' && tag === null && rack.length > 0 && (
+            <div className="mb-4">
+              <div className="mb-2 flex items-baseline justify-between">
+                <h3 className="font-game text-[10px] tracking-[0.12em] text-coral-deep">
+                  오늘 걸린 옷
+                </h3>
+                <span className="text-[11px] text-inkfaint">내일이면 또 바뀌어</span>
+              </div>
+              <ul className="grid grid-cols-3 gap-2">
+                {rack.map((view) => (
+                  <li key={view.def.id}>
+                    <SkinCard
+                      view={view}
+                      onSelect={() => tap(view)}
+                      onPack={() => openPack(view.def.packId)}
+                    />
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-[11px] leading-relaxed text-inkfaint">
+                걸린 옷은 들어오는 것만으로 도감에 남아. 안 사도 괜찮고,
+                <br />
+                값이 붙은 옷은 아래 목록에서 언제든 살 수 있어.
+              </p>
+              <div className="mt-3 h-px bg-line" />
+            </div>
+          )}
+
           {shown.length === 0 ? (
             <p className="mt-8 text-center text-[12px] leading-relaxed text-inkfaint">
               {shelf === 'MINE'
