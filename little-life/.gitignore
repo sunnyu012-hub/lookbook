@@ -10,13 +10,18 @@ assets/source-sheets/*.png
 !assets/source-sheets/extra.png
 !assets/source-sheets/trophy.png
 !assets/source-sheets/companions.png
-# 캐릭터 모습 시트 여섯 장. 스물네 모습의 유일한 사본이라 함께 둔다.
+# 캐릭터 모습 시트 서른 장. 백스무 모습의 유일한 사본이라 함께 둔다.
+# (1·2차 여섯 장 = 24벌, 3차 스물네 장 = 96벌)
 !assets/source-sheets/skins-1.png
 !assets/source-sheets/skins-2.png
 !assets/source-sheets/skins-3.png
 !assets/source-sheets/skins2-sweet.png
 !assets/source-sheets/skins2-rock.png
 !assets/source-sheets/skins2-idol.png
+!assets/source-sheets/skins3-*.png
+# 잘라낸 조각은 시트에서 언제든 다시 만든다.
+# 다만 skins3 는 아직 이름이 안 붙어서 자리 이름(01-a)으로만 있다 —
+# 이름이 정해지면 extract-skins.py 로 정식 id 를 달아 내보낸다.
 assets/slices/
 
 # 환경변수 (.env.example 만 저장소에 둔다)
