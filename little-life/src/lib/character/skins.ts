@@ -312,9 +312,9 @@ const LEGACY_SKINS: CharacterSkin[] = [
       price: 750,
     },
     acquisition: 'LEGACY_UNLOCK',
-    hint: 'June이 진열하지 않는 옷도 있는 것 같다.',
+    hint: '이안이 진열하지 않는 옷도 있는 것 같다.',
     dialogue: {
-      line1: 'June이 비밀스럽게 옷걸이를 하나 꺼냈다.',
+      line1: '이안이 말없이 옷걸이를 하나 꺼냈다.',
       line2: '"너라면 이 무드도 잘 소화할 것 같아."',
     },
     sortOrder: 17,

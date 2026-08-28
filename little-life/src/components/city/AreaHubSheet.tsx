@@ -24,6 +24,8 @@ interface AreaHubSheetProps {
   npcs: NpcStates
   events: CityEvent[]
   state: AppState
+  /** 지금 시각. 누가 여기 있고 가게가 열렸는지가 여기서 갈린다 */
+  now: Date
   onClose: () => void
   onSelect: (id: AreaId) => void
   onOpenNpc: (npc: NpcDef) => void
@@ -40,7 +42,7 @@ interface AreaHubSheetProps {
  *
  * 예전 시트는 설명이 먼저였다 — 평판 막대, 버프 설명, 이벤트 설명, 사람 목록,
  * 가게 목록, 어울리는 분야, 오늘 퀘스트 다섯 줄, 그리고 맨 아래 "여기로 가기".
- * 미나에게 말을 걸려면 시트를 열고 스크롤을 내려야 했다.
+ * 하루에게 말을 걸려면 시트를 열고 스크롤을 내려야 했다.
  *
  * 여기서는 **할 수 있는 것이 먼저**다. 사람도 가게도 정원도 같은 크기의 칸으로
  * 두 줄씩 깔린다. 지도에서 두 번 누르면 어디든 닿는다.
@@ -53,6 +55,7 @@ export function AreaHubSheet({
   npcs,
   events,
   state,
+  now,
   onClose,
   onSelect,
   onOpenNpc,
@@ -64,8 +67,8 @@ export function AreaHubSheet({
   onOpenDungeon,
 }: AreaHubSheetProps) {
   const actions = useMemo(
-    () => (area ? areaActions({ area, state, npcs }) : []),
-    [area, state, npcs],
+    () => (area ? areaActions({ area, state, npcs, now }) : []),
+    [area, state, npcs, now],
   )
   const areaEvents = useMemo(
     () => (area ? eventsForArea(area.id, events) : []),

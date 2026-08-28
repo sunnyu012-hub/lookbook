@@ -11,6 +11,8 @@ interface AreaCardProps {
   event: CityEvent | null
   /** 지금 여기 아니면 한 칸, 지금 여기면 한 줄 전부 */
   wide?: boolean
+  /** 지금 시각. 누가 여기 있는지가 여기서 갈린다 */
+  now?: Date
   onOpen: (area: AreaDef) => void
 }
 
@@ -19,14 +21,14 @@ interface AreaCardProps {
  *
  * 예전에는 여섯 동네가 전부 같은 너비로 세로로 쌓였고, 카드마다 평판 막대 ·
  * 하트 · 이벤트 설명 · 어울리는 퀘스트 개수가 다 붙어 있었다. 그래서 지도를
- * 열면 읽을 게 먼저 나오고, 정작 "미나한테 말 걸기" 까지는 한참 걸렸다.
+ * 열면 읽을 게 먼저 나오고, 정작 "하루한테 말 걸기" 까지는 한참 걸렸다.
  *
  * 여기는 다섯 가지만 적는다 — 아이콘 · 이름 · 여기 뭐가 있는지 · 오늘 한 줄 · 상태.
  * 나머지는 눌러서 들어간 다음이다.
  */
-export function AreaCard({ area, isCurrent, closed, event, wide, onOpen }: AreaCardProps) {
+export function AreaCard({ area, isCurrent, closed, event, wide, now, onOpen }: AreaCardProps) {
   // 반 칸짜리에는 둘까지. 셋째 이름은 어차피 잘린다.
-  const highlights = areaHighlights(area, wide ? 3 : 2)
+  const highlights = areaHighlights(area, wide ? 3 : 2, now)
 
   return (
     <button

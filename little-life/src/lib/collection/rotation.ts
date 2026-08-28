@@ -10,7 +10,7 @@ import { findCollectionItem } from './catalog'
 /**
  * 오늘 무엇이 깔릴지 정하는 규칙.
  *
- * 예전에는 가게 목록에서 그냥 아무거나 N개를 뽑았다. 그래서 준의 빈티지에서는
+ * 예전에는 가게 목록에서 그냥 아무거나 N개를 뽑았다. 그래서 이안의 빈티지에서는
  * 다섯 칸 중 한 칸이 늘 전설품이었고, 취미 코너는 네 칸 중 하나가 EPIC 이었다.
  * 매일 있는 것은 귀한 것이 아니다. 그러면 들여다볼 이유가 없어진다.
  *
@@ -115,7 +115,7 @@ export function isEligible(def: CollectionItemDef, ctx: PickContext): boolean {
  * 무게는 등급 전체에 주는 몫이지 한 물건에 주는 몫이 아니다.
  * 그래서 그 등급에 몇 개가 있는지로 나눠준다 —
  * 안 그러면 전설품이 세 개인 가게에서는 전설품 몫이 저절로 세 배가 된다.
- * (준의 빈티지가 다섯 칸 중 한 칸을 늘 전설품으로 채우던 이유가 이거였다)
+ * (이안의 빈티지가 다섯 칸 중 한 칸을 늘 전설품으로 채우던 이유가 이거였다)
  */
 function weightOf(def: CollectionItemDef, ctx: PickContext): number {
   const tilt = SHOP_TILT[ctx.shop.id]?.[def.rarity] ?? 1
@@ -212,7 +212,7 @@ export function rotateShop(
 /**
  * 귀한 칸 채우기.
  *
- * 준의 빈티지에 오늘 흔한 것만 다섯 개 깔리면 그건 그냥 잡화점이다.
+ * 이안의 빈티지에 오늘 흔한 것만 다섯 개 깔리면 그건 그냥 잡화점이다.
  * 무게만으로 뽑으면 그런 날이 생기니까, 가게가 약속한 만큼은 채워 넣는다.
  * 대신 제일 흔한 칸을 내주고 바꾼다 — 칸 수가 늘어나면 안 된다.
  */

@@ -72,7 +72,7 @@ const SHOP_DEFS: Omit<CollectionShopDef, 'catalog'>[] = [
   },
   {
     id: 'JUNE_VINTAGE',
-    name: '준의 빈티지',
+    name: '이안의 빈티지',
     icon: '🕰️',
     areaId: 'CREATIVE_DISTRICT',
     description: '먼저 쓰던 사람이 있던 물건만 둔다.',
@@ -211,7 +211,7 @@ export function todayListings(
     if (!item?.price) continue
 
     // 뒷줄에 두는 건 전설품뿐이다.
-    // 예전에는 EPIC 까지 잠갔는데, 등급 무게를 넣고 나니 준의 빈티지에
+    // 예전에는 EPIC 까지 잠갔는데, 등급 무게를 넣고 나니 이안의 빈티지에
     // EPIC 이 꾸준히 들어오게 되어서 처음 온 사람은 네 칸 중 한 칸만 살 수 있었다.
     // 가게에 들어갔는데 살 수 있는 게 하나면 그건 가게가 아니다.
     const locked =

@@ -250,7 +250,7 @@ const BASE_RECIPES: RecipeDef[] = [
       { itemId: 'dream_piece', count: 1 },
     ],
     unlock: { kind: 'NPC', npcId: 'LULU', friendship: 20 },
-    unlockHint: '루루에게 배운다',
+    unlockHint: '미래에게 배운다',
   },
   {
     id: 'raindrop_light',
@@ -261,14 +261,14 @@ const BASE_RECIPES: RecipeDef[] = [
       { itemId: 'raindrop_crystal', count: 1 },
     ],
     unlock: { kind: 'NPC', npcId: 'NOA', friendship: 30 },
-    unlockHint: '노아에게 배운다',
+    unlockHint: '세라에게 배운다',
   },
   {
     id: 'sleepy_bear_cushion',
     resultItemId: 'sleepy_bear_cushion',
     ingredients: [{ itemId: 'm_cloth', count: 5 }, { itemId: 'm_petal', count: 3 }],
     unlock: { kind: 'NPC', npcId: 'JUNE', friendship: 25 },
-    unlockHint: '준에게 배운다',
+    unlockHint: '이안에게 배운다',
   },
 
   // ── 세트를 완성하고 알게 되는 것 ──

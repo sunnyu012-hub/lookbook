@@ -9,6 +9,11 @@ import type { AreaId, Bonuses, Rarity } from './rpg'
  */
 
 // ── NPC ─────────────────────────────────────────────────
+//
+// id 는 처음 만든 그대로다. 사람은 캐릭터 바이블 쪽으로 바뀌었다 —
+// MINA=윤하루 · HARU=윤태오 · LULU=오미래 · JUNE=서이안 · RIO=한도윤 · NOA=차세라.
+// 저장이 친밀도 · 읽은 이야기 · 비밀 장소 · 던전 입구를 전부 이 id 로 붙잡고
+// 있어서 이름을 따라 바꾸면 하던 사람들이 그걸 잃는다. 이름은 `city/npcs.ts` 에 있다.
 export const NPC_IDS = ['MINA', 'HARU', 'LULU', 'JUNE', 'RIO', 'NOA'] as const
 export type NpcId = (typeof NPC_IDS)[number]
 
@@ -110,6 +115,36 @@ export interface NpcState {
 
 export type NpcStates = Record<string, NpcState>
 
+// ── 하루 동선 ───────────────────────────────────────────
+
+/**
+ * 지금 있을 만한 자리.
+ *
+ * `OFFSCREEN` 은 도시 어디에도 안 보인다는 뜻이다. 집에 있든 일하러 갔든
+ * 그건 우리가 알 바 아니고, 화면에 없다는 것만 참이다.
+ */
+export type RoutineSpot = AreaId | 'OFFSCREEN'
+
+/** 자리 하나와 그 자리가 뽑힐 무게 */
+export interface WeightedSpot {
+  spot: RoutineSpot
+  weight: number
+}
+
+/**
+ * 한 사람의 하루.
+ *
+ * 분 단위 시간표를 만들지 않는다. 시간대 넷이면 충분하다 —
+ * 08:12 카페 / 08:47 집 같은 건 사람의 하루가 아니라 로그다.
+ */
+export interface NpcRoutineDef {
+  npcId: NpcId
+  /** 평일 네 칸. 비워두지 않는다 */
+  weekday: Record<import('./rpg').TimeBand, WeightedSpot[]>
+  /** 주말에만 달라지는 칸. 없으면 평일과 같다 */
+  weekend?: Partial<Record<import('./rpg').TimeBand, WeightedSpot[]>>
+}
+
 // ── 상점 ────────────────────────────────────────────────
 export const SHOP_IDS = ['MINA_CAFE', 'JUNE_CLOSET', 'MOVE_STORE', 'NIGHT_MARKET'] as const
 export type ShopId = (typeof SHOP_IDS)[number]
@@ -134,6 +169,13 @@ export interface ShopDef {
   rotatingPool?: ShopEntry[]
   rotatingCount?: number
   nightOnly?: boolean
+  /**
+   * 여는 시각과 닫는 시각 (0~23).
+   *
+   * 닫는 쪽이 더 작으면 자정을 넘긴다 (예: 21 → 5).
+   * `nightOnly` 가 있으면 그쪽이 먼저다 — 밤 가게는 이미 자기 시간을 안다.
+   */
+  hours?: { open: number; close: number }
 }
 
 // ── 도시 이벤트 ─────────────────────────────────────────

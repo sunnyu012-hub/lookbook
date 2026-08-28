@@ -20,13 +20,13 @@ import { conditionProgress } from './secrets'
  */
 
 export const STORY_CHAPTERS: StoryChapterDef[] = [
-  // ── 미나 · 카페 거리 ──────────────────────────────
+  // ── 하루 · 카페 거리 ──────────────────────────────
   {
     id: 'MINA_1',
     npcId: 'MINA',
     order: 1,
     title: '늘 같은 자리',
-    lockedHint: '미나와 몇 번 더 이야기하면.',
+    lockedHint: '하루와 몇 번 더 이야기하면.',
     conditions: [{ kind: 'FRIENDSHIP', npcId: 'MINA', value: 6 }],
     lines: [
       '"저 자리 있잖아. 창가 두 번째."',
@@ -73,7 +73,7 @@ export const STORY_CHAPTERS: StoryChapterDef[] = [
     npcId: 'MINA',
     order: 4,
     title: '뒤쪽의 작은 방',
-    lockedHint: '미나가 아직 안 한 말이 있는 것 같다.',
+    lockedHint: '하루가 아직 안 한 말이 있는 것 같다.',
     conditions: [
       { kind: 'FRIENDSHIP', npcId: 'MINA', value: 30 },
       { kind: 'AREA_REPUTATION', areaId: 'CAFE_STREET', value: 40 },
@@ -81,6 +81,7 @@ export const STORY_CHAPTERS: StoryChapterDef[] = [
     lines: [
       '"사실 뒤쪽에 작은 방이 하나 있어."',
       '"손님한테는 잘 안 알려주는데."',
+      '"나도 가끔 거기 들어가 있어. 웃는 게 힘든 날에."',
       '"거긴 오래 앉아 있어도 아무도 안 봐. 필요할 때 써."',
     ],
     rewardItemId: null,
@@ -88,18 +89,18 @@ export const STORY_CHAPTERS: StoryChapterDef[] = [
     unlocksSecret: 'BACKROOM_CAFE',
   },
 
-  // ── 하루 · 초록 공원 ──────────────────────────────
+  // ── 태오 · 초록 공원 ──────────────────────────────
   {
     id: 'HARU_1',
     npcId: 'HARU',
     order: 1,
     title: '자기 속도',
-    lockedHint: '하루와 몇 번 더 마주치면.',
+    lockedHint: '태오와 몇 번 더 마주치면.',
     conditions: [{ kind: 'FRIENDSHIP', npcId: 'HARU', value: 6 }],
     lines: [
       '"빨리 뛰는 사람이 부럽지 않냐고? 예전엔 그랬지."',
-      '"근데 빨리 뛰면 이 길을 못 봐."',
-      '"나는 이 길 보려고 나오는 거라서."',
+      '"처음엔 나도 남들 속도로 뛰었어. 그땐 뭘 잊으려고 뛴 거라."',
+      '"지금은 이 길 보려고 나와. 그게 더 오래 가더라."',
     ],
     rewardItemId: 'water_bottle',
     rewardFriendship: 3,
@@ -148,7 +149,7 @@ export const STORY_CHAPTERS: StoryChapterDef[] = [
     npcId: 'HARU',
     order: 4,
     title: '돌이 많은 길',
-    lockedHint: '하루가 요즘 다른 데를 다니는 것 같다.',
+    lockedHint: '태오가 요즘 다른 데를 다니는 것 같다.',
     conditions: [
       { kind: 'FRIENDSHIP', npcId: 'HARU', value: 30 },
       { kind: 'AREA_REPUTATION', areaId: 'GREEN_PARK', value: 40 },
@@ -170,7 +171,7 @@ export const STORY_CHAPTERS: StoryChapterDef[] = [
     npcId: 'HARU',
     order: 5,
     title: '열쇠는 아무도 못 찾았대',
-    lockedHint: '주운 돌조각을 하루한테 보여주면 뭔가 알 것 같다.',
+    lockedHint: '주운 돌조각을 태오한테 보여주면 뭔가 알 것 같다.',
     conditions: [
       { kind: 'FRIENDSHIP', npcId: 'HARU', value: 34 },
       { kind: 'QUARRY_FIND', itemId: 'mineral_strange_fragment', count: 1 },
@@ -184,17 +185,17 @@ export const STORY_CHAPTERS: StoryChapterDef[] = [
     rewardFriendship: 4,
   },
 
-  // ── 루루 · 창작 지구 ──────────────────────────────
+  // ── 미래 · 창작 지구 ──────────────────────────────
   {
     id: 'LULU_1',
     npcId: 'LULU',
     order: 1,
     title: '안 끝낸 것들',
-    lockedHint: '루루와 몇 번 더 이야기하면.',
+    lockedHint: '미래와 몇 번 더 이야기하면.',
     conditions: [{ kind: 'FRIENDSHIP', npcId: 'LULU', value: 6 }],
     lines: [
       '"저기 쌓인 거? 전부 하다 만 거야."',
-      '"끝내야 된다고 생각하면 시작을 못 하겠더라고."',
+      '"끝내야 된다고 생각하면 시작을 못 하겠더라고. 예순 넘어도 똑같아."',
       '"그래서 그냥 시작만 해. 요즘은 그게 편해."',
     ],
     rewardItemId: 'sketchbook',
@@ -227,14 +228,14 @@ export const STORY_CHAPTERS: StoryChapterDef[] = [
     ],
     lines: [
       '"골목 끝에서 가끔 소리 나는 거 들었어?"',
-      '"옛날에 오락실이었대. 아직 안 닫았다는 말도 있고."',
-      '"한 번 가보고 싶은데 무서워서 혼자는 못 가겠어."',
+      '"옛날에 오락실이었어. 문 닫는 것도 내가 봤는데."',
+      '"그런데 요즘도 소리가 나. 혼자 가보긴 좀 그렇고."',
     ],
     rewardItemId: 'small_radio',
     rewardFriendship: 4,
   },
 
-  // ── 노아 · 밤거리 ─────────────────────────────────
+  // ── 세라 · 밤거리 ─────────────────────────────────
   {
     id: 'NOA_1',
     npcId: 'NOA',
@@ -255,7 +256,7 @@ export const STORY_CHAPTERS: StoryChapterDef[] = [
     npcId: 'NOA',
     order: 2,
     title: '안 파는 것',
-    lockedHint: '노아와 조금 더 가까워지면.',
+    lockedHint: '세라와 조금 더 가까워지면.',
     conditions: [{ kind: 'FRIENDSHIP', npcId: 'NOA', value: 18 }],
     lines: [
       '"이건 안 팔아."',

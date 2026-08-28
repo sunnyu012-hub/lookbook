@@ -43,6 +43,7 @@ import { KitchenLab } from '@/components/kitchen/KitchenLab'
 import { WorkshopLab } from '@/components/collection/WorkshopLab'
 import { QuarryLab } from '@/components/quarry/QuarryLab'
 import { DungeonLab } from '@/components/dungeon/DungeonLab'
+import { CityLab } from '@/components/city/CityLab'
 import type { CookedNote } from '@/components/kitchen/CookedOverlay'
 import type { HarvestNote } from '@/components/garden/HarvestOverlay'
 import { WorkshopSheet } from '@/components/collection/WorkshopSheet'
@@ -186,6 +187,7 @@ export default function App() {
   const devWorkshop = devParam === 'workshop'
   const devQuarry = devParam === 'quarry'
   const devDungeon = devParam === 'dungeon'
+  const devCity = devParam === 'city'
 
   /**
    * 처음 여는 사람에게 한 번.
@@ -656,6 +658,10 @@ export default function App() {
 
   if (devGarden) {
     return <GardenLab state={state} onRun={runDevGarden} />
+  }
+
+  if (devCity) {
+    return <CityLab />
   }
 
   if (devDungeon) {

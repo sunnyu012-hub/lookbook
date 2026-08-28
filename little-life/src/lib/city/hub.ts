@@ -6,22 +6,21 @@ import type {
   NpcStates,
   SecretView,
 } from '@/types'
-import { npcsInArea } from './npcs'
-import { isShopOpen, shopInArea } from './shops'
+import { awayLine, npcsAway, npcsHere } from './routine'
+import { isShopOpen, shopClosedLine, shopInArea } from './shops'
 import { collectionShopsInArea, isCollectionShopOpen, openingLabel } from '@/lib/collection/shops'
 import { hasFreshStock } from '@/lib/collection/progress'
 import { secretsInArea } from '@/lib/discovery/secrets'
 import { isGardenUnlocked, unlockProgress } from '@/lib/garden/derive'
 import { isQuarryUnlocked, unlockProgress as quarryProgress } from '@/lib/quarry/derive'
 import { isGateFound } from '@/lib/dungeon/derive'
-import { isNightOpen } from '@/lib/rpg/time'
 import { todayKey } from '@/lib/date'
 
 /**
  * 이 동네에서 지금 **할 수 있는 것**.
  *
  * 지도가 설명 카드 목록이던 게 문제였다. 카페 거리를 눌러도 평판 막대와
- * 버프 설명과 어울리는 퀘스트 목록이 나오고, 정작 미나에게 말을 걸려면
+ * 버프 설명과 어울리는 퀘스트 목록이 나오고, 정작 하루에게 말을 걸려면
  * 그 아래로 한참 내려가야 했다. 지도는 읽는 곳이 아니라 **가는 곳**이다.
  *
  * 그래서 화면이 아니라 여기서 목록을 만든다. 사람·가게·정원·채석장·작업실이
@@ -78,19 +77,31 @@ interface HubInput {
  * 그다음이 가게, 그다음이 이 동네에서만 갈 수 있는 곳들이다.
  */
 export function areaActions({ area, state, now = new Date() }: HubInput): HubAction[] {
-  const nightOpen = isNightOpen(now)
   const actions: HubAction[] = []
 
-  // ── 사람 ──────────────────────────────────────────────
-  for (const npc of npcsInArea(area.id)) {
-    const away = npc.nightOnly === true && !nightOpen
+  // ── 지금 여기 있는 사람 ───────────────────────────────
+  // 자기 동네 사람이 아니어도 된다. 오늘은 여기 와 있는 것뿐이다.
+  for (const npc of npcsHere(area.id, now)) {
     actions.push({
       key: `npc:${npc.id}`,
       kind: 'NPC',
       icon: npc.avatar,
       title: npc.name,
-      subtitle: away ? '밤에만 보여' : npc.role,
-      disabled: away,
+      subtitle: npc.role,
+      disabled: false,
+      npc,
+    })
+  }
+
+  // ── 이 동네 사람인데 지금은 없는 사람 ─────────────────
+  for (const npc of npcsAway(area.id, now)) {
+    actions.push({
+      key: `npc:${npc.id}`,
+      kind: 'NPC',
+      icon: npc.avatar,
+      title: npc.name,
+      subtitle: awayLine(npc, now),
+      disabled: true,
       npc,
     })
   }
@@ -104,7 +115,7 @@ export function areaActions({ area, state, now = new Date() }: HubInput): HubAct
       kind: 'SHOP',
       icon: shop.icon,
       title: shop.name,
-      subtitle: open ? '구경하기' : '지금은 닫혀 있어',
+      subtitle: open ? '구경하기' : shopClosedLine(shop, now),
       disabled: !open,
     })
   }
@@ -223,20 +234,17 @@ export function areaActions({ area, state, now = new Date() }: HubInput): HubAct
 /**
  * 지도 카드에 적을 짧은 한 줄.
  *
- * "미나 · 카페 · 상점" 처럼 여기 뭐가 있는지만. 평판 숫자도, 하트도, 퀘스트 개수도
+ * "하루 · 카페 · 상점" 처럼 여기 뭐가 있는지만. 평판 숫자도, 하트도, 퀘스트 개수도
  * 여기 안 적는다 — 카드 여섯 장에 그게 다 붙으면 지도가 아니라 표가 된다.
  *
  * 반 칸짜리 카드에 셋을 적으면 세 번째가 "June..." 으로 잘린다.
  * 잘린 이름은 안 적은 것만도 못하다 — 그래서 몇 개까지 적을지는 부르는 쪽이 정한다.
  */
 export function areaHighlights(area: AreaDef, max = 3, now: Date = new Date()): string[] {
-  const nightOpen = isNightOpen(now)
   const names: string[] = []
 
-  for (const npc of npcsInArea(area.id)) {
-    if (npc.nightOnly && !nightOpen) continue
-    names.push(npc.name)
-  }
+  // 지금 여기 있는 사람만. 지도를 훑는 것만으로 누가 어디 있는지 보여야 한다.
+  for (const npc of npcsHere(area.id, now)) names.push(npc.name)
 
   const shop = shopInArea(area.id)
   if (shop) names.push(shop.name)

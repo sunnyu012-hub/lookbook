@@ -42,7 +42,7 @@ export const SECRETS: SecretDef[] = [
     name: '뒷방',
     areaId: 'CAFE_STREET',
     icon: '🚪',
-    hint: '미나가 뭔가 말하려다 만 것 같다.',
+    hint: '하루가 뭔가 말하려다 만 것 같다.',
     reveal: '"사실 뒤쪽에 작은 방이 하나 있어."',
     description: '문을 닫으면 소리가 거의 안 들어온다. 오래 앉아 있어도 아무도 안 본다.',
     conditions: [
