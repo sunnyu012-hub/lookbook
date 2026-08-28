@@ -30,8 +30,17 @@ interface DungeonScreenProps {
   onOpenBook: () => void
 }
 
-/** 에너지가 없을 때 하는 말. 부족하다고 하지 않는다. */
-const NO_ENERGY = '오늘은 여기까지 둘러봐도 괜찮을 것 같아.'
+/**
+ * 등불이 다 됐을 때 하는 말.
+ *
+ * 여기 있던 말은 "오늘은 여기까지 둘러봐도 괜찮을 것 같아." 였다.
+ * 그게 거짓말이었다 — 등불은 날이 바뀐다고 다시 차지 않는다.
+ * 새벽에 다시 와서 그대로 0 인 걸 보면, 앱이 고장 난 것처럼 보인다.
+ *
+ * 채석장의 "오늘 몫" 과 헷갈리지 않게, 여기서는 날짜 얘기를 아예 안 한다.
+ * 대신 어디서 다시 켜지는지를 적는다. 서두르라는 말은 여전히 안 한다.
+ */
+const NO_LANTERN = '등불이 다 됐어. 퀘스트를 하나 끝내면 다시 켜져 — 오늘 아니어도 괜찮아.'
 
 /**
  * 잠든 돌문.
@@ -136,12 +145,14 @@ export function DungeonScreen({
             </p>
             <p className="mt-0.5 text-[12px] text-inkdim">잠든 돌문</p>
           </div>
-          {/* 에너지는 작게. 크게 띄우면 그게 오늘의 할 일이 된다. */}
+          {/* 작게. 크게 띄우면 그게 오늘의 할 일이 된다.
+              그래도 이름은 적는다 — 🔦 옆의 숫자만 있으면 채석장의
+              "오늘 3번" 과 같은 것으로 읽힌다. 둘은 아무 상관이 없다. */}
           <span
             className="shrink-0 rounded-pill bg-surface px-2.5 py-1.5 font-game text-[10.5px] text-inkdim ring-1 ring-line"
-            aria-label={`탐험 에너지 ${view.energy}`}
+            aria-label={`등불 ${view.energy}`}
           >
-            🔦 {view.energy}
+            🔦 등불 {view.energy}
           </span>
         </header>
 
@@ -263,7 +274,7 @@ export function DungeonScreen({
                         ? '가본 곳이야'
                         : shutDoor
                           ? '아직 안 열린다'
-                          : `처음 가는 길 · 탐험 에너지 ${ENERGY_PER_ROOM}`}
+                          : `처음 가는 길 · 등불 ${ENERGY_PER_ROOM}`}
                   </span>
                 </span>
                 <span className="shrink-0 text-[12px] text-inkfaint">›</span>
@@ -301,7 +312,7 @@ export function DungeonScreen({
 
           {view.energy < ENERGY_PER_SEARCH && (
             <p className="mt-4 rounded-card bg-sunken px-3.5 py-2.5 text-center text-[12.5px] leading-relaxed text-inkdim">
-              {NO_ENERGY}
+              {NO_LANTERN}
             </p>
           )}
 
@@ -336,13 +347,13 @@ export function DungeonScreen({
                   {searching ? '들여다보는 중…' : '조사하기'}
                 </Button>
                 <p className="mt-2 text-[11.5px] text-inkfaint">
-                  탐험 에너지 {ENERGY_PER_SEARCH} · 지금 {view.energy}
+                  등불 {ENERGY_PER_SEARCH} · 지금 {view.energy}
                 </p>
               </>
             ) : (
               <>
                 <p className="mt-4 rounded-card bg-canvas px-3.5 py-3 text-[12.5px] leading-relaxed text-inkdim">
-                  {NO_ENERGY}
+                  {NO_LANTERN}
                 </p>
                 <Button
                   variant="soft"

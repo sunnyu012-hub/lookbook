@@ -523,6 +523,7 @@ function snapshot(state: AppState, statKey: StatKey): GrowthSnapshot {
     totalExp: state.user.totalExp,
     coins: state.user.coins,
     stat: state.user.stats[statKey],
+    lantern: state.user.adventureEnergy,
   }
 }
 
@@ -1088,6 +1089,7 @@ export function useGameState(): GameState {
         gainedSkillPoints,
         collected: [...collected, ...derived.discoveries],
         gainedEnergy,
+        lanternKnown: isGateFound(prev),
         growthBonusSeconds: grown.applied.length > 0 ? bonusSeconds : 0,
         before: snapshot(prev, statKey),
         after: snapshot(final, statKey),

@@ -96,9 +96,10 @@ export function QuarryScreen({
             <p className="truncate font-game text-[11px] tracking-[0.14em] text-inkdim">
               OLD QUARRY
             </p>
-            <p className="mt-0.5 text-[12px] text-inkdim">
-              {view.night ? '밤이라 안쪽이 더 조용하다' : '오늘은 무엇이 있을까?'}
-            </p>
+            {/* 잠든 돌문은 여기 제 이름을 적는데 여기만 인사말을 적고 있었다.
+                그래서 두 곳을 다 다녀오면 어디가 어디였는지 헷갈린다.
+                오늘의 인사는 아래 칸으로 내리고, 이 자리에는 이름을 적는다. */}
+            <p className="mt-0.5 text-[12px] text-inkdim">오래된 채석장</p>
           </div>
           <span className="shrink-0 rounded-pill bg-surface px-2.5 py-1.5 font-game text-[10.5px] text-inkdim ring-1 ring-line">
             {view.found}/{view.total}
@@ -112,7 +113,7 @@ export function QuarryScreen({
             <span className="min-w-0 flex-1">
               <span className="block text-[13.5px] font-medium text-ink">오늘의 탐색</span>
               <span className="mt-0.5 block text-[11.5px] text-inkdim">
-                아래에서 궁금한 곳을 골라보세요
+                {view.night ? '밤이라 안쪽이 더 조용하다' : '아래에서 궁금한 곳을 골라보세요'}
               </span>
             </span>
             <span className="flex shrink-0 items-center gap-1" aria-label={`${view.left}번 남음`}>
@@ -131,7 +132,7 @@ export function QuarryScreen({
 
           {view.left === 0 && (
             <p className="mb-3 rounded-card bg-sunken px-3.5 py-2.5 text-center text-[12.5px] leading-relaxed text-inkdim">
-              오늘 몫은 다 썼어. 내일 또 와도 되고, 안 와도 괜찮아.
+              오늘 몫은 다 썼어. 날짜가 바뀌면 다시 {DAILY_ATTEMPTS}번이야 — 안 와도 괜찮아.
             </p>
           )}
 

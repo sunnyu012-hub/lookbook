@@ -36,6 +36,16 @@ export interface RewardSummary {
   collected: Array<{ itemId: string; isNew: boolean }>
   /** 이번 완료로 같이 깎인 몬스터·보스 */
   battles: BattleProgress[]
+  /**
+   * 등불 줄을 보여줄지.
+   *
+   * 등불은 퀘스트 완료로만 오르고 날이 바뀐다고 다시 차지 않는데,
+   * 오르는 장면이 어디에도 안 보였다. 잠든 돌문에 들어가서 0 을 본
+   * 다음에야 "왜 안 차지?" 가 된다. 그래서 오르는 순간에 적어둔다.
+   *
+   * 문을 아직 못 찾은 사람에게는 안 보여준다 — 쓸 데 없는 숫자다.
+   */
+  lanternKnown: boolean
 }
 
 interface RewardSummaryOverlayProps {
@@ -98,6 +108,7 @@ export function RewardSummaryOverlay({ summary, onClose }: RewardSummaryOverlayP
   const expGained = after.totalExp - before.totalExp
   const coinsGained = after.coins - before.coins
   const statGained = summary.statKey ? after.stat - before.stat : 0
+  const lanternGained = after.lantern - before.lantern
 
   return (
     <div
@@ -168,6 +179,13 @@ export function RewardSummaryOverlay({ summary, onClose }: RewardSummaryOverlayP
               label={statLabel}
               gain={`+${statGained}`}
               detail={`${before.stat} → ${after.stat}`}
+            />
+          )}
+          {summary.lanternKnown && lanternGained > 0 && (
+            <Row
+              label="등불"
+              gain={`+${lanternGained}`}
+              detail={`${before.lantern} → ${after.lantern}`}
             />
           )}
           {names.length > 0 && (

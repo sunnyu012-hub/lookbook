@@ -184,10 +184,15 @@ export interface User {
   /** 지금까지 얻은 모습들 */
   ownedSkinIds: SkinId[]
   /**
-   * 모험 에너지.
+   * 모험 에너지. **화면에서는 "등불"이라고 부른다.**
    *
-   * 퀘스트를 끝내면 조금씩 쌓인다. 지금은 쓰는 곳이 없다 —
-   * 앞으로 들어올 광산·던전 같은 곁가지를 위한 자리다.
+   * 코드 이름과 화면 이름이 다르니 여기 한 번만 적어둔다 — 세이브 필드는
+   * 이미 이 이름으로 나가 있어서 못 바꾸고, 화면에서는 채석장의 "오늘 3번"과
+   * 구분되는 이름이 필요했다.
+   *
+   * 퀘스트를 끝내면 조금씩 쌓이고, 잠든 돌문 안쪽에서만 쓴다.
+   * **날짜가 바뀐다고 다시 차지 않는다** — 시간으로 회복시키는 코드가 없다.
+   * 그래서 화면 문구에 "오늘" 을 붙이면 안 된다.
    *
    * 퀘스트에도, 캐릭터 성장에도, 정원이 자라는 데도 필요하지 않다.
    * 0이어도 오늘 할 수 있는 일은 하나도 줄지 않는다.
@@ -327,6 +332,8 @@ export interface GrowthSnapshot {
   coins: number
   /** 이번에 오른 스탯의 값 */
   stat: number
+  /** 잠든 돌문에서 쓰는 등불. 퀘스트 완료로만 오른다. */
+  lantern: number
 }
 
 export interface CompleteResult {
@@ -350,8 +357,15 @@ export interface CompleteResult {
   gainedSkillPoints: number
   /** 이번에 나온 재료·수집품. 처음 본 것은 따로 연출한다. */
   collected: import('./collection').DiscoveryResult[]
-  /** 이번에 쌓인 모험 에너지 */
+  /** 이번에 쌓인 등불 */
   gainedEnergy: number
+  /**
+   * 등불이 뭔지 아는 사람인지 (= 잠든 돌문을 찾았는지).
+   *
+   * 아직 문을 못 찾은 사람에게 "등불 +1" 은 설명 없는 숫자다.
+   * 문을 찾은 다음부터만 보상 카드에 줄이 생긴다.
+   */
+  lanternKnown: boolean
   /** 이번에 정원 밭을 몇 초나 앞당겼는지. 0 이면 앞당길 게 없었다는 뜻. */
   growthBonusSeconds: number
   /** 완료 전 · 완료 후. 보상 요약이 변화를 그릴 때 쓴다. */
