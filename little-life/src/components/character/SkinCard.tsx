@@ -13,15 +13,21 @@ interface SkinCardProps {
 /**
  * 목록에 한 칸.
  *
- * ── 세 가지 상태 ───────────────────────────────────────
+ * ── 네 가지 상태 ───────────────────────────────────────
  *
- * 가진 것    그림 그대로. 누르면 바로 입는다.
- * 못 가진 것 흐리게 + 힌트. 조건 숫자는 안 적는다.
- * 감춘 것    실루엣과 ???. 이름도 그림도 안 보여준다 —
- *            얻기 전에 뭐가 있는지 다 알면 찾을 일이 없다.
+ * 가진 것     그림 그대로.
+ * 가게에서 본 것  그림 그대로 + 값. 안 샀어도 본 건 기억한다 —
+ *             봤는데 다음 날 다시 실루엣이 되면 그건 도감이 아니다.
+ * 못 가진 것  실루엣 + 힌트. 조건 숫자는 안 적는다.
+ * 감춘 것     ❔ 와 ???. 이름도 그림도 안 보여준다 —
+ *             얻기 전에 뭐가 있는지 다 알면 찾을 일이 없다.
+ *
+ * 어느 칸을 눌러도 여기서 무슨 일이 일어나지는 않는다. 상세 시트가 열린다.
  */
 export function SkinCard({ view, onSelect }: SkinCardProps) {
-  const { def, owned, active, hidden, forSale } = view
+  const { def, owned, active, hidden, forSale, seen } = view
+  // 봤으면 그림을 그대로 보여준다. 가진 것과 같은 밝기다.
+  const revealed = owned || seen
   const price = skinPrice(def)
   const rarity = RARITY_STYLE[def.rarity]
 
@@ -52,9 +58,9 @@ export function SkinCard({ view, onSelect }: SkinCardProps) {
           <span
             className={cn(
               'flex h-full w-full items-center justify-center',
-              // 못 가진 것은 실루엣처럼 눌러둔다. 흐리게만 두면
+              // 아직 못 만난 것은 실루엣처럼 눌러둔다. 흐리게만 두면
               // 그냥 그림이 덜 나온 것처럼 보인다.
-              !owned && 'opacity-30 grayscale',
+              !revealed && 'opacity-30 grayscale',
             )}
           >
             <CharacterSkinRenderer skinId={def.id} animated={false} className="h-[86px] w-auto" />
@@ -91,6 +97,11 @@ export function SkinCard({ view, onSelect }: SkinCardProps) {
         forSale && price !== null ? (
           <span className="absolute right-1 top-1 rounded-pill bg-butter-soft px-1.5 py-0.5 font-game text-[9px] text-butter-deep">
             🪙 {price}
+          </span>
+        ) : seen ? (
+          // 가게에서 봤지만 아직 조건이 안 찬 것. 값 대신 봤다는 표시만.
+          <span className="absolute right-1 top-1 rounded-pill bg-sunken px-1.5 py-0.5 font-game text-[9px] text-inkdim">
+            봤음
           </span>
         ) : (
           <span className="absolute right-1.5 top-1.5 text-[12px] leading-none text-inkfaint">

@@ -5,7 +5,7 @@ import type { AppState } from '@/types'
 import { SKIN_IDS } from '@/types'
 import { createDefaultState } from '@/store/defaultState'
 import { sanitizeState } from '@/store/localStorage'
-import { sanitizeOwnedSkins, sanitizeSelectedSkin } from '@/store/migrate'
+import { sanitizeOwnedSkins, sanitizeSeenSkins, sanitizeSelectedSkin } from '@/store/migrate'
 import {
   DEFAULT_SKIN_ID,
   SKINS,
@@ -18,6 +18,7 @@ import {
   skinPrice,
   skinProgress,
   skinViews,
+  markSkinsSeen,
 } from '@/lib/character/skins'
 import { discoveredInGroup, groupSize, itemIdsInGroup } from '@/lib/character/groups'
 import { SKIN_ITEM_GROUPS } from '@/types'
@@ -433,5 +434,122 @@ describe('기존 저장', () => {
     if (!result.ok) return
     expect(result.state.user.selectedSkinId).toBe('night_owl')
     expect(result.state.user.ownedSkinIds).toContain('night_owl')
+  })
+})
+
+describe('가게에서 본 것을 기억한다', () => {
+  /**
+   * 도감은 기억하는 곳이다.
+   *
+   * 진열은 저장하지 않는다 — 날짜 씨앗으로 다시 만든다. 그런데 그러면
+   * 어제 가게에서 본 옷이 오늘 진열에서 빠졌을 때 도감에서 다시 실루엣이 된다.
+   * 봤다는 사실만은 남아야 한다.
+   */
+  const priced = SKINS.find((s) => skinPrice(s) !== null)
+  if (!priced) throw new Error('값이 붙은 모습이 하나도 없다')
+
+  it('처음에는 아무것도 안 봤다', () => {
+    const s = createDefaultState()
+    expect(s.user.seenSkinIds).toEqual([])
+    expect(skinViews(s).every((v) => !v.seen)).toBe(true)
+  })
+
+  it('본 것으로 적으면 도감이 그림을 보여준다', () => {
+    const s = markSkinsSeen(createDefaultState(), [priced.id])
+    const view = skinViews(s).find((v) => v.def.id === priced.id)
+    expect(view?.seen).toBe(true)
+    expect(view?.owned).toBe(false)
+  })
+
+  it('감춘 모습도 한 번 보면 안 감춘다', () => {
+    const secret = SKINS.find((sk) => sk.hiddenUntilOwned === true)
+    if (!secret) throw new Error('감춘 모습이 없다')
+    expect(skinViews(createDefaultState()).find((v) => v.def.id === secret.id)?.hidden).toBe(true)
+
+    const s = markSkinsSeen(createDefaultState(), [secret.id])
+    expect(skinViews(s).find((v) => v.def.id === secret.id)?.hidden).toBe(false)
+  })
+
+  it('두 번 적어도 한 번만 남고 순서는 그대로다', () => {
+    let s = markSkinsSeen(createDefaultState(), [priced.id])
+    const other = SKINS.find((sk) => sk.id !== priced.id)!
+    s = markSkinsSeen(s, [other.id, priced.id])
+    expect(s.user.seenSkinIds).toEqual([priced.id, other.id])
+  })
+
+  it('모르는 id 는 안 적는다', () => {
+    const s = markSkinsSeen(createDefaultState(), ['no_such_skin'])
+    expect(s.user.seenSkinIds).toEqual([])
+  })
+
+  it('사도 본 기록은 안 사라진다', () => {
+    // 되돌릴 일이 생겨도 "본 적 있다" 는 사실은 남아야 한다
+    let s = markSkinsSeen(createDefaultState(), [priced.id])
+    s = { ...s, user: { ...s.user, coins: 9999 } }
+    const bought = buySkin(s, priced.id)
+    expect(bought.result.ok).toBe(true)
+    expect(bought.state.user.seenSkinIds).toContain(priced.id)
+    expect(bought.state.user.ownedSkinIds).toContain(priced.id)
+  })
+
+  it('예전 저장에는 이 칸이 없다 — 빈 배열로 연다', () => {
+    expect(sanitizeSeenSkins(undefined)).toEqual([])
+    expect(sanitizeSeenSkins('아무거나')).toEqual([])
+    expect(sanitizeSeenSkins([priced.id, 'no_such_skin', 7])).toEqual([priced.id])
+  })
+
+  it('저장을 한 바퀴 돌려도 살아남는다', () => {
+    const s = markSkinsSeen(createDefaultState(), [priced.id])
+    const back = sanitizeState(JSON.parse(JSON.stringify(s)))
+    expect(back?.user.seenSkinIds).toEqual([priced.id])
+  })
+})
+
+describe('누르는 것만으로는 안 사진다', () => {
+  /**
+   * 목록에서 옷을 누르면 그 자리에서 코인이 빠져나갔다. 물어보지도 않았다.
+   * 자세히 보려고 눌렀을 뿐인데 750 코인이 사라진다.
+   *
+   * 화면은 이제 상세 시트를 열 뿐이고, 코인이 움직이는 길은 buySkin 하나다.
+   * 여기서는 그 하나가 제대로 잠겨 있는지만 못 박는다.
+   */
+  const priced = SKINS.find((s) => skinPrice(s) !== null)!
+
+  it('코인이 모자라면 아무것도 안 변한다', () => {
+    const s = { ...createDefaultState(), user: { ...createDefaultState().user, coins: 0 } }
+    const r = buySkin(s, priced.id)
+    expect(r.result.ok).toBe(false)
+    expect(r.state).toBe(s)
+    expect(r.state.user.ownedSkinIds).not.toContain(priced.id)
+  })
+
+  it('조건이 안 찼으면 코인이 넘쳐도 안 팔린다', () => {
+    const conditional = SKINS.find(
+      (sk) => skinPrice(sk) !== null && sk.unlock.kind === 'CONDITION' && sk.unlock.all.length > 0,
+    )
+    if (!conditional) return
+    const base = createDefaultState()
+    const s = { ...base, user: { ...base.user, coins: 99999 } }
+    const r = buySkin(s, conditional.id)
+    expect(r.result.ok).toBe(false)
+    expect(r.state.user.coins).toBe(99999)
+  })
+
+  it('값이 없는 모습은 코인으로 살 수 없다', () => {
+    const free = SKINS.find((sk) => skinPrice(sk) === null && sk.unlock.kind !== 'DEFAULT')!
+    const base = createDefaultState()
+    const s = { ...base, user: { ...base.user, coins: 99999 } }
+    const r = buySkin(s, free.id)
+    expect(r.result.ok).toBe(false)
+    if (!r.result.ok) expect(r.result.reason).toBe('NOT_FOR_SALE')
+  })
+
+  it('산 만큼만 정확히 빠진다', () => {
+    const base = createDefaultState()
+    const price = skinPrice(priced)!
+    const s = { ...base, user: { ...base.user, coins: price + 37 } }
+    const r = buySkin(s, priced.id)
+    expect(r.result.ok).toBe(true)
+    expect(r.state.user.coins).toBe(37)
   })
 })

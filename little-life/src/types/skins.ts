@@ -203,4 +203,11 @@ export interface SkinView {
   forSale: boolean
   /** 이름도 그림도 감출지 */
   hidden: boolean
+  /**
+   * 가게에서 한 번이라도 본 것.
+   *
+   * 안 가졌어도 그림과 이름을 보여준다. 도감이 "언젠가 봤던 그 옷" 을
+   * 기억해주는 자리다 — 실루엣만 남으면 봤다는 사실이 사라진다.
+   */
+  seen: boolean
 }

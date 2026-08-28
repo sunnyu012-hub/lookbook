@@ -69,6 +69,7 @@ export function createDefaultState(): AppState {
       activeBuffs: [],
       selectedSkinId: DEFAULT_SKIN_ID,
       ownedSkinIds: defaultOwnedSkinIds(),
+      seenSkinIds: [],
       adventureEnergy: 0,
       maxAdventureEnergy: MAX_ADVENTURE_ENERGY,
     },
