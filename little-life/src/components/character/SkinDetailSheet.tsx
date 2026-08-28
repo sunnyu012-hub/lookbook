@@ -11,11 +11,7 @@ import { cn } from '@/components/ui/cn'
 interface SkinDetailSheetProps {
   view: SkinView | null
   coins: number
-  /** 지금 미리 입어보고 있는 중인지 */
-  tryingOn: boolean
   onClose: () => void
-  onTryOn: () => void
-  onStopTryOn: () => void
   /** 가진 것을 진짜로 입는다 */
   onWear: () => void
   /** 살 수 있을 때만 넘어온다. 없으면 살 수 있는 상태가 아니라는 뜻이다. */
@@ -31,14 +27,14 @@ interface SkinDetailSheetProps {
  * 않았다. 자세히 보려고 눌렀을 뿐인데 코인이 사라진다.
  * 목록의 한 칸은 "고르는 곳" 이지 "결제하는 곳" 이 아니다.
  *
- * 그래서 누르면 여기가 열린다. 여기서 하는 일은 셋이다 —
- * 크게 보기 · 입어보기 · 사기. 셋 다 각자 버튼이 있고,
- * 코인은 **사기 버튼을 눌렀을 때만** 움직인다.
+ * 그래서 누르면 여기가 열린다. 여기서 하는 일은 둘이다 —
+ * 크게 보기 · 사기. 코인은 **사기 버튼을 눌렀을 때만** 움직인다.
  *
- * ── 입어보기는 저장하지 않는다 ─────────────────────────
+ * ── 입어보기는 뺐다 ────────────────────────────────────
  *
- * 미리보기는 이 시트가 열려 있는 동안만이다. 닫으면 원래 입던 걸로
- * 돌아온다. 안 산 옷이 홈 화면에 남아 있으면 그건 미리보기가 아니라 버그다.
+ * 한때 안 가진 옷도 미리 입어보게 했다. 그런데 미리보기가 그려지는 자리는
+ * 의상실 맨 위인데, 이 시트가 그 위를 덮는다 — 입어봐도 볼 수가 없었다.
+ * 볼 수 없는 미리보기는 기능이 아니다.
  *
  * ── 색을 빼지 않는다 ───────────────────────────────────
  *
@@ -49,10 +45,7 @@ interface SkinDetailSheetProps {
 export function SkinDetailSheet({
   view,
   coins,
-  tryingOn,
   onClose,
-  onTryOn,
-  onStopTryOn,
   onWear,
   onBuy,
 }: SkinDetailSheetProps) {
@@ -67,7 +60,7 @@ export function SkinDetailSheet({
   const buyable = forSale && price !== null && onBuy !== undefined
   // 값은 붙어 있는데 오늘은 안 걸린 옷
   const comesToRack = !owned && !forSale && price !== null
-  const inColor = owned || seen || buyable || tryingOn
+  const inColor = owned || seen || buyable
 
   return (
     <BottomSheet open onClose={onClose} title={hidden ? '???' : def.name}>
@@ -128,27 +121,7 @@ export function SkinDetailSheet({
           </p>
         )}
 
-        {tryingOn && (
-          <p className="mt-3 rounded-btn bg-sunken px-3.5 py-2.5 text-[12.5px] leading-relaxed text-inkdim">
-            지금 미리 입어보는 중이야. 닫으면 원래 입던 걸로 돌아와.
-          </p>
-        )}
-
         <div className="mt-4 space-y-2">
-          {/* 입어보기는 안 가진 옷에도 열어둔다 — 그게 이 시트의 요점이다.
-              대신 감춘 옷은 그림 자체가 비밀이라 못 입어본다. */}
-          {!hidden &&
-            !active &&
-            (tryingOn ? (
-              <Button variant="soft" size="lg" className="w-full" onClick={onStopTryOn}>
-                원래대로
-              </Button>
-            ) : (
-              <Button variant="soft" size="lg" className="w-full" onClick={onTryOn}>
-                입어보기
-              </Button>
-            ))}
-
           {owned && !active && (
             <Button size="lg" className="w-full" onClick={onWear}>
               이걸로 입기
