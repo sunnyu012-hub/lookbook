@@ -6,8 +6,11 @@ import { Button } from '@/components/ui/Button'
 import { useOverlay } from '@/hooks/useOverlay'
 import { kitchenView } from '@/lib/kitchen/derive'
 import { ownedCount } from '@/lib/collection/progress'
+import { findCollectionItem } from '@/lib/collection/catalog'
+import { ItemIcon } from '@/components/collection/ItemIcon'
 import { KitchenTutorial } from './KitchenTutorial'
 import { CookedOverlay, type CookedNote } from './CookedOverlay'
+import { DishIcon } from './DishIcon'
 import { cn } from '@/components/ui/cn'
 
 interface KitchenScreenProps {
@@ -125,7 +128,7 @@ export function KitchenScreen({
               onClick={() => setOpenId(view.suggestion!.def.id)}
               className="mb-3 flex w-full items-center gap-3 rounded-card border border-coral/30 bg-coral-soft/40 px-3.5 py-3 text-left transition-transform duration-150 ease-out active:scale-[0.98]"
             >
-              <span className="text-[30px] leading-none">{view.suggestion.def.icon}</span>
+              <DishIcon def={view.suggestion.def} size="lg" />
               <span className="min-w-0 flex-1">
                 <span className="block font-game text-[9.5px] tracking-[0.12em] text-coral-deep">
                   지금 만들 수 있어
@@ -187,13 +190,13 @@ export function KitchenScreen({
         {active && (
           <div>
             <div className="flex items-start gap-3">
-              <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-card bg-canvas text-[32px]">
-                {active.stage === 'DISCOVERED' ? (
-                  active.def.icon
-                ) : (
-                  <span className="text-[26px] text-inkfaint/60">?</span>
-                )}
-              </span>
+              {active.stage === 'DISCOVERED' ? (
+                <DishIcon def={active.def} size="xl" className="shrink-0" />
+              ) : (
+                <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-card bg-canvas text-[26px] text-inkfaint/60">
+                  ?
+                </span>
+              )}
               <div className="min-w-0 flex-1 pt-0.5">
                 <h2 className="text-[18px] font-semibold text-ink">
                   {active.stage === 'DISCOVERED' ? active.def.name : '???'}
@@ -231,7 +234,7 @@ export function KitchenScreen({
                         key={i.itemId}
                         className="flex items-center gap-3 rounded-card bg-canvas px-3.5 py-2.5"
                       >
-                        <span className="text-[20px] leading-none">{i.icon}</span>
+                        <IngredientIcon itemId={i.itemId} icon={i.icon} />
                         <span className="min-w-0 flex-1 truncate text-[13.5px] text-ink">
                           {i.name}
                         </span>
@@ -344,14 +347,15 @@ function RecipeCard({ recipe, onSelect }: { recipe: KitchenRecipeView; onSelect:
         stage === 'UNKNOWN' && 'active:scale-100',
       )}
     >
-      <span className="flex h-[62px] w-full items-center justify-center rounded-btn bg-canvas/80 text-[30px] leading-none">
+      <span className="flex h-[62px] w-full items-center justify-center rounded-btn bg-canvas/80 leading-none">
         {stage === 'DISCOVERED' ? (
-          def.icon
+          <DishIcon def={def} size="lg" className="bg-transparent" />
         ) : hidden || stage === 'UNKNOWN' ? (
           // 이모지 물음표는 이 팔레트에서 혼자 새빨갛게 튄다
           <span className="text-[26px] text-inkfaint/60">?</span>
         ) : (
-          <span className="opacity-40">{def.icon}</span>
+          // 아직 못 만든 건 그림자만. 모양이 보여야 궁금해진다.
+          <DishIcon def={def} size="lg" hidden className="bg-transparent" />
         )}
       </span>
 
@@ -375,4 +379,22 @@ function RecipeCard({ recipe, onSelect }: { recipe: KitchenRecipeView; onSelect:
       </span>
     </button>
   )
+}
+
+/**
+ * 재료 한 알.
+ *
+ * 작물 그림도 이미 들어와 있다 (public/assets/items/crops/). 음식과 같은 이유로
+ * 여기도 이모지를 그리고 있었다 — 정원에서 본 당근과 부엌에서 본 당근이 달랐다.
+ */
+function IngredientIcon({ itemId, icon }: { itemId: string; icon: string }) {
+  const item = findCollectionItem(itemId)
+  if (!item) {
+    return (
+      <span aria-hidden className="text-[20px] leading-none">
+        {icon}
+      </span>
+    )
+  }
+  return <ItemIcon item={item} size="sm" />
 }
