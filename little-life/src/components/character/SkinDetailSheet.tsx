@@ -65,6 +65,8 @@ export function SkinDetailSheet({
   const world = skinWorld(def)
   const canAfford = price !== null && coins >= price
   const buyable = forSale && price !== null && onBuy !== undefined
+  // 값은 붙어 있는데 오늘은 안 걸린 옷
+  const comesToRack = !owned && !forSale && price !== null
   const inColor = owned || seen || buyable || tryingOn
 
   return (
@@ -151,6 +153,14 @@ export function SkinDetailSheet({
             <Button size="lg" className="w-full" onClick={onWear}>
               이걸로 입기
             </Button>
+          )}
+
+          {comesToRack && (
+            <p className="rounded-btn bg-sunken px-3.5 py-2.5 text-center text-[12px] leading-relaxed text-inkdim">
+              오늘은 안 걸렸어. 의상실에 다시 걸리는 날 데려올 수 있어.
+              <br />
+              <span className="text-inkfaint">서두를 것 없어 — 없어지지 않아.</span>
+            </p>
           )}
 
           {buyable && (

@@ -21,7 +21,8 @@ interface SkinCardProps {
  * 가진 것    그림 그대로.
  * 본 것      그림 그대로. 안 샀어도 한 번 본 건 기억한다 —
  *            봤는데 다음에 다시 실루엣이 되면 그건 도감이 아니다.
- * 살 수 있는 것 값이 붙는다.
+ * 오늘 걸린 것 값이 붙는다. 이것만 살 수 있다 (가구 가게와 같다).
+ * 가끔 걸리는 것 🏷️. 값은 안 적는다 — 지금 사면 되는 줄 안다.
  * 작은 옷장  자물쇠. 값을 안 보여준다 — 650 은 한 번 여는 값이지
  *            이 옷 한 벌의 값이 아니다. 여기서 값을 적으면 살 수 있는 줄 안다.
  * 감춘 것    실루엣과 ???. 이름도 그림도 안 보여준다.
@@ -35,9 +36,11 @@ interface SkinCardProps {
  */
 export function SkinCard({ view, onSelect, onPack }: SkinCardProps) {
   const { def, owned, active, hidden, forSale, seen } = view
+  const price = skinPrice(def)
   // 가졌거나 한 번 본 옷은 그림 그대로. 나머지만 실루엣이다.
   const revealed = owned || seen
-  const price = skinPrice(def)
+  // 값은 붙어 있는데 오늘은 안 걸린 옷. 언젠가 다시 걸린다.
+  const comesToRack = !owned && !forSale && price !== null
   const rarity = RARITY_STYLE[def.rarity]
   const pack = findPack(def.packId)
   const fromWardrobe = def.unlock.kind === 'GACHA'
@@ -105,6 +108,12 @@ export function SkinCard({ view, onSelect, onPack }: SkinCardProps) {
           forSale && price !== null ? (
             <span className="absolute right-1 top-1 rounded-pill bg-butter-soft px-1.5 py-0.5 font-game text-[9px] text-butter-deep">
               🪙 {price}
+            </span>
+          ) : comesToRack ? (
+            // 의상실에 가끔 걸리는 옷. 값은 안 적는다 —
+            // 값부터 보여주면 지금 사면 되는 줄 안다.
+            <span className="absolute right-1.5 top-1.5 text-[12px] leading-none text-inkfaint">
+              🏷️
             </span>
           ) : seen ? (
             // 본 적은 있지만 아직 만날 수 없는 것. 값 대신 봤다는 표시만.

@@ -11,7 +11,7 @@ import {
   findPack,
 } from '@/lib/character/packs'
 import type { BuySkinResult } from '@/lib/character/derive'
-import { todayRack } from '@/lib/character/rack'
+import { todayRack, todayRackIds } from '@/lib/character/rack'
 import { CharacterSkinRenderer } from './CharacterSkinRenderer'
 import { SkinCard } from './SkinCard'
 import { SkinDetailSheet } from './SkinDetailSheet'
@@ -93,8 +93,6 @@ export function MyLookSheet({ open, state, onClose, onSelect, onSee, onBuy }: My
    * 돌았다 — 스물넷일 때는 티가 안 났지만 백스무 벌에서는 아니다.
    * 훅 순서를 지켜야 해서 useMemo 는 늘 부르고, 안에서만 건너뛴다.
    */
-  const views = useMemo(() => (open ? skinViews(state) : []), [open, state])
-
   /**
    * 오늘 걸린 다섯 벌.
    *
@@ -105,6 +103,12 @@ export function MyLookSheet({ open, state, onClose, onSelect, onSee, onBuy }: My
     () => (open ? todayRack().map((s) => s.id) : []),
     // 하루 안에서는 같은 값이다. 자정을 넘겨 다시 열면 그때 새로 뽑힌다.
     [open],
+  )
+
+  // 무엇을 살 수 있는지는 오늘 걸린 것이 정한다 (skins.ts 의 forSale)
+  const views = useMemo(
+    () => (open ? skinViews(state, todayRackIds()) : []),
+    [open, state],
   )
   const rack = useMemo(
     () => rackIds.map((id) => views.find((v) => v.def.id === id)).filter((v): v is SkinView => !!v),
@@ -181,6 +185,9 @@ export function MyLookSheet({ open, state, onClose, onSelect, onSee, onBuy }: My
     }
     if (result.reason === 'NOT_ENOUGH_COINS') {
       setNote(`코인이 조금 모자라. ${skinPrice(view.def) ?? 0} 코인이 필요해.`)
+    } else if (result.reason === 'NOT_TODAY') {
+      // 진열이 바뀌는 자정 언저리에만 여기 온다
+      setNote('오늘 진열이 방금 바뀌었어. 다시 걸리는 날 데려올 수 있어.')
     } else {
       setNote('지금은 데려올 수 없어.')
     }
@@ -348,9 +355,9 @@ export function MyLookSheet({ open, state, onClose, onSelect, onSee, onBuy }: My
                 ))}
               </ul>
               <p className="mt-2 text-[11px] leading-relaxed text-inkfaint">
-                걸린 옷은 들어오는 것만으로 도감에 남아. 안 사도 괜찮고,
+                살 수 있는 건 오늘 걸린 이것들이야. 들어오는 것만으로
                 <br />
-                값이 붙은 옷은 아래 목록에서 언제든 살 수 있어.
+                도감에도 남아 — 안 사도 괜찮아. 내일은 또 다른 게 걸려.
               </p>
               <div className="mt-3 h-px bg-line" />
             </div>
@@ -380,9 +387,10 @@ export function MyLookSheet({ open, state, onClose, onSelect, onSee, onBuy }: My
               칸마다 가격을 박아두면 목록이 가게처럼 보인다. */}
           {shown.some((v) => v.forSale) && (
             <p className="mt-3 text-center text-[11.5px] leading-relaxed text-inkfaint">
-              🪙 가 붙은 건 눌러서 자세히 보고, 입어보고, 살 수 있어.
+              🪙 는 오늘 걸린 옷이야. 눌러서 자세히 보고, 입어보고, 살 수 있어.
               <br />
-              지금 가진 코인 {state.user.coins.toLocaleString()}
+              🏷️ 는 의상실에 가끔 걸리는 옷 · 지금 가진 코인{' '}
+              {state.user.coins.toLocaleString()}
             </p>
           )}
 

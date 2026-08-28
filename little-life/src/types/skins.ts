@@ -353,8 +353,15 @@ export interface SkinView {
   active: boolean
   /** 0~1. 아직 못 얻은 것이 얼마나 왔는지 */
   progress: number
-  /** 조건은 다 채웠고 이제 코인만 있으면 되는 상태 */
+  /**
+   * 지금 살 수 있는 상태.
+   *
+   * 조건을 다 채웠고, 값이 붙어 있고, **오늘 진열대에 걸려 있어야** 참이다.
+   * 가구 가게와 같은 규칙이다 — 오늘 깔린 것만 산다.
+   */
   forSale: boolean
+  /** 오늘 의상실 진열대에 걸려 있는지 */
+  onRack: boolean
   /** 이름도 그림도 감출지 */
   hidden: boolean
   /**

@@ -89,3 +89,14 @@ export function todayRack(dayKey: string = todayKey(), count = RACK_COUNT): Char
 export function isOnRack(id: string, dayKey: string = todayKey()): boolean {
   return todayRack(dayKey).some((s) => s.id === id)
 }
+
+/**
+ * 오늘 걸린 id 집합.
+ *
+ * skinViews 가 이걸 받아서 forSale 을 정한다. **skins.ts 가 이 파일을
+ * 부르지는 않는다** — 이 파일이 이미 skins.ts 를 부르고 있어서, 반대로
+ * 부르면 서로 물린다. 그래서 부르는 쪽이 들고 와서 넘긴다.
+ */
+export function todayRackIds(dayKey: string = todayKey()): ReadonlySet<string> {
+  return new Set(todayRack(dayKey).map((s) => s.id))
+}

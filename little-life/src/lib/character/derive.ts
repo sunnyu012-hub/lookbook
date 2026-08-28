@@ -1,5 +1,6 @@
 import type { AppState, CharacterSkin, SkinId } from '@/types'
 import { SKINS, conditionsMet, findSkin, newlyUnlocked, skinPrice } from './skins'
+import { isOnRack } from './rack'
 
 /**
  * 조건을 채운 모습을 손에 넣어준다.
@@ -41,16 +42,30 @@ export type BuySkinResult =
   | { ok: true; skin: CharacterSkin; price: number }
   | {
       ok: false
-      reason: 'NOT_FOR_SALE' | 'NOT_YET' | 'ALREADY_OWNED' | 'NOT_ENOUGH_COINS' | 'UNKNOWN'
+      reason:
+        | 'NOT_FOR_SALE'
+        | 'NOT_YET'
+        | 'ALREADY_OWNED'
+        | 'NOT_ENOUGH_COINS'
+        /** 값은 붙어 있는데 오늘 진열대에 안 걸렸다 */
+        | 'NOT_TODAY'
+        | 'UNKNOWN'
     }
 
 /**
  * 코인으로 하나 데려온다.
  *
- * 가게 진열과 섞지 않는다 — 가구 가게에 캐릭터 모습이 끼어 있으면
- * 둘 다 찾기 어려워진다. 여기서는 모습 화면 안에서 바로 산다.
+ * 가구 가게 진열과 섞지 않는다 — 거기에 캐릭터 모습이 끼어 있으면
+ * 둘 다 찾기 어려워진다. 의상실은 제 진열대를 따로 갖는다 (rack.ts).
+ *
+ * 살 수 있는 조건 넷: 값이 붙어 있고 · 아직 없고 · 조건을 채웠고 ·
+ * **오늘 걸려 있어야** 한다.
  */
-export function buySkin(state: AppState, id: string): { state: AppState; result: BuySkinResult } {
+export function buySkin(
+  state: AppState,
+  id: string,
+  dayKey?: string,
+): { state: AppState; result: BuySkinResult } {
   const def = findSkin(id)
   if (!def) return { state, result: { ok: false, reason: 'UNKNOWN' } }
 
@@ -63,6 +78,17 @@ export function buySkin(state: AppState, id: string): { state: AppState; result:
   // June 이 안쪽에서 꺼내주는 옷은 아무한테나 꺼내주지 않는다.
   if (!conditionsMet(state, def.unlock)) {
     return { state, result: { ok: false, reason: 'NOT_YET' } }
+  }
+
+  /*
+   * 오늘 진열대에 걸린 것만 산다. 가구 가게와 같은 규칙이다 —
+   * 거기서도 오늘 깔린 것만 살 수 있다.
+   *
+   * 화면에서도 막지만 여기서 한 번 더 본다. 화면만 믿으면 진열이 바뀌는
+   * 자정 언저리에 열어둔 시트로 어제 것을 살 수 있다.
+   */
+  if (!isOnRack(def.id, dayKey)) {
+    return { state, result: { ok: false, reason: 'NOT_TODAY' } }
   }
 
   if (state.user.coins < price) {

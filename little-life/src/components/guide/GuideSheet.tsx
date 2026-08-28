@@ -9,6 +9,7 @@ import { CATEGORY_LABEL } from '@/lib/labels'
 import { GUIDE_PAGES, type GuideArt } from '@/lib/guide/pages'
 import { companionViews, meetingLabel, meetingProgress } from '@/lib/discovery/companions'
 import { SKINS, ownedSkinCount, skinViews } from '@/lib/character/skins'
+import { todayRackIds } from '@/lib/character/rack'
 import { CharacterSkinRenderer } from '@/components/character/CharacterSkinRenderer'
 import { CompanionArt } from '@/components/discovery/CompanionArt'
 
@@ -155,7 +156,9 @@ function Categories() {
  * 얻을 게 남아 있다는 걸 보여주는 게 여기서 할 일이다.
  */
 function Skins({ state }: { state: AppState }) {
-  const views = skinViews(state).filter((v) => !v.hidden).slice(0, 4)
+  const views = skinViews(state, todayRackIds())
+    .filter((v) => !v.hidden)
+    .slice(0, 4)
   const owned = ownedSkinCount(state)
 
   return (
