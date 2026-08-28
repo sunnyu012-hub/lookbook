@@ -192,6 +192,15 @@ describe('C 상태 한 줄', () => {
     expect(late?.statusLine).toBe('영업 종료')
   })
 
+  it('C3-2 우리 집은 떠나 있으면 "비어 있어"', () => {
+    const away = views(base(), at(10), 'CAFE_STREET').find((v) => v.area?.id === 'HOME_BASE')
+    expect(away?.statusLine).toBe('비어 있어')
+
+    // 돌아와 있으면 그 자리 얘기가 먼저다
+    const home = views(base(), at(10), 'HOME_BASE').find((v) => v.area?.id === 'HOME_BASE')
+    expect(home?.statusLine).toBe('지금 여기')
+  })
+
   it('C4 한 줄은 짧게 — 지도에서 두 줄이 되지 않는다', () => {
     for (const hour of [7, 10, 14, 19, 22, 2]) {
       for (const view of views(base(), at(hour))) {

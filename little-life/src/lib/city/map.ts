@@ -271,6 +271,11 @@ function statusOf(area: AreaDef, npcCount: number, now: Date): { line: string; t
   }
 
   if (npcCount > 0) return { line: '사람이 있는 것 같다', tone: 'OPEN' }
+
+  // 우리 집은 원래 아무도 안 온다 (동선표에서 아예 뺐다). 그래서 늘
+  // 이 줄인데, 내 집한테 "지금은 조용함" 은 남의 집 얘기처럼 들린다.
+  if (area.id === 'HOME_BASE') return { line: '비어 있어', tone: 'QUIET' }
+
   return { line: '지금은 조용함', tone: 'QUIET' }
 }
 
