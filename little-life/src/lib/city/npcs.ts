@@ -17,7 +17,7 @@ import { FRIENDSHIP_LEVELS } from '@/types'
  *   HARU → 윤태오 · 34 · 스포츠 회사원 / 러닝
  *   LULU → 오미래 · 61 · 공방 주인
  *   JUNE → 서이안 · 빈티지숍 사장
- *   RIO  → 한도윤 · 클라이밍장
+ *   RIO  → 한도윤 · 33 · 클라이밍짐 코치
  *   NOA  → 차세라 · 35 · BAR 사장
  *
  * 성격과 이야기는 `docs/direction/06_NPC_CHARACTER_BIBLE.md` 쪽이 맞다.
@@ -231,30 +231,41 @@ export const NPCS: NpcDef[] = [
     id: 'RIO',
     name: '한도윤',
     areaId: 'TRAINING_ZONE',
-    role: '클라이밍장 코치',
-    description: '벽에 붙일 루트를 짜는 사람. 하나에 빠지면 오래 간다. 절대 몰아붙이지 않는다.',
+    role: '클라이밍짐 코치',
+    description: '서른세 살. 짐을 보고 루트를 짠다. 재촉하지 않고 감이 올 때까지 기다려준다.',
     avatar: '🧗',
     likes: ['sport', 'healthy'],
     shopId: 'MOVE_STORE',
+    // 혼자 존댓말을 쓴다. 코치라서 그런 것도 있지만 원래 말이 짧고 담백한 사람이다.
+    // 친해져도 말을 놓지 않는다 — 대신 좋아하는 얘기가 나오면 말이 조금 길어진다.
     dialogues: [
-      { text: '왔네. 오늘은 몸이 어때?' },
-      { text: '오늘 안 되면 내일 해. 벽은 도망 안 가.' },
-      { text: '힘으로 당기지 말고 발부터 봐. 그게 먼저야.' },
-      { text: '쉬는 날도 훈련의 일부야. 진짜로.' },
-      { text: '숨이 차면 멈춰. 그게 실패가 아니야.' },
-      { text: '새 루트 짜다가 밤을 샜어. 이게 재밌어서 큰일이야.' },
-      { text: '아침에 하면 하루가 길어져.', band: 'MORNING' },
-      { text: '너 자세 좋아졌어. 눈에 보여.', minLevel: 'FRIEND' },
-      { text: '태오랑은 예전 회사에서 알던 사이야. 그땐 둘 다 지금 같지 않았고.', minLevel: 'FRIEND' },
-      { text: '이제 내가 안 봐줘도 되겠는데.', minLevel: 'CLOSE_FRIEND' },
+      { text: '왔네요. 오늘 몸은 좀 어때요?' },
+      { text: '힘으로 안 당겨도 돼요. 발부터 한번 바꿔봐요.' },
+      { text: '한 번만 더 해봐요. 아까 거의 됐는데.' },
+      { text: '오늘 안 되면 내일 해요. 벽은 안 도망가요.' },
+      { text: '쉬는 날도 훈련이에요. 진짜로.' },
+      { text: '숨 차면 멈춰요. 그건 실패가 아니에요.' },
+      { text: '안 되던 게 어느 날 그냥 돼요. 그게 재밌어서 오래 하는 거고요.' },
+      { text: '아침에 하면 하루가 길어져요.', band: 'MORNING' },
+      { text: '자세 좋아졌어요. 눈에 보여요.', minLevel: 'FRIEND' },
+      {
+        text: '시우 씨요? 처음엔 금방 질릴 줄 알았죠. 요즘은 나보다 더 자주 와요.',
+        minLevel: 'FRIEND',
+      },
+      { text: '태오는 원래 저렇진 않았어요. …그 얘기는 본인한테 물어봐요.', minLevel: 'FRIEND' },
+      { text: '이제 내가 안 봐줘도 되겠는데요.', minLevel: 'CLOSE_FRIEND' },
+      {
+        text: '어제 새 루트 보다가 시간 다 갔어요. 쉬는 날에 뭐 하냐고 물으면 할 말이 없네요.',
+        minLevel: 'CLOSE_FRIEND',
+      },
     ],
     chains: [
       {
         id: 'rio_basic',
         npcId: 'RIO',
         name: '기초 한 세트',
-        intro: '딱 한 세트만 하자. 그 이상은 오늘 안 해.',
-        outro: '좋아. 이거 신고 다녀.',
+        intro: '딱 한 세트만 해요. 그 이상은 오늘 안 시켜요.',
+        outro: '좋아요. 이거 신고 다녀요.',
         steps: [
           { title: '스쿼트 10번', category: 'BODY', difficulty: 'EASY' },
           { title: '플랭크 30초', category: 'BODY', difficulty: 'EASY' },

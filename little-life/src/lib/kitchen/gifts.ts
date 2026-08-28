@@ -37,7 +37,7 @@ const LINES: Partial<Record<NpcId, Record<string, string[]>>> = {
   },
   // 도윤 (클라이밍장)
   RIO: {
-    tomato_pasta: ['잘 먹을게. 이런 거 챙겨 먹어야 하는데.'],
+    tomato_pasta: ['잘 먹을게요. 이런 거 챙겨 먹어야 하는데.'],
   },
 }
 

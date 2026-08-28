@@ -127,7 +127,7 @@ const ROUTINES: NpcRoutineDef[] = [
     },
   },
   {
-    // 도윤 — 클라이밍장이 일터이고, 주말에는 공원으로 나간다.
+    // 도윤 — 클라이밍짐이 일터다. 쉬는 날에도 멀리 안 가고 공원이나 카페에 있다.
     npcId: 'RIO',
     weekday: {
       MORNING: [
