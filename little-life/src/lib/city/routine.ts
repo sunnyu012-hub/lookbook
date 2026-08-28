@@ -22,10 +22,10 @@ import { seededRandom } from './seed'
  *
  * ── 놓치는 게 없다 ──────────────────────────────────────
  *
- * 세라를 뺀 다섯은 어느 시간대에도 도시 어딘가에 반드시 있다.
- * 자리를 옮길 뿐 사라지지 않는다 — 지금 말을 못 걸어서 오늘 치를
- * 손해 보는 구조를 만들면, 그건 생활이 아니라 출석 체크다.
- * (세라는 원래부터 밤에만 보이던 사람이라 그대로 뒀다.)
+ * 밤사람 둘(세라 · 유현)을 뺀 스물둘은 어느 시간대에도 도시 어딘가에
+ * 반드시 있다. 자리를 옮길 뿐 사라지지 않는다 — 지금 말을 못 걸어서
+ * 오늘 치를 손해 보는 구조를 만들면, 그건 생활이 아니라 출석 체크다.
+ * (그 둘은 밤에만 일하는 사람이라 낮에는 도시에 없다.)
  */
 
 /** 우리 집에는 아무도 오지 않는다. 여기는 내 자리다. */
@@ -158,6 +158,386 @@ const ROUTINES: NpcRoutineDef[] = [
   {
     // 세라 — 밤에만 보인다. 낮에 어디 있는지는 예나 지금이나 아무도 모른다.
     npcId: 'NOA',
+    weekday: {
+      MORNING: [{ spot: 'OFFSCREEN', weight: 100 }],
+      DAY: [{ spot: 'OFFSCREEN', weight: 100 }],
+      EVENING: [{ spot: 'OFFSCREEN', weight: 100 }],
+      NIGHT: [{ spot: 'NIGHT_TOWN', weight: 100 }],
+    },
+  },
+  // ── 카페 거리 사람들 ─────────────────────────────────
+  {
+    // 은채 — 꽃집. 가게가 곧 하루다.
+    npcId: 'EUNCHAE',
+    weekday: {
+      MORNING: [{ spot: 'CAFE_STREET', weight: 100 }],
+      DAY: [{ spot: 'CAFE_STREET', weight: 100 }],
+      EVENING: [
+        { spot: 'CAFE_STREET', weight: 70 },
+        { spot: 'CREATIVE_DISTRICT', weight: 30 },
+      ],
+      NIGHT: [
+        { spot: 'CAFE_STREET', weight: 40 },
+        { spot: 'CREATIVE_DISTRICT', weight: 30 },
+        { spot: 'NIGHT_TOWN', weight: 30 },
+      ],
+    },
+    weekend: {
+      DAY: [
+        { spot: 'CAFE_STREET', weight: 60 },
+        { spot: 'GREEN_PARK', weight: 40 },
+      ],
+    },
+  },
+  {
+    // 민지 — 편의점 오전. 오후엔 애 학교와 동네를 돈다.
+    npcId: 'MINJI',
+    weekday: {
+      MORNING: [{ spot: 'CAFE_STREET', weight: 100 }],
+      DAY: [
+        { spot: 'CAFE_STREET', weight: 70 },
+        { spot: 'GREEN_PARK', weight: 30 },
+      ],
+      EVENING: [
+        { spot: 'CAFE_STREET', weight: 40 },
+        { spot: 'GREEN_PARK', weight: 40 },
+        { spot: 'CREATIVE_DISTRICT', weight: 20 },
+      ],
+      NIGHT: [
+        { spot: 'CAFE_STREET', weight: 40 },
+        { spot: 'GREEN_PARK', weight: 30 },
+        { spot: 'NIGHT_TOWN', weight: 30 },
+      ],
+    },
+  },
+  {
+    // 준 — 편의점 오후. 아침은 겨우 나오고 밤이 본업이다.
+    npcId: 'JUN',
+    weekday: {
+      MORNING: [
+        { spot: 'CAFE_STREET', weight: 70 },
+        { spot: 'CREATIVE_DISTRICT', weight: 30 },
+      ],
+      DAY: [{ spot: 'CAFE_STREET', weight: 100 }],
+      EVENING: [{ spot: 'CAFE_STREET', weight: 100 }],
+      NIGHT: [
+        { spot: 'NIGHT_TOWN', weight: 50 },
+        { spot: 'CAFE_STREET', weight: 50 },
+      ],
+    },
+  },
+  {
+    // 현우 — 약국. 저녁엔 동네를 걷는다.
+    npcId: 'HYUNWOO',
+    weekday: {
+      MORNING: [{ spot: 'CAFE_STREET', weight: 100 }],
+      DAY: [{ spot: 'CAFE_STREET', weight: 100 }],
+      EVENING: [
+        { spot: 'CAFE_STREET', weight: 60 },
+        { spot: 'GREEN_PARK', weight: 40 },
+      ],
+      NIGHT: [
+        { spot: 'CAFE_STREET', weight: 50 },
+        { spot: 'NIGHT_TOWN', weight: 50 },
+      ],
+    },
+  },
+  {
+    // 하린 — 콘센트 있는 자리를 따라다닌다.
+    npcId: 'HARIN',
+    weekday: {
+      MORNING: [
+        { spot: 'CAFE_STREET', weight: 80 },
+        { spot: 'CREATIVE_DISTRICT', weight: 20 },
+      ],
+      DAY: [
+        { spot: 'CAFE_STREET', weight: 70 },
+        { spot: 'CREATIVE_DISTRICT', weight: 30 },
+      ],
+      EVENING: [
+        { spot: 'CAFE_STREET', weight: 50 },
+        { spot: 'CREATIVE_DISTRICT', weight: 30 },
+        { spot: 'GREEN_PARK', weight: 20 },
+      ],
+      NIGHT: [
+        { spot: 'CAFE_STREET', weight: 40 },
+        { spot: 'CREATIVE_DISTRICT', weight: 30 },
+        { spot: 'NIGHT_TOWN', weight: 30 },
+      ],
+    },
+  },
+
+  // ── 창작 골목 사람들 ─────────────────────────────────
+  {
+    // 재희 — 서점. 매일 같은 자리에서 같은 순서로 연다.
+    npcId: 'JAEHUI',
+    weekday: {
+      MORNING: [{ spot: 'CREATIVE_DISTRICT', weight: 100 }],
+      DAY: [{ spot: 'CREATIVE_DISTRICT', weight: 100 }],
+      EVENING: [
+        { spot: 'CREATIVE_DISTRICT', weight: 80 },
+        { spot: 'CAFE_STREET', weight: 20 },
+      ],
+      NIGHT: [
+        { spot: 'CREATIVE_DISTRICT', weight: 50 },
+        { spot: 'NIGHT_TOWN', weight: 50 },
+      ],
+    },
+  },
+  {
+    // 라온 — 찍을 게 있는 데로 간다. 그래서 제일 넓게 돈다.
+    npcId: 'RAON',
+    weekday: {
+      MORNING: [
+        { spot: 'CREATIVE_DISTRICT', weight: 40 },
+        { spot: 'CAFE_STREET', weight: 30 },
+        { spot: 'GREEN_PARK', weight: 30 },
+      ],
+      DAY: [
+        { spot: 'CREATIVE_DISTRICT', weight: 50 },
+        { spot: 'GREEN_PARK', weight: 30 },
+        { spot: 'CAFE_STREET', weight: 20 },
+      ],
+      EVENING: [
+        { spot: 'GREEN_PARK', weight: 40 },
+        { spot: 'CREATIVE_DISTRICT', weight: 40 },
+        { spot: 'NIGHT_TOWN', weight: 20 },
+      ],
+      NIGHT: [
+        { spot: 'NIGHT_TOWN', weight: 60 },
+        { spot: 'CREATIVE_DISTRICT', weight: 40 },
+      ],
+    },
+  },
+  {
+    // 지호 — 레코드숍. 밤에는 공연이 있는 쪽으로 샌다.
+    npcId: 'JIHO',
+    weekday: {
+      MORNING: [
+        { spot: 'CREATIVE_DISTRICT', weight: 60 },
+        { spot: 'CAFE_STREET', weight: 40 },
+      ],
+      DAY: [{ spot: 'CREATIVE_DISTRICT', weight: 100 }],
+      EVENING: [
+        { spot: 'CREATIVE_DISTRICT', weight: 70 },
+        { spot: 'NIGHT_TOWN', weight: 30 },
+      ],
+      NIGHT: [
+        { spot: 'NIGHT_TOWN', weight: 60 },
+        { spot: 'CREATIVE_DISTRICT', weight: 40 },
+      ],
+    },
+  },
+
+  // ── 초록 공원 사람들 ─────────────────────────────────
+  {
+    // 우식 — 공원이 일터다. 여기서 거의 안 나간다.
+    npcId: 'WOOSIK',
+    weekday: {
+      MORNING: [{ spot: 'GREEN_PARK', weight: 100 }],
+      DAY: [{ spot: 'GREEN_PARK', weight: 100 }],
+      EVENING: [
+        { spot: 'GREEN_PARK', weight: 80 },
+        { spot: 'CAFE_STREET', weight: 20 },
+      ],
+      NIGHT: [
+        { spot: 'GREEN_PARK', weight: 60 },
+        { spot: 'CAFE_STREET', weight: 40 },
+      ],
+    },
+  },
+  {
+    // 해인 — 식물가게와 공원. 사람 많은 쪽은 피한다.
+    npcId: 'HAEIN',
+    weekday: {
+      MORNING: [
+        { spot: 'GREEN_PARK', weight: 70 },
+        { spot: 'CREATIVE_DISTRICT', weight: 30 },
+      ],
+      DAY: [
+        { spot: 'GREEN_PARK', weight: 60 },
+        { spot: 'CREATIVE_DISTRICT', weight: 40 },
+      ],
+      EVENING: [
+        { spot: 'GREEN_PARK', weight: 70 },
+        { spot: 'CREATIVE_DISTRICT', weight: 30 },
+      ],
+      NIGHT: [
+        { spot: 'GREEN_PARK', weight: 60 },
+        { spot: 'CREATIVE_DISTRICT', weight: 40 },
+      ],
+    },
+  },
+  {
+    // 수아 — 사람 있는 쪽으로 간다. 밤에도 어딘가에 있다.
+    npcId: 'SUA',
+    weekday: {
+      MORNING: [
+        { spot: 'CAFE_STREET', weight: 50 },
+        { spot: 'GREEN_PARK', weight: 50 },
+      ],
+      DAY: [
+        { spot: 'GREEN_PARK', weight: 40 },
+        { spot: 'CAFE_STREET', weight: 40 },
+        { spot: 'CREATIVE_DISTRICT', weight: 20 },
+      ],
+      EVENING: [
+        { spot: 'CAFE_STREET', weight: 40 },
+        { spot: 'NIGHT_TOWN', weight: 30 },
+        { spot: 'GREEN_PARK', weight: 30 },
+      ],
+      NIGHT: [
+        { spot: 'NIGHT_TOWN', weight: 50 },
+        { spot: 'CAFE_STREET', weight: 30 },
+        { spot: 'GREEN_PARK', weight: 20 },
+      ],
+    },
+  },
+  {
+    // 선재 — 집에서 일이 안 되면 나온다. 걷는 것도 일이다.
+    npcId: 'SUNJAE',
+    weekday: {
+      MORNING: [
+        { spot: 'GREEN_PARK', weight: 50 },
+        { spot: 'CAFE_STREET', weight: 50 },
+      ],
+      DAY: [
+        { spot: 'CAFE_STREET', weight: 60 },
+        { spot: 'GREEN_PARK', weight: 40 },
+      ],
+      EVENING: [
+        { spot: 'GREEN_PARK', weight: 50 },
+        { spot: 'CREATIVE_DISTRICT', weight: 30 },
+        { spot: 'CAFE_STREET', weight: 20 },
+      ],
+      NIGHT: [
+        { spot: 'CREATIVE_DISTRICT', weight: 40 },
+        { spot: 'GREEN_PARK', weight: 30 },
+        { spot: 'NIGHT_TOWN', weight: 30 },
+      ],
+    },
+  },
+  {
+    // 연주 — 동네를 도는 게 일이다.
+    npcId: 'YEONJU',
+    weekday: {
+      MORNING: [
+        { spot: 'CAFE_STREET', weight: 60 },
+        { spot: 'GREEN_PARK', weight: 40 },
+      ],
+      DAY: [
+        { spot: 'GREEN_PARK', weight: 50 },
+        { spot: 'CAFE_STREET', weight: 50 },
+      ],
+      EVENING: [
+        { spot: 'GREEN_PARK', weight: 60 },
+        { spot: 'CAFE_STREET', weight: 40 },
+      ],
+      NIGHT: [
+        { spot: 'CAFE_STREET', weight: 50 },
+        { spot: 'GREEN_PARK', weight: 50 },
+      ],
+    },
+  },
+
+  // ── 운동 구역 사람들 ─────────────────────────────────
+  {
+    // 유나 — 수업이 일터다. 주말에도 몸은 움직인다.
+    npcId: 'YUNA',
+    weekday: {
+      MORNING: [{ spot: 'TRAINING_ZONE', weight: 100 }],
+      DAY: [{ spot: 'TRAINING_ZONE', weight: 100 }],
+      EVENING: [
+        { spot: 'TRAINING_ZONE', weight: 80 },
+        { spot: 'CAFE_STREET', weight: 20 },
+      ],
+      NIGHT: [
+        { spot: 'TRAINING_ZONE', weight: 40 },
+        { spot: 'CAFE_STREET', weight: 30 },
+        { spot: 'NIGHT_TOWN', weight: 30 },
+      ],
+    },
+    weekend: {
+      DAY: [
+        { spot: 'TRAINING_ZONE', weight: 60 },
+        { spot: 'GREEN_PARK', weight: 40 },
+      ],
+    },
+  },
+
+  // ── 밤의 거리 사람들 ─────────────────────────────────
+  {
+    // 시우 — 아침은 벽, 밤은 트럭.
+    //
+    // 도윤이 한번 해보라고 권한 뒤로 오전이 통째로 클라이밍장이 됐다.
+    npcId: 'SIWOO',
+    weekday: {
+      MORNING: [
+        { spot: 'TRAINING_ZONE', weight: 70 },
+        { spot: 'CAFE_STREET', weight: 30 },
+      ],
+      DAY: [
+        { spot: 'CAFE_STREET', weight: 40 },
+        { spot: 'CREATIVE_DISTRICT', weight: 30 },
+        { spot: 'TRAINING_ZONE', weight: 30 },
+      ],
+      EVENING: [
+        { spot: 'NIGHT_TOWN', weight: 80 },
+        { spot: 'CAFE_STREET', weight: 20 },
+      ],
+      NIGHT: [{ spot: 'NIGHT_TOWN', weight: 100 }],
+    },
+    weekend: {
+      MORNING: [{ spot: 'TRAINING_ZONE', weight: 100 }],
+    },
+  },
+  {
+    // 소라 — 밤이 근무다. 낮에는 카페인으로 버틴다.
+    npcId: 'SORA',
+    weekday: {
+      MORNING: [
+        { spot: 'CAFE_STREET', weight: 70 },
+        { spot: 'NIGHT_TOWN', weight: 30 },
+      ],
+      DAY: [
+        { spot: 'CAFE_STREET', weight: 50 },
+        { spot: 'CREATIVE_DISTRICT', weight: 30 },
+        { spot: 'GREEN_PARK', weight: 20 },
+      ],
+      EVENING: [
+        { spot: 'NIGHT_TOWN', weight: 80 },
+        { spot: 'CAFE_STREET', weight: 20 },
+      ],
+      NIGHT: [{ spot: 'NIGHT_TOWN', weight: 100 }],
+    },
+  },
+  {
+    // 정원 — 낮은 회사. 저녁에 몸을 쓰거나 밤거리를 걷는다.
+    npcId: 'JEONGWON',
+    weekday: {
+      MORNING: [
+        { spot: 'CAFE_STREET', weight: 60 },
+        { spot: 'GREEN_PARK', weight: 40 },
+      ],
+      DAY: [
+        { spot: 'CAFE_STREET', weight: 50 },
+        { spot: 'GREEN_PARK', weight: 30 },
+        { spot: 'TRAINING_ZONE', weight: 20 },
+      ],
+      EVENING: [
+        { spot: 'TRAINING_ZONE', weight: 40 },
+        { spot: 'NIGHT_TOWN', weight: 40 },
+        { spot: 'CAFE_STREET', weight: 20 },
+      ],
+      NIGHT: [
+        { spot: 'NIGHT_TOWN', weight: 70 },
+        { spot: 'CAFE_STREET', weight: 30 },
+      ],
+    },
+  },
+  {
+    // 유현 — 야간 편의점. 세라와 같은 이유로 낮에는 도시에 없다.
+    npcId: 'YUHYEON',
     weekday: {
       MORNING: [{ spot: 'OFFSCREEN', weight: 100 }],
       DAY: [{ spot: 'OFFSCREEN', weight: 100 }],

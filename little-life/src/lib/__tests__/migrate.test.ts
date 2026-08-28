@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { NPCS } from '@/lib/city/npcs'
 import type { AppState } from '@/types'
 import { createDefaultState } from '@/store/defaultState'
 import {
@@ -154,9 +155,9 @@ describe('grantWelcomeGift', () => {
 
 // ── 도시가 붙은 뒤 (v4) ─────────────────────────────────
 describe('sanitizeNpcs', () => {
-  it('없으면 여섯 명 모두 빈 관계로 시작한다', () => {
+  it('없으면 도시 사람 전부가 빈 관계로 시작한다', () => {
     const npcs = sanitizeNpcs(undefined)
-    expect(Object.keys(npcs)).toHaveLength(6)
+    expect(Object.keys(npcs)).toHaveLength(NPCS.length)
     expect(npcs.MINA).toEqual({ friendship: 0, lastTalkedOn: null, clearedChainIds: [] })
   })
 
@@ -263,7 +264,8 @@ describe('withSkillPoints', () => {
 describe('첫 실행 상태 (v4)', () => {
   it('도시 항목이 전부 들어 있다', () => {
     const state: AppState = createDefaultState()
-    expect(Object.keys(state.npcs)).toHaveLength(6)
+    expect(Object.keys(state.npcs)).toHaveLength(NPCS.length)
+    // 동네는 여섯 곳 그대로다 — 사람이 늘어도 도시는 안 넓어졌다
     expect(Object.keys(state.reputation)).toHaveLength(6)
     expect(state.user.unlockedSkills).toEqual([])
     expect(state.user.activeBuffs).toEqual([])
