@@ -24,6 +24,8 @@ interface MyLookSheetProps {
   /** 의상실에서 본 옷들을 적어둔다 — 도감이 기억한다 */
   onSee: (ids: readonly string[]) => void
   onBuy: (id: string) => BuySkinResult
+  /** 작은 옷장으로 가는 길. 없으면 그 칸을 아예 안 그린다. */
+  onOpenBox?: () => void
 }
 
 type Shelf = 'MINE' | 'NEW'
@@ -60,7 +62,15 @@ type WorldTab = 'ALL' | SkinWorld
  * 거르는 걸 바꿀 때마다 칸 수가 달라지는데, 높이를 내용에 맡기면
  * 누를 때마다 시트가 손가락 밑에서 오르내린다.
  */
-export function MyLookSheet({ open, state, onClose, onSelect, onSee, onBuy }: MyLookSheetProps) {
+export function MyLookSheet({
+  open,
+  state,
+  onClose,
+  onSelect,
+  onSee,
+  onBuy,
+  onOpenBox,
+}: MyLookSheetProps) {
   const [shelf, setShelf] = useState<Shelf>('MINE')
   const [world, setWorld] = useState<WorldTab>('ALL')
   const [tag, setTag] = useState<WardrobeTag | null>(null)
@@ -108,6 +118,14 @@ export function MyLookSheet({ open, state, onClose, onSelect, onSee, onBuy }: My
   const rack = useMemo(
     () => rackIds.map((id) => views.find((v) => v.def.id === id)).filter((v): v is SkinView => !!v),
     [rackIds, views],
+  )
+
+  // 작은 옷장 마흔여덟 벌을 몇 벌 모았는지. 세는 것뿐이라 저장하지 않는다.
+  const boxSkins = useMemo(() => SKINS.filter((s) => s.acquisition === 'GACHA'), [])
+  const boxTotal = boxSkins.length
+  const boxFound = useMemo(
+    () => boxSkins.filter((s) => state.user.ownedSkinIds.includes(s.id)).length,
+    [boxSkins, state.user.ownedSkinIds],
   )
 
   /**
@@ -219,6 +237,27 @@ export function MyLookSheet({ open, state, onClose, onSelect, onSee, onBuy }: My
             </div>
           </div>
         </div>
+
+        {/* 작은 옷장으로 가는 길.
+            여기 있는 이유: 마흔여덟 벌이 "작은 옷장에서 만날 수 있다" 라고만
+            적혀 있고 정작 갈 데가 없었다. 문장을 읽은 자리에서 바로 가는 게
+            맞다 — 이것 때문에 지도에 새 장소를 만들거나 탭을 늘리지 않는다. */}
+        {onOpenBox && (
+          <button
+            type="button"
+            onClick={onOpenBox}
+            className="mt-3 flex w-full shrink-0 items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 text-left shadow-soft transition-transform duration-150 ease-out active:scale-[0.99]"
+          >
+            <span className="text-[22px] leading-none">🚪</span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[14px] font-medium text-ink">작은 옷장</span>
+              <span className="block text-[12px] text-inkdim">
+                여기서만 만나는 옷 {boxFound} / {boxTotal}
+              </span>
+            </span>
+            <span className="shrink-0 text-[13px] text-inkfaint">›</span>
+          </button>
+        )}
 
         {/* 내 옷 · 새 옷 */}
         <div className="mt-3 flex shrink-0 gap-1 rounded-pill bg-sunken p-1">

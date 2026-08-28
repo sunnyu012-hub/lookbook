@@ -30,6 +30,7 @@ import { StorySheet } from '@/components/discovery/StorySheet'
 import { ConflictSheet } from '@/components/sync/ConflictSheet'
 import { GuideSheet } from '@/components/guide/GuideSheet'
 import { MyLookSheet } from '@/components/character/MyLookSheet'
+import { WardrobeBoxSheet } from '@/components/character/WardrobeBoxSheet'
 import { NewSkinOverlay } from '@/components/character/NewSkinOverlay'
 import { SkinGallery } from '@/components/character/SkinGallery'
 import { GardenScreen } from '@/components/garden/GardenScreen'
@@ -128,6 +129,7 @@ export default function App() {
     selectSkin,
     seeSkin,
     buySkin,
+    drawWardrobeBox,
     devGrantAllSkins,
     newSkins,
     dismissNewSkins,
@@ -170,6 +172,7 @@ export default function App() {
   const [conflictOpen, setConflictOpen] = useState(false)
   const [guideOpen, setGuideOpen] = useState(false)
   const [lookOpen, setLookOpen] = useState(false)
+  const [boxOpen, setBoxOpen] = useState(false)
   const [gardenOpen, setGardenOpen] = useState(false)
   const [kitchenOpen, setKitchenOpen] = useState(false)
   const [quarryOpen, setQuarryOpen] = useState(false)
@@ -1040,6 +1043,14 @@ export default function App() {
         onSelect={selectSkin}
         onSee={seeSkin}
         onBuy={buySkin}
+        onOpenBox={() => setBoxOpen(true)}
+      />
+
+      <WardrobeBoxSheet
+        open={boxOpen}
+        state={state}
+        onClose={() => setBoxOpen(false)}
+        onDraw={drawWardrobeBox}
       />
 
       {/* 새 모습은 얻은 자리에서 한 번 보여준다. 자동으로 갈아입히지는 않는다. */}

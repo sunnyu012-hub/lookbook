@@ -20,6 +20,7 @@ import type {
   Rarity,
   Routine,
   ShopDef,
+  SkinGachaPoolId,
 } from '@/types'
 import type { BuySkinResult } from '@/lib/character/derive'
 import type { HarvestResult, PlantResult } from '@/lib/garden/derive'
@@ -68,6 +69,10 @@ import {
 import { pendingDelivery } from '@/lib/collection/delivery'
 import { applyDiscovery } from '@/lib/discovery/derive'
 import { applySkinUnlocks, buySkin as buySkinIn, grantAllSkins, wearSkin } from '@/lib/character/derive'
+import {
+  drawFromWardrobeBox,
+  type WardrobeBoxDrawResult,
+} from '@/lib/character/wardrobe-box'
 import { markSkinsSeen } from '@/lib/character/skins'
 import {
   harvestPlot as harvestPlotIn,
@@ -248,6 +253,7 @@ interface GameState {
   seeSkin: (ids: readonly string[]) => void
   /** 코인으로 하나 데려온다 */
   buySkin: (id: string) => BuySkinResult
+  drawWardrobeBox: (poolId: SkinGachaPoolId) => WardrobeBoxDrawResult
   /** 개발용 — 모습을 전부 지급한다 (?dev=skins 갤러리에서만 부른다) */
   devGrantAllSkins: () => void
   /** 이번에 새로 얻은 모습들 (알려주고 나면 비운다) */
@@ -700,6 +706,8 @@ export function useGameState(): GameState {
   const [discoveryNotes, setDiscoveryNotes] = useState<DiscoveryNote[]>([])
   /** 이번에 새로 얻은 캐릭터 모습. 한 번 보여주고 비운다. */
   const [newSkins, setNewSkins] = useState<CharacterSkin[]>([])
+  /** 작은 옷장 결과를 보여주는 중인지. 한 번 열면 닫을 때까지 다시 안 열린다. */
+  const drawingRef = useRef(false)
 
   /**
    * 모든 상태 변경은 여기를 지난다. ref 를 먼저 갱신해 연속 클릭에도 최신값을 본다.
@@ -2171,11 +2179,46 @@ export function useGameState(): GameState {
     [commit],
   )
 
+  /**
+   * 작은 옷장을 한 번 열어본다.
+   *
+   * 판정은 전부 `drawFromWardrobeBox` 안에서 한 덩어리로 끝난다 —
+   * 코인을 보고, 뽑고, 빼고, 넣는 게 한 번의 갱신이다.
+   *
+   * 빠르게 두 번 눌러도 두 벌이 나오지 않는다. `commit` 이 `stateRef`
+   * 를 그 자리에서 갱신해서, 두 번째 누름은 이미 코인이 빠지고 옷이
+   * 들어간 상태를 읽는다. 화면 잠금으로 막는 게 아니라 판정이 막는다.
+   *
+   * 얻은 옷은 조건을 채워 열린 옷과 같은 자리(NewSkinOverlay)로 보여준다.
+   * 뽑기 전용 결과 화면을 따로 만들지 않는다.
+   */
+  const drawWardrobeBox = useCallback(
+    (poolId: SkinGachaPoolId): WardrobeBoxDrawResult => {
+      // 결과를 아직 안 닫았으면 다시 안 뽑는다. 화면에서는 결과 창이
+      // 버튼을 덮고 있어서 손가락으로는 못 누르지만, 그건 화면 사정이다.
+      // 판정이 스스로 막아야 창을 안 띄우는 길이 생겨도 안전하다.
+      if (drawingRef.current) return { ok: false, reason: 'BUSY' }
+
+      const prev = stateRef.current
+      const { state: next, result } = drawFromWardrobeBox(prev, poolId)
+      if (result.ok) {
+        drawingRef.current = true
+        commit(next)
+        setNewSkins([result.skin])
+      }
+      return result
+    },
+    [commit],
+  )
+
   const devGrantAllSkins = useCallback(() => {
     commit(grantAllSkins(stateRef.current))
   }, [commit])
 
-  const dismissNewSkins = useCallback(() => setNewSkins([]), [])
+  const dismissNewSkins = useCallback(() => {
+    drawingRef.current = false
+    setNewSkins([])
+  }, [])
 
   // ── 작은 정원 ───────────────────────────────────────────
 
@@ -2591,6 +2634,7 @@ export function useGameState(): GameState {
       selectSkin,
       seeSkin,
       buySkin,
+    drawWardrobeBox,
       devGrantAllSkins,
       enterGarden,
       enterQuarry,
