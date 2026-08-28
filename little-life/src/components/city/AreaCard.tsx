@@ -11,6 +11,8 @@ interface AreaCardProps {
   event: CityEvent | null
   /** 지금 여기 아니면 한 칸, 지금 여기면 한 줄 전부 */
   wide?: boolean
+  /** 지금 시각. 누가 여기 있는지가 여기서 갈린다 */
+  now?: Date
   onOpen: (area: AreaDef) => void
 }
 
@@ -24,9 +26,9 @@ interface AreaCardProps {
  * 여기는 다섯 가지만 적는다 — 아이콘 · 이름 · 여기 뭐가 있는지 · 오늘 한 줄 · 상태.
  * 나머지는 눌러서 들어간 다음이다.
  */
-export function AreaCard({ area, isCurrent, closed, event, wide, onOpen }: AreaCardProps) {
+export function AreaCard({ area, isCurrent, closed, event, wide, now, onOpen }: AreaCardProps) {
   // 반 칸짜리에는 둘까지. 셋째 이름은 어차피 잘린다.
-  const highlights = areaHighlights(area, wide ? 3 : 2)
+  const highlights = areaHighlights(area, wide ? 3 : 2, now)
 
   return (
     <button

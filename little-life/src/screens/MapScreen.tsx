@@ -13,6 +13,7 @@ import { AREAS } from '@/lib/rpg/content'
 import { TIME_ICON, TIME_LABEL, isNightOpen, timeBand } from '@/lib/rpg/time'
 import { ScreenHeader } from '@/components/layout/ScreenHeader'
 import { AreaCard } from '@/components/city/AreaCard'
+import { useCityClock } from '@/hooks/useCityClock'
 import { AreaHubSheet } from '@/components/city/AreaHubSheet'
 import { eventsForArea } from '@/lib/city/events'
 
@@ -65,7 +66,8 @@ export function MapScreen({
   onOpenDungeon,
 }: MapScreenProps) {
   const [openArea, setOpenArea] = useState<AreaDef | null>(null)
-  const now = new Date()
+  // 켜둔 채로 시간이 흘러도 도시가 아침에 멈춰 있지 않게.
+  const now = useCityClock()
   const band = timeBand(now)
   const nightOpen = isNightOpen(now)
 
@@ -101,6 +103,7 @@ export function MapScreen({
         closed={closedNow(here)}
         event={eventOf(here)}
         wide
+        now={now}
         onOpen={setOpenArea}
       />
 
@@ -112,6 +115,7 @@ export function MapScreen({
               isCurrent={false}
               closed={closedNow(area)}
               event={eventOf(area)}
+              now={now}
               onOpen={setOpenArea}
             />
           </li>
@@ -126,6 +130,7 @@ export function MapScreen({
         npcs={npcs}
         events={events}
         state={state}
+        now={now}
         onClose={() => setOpenArea(null)}
         onSelect={(id) => {
           onSelectArea(id)

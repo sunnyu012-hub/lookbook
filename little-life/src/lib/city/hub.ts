@@ -6,15 +6,14 @@ import type {
   NpcStates,
   SecretView,
 } from '@/types'
-import { npcsInArea } from './npcs'
-import { isShopOpen, shopInArea } from './shops'
+import { awayLine, npcsAway, npcsHere } from './routine'
+import { isShopOpen, shopClosedLine, shopInArea } from './shops'
 import { collectionShopsInArea, isCollectionShopOpen, openingLabel } from '@/lib/collection/shops'
 import { hasFreshStock } from '@/lib/collection/progress'
 import { secretsInArea } from '@/lib/discovery/secrets'
 import { isGardenUnlocked, unlockProgress } from '@/lib/garden/derive'
 import { isQuarryUnlocked, unlockProgress as quarryProgress } from '@/lib/quarry/derive'
 import { isGateFound } from '@/lib/dungeon/derive'
-import { isNightOpen } from '@/lib/rpg/time'
 import { todayKey } from '@/lib/date'
 
 /**
@@ -78,19 +77,31 @@ interface HubInput {
  * 그다음이 가게, 그다음이 이 동네에서만 갈 수 있는 곳들이다.
  */
 export function areaActions({ area, state, now = new Date() }: HubInput): HubAction[] {
-  const nightOpen = isNightOpen(now)
   const actions: HubAction[] = []
 
-  // ── 사람 ──────────────────────────────────────────────
-  for (const npc of npcsInArea(area.id)) {
-    const away = npc.nightOnly === true && !nightOpen
+  // ── 지금 여기 있는 사람 ───────────────────────────────
+  // 자기 동네 사람이 아니어도 된다. 오늘은 여기 와 있는 것뿐이다.
+  for (const npc of npcsHere(area.id, now)) {
     actions.push({
       key: `npc:${npc.id}`,
       kind: 'NPC',
       icon: npc.avatar,
       title: npc.name,
-      subtitle: away ? '밤에만 보여' : npc.role,
-      disabled: away,
+      subtitle: npc.role,
+      disabled: false,
+      npc,
+    })
+  }
+
+  // ── 이 동네 사람인데 지금은 없는 사람 ─────────────────
+  for (const npc of npcsAway(area.id, now)) {
+    actions.push({
+      key: `npc:${npc.id}`,
+      kind: 'NPC',
+      icon: npc.avatar,
+      title: npc.name,
+      subtitle: awayLine(npc, now),
+      disabled: true,
       npc,
     })
   }
@@ -104,7 +115,7 @@ export function areaActions({ area, state, now = new Date() }: HubInput): HubAct
       kind: 'SHOP',
       icon: shop.icon,
       title: shop.name,
-      subtitle: open ? '구경하기' : '지금은 닫혀 있어',
+      subtitle: open ? '구경하기' : shopClosedLine(shop, now),
       disabled: !open,
     })
   }
@@ -230,13 +241,10 @@ export function areaActions({ area, state, now = new Date() }: HubInput): HubAct
  * 잘린 이름은 안 적은 것만도 못하다 — 그래서 몇 개까지 적을지는 부르는 쪽이 정한다.
  */
 export function areaHighlights(area: AreaDef, max = 3, now: Date = new Date()): string[] {
-  const nightOpen = isNightOpen(now)
   const names: string[] = []
 
-  for (const npc of npcsInArea(area.id)) {
-    if (npc.nightOnly && !nightOpen) continue
-    names.push(npc.name)
-  }
+  // 지금 여기 있는 사람만. 지도를 훑는 것만으로 누가 어디 있는지 보여야 한다.
+  for (const npc of npcsHere(area.id, now)) names.push(npc.name)
 
   const shop = shopInArea(area.id)
   if (shop) names.push(shop.name)

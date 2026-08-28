@@ -24,6 +24,8 @@ interface AreaHubSheetProps {
   npcs: NpcStates
   events: CityEvent[]
   state: AppState
+  /** 지금 시각. 누가 여기 있고 가게가 열렸는지가 여기서 갈린다 */
+  now: Date
   onClose: () => void
   onSelect: (id: AreaId) => void
   onOpenNpc: (npc: NpcDef) => void
@@ -53,6 +55,7 @@ export function AreaHubSheet({
   npcs,
   events,
   state,
+  now,
   onClose,
   onSelect,
   onOpenNpc,
@@ -64,8 +67,8 @@ export function AreaHubSheet({
   onOpenDungeon,
 }: AreaHubSheetProps) {
   const actions = useMemo(
-    () => (area ? areaActions({ area, state, npcs }) : []),
-    [area, state, npcs],
+    () => (area ? areaActions({ area, state, npcs, now }) : []),
+    [area, state, npcs, now],
   )
   const areaEvents = useMemo(
     () => (area ? eventsForArea(area.id, events) : []),
