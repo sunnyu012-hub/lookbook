@@ -9,12 +9,14 @@ import type {
   NpcStates,
   Reputation,
 } from '@/types'
-import { AREAS } from '@/lib/rpg/content'
+import { AREAS, findArea } from '@/lib/rpg/content'
 import { TIME_ICON, TIME_LABEL, isNightOpen, timeBand } from '@/lib/rpg/time'
 import { ScreenHeader } from '@/components/layout/ScreenHeader'
 import { AreaCard } from '@/components/city/AreaCard'
 import { useCityClock } from '@/hooks/useCityClock'
 import { AreaHubSheet } from '@/components/city/AreaHubSheet'
+import { CityMap } from '@/components/city/CityMap'
+import { cityMapViews } from '@/lib/city/map'
 import { eventsForArea } from '@/lib/city/events'
 
 interface MapScreenProps {
@@ -47,8 +49,15 @@ interface MapScreenProps {
  * 이벤트 설명 · 어울리는 퀘스트 개수가 다 붙어 있었다. 눌러서 열면 또 설명이
  * 먼저 나와서, 하루에게 말을 걸려면 시트를 열고 한참 내려가야 했다.
  *
- * 지금은 동네를 두 칸씩 깔고, 눌러 들어가면 **할 수 있는 것**이 격자로 나온다.
- * 사람 · 가게 · 정원 · 채석장 · 작업실 어디든 두 번 누르면 닿는다.
+ * 지금은 도시 그림 한 장을 깔고 그 위에 지금 상태만 얹는다. 동네를 누르면
+ * **할 수 있는 것**이 격자로 나온다 — 사람 · 가게 · 정원 · 채석장 · 작업실
+ * 어디든 두 번 누르면 닿는다.
+ *
+ * ── 그림이 없으면 예전 목록으로 ─────────────────────────
+ *
+ * 배경 그림은 하나뿐이라 그게 없으면 지도가 빈 판이 된다. 그럴 때는
+ * 조용히 예전 카드 목록으로 되돌아간다 — 그림 하나 때문에 도시로
+ * 가는 길이 통째로 막히면 안 된다.
  */
 export function MapScreen({
   currentAreaId,
@@ -81,6 +90,20 @@ export function MapScreen({
 
   const closedNow = (area: AreaDef) => area.nightOnly === true && !nightOpen
 
+  // 그림이 아직 안 들어왔을 때만 예전 카드 목록으로 되돌아간다.
+  const [baseMissing, setBaseMissing] = useState(false)
+  // 누르는 자리를 눈으로 보려면 주소에 ?dev=map. 화면 어디에도 길은 없다.
+  const [debug] = useState(
+    () =>
+      typeof window !== 'undefined' &&
+      new URLSearchParams(window.location.search).get('dev') === 'map',
+  )
+
+  const mapViews = useMemo(
+    () => cityMapViews({ state, events, currentAreaId, now }),
+    [state, events, currentAreaId, now],
+  )
+
   return (
     <div className="animate-risein">
       <ScreenHeader
@@ -95,32 +118,43 @@ export function MapScreen({
         }
       />
 
-      <p className="-mt-1 mb-5 text-[13px] text-inkdim">오늘은 어디서 지내볼까?</p>
+      <p className="-mt-1 mb-4 text-[13px] text-inkdim">오늘은 어디서 지내볼까?</p>
 
-      <AreaCard
-        area={here}
-        isCurrent
-        closed={closedNow(here)}
-        event={eventOf(here)}
-        wide
-        now={now}
-        onOpen={setOpenArea}
-      />
+      {baseMissing ? (
+        <>
+          <AreaCard
+            area={here}
+            isCurrent
+            closed={closedNow(here)}
+            event={eventOf(here)}
+            wide
+            now={now}
+            onOpen={setOpenArea}
+          />
 
-      <ul className="mt-3 grid grid-cols-2 gap-3">
-        {others.map((area) => (
-          <li key={area.id}>
-            <AreaCard
-              area={area}
-              isCurrent={false}
-              closed={closedNow(area)}
-              event={eventOf(area)}
-              now={now}
-              onOpen={setOpenArea}
-            />
-          </li>
-        ))}
-      </ul>
+          <ul className="mt-3 grid grid-cols-2 gap-3">
+            {others.map((area) => (
+              <li key={area.id}>
+                <AreaCard
+                  area={area}
+                  isCurrent={false}
+                  closed={closedNow(area)}
+                  event={eventOf(area)}
+                  now={now}
+                  onOpen={setOpenArea}
+                />
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : (
+        <CityMap
+          views={mapViews}
+          debug={debug}
+          onBaseMissing={() => setBaseMissing(true)}
+          onSelect={(view) => setOpenArea(findArea(view.def.targetAreaId))}
+        />
+      )}
 
       <AreaHubSheet
         area={openArea}
