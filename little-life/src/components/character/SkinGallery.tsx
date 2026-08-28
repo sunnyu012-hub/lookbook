@@ -112,7 +112,7 @@ export function SkinGallery({ state, onGrantAll, onWear }: SkinGalleryProps) {
                   : '그림 없음 → 기본으로 대체'
                 : '재는 중…'}
               {'  '}
-              {skin.unlockType} · 진행 {Math.round(skinProgress(state, skin.unlock) * 100)}%
+              {skin.acquisition} · 진행 {Math.round(skinProgress(state, skin.unlock) * 100)}%
               {skinPrice(skin) !== null && ` · 🪙 ${skinPrice(skin)}`}
               {skin.dialogue && (
                 <>

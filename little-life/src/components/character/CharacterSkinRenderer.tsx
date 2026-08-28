@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { CharacterMood } from './types'
 import { CHARACTER } from '@/lib/assets'
-import { DEFAULT_SKIN_ID, findSkin, skinArt } from '@/lib/character/skins'
+import { DEFAULT_SKIN_ID, findSkin, skinArt, skinThumb } from '@/lib/character/skins'
 import { cn } from '@/components/ui/cn'
 
 interface CharacterSkinRendererProps {
@@ -10,6 +10,15 @@ interface CharacterSkinRendererProps {
   mood?: CharacterMood
   /** 작은 썸네일에서는 숨쉬는 움직임을 끈다 */
   animated?: boolean
+  /**
+   * 작은 그림을 쓴다.
+   *
+   * 목록 한 칸은 폰에서 86px 다. 백스무 벌을 원본으로 받으면 4MB 가 넘는다.
+   * 큰 미리보기에서는 그대로 원본을 쓴다 — 거기서는 크게 보인다.
+   */
+  small?: boolean
+  /** 화면에 들어올 때 받는다. 목록처럼 한 번에 여럿 그릴 때 쓴다. */
+  lazy?: boolean
   className?: string
 }
 
@@ -38,10 +47,12 @@ export function CharacterSkinRenderer({
   skinId,
   mood = 'idle',
   animated = true,
+  small = false,
+  lazy = false,
   className,
 }: CharacterSkinRendererProps) {
   const def = findSkin(skinId) ?? findSkin(DEFAULT_SKIN_ID)
-  const wanted = def ? skinArt(def, mood) : CHARACTER.idle
+  const wanted = def ? (small && mood === 'idle' ? skinThumb(def) : skinArt(def, mood)) : CHARACTER.idle
   const [src, setSrc] = useState(wanted)
 
   // 모습이나 자세가 바뀌면 다시 처음부터 시도한다.
@@ -52,8 +63,14 @@ export function CharacterSkinRenderer({
 
   const fallback = () => {
     const base = findSkin(DEFAULT_SKIN_ID)
+    const full = def ? skinArt(def, mood) : CHARACTER.idle
     const backup = base ? skinArt(base) : CHARACTER.idle
-    setSrc((current) => (current === backup ? CHARACTER.idle : backup))
+    setSrc((current) => {
+      // 작은 그림이 아직 안 만들어진 것이면 원본을 한 번 더 시도한다
+      if (current !== full && current !== backup) return full
+      if (current === backup) return CHARACTER.idle
+      return backup
+    })
   }
 
   // 자를 때 발끝과 키를 이미 맞춰뒀기 때문에 보통은 손볼 게 없다.
@@ -69,6 +86,8 @@ export function CharacterSkinRenderer({
       key={`${skinId}:${mood}`}
       src={src}
       onError={fallback}
+      loading={lazy ? 'lazy' : undefined}
+      decoding={lazy ? 'async' : undefined}
       alt="내 캐릭터"
       draggable={false}
       className={cn(

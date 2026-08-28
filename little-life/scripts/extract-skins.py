@@ -34,6 +34,18 @@
      그래서 아래쪽(발) 기준으로 가운데를 잡는다. 서 있는 자리가 기준이다.
 
 시트가 없으면 이미 내보낸 파일은 그대로 두고 조용히 끝난다.
+
+── 새 묶음을 더할 때 ──────────────────────────────────
+
+아래 LAYOUT 에 시트를 **덧붙이고 전체를 한 번에 돌린다.**
+캔버스 크기는 그 판에 들어온 모든 조각에서 계산하기 때문에,
+새 시트만 따로 돌리면 그것들만 다른 캔버스에 올라간다 —
+화면에서 새 옷만 몸 크기가 달라 보이게 되는 길이다.
+지금 여섯 장은 저장소에 함께 있어서(.gitignore 예외) 언제든 다시 돌릴 수 있고,
+같은 입력으로 다시 돌리면 결과 파일도 바이트까지 같다.
+
+잘라낸 뒤에는 `npm run assets:thumbs` 로 목록용 작은 그림을,
+`npm run assets:audit` 으로 빠진 것을 확인한다.
 """
 import os
 import sys
@@ -56,6 +68,87 @@ LAYOUT = [
     ("skins2-sweet.png", ["strawberry_bonbon", "milky_ballet", "toy_candy_pop", "angel_picnic"]),
     ("skins2-rock.png", ["soft_rock_chic", "pink_punk", "vintage_band_girl", "midnight_leather"]),
     ("skins2-idol.png", ["pink_idol_stage", "navy_star_idol", "white_encore", "aurora_pop"]),
+    # 3차 — 묶음 4 · 5 · 6 (스무 벌. 나머지는 아직 안 왔다)
+    ("skins3-festival-a.png", [
+        "cherry_blossom_picnic", "spring_rain_walker", "summer_firework_keeper", "marine_vacance",
+    ]),
+    ("skins3-festival-b.png", [
+        "peach_holiday", "autumn_leaf_explorer", "halloween_candy_witch", "ghost_hotel_bellboy",
+    ]),
+    ("skins3-guild.png", [
+        "treasure_hunter", "slime_researcher", "dungeon_idol", "legendary_guildmaster",
+    ]),
+    ("skins3-other-a.png", [
+        "dawn_black_cat", "moonlight_rockstar", "dream_ballerina", "neon_angel",
+    ]),
+    ("skins3-other-b.png", [
+        "rose_garden_ghost", "star_thief_mage", "time_traveler", "mirror_world_me",
+    ]),
+    # 4차 — 묶음 3 · 5 · 6 · 7 (스무 벌 더)
+    ("skins4-city-a.png", [
+        "night_bookkeeper", "starlight_patissier", "alley_detective", "magic_postal",
+    ]),
+    ("skins4-city-b.png", [
+        "dream_mender", "night_market_trader", "treasure_appraiser", "neon_dj",
+    ]),
+    ("skins4-guild-b.png", [
+        "monster_chef", "dessert_alchemist", "mushroom_forager", "moonlight_angler",
+    ]),
+    ("skins4-other-c.png", [
+        "city_guardian", "golden_slime_queen", "all_seasons_spirit", "little_life_lead",
+    ]),
+    ("skins4-taste-a.png", [
+        "french_girl_casual", "minimal_monotone", "kitsch_vintage_denim",
+        "vintage_bookcafe_mood",
+    ]),
+    # 5차 — 묶음 4 · 7 · 8 · 9 (스무 벌 더)
+    ("skins5-festival-c.png", [
+        "first_snow_angel", "christmas_idol", "new_year_pouch", "starlight_ball",
+    ]),
+    ("skins5-outing-c.png", [
+        "new_cafe_hunt", "exhibition_day", "baseball_cheer", "hangang_picnic",
+    ]),
+    ("skins5-daily-c.png", [
+        "dusty_blue_work_jacket", "cream_knit_vest_long_skirt", "dusty_red_rugby_shirt",
+        "shirring_blouse_cargo_skirt",
+    ]),
+    ("skins5-weather.png", [
+        "rainy_season_practical", "heatwave_linen", "aircon_cardigan", "midsummer_long_skirt",
+    ]),
+    ("skins5-taste.png", [
+        "retro_sporty", "cityboy_overfit", "romantic_satin_mood", "soft_chic_all_black",
+    ]),
+    # 6차 — 묶음 5 · 8 · 9 · 10 (스무 벌 더)
+    ("skins6-guild-c.png", [
+        "strawberry_farmer", "herb_witch", "crystal_miner", "cave_cartographer",
+    ]),
+    ("skins6-weather-a.png", [
+        "early_spring_trench", "fine_dust_day", "spring_wedding_guest", "early_summer_shirt",
+    ]),
+    ("skins6-weather-c.png", [
+        "early_autumn_shirt", "autumn_suede_jacket", "sudden_cold_day", "cold_wave_long_padding",
+    ]),
+    ("skins6-taste-b.png", [
+        "real_balletcore", "soft_gorpcore", "cozy_scandi_mood", "campus_preppy",
+    ]),
+    ("skins6-outing.png", [
+        "popup_openrun", "concert_day", "airport_day", "interview_day",
+    ]),
+    # 7차 — 남은 열여섯 (묶음 3 · 9 · 10)
+    ("skins7-city-c.png", [
+        "city_archivist", "vintage_shop_buyer", "little_theater_actor", "rooftop_gardener",
+    ]),
+    ("skins7-outing-a.png", [
+        "subway_commute", "work_from_home_day", "convenience_store_run", "after_work_meetup",
+    ]),
+    ("skins7-daily-b.png", [
+        "denim_shirt_setup", "lavender_shirt_dress", "city_windbreaker_wide_pants",
+        "red_cardigan_cream_pants",
+    ]),
+    ("skins7-daily-a.png", [
+        "oatmeal_sweatshirt_daily", "coral_tee_light_denim", "sage_check_shirt_layered",
+        "charcoal_cardigan_raw_denim",
+    ]),
 ]
 
 # 시트마다 네 명의 키 중앙값을 이 높이에 맞춘다.

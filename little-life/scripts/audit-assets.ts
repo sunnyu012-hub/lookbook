@@ -14,6 +14,8 @@ import {
   MATERIAL_CATALOG,
   TROPHY_CATALOG,
 } from '../src/lib/collection/catalog'
+import { SKINS, skinArt, skinThumb } from '../src/lib/character/skins'
+import { findPack } from '../src/lib/character/packs'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 const PUBLIC = path.join(ROOT, 'public')
@@ -125,6 +127,50 @@ for (const item of ALL_COLLECTION_ITEMS) {
   }
 }
 
+/**
+ * 캐릭터 모습.
+ *
+ * 여기에 fallback 이 있다고 해서 없는 걸 통과시키지 않는다.
+ * 그림이 없으면 목록에 스물넷 중 하나가 대신 서 있게 되는데,
+ * 그건 앱이 안 깨지게 하는 장치지 "있다" 는 뜻이 아니다.
+ */
+const skinMissing: Row[] = []
+/** 그림은 있는데 이름이 아직 안 정해진 것 */
+const skinNoName: Row[] = []
+const skinNoThumb: Row[] = []
+const skinOddSize: Row[] = []
+let skinCanvas = ''
+
+for (const skin of SKINS) {
+  const pack = findPack(skin.packId)
+  const where = pack ? `${pack.id}팩 · ${pack.name}` : '처음 스물넷'
+
+  if (skin.nameMissing) skinNoName.push({ id: skin.id, name: skin.name, note: where })
+  const file = path.join(PUBLIC, skinArt(skin).replace(/^\//, ''))
+
+  if (!existsSync(file)) {
+    skinMissing.push({ id: skin.id, name: skin.name, note: where })
+    continue
+  }
+
+  const size = webpSize(file)
+  const box = `${size.width}x${size.height}`
+  if (skinCanvas === '') skinCanvas = box
+  else if (box !== skinCanvas) {
+    skinOddSize.push({ id: skin.id, name: skin.name, note: `${box} — 나머지는 ${skinCanvas}` })
+  }
+
+  if (!existsSync(path.join(PUBLIC, skinThumb(skin).replace(/^\//, '')))) {
+    skinNoThumb.push({ id: skin.id, name: skin.name, note: where })
+  }
+}
+
+// 스킨 id 중복 · 순서 중복
+const skinIds = SKINS.map((s) => s.id)
+const dupSkinIds = skinIds.filter((id, i) => skinIds.indexOf(id) !== i)
+const skinOrders = SKINS.map((s) => s.sortOrder)
+const dupSkinOrders = skinOrders.filter((o, i) => skinOrders.indexOf(o) !== i)
+
 // 카탈로그에 없는 파일이 폴더에 남아 있는지
 const known = new Set(
   ALL_COLLECTION_ITEMS.filter((i) => i.assetKey).map((i) => path.join(PUBLIC, i.assetKey!)),
@@ -179,6 +225,13 @@ const lines = [
   `| 카탈로그에 없는 파일 | ${orphans.length} |`,
   `| id 중복 | ${dupIds.length} |`,
   `| 경로 중복 | ${dupPaths.length} |`,
+  `| 캐릭터 모습 | ${SKINS.length} |`,
+  `| 모습 그림 없음 | ${skinMissing.length} |`,
+  `| 모습 이름 없음 (자리표) | ${skinNoName.length} |`,
+  `| 모습 작은 그림 없음 | ${skinNoThumb.length} |`,
+  `| 모습 캔버스 다름 | ${skinOddSize.length} |`,
+  `| 모습 id 중복 | ${dupSkinIds.length} |`,
+  `| 모습 순서 중복 | ${dupSkinOrders.length} |`,
   `| 테두리까지 꽉 참 (POSSIBLE_CROP) | ${possibleCrop.length} |`,
   `| 유난히 촘촘함 (STYLE_REVIEW) | ${styleReview.length} |`,
   '',
@@ -194,6 +247,27 @@ const lines = [
     .sort((a, b) => b[1] - a[1])
     .map(([k, v]) => `| ${k} | ${v} |`),
   '',
+  '## 그림이 없는 캐릭터 모습',
+  '',
+  `캔버스 기준 ${skinCanvas || '알 수 없음'}. fallback 이 있어도 여기 남은 건 없는 것이다.`,
+  '',
+  table(skinMissing),
+  '## 이름이 아직 안 정해진 캐릭터 모습',
+  '',
+  '그림은 있는데 확정된 이름이 없는 것. `name` 에 든 건 자리표지 이름이 아니다.',
+  '이름이 오면 id · 이름 · 그림 파일을 한 번에 같이 정한다.',
+  '',
+  table(skinNoName),
+  '## 작은 그림이 없는 캐릭터 모습',
+  '',
+  '`npm run assets:thumbs` 로 만든다. 없으면 목록에서 원본을 그대로 받는다.',
+  '',
+  table(skinNoThumb),
+  '## 캔버스가 다른 캐릭터 모습',
+  '',
+  '같은 캔버스가 아니면 화면에서 한 벌만 몸 크기가 달라 보인다.',
+  '',
+  table(skinOddSize),
   '## 그림이 없는 물건',
   '',
   table(missing),
@@ -233,6 +307,9 @@ writeFileSync(REPORT, `${lines.join('\n')}\n`)
 console.log(`도감 ${CATALOG.length} · 연결 ${mapped} · 이모지 ${emojiOnly.length} · 실루엣 ${silhouetteOnly.length}`)
 console.log(`깨진 경로 ${brokenPath.length} · 주인 없는 파일 ${orphans.length} · 중복 ${dupIds.length + dupPaths.length}`)
 console.log(`볼 것: 테두리 꽉 참 ${possibleCrop.length} · 촘촘함 ${styleReview.length}`)
+console.log(
+  `모습 ${SKINS.length} · 그림 없음 ${skinMissing.length} · 이름 없음 ${skinNoName.length} · 작은 그림 없음 ${skinNoThumb.length} · 캔버스 다름 ${skinOddSize.length}`,
+)
 console.log(`리포트: reports/asset-audit.md`)
 
 // 깨진 경로나 중복은 그냥 넘어가면 안 된다

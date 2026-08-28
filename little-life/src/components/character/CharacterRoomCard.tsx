@@ -32,9 +32,18 @@ interface CharacterRoomCardProps {
  * 앉은 그림은 옆으로 넓고, 서 있는 그림은 세로로 길다.
  *
  * 자세 그림이 따로 없는 모습(대부분)은 늘 서 있는 한 장이라 idle 자리를 쓴다.
+ *
+ * ── idle 만 넉넉하게 잡는 이유 ─────────────────────────
+ *
+ * 나머지 셋은 처음부터 있던 그림 파일이라 크기가 안 변한다. idle 은
+ * 옷 캔버스를 쓰는데, 그 캔버스는 제일 넓은 한 벌에 맞춰져 있다 —
+ * 머리가 긴 옷이 새로 들어오면 캔버스가 옆으로 넓어진다.
+ * 폭이 빠듯하면 그때마다 캐릭터가 조금씩 작아진다(실제로 38% 에서
+ * 162px 이 156px 이 됐다). 넉넉히 두면 늘 높이로 재서 62% 그대로다.
+ * 얼마나 넉넉한지는 테스트가 붙잡는다.
  */
 const PLACEMENT: Record<CharacterMood, { width: string; bottom: string }> = {
-  idle: { width: '38%', bottom: '7%' },
+  idle: { width: '45%', bottom: '7%' },
   questClear: { width: '40%', bottom: '7%' },
   levelUp: { width: '46%', bottom: '7%' },
   resting: { width: '56%', bottom: '9%' },
