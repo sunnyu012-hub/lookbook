@@ -22,10 +22,10 @@ import { seededRandom } from './seed'
  *
  * ── 놓치는 게 없다 ──────────────────────────────────────
  *
- * 노아를 뺀 다섯은 어느 시간대에도 도시 어딘가에 반드시 있다.
+ * 세라를 뺀 다섯은 어느 시간대에도 도시 어딘가에 반드시 있다.
  * 자리를 옮길 뿐 사라지지 않는다 — 지금 말을 못 걸어서 오늘 치를
  * 손해 보는 구조를 만들면, 그건 생활이 아니라 출석 체크다.
- * (노아는 원래부터 밤에만 보이던 사람이라 그대로 뒀다.)
+ * (세라는 원래부터 밤에만 보이던 사람이라 그대로 뒀다.)
  */
 
 /** 우리 집에는 아무도 오지 않는다. 여기는 내 자리다. */
@@ -33,7 +33,7 @@ const NEVER: AreaId = 'HOME_BASE'
 
 const ROUTINES: NpcRoutineDef[] = [
   {
-    // 카페 주인. 가게가 곧 하루라서 낮에는 거의 카페 거리에 있다.
+    // 하루 — 카페 사장. 가게가 곧 하루라서 낮에는 거의 카페 거리에 있다.
     npcId: 'MINA',
     weekday: {
       MORNING: [{ spot: 'CAFE_STREET', weight: 100 }],
@@ -59,7 +59,7 @@ const ROUTINES: NpcRoutineDef[] = [
     },
   },
   {
-    // 아침에 뛰는 사람. 아침 공원 비중이 제일 크다.
+    // 태오 — 아침에 뛴다. 아침 공원 비중이 제일 크다.
     npcId: 'HARU',
     weekday: {
       MORNING: [
@@ -88,7 +88,7 @@ const ROUTINES: NpcRoutineDef[] = [
     },
   },
   {
-    // 작업실 주인. 아침 커피만 마시고 골목으로 들어간다.
+    // 미래 — 공방 주인. 아침 커피만 마시고 골목으로 들어간다.
     npcId: 'LULU',
     weekday: {
       MORNING: [
@@ -110,7 +110,7 @@ const ROUTINES: NpcRoutineDef[] = [
     },
   },
   {
-    // 빈티지 가게 주인. 가게를 낮에 열어서 아침에는 밖을 돈다.
+    // 이안 — 빈티지숍 사장. 가게를 낮에 열어서 아침에는 밖을 돈다.
     npcId: 'JUNE',
     weekday: {
       MORNING: [
@@ -127,7 +127,7 @@ const ROUTINES: NpcRoutineDef[] = [
     },
   },
   {
-    // 코치. 운동 구역이 일터이고, 주말에는 공원으로 나간다.
+    // 도윤 — 클라이밍장이 일터이고, 주말에는 공원으로 나간다.
     npcId: 'RIO',
     weekday: {
       MORNING: [
@@ -156,7 +156,7 @@ const ROUTINES: NpcRoutineDef[] = [
     },
   },
   {
-    // 밤을 걷는 사람. 낮에 어디 있는지는 예나 지금이나 아무도 모른다.
+    // 세라 — 밤에만 보인다. 낮에 어디 있는지는 예나 지금이나 아무도 모른다.
     npcId: 'NOA',
     weekday: {
       MORNING: [{ spot: 'OFFSCREEN', weight: 100 }],
@@ -225,7 +225,7 @@ export function npcsHere(areaId: string, now: Date = new Date()): NpcDef[] {
 /**
  * 이 동네 사람인데 지금은 자리를 비운 사람들.
  *
- * 목록에서 아예 빼지 않는다 — 원래 카페에 있던 미나가 소리 없이 사라지면
+ * 목록에서 아예 빼지 않는다 — 원래 카페에 있던 하루가 소리 없이 사라지면
  * 그건 "나갔구나" 가 아니라 "없어졌나?" 로 읽힌다. 자리는 두고 흐리게만.
  */
 export function npcsAway(areaId: string, now: Date = new Date()): NpcDef[] {
@@ -240,7 +240,7 @@ export function npcsAway(areaId: string, now: Date = new Date()): NpcDef[] {
  * 찾는 재미로 바꾸는 건 그 느낌이 먼저 자리를 잡은 뒤에 해도 늦지 않다.
  */
 export function awayLine(npc: NpcDef, now: Date = new Date()): string {
-  // 노아는 원래 밤에만 보이는 사람이다. 그건 오늘 사정이 아니라 그 사람 자체다.
+  // 세라는 원래 밤에만 보이는 사람이다. 그건 오늘 사정이 아니라 그 사람 자체다.
   if (npc.nightOnly) return '밤에만 보여'
   const area = npcAreaNow(npc.id, now)
   return area ? `${findArea(area).name}에 있는 것 같다` : '지금은 여기 없는 것 같다'

@@ -66,7 +66,7 @@ describe('하루 동선 — 정해진 자리', () => {
 })
 
 describe('하루 동선 — 놓치는 게 없다', () => {
-  it('노아를 뺀 다섯은 어느 시간대에도 도시 어딘가에 있다', () => {
+  it('세라를 뺀 다섯은 어느 시간대에도 도시 어딘가에 있다', () => {
     for (const npc of NPCS) {
       if (npc.nightOnly) continue
       for (const band of BANDS) {
@@ -78,7 +78,7 @@ describe('하루 동선 — 놓치는 게 없다', () => {
     }
   })
 
-  it('노아는 예전처럼 밤에만 보인다', () => {
+  it('세라는 예전처럼 밤에만 보인다', () => {
     expect(npcSpotNow('NOA', at(MON, 22))).toBe('NIGHT_TOWN')
     for (const hour of [7, 13, 19]) {
       expect(npcSpotNow('NOA', at(MON, hour))).toBe('OFFSCREEN')
@@ -126,7 +126,7 @@ describe('하루 동선 — 주말', () => {
   })
 
   it('주말 표가 없는 시간대는 평일 표를 그대로 쓴다', () => {
-    // 루루는 주말 표가 아예 없다.
+    // 미래는 주말 표가 아예 없다.
     expect(findRoutine('LULU')?.weekend).toBeUndefined()
     expect(npcSpot('LULU', SAT, 'DAY', true)).toBe(npcSpot('LULU', SAT, 'DAY', false))
   })
@@ -181,7 +181,7 @@ describe('한 동네에 여럿', () => {
 })
 
 describe('영업시간', () => {
-  it('미나의 카페는 아침 7시에 열고 저녁 8시에 닫는다', () => {
+  it('하루의 카페는 아침 7시에 열고 저녁 8시에 닫는다', () => {
     const cafe = findShop('MINA_CAFE')!
     expect(isShopOpen(cafe, at(MON, 6))).toBe(false)
     expect(isShopOpen(cafe, at(MON, 7))).toBe(true)
@@ -214,7 +214,7 @@ describe('영업시간', () => {
   })
 
   it('가게가 닫혀도 주인은 자기 생활을 한다', () => {
-    // 저녁 8시 — 카페는 닫혔지만 미나는 도시 어딘가에 있다.
+    // 저녁 8시 — 카페는 닫혔지만 하루는 도시 어딘가에 있다.
     const now = at(MON, 20)
     expect(isShopOpen(findShop('MINA_CAFE')!, now)).toBe(false)
     expect(npcSpotNow('MINA', now)).not.toBe('OFFSCREEN')
@@ -260,7 +260,7 @@ describe('지도와 동네 화면', () => {
       for (const action of areaActions({ area, state, npcs, now })) {
         if (action.kind !== 'NPC' || !action.disabled) continue
         const spot = npcSpotNow(action.npc!.id, now)
-        // 어디 있는지까지 적힌다. 노아만 예외 — 낮에는 도시에 없다.
+        // 어디 있는지까지 적힌다. 세라만 예외 — 낮에는 도시에 없다.
         expect(action.subtitle).toBe(
           spot === 'OFFSCREEN' ? '밤에만 보여' : `${findArea(spot).name}에 있는 것 같다`,
         )

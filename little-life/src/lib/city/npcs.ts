@@ -6,29 +6,51 @@ import { FRIENDSHIP_LEVELS } from '@/types'
  *
  * 대사는 짧고 현대 생활 말투로 쓴다. 과한 판타지 문체는 쓰지 않는다.
  * 아무도 재촉하지 않는다 — 며칠 만에 와도 "어디 갔었어" 라고 묻지 않는다.
+ *
+ * ── 이름은 캐릭터 바이블을 따른다 ────────────────────────
+ *
+ * id 는 처음 만든 그대로 두고 사람만 바꿨다. 진행 중인 저장이
+ * 친밀도 · 읽은 이야기 · 비밀 장소 · 던전 입구를 전부 npc id 로 붙잡고
+ * 있어서, id 를 바꾸면 하던 사람들이 그걸 통째로 잃는다.
+ *
+ *   MINA → 윤하루 · 31 · 카페 사장
+ *   HARU → 윤태오 · 34 · 스포츠 회사원 / 러닝
+ *   LULU → 오미래 · 61 · 공방 주인
+ *   JUNE → 서이안 · 빈티지숍 사장
+ *   RIO  → 한도윤 · 클라이밍장
+ *   NOA  → 차세라 · 35 · BAR 사장
+ *
+ * 성격과 이야기는 `docs/direction/06_NPC_CHARACTER_BIBLE.md` 쪽이 맞다.
+ * 직업이 사람을 정하지 않는다 — 여섯 다 플레이어를 만나기 전부터
+ * 가족과 과거와 습관이 있었고, 대사는 그게 가끔 비치는 정도로만 쓴다.
  */
 
 export const NPCS: NpcDef[] = [
   {
     id: 'MINA',
-    name: '미나',
+    name: '윤하루',
     areaId: 'CAFE_STREET',
-    role: '카페 주인',
-    description: '작은 카페를 혼자 꾸려가는 사람. 말수는 적지만 잘 본다.',
+    role: '카페 사장',
+    description: '서른한 살. 사람도 취향도 잘 기억하는데 자기 이야기는 거의 안 한다.',
     avatar: '☕',
     likes: ['coffee', 'book', 'sweet'],
     shopId: 'MINA_CAFE',
     dialogues: [
       { text: '어서 와. 오늘은 창가 자리가 비었어.' },
-      { text: '집중이 안 되는 날엔 그냥 앉아만 있어도 돼.' },
-      { text: '원두를 바꿔봤는데, 어떤지 모르겠네.' },
+      { text: '지난번엔 시럽 빼고 마셨지? 오늘도 그렇게 줄까.' },
+      { text: '원두를 바꿔봤는데, 물어보면 다들 좋다고만 해서 잘 모르겠어.' },
       { text: '바쁜 사람들이 많이 다녀갔어. 다들 뭔가 하고 있더라.' },
       { text: '한 가지만 끝내고 가도 충분한 하루야.' },
       { text: '아침엔 조용해서 좋아. 뭐 마실래?', band: 'MORNING' },
       { text: '저녁엔 조명을 낮춰. 그게 더 편하더라.', band: 'EVENING' },
-      { text: '자주 보니까 이제 얼굴만 봐도 알겠어.', minLevel: 'FRIEND' },
+      { text: '태오는 아침마다 공원 돈대. 우리 남매인 거, 말했었나?', minLevel: 'FRIEND' },
       { text: '오늘 뭐 할지 모르겠으면, 여기 앉아서 정하고 가.', minLevel: 'FRIEND' },
-      { text: '네 자리는 늘 비워둘게.', minLevel: 'SPECIAL_BOND' },
+      { text: '이안? 알지. 예전에 한 번… 아니다, 그 얘긴 됐어.', minLevel: 'CLOSE_FRIEND' },
+      { text: '네 자리는 늘 비워둘게.', minLevel: 'CLOSE_FRIEND' },
+      {
+        text: '남 얘기 듣는 건 잘하는데, 내 얘기는 어디서부터 해야 할지 모르겠어.',
+        minLevel: 'SPECIAL_BOND',
+      },
       { text: '비 오는 날은 이상하게 잘 팔려. 다들 오래 앉아 있고.', eventId: 'rainy_cafe' },
     ],
     chains: [
@@ -51,7 +73,7 @@ export const NPCS: NpcDef[] = [
         id: 'mina_quiet',
         npcId: 'MINA',
         name: '조용한 오후',
-        intro: '가끔은 아무것도 안 하는 시간도 필요하더라.',
+        intro: '가끔은 아무것도 안 하는 시간도 필요하더라. 나는 잘 안 되지만.',
         outro: '이런 날도 있어야 해. 이건 내가 주는 거야.',
         requiresLevel: 'FRIEND',
         steps: [
@@ -66,10 +88,10 @@ export const NPCS: NpcDef[] = [
   },
   {
     id: 'HARU',
-    name: '하루',
+    name: '윤태오',
     areaId: 'GREEN_PARK',
-    role: '아침에 뛰는 사람',
-    description: '아침마다 공원을 도는 사람. 늘 조금 숨이 차 있다.',
+    role: '아침에 뛰는 회사원',
+    description: '서른네 살. 스포츠 회사에 다니고 아침마다 공원을 돈다. 예전엔 안 그랬다고 한다.',
     avatar: '🏃',
     likes: ['healthy', 'nature', 'sport'],
     shopId: null,
@@ -78,10 +100,13 @@ export const NPCS: NpcDef[] = [
       { text: '한 바퀴만 돌아도 기분이 달라져.' },
       { text: '나도 매일 나오는 건 아니야. 그래도 괜찮아.' },
       { text: '벤치에 앉아 있다 가도 돼. 그것도 나온 거야.' },
-      { text: '무릎이 좀 아파서 오늘은 천천히 뛰었어.' },
+      { text: '하루 종일 앉아 있다가 나오면 이게 제일 나아.' },
       { text: '아침 공기 맡으러 나온 거지? 잘했어.', band: 'MORNING' },
       { text: '해 질 때 여기가 제일 예뻐.', band: 'EVENING' },
       { text: '같이 걸을래? 말 안 해도 돼.', minLevel: 'FRIEND' },
+      { text: '하루 가게 가봤어? 내 동생인데, 커피는 걔가 훨씬 잘해.', minLevel: 'FRIEND' },
+      { text: '나 원래 이런 사람 아니었어. 스물아홉까지는 말도 잘 못 붙였고.', minLevel: 'CLOSE_FRIEND' },
+      { text: '처음엔 생각 안 하려고 뛴 거였어. 지금은 아니고.', minLevel: 'SPECIAL_BOND' },
       { text: '네가 오면 나도 하루 시작한 것 같아.', minLevel: 'SPECIAL_BOND' },
       { text: '오늘 빛이 좋다. 사진이라도 찍어둘 걸.', eventId: 'golden_hour' },
       {
@@ -96,7 +121,7 @@ export const NPCS: NpcDef[] = [
         id: 'haru_start',
         npcId: 'HARU',
         name: '가볍게 시작하기',
-        intro: '거창하게 시작하면 오래 못 가. 작게 해보자.',
+        intro: '거창하게 시작하면 오래 못 가. 나도 처음엔 십 분이었어.',
         outro: '이 정도면 충분해. 신발 하나 줄게, 편할 거야.',
         steps: [
           { title: '5분 스트레칭', category: 'BODY', difficulty: 'EASY' },
@@ -110,7 +135,7 @@ export const NPCS: NpcDef[] = [
         id: 'haru_together',
         npcId: 'HARU',
         name: '누군가와 같이',
-        intro: '혼자 하는 것도 좋은데, 가끔은 같이가 낫더라.',
+        intro: '사람 만나는 건 이제 쉬운데, 먼저 연락하는 건 아직도 어렵더라.',
         outro: '고마워. 오늘 좀 덜 외로웠어.',
         requiresLevel: 'FAMILIAR',
         steps: [
@@ -125,21 +150,23 @@ export const NPCS: NpcDef[] = [
   },
   {
     id: 'LULU',
-    name: '루루',
+    name: '오미래',
     areaId: 'CREATIVE_DISTRICT',
-    role: '작업실 주인',
-    description: '작업실 겸 가게를 쓰는 사람. 늘 뭔가 만들고 있다.',
-    avatar: '🎨',
+    role: '공방 주인',
+    description: '예순한 살. 공방을 오래 했다. 오는 사람마다 밥은 먹었는지부터 묻는다.',
+    avatar: '🧶',
     likes: ['art', 'collectible', 'sweet'],
     shopId: null,
     dialogues: [
       { text: '이거 봐, 어제 만든 건데 아직 마음에 안 들어.' },
-      { text: '잘 만들려고 하면 손이 안 움직여. 일단 그려.' },
+      { text: '밥은 먹었어? 저기 사탕 있으니까 하나 집어 가.' },
+      { text: '잘 만들려고 하면 손이 안 움직여. 일단 해.' },
       { text: '망한 것도 다 남겨둬. 나중에 쓰이더라.' },
       { text: '오늘은 아무것도 안 나왔어. 그런 날도 있지.' },
       { text: '재미없으면 그만해도 돼. 진짜로.' },
-      { text: '밤에 하는 작업이 제일 잘 돼. 위험한 습관이지만.', band: 'NIGHT' },
+      { text: '나이 먹으니 잠이 줄어서, 밤에 손이 더 잘 가.', band: 'NIGHT' },
       { text: '너 요즘 뭐 만들어? 궁금해서.', minLevel: 'FRIEND' },
+      { text: '이안? 걔 옛날부터 봤지. 아직도 밥은 안 챙겨 먹더라.', minLevel: 'FRIEND' },
       { text: '네가 만든 거 언젠가 꼭 보여줘.', minLevel: 'CLOSE_FRIEND' },
       { text: '오늘 시장 나왔어? 좋은 거 많더라.', eventId: 'tiny_flea_market' },
     ],
@@ -148,7 +175,7 @@ export const NPCS: NpcDef[] = [
         id: 'lulu_make',
         npcId: 'LULU',
         name: '아무거나 하나 만들기',
-        intro: '잘 만들 필요 없어. 하나만 끝내보자.',
+        intro: '잘 만들려고 하지 마. 오늘은 하나 끝내는 걸로 하자.',
         outro: '봤지? 끝내는 게 제일 어려운 거야.',
         steps: [
           { title: '뭘 만들지 5분 안에 정하기', category: 'PLAY', difficulty: 'EASY' },
@@ -163,21 +190,24 @@ export const NPCS: NpcDef[] = [
   },
   {
     id: 'JUNE',
-    name: '준',
+    name: '서이안',
     areaId: 'CREATIVE_DISTRICT',
-    role: '빈티지 가게 주인',
-    description: '오래된 물건만 파는 가게 주인. 물건마다 이야기를 붙인다.',
+    role: '빈티지숍 사장',
+    description: '툴툴대지만 물건도 사람도 잘 기억한다. 나이를 물으면 그냥 넘어간다.',
     avatar: '🧥',
     likes: ['collectible', 'cozy'],
     shopId: 'JUNE_CLOSET',
     dialogues: [
-      { text: '천천히 봐. 아무것도 안 사도 돼.' },
+      { text: '천천히 봐. 아무것도 안 사도 되고.' },
       { text: '이건 누가 오래 입던 거야. 그래서 더 편해.' },
       { text: '새 물건보다 손 탄 물건이 몸에 잘 맞아.' },
       { text: '뭘 찾는지 모르겠으면 그냥 눈에 들어오는 걸로 해.' },
-      { text: '오늘 새로 들어온 게 있는데, 안쪽에 있어.' },
-      { text: '문 닫기 전에 왔네. 편하게 봐.', band: 'EVENING' },
+      { text: '지난달에 네가 만지작거리던 거, 아직 안 팔았어.' },
+      { text: '문 닫기 전에 왔네. 급한 거 아니면 천천히 봐.', band: 'EVENING' },
       { text: '너한테 어울릴 것 같아서 빼놨어.', minLevel: 'FRIEND' },
+      { text: '미래 어르신이 또 반찬을 들고 왔어. 나 밥 잘 먹는데.', minLevel: 'FRIEND' },
+      { text: '남 얘기는 안 해. 네 얘기도 마찬가지고.', minLevel: 'CLOSE_FRIEND' },
+      { text: '이 가게? 생각보다 오래 했어. 얼마나인지는 됐고.', minLevel: 'CLOSE_FRIEND' },
       { text: '이건 안 팔려고 뒀던 건데, 가져가.', minLevel: 'SPECIAL_BOND' },
     ],
     chains: [
@@ -199,21 +229,23 @@ export const NPCS: NpcDef[] = [
   },
   {
     id: 'RIO',
-    name: '리오',
+    name: '한도윤',
     areaId: 'TRAINING_ZONE',
-    role: '코치',
-    description: '기초만 반복해서 가르치는 코치. 절대 몰아붙이지 않는다.',
-    avatar: '👟',
+    role: '클라이밍장 코치',
+    description: '벽에 붙일 루트를 짜는 사람. 하나에 빠지면 오래 간다. 절대 몰아붙이지 않는다.',
+    avatar: '🧗',
     likes: ['sport', 'healthy'],
     shopId: 'MOVE_STORE',
     dialogues: [
       { text: '왔네. 오늘은 몸이 어때?' },
-      { text: '오늘 안 되면 내일 해. 몸은 도망 안 가.' },
-      { text: '무게 늘리는 것보다 자세가 먼저야.' },
+      { text: '오늘 안 되면 내일 해. 벽은 도망 안 가.' },
+      { text: '힘으로 당기지 말고 발부터 봐. 그게 먼저야.' },
       { text: '쉬는 날도 훈련의 일부야. 진짜로.' },
       { text: '숨이 차면 멈춰. 그게 실패가 아니야.' },
+      { text: '새 루트 짜다가 밤을 샜어. 이게 재밌어서 큰일이야.' },
       { text: '아침에 하면 하루가 길어져.', band: 'MORNING' },
       { text: '너 자세 좋아졌어. 눈에 보여.', minLevel: 'FRIEND' },
+      { text: '태오랑은 예전 회사에서 알던 사이야. 그땐 둘 다 지금 같지 않았고.', minLevel: 'FRIEND' },
       { text: '이제 내가 안 봐줘도 되겠는데.', minLevel: 'CLOSE_FRIEND' },
     ],
     chains: [
@@ -236,21 +268,24 @@ export const NPCS: NpcDef[] = [
   },
   {
     id: 'NOA',
-    name: '노아',
+    name: '차세라',
     areaId: 'NIGHT_TOWN',
-    role: '밤을 걷는 사람',
-    description: '밤에만 보이는 사람. 어디 사는지는 아무도 모른다.',
+    role: 'BAR 사장',
+    description: '밤거리 안쪽에서 바를 한다. 밤 시장 가판도 자기 몫이다. 능숙한데 가까워지긴 어렵다.',
     avatar: '🌙',
     likes: ['moon', 'book', 'tea'],
     shopId: 'NIGHT_MARKET',
     nightOnly: true,
     dialogues: [
       { text: '아직 안 잤네. 나도.' },
-      { text: '밤은 조용해서 생각이 잘 정리돼.' },
+      { text: '가게는 저 안쪽이야. 이 가판은 늦게 열어.' },
+      { text: '밤 손님은 낮 손님이랑 아예 다른 사람이야. 같은 사람이어도 그래.' },
       { text: '오늘 하루, 뭐 하나는 괜찮았을 거야.' },
       { text: '못 한 건 내일 몫으로 넘겨. 그래도 돼.' },
       { text: '별 보고 가. 오늘은 잘 보여.' },
       { text: '늦게까지 있지 마. 그 말 하려고 기다렸어.', minLevel: 'FRIEND' },
+      { text: '새로 생긴 데 있으면 알려줘. 안 가본 데를 제일 좋아해.', minLevel: 'FRIEND' },
+      { text: '나는 사람을 오래 보는 걸 잘 못해. 그래서 밤에 하는 걸지도.', minLevel: 'CLOSE_FRIEND' },
       { text: '너 오면 밤이 좀 덜 길어.', minLevel: 'SPECIAL_BOND' },
       { text: '오늘 하늘 봤어? 하나 떨어질지도 몰라.', eventId: 'late_night_star' },
     ],
@@ -259,7 +294,7 @@ export const NPCS: NpcDef[] = [
         id: 'noa_close',
         npcId: 'NOA',
         name: '하루 닫기',
-        intro: '자기 전에 하나만 정리하고 가면 잠이 잘 와.',
+        intro: '자기 전에 하나만 정리하고 가면 잠이 잘 와. 나는 그게 일이라 매일 하고.',
         outro: '잘 자. 이건 주머니에 넣어둬.',
         steps: [
           { title: '오늘 좋았던 것 하나 적기', category: 'MIND', difficulty: 'EASY' },
@@ -273,7 +308,7 @@ export const NPCS: NpcDef[] = [
         id: 'noa_letter',
         npcId: 'NOA',
         name: '못 보낸 말',
-        intro: '전하지 못한 말이 있으면, 오늘 보내도 괜찮아.',
+        intro: '전하지 못한 말이 있으면, 오늘 보내도 괜찮아. 나는 늦게 배웠거든.',
         outro: '용기 냈네. 이거 받아.',
         requiresLevel: 'CLOSE_FRIEND',
         steps: [

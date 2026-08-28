@@ -10,26 +10,32 @@ import { findKitchenRecipe } from './recipes'
  * 대사가 없다고 손해는 없다. 친밀도는 결(giftTags)만 보고 오른다.
  */
 const LINES: Partial<Record<NpcId, Record<string, string[]>>> = {
+  // 하루 (카페 사장)
   MINA: {
     strawberry_milk: ['이 색 너무 귀엽다.', '마시기 전에 사진부터 찍고 싶은데?'],
-    strawberry_toast: ['가게에 내놔도 되겠는데.'],
+    strawberry_toast: ['가게에 내놔도 되겠는데. 진심이야.'],
   },
+  // 태오 (아침에 뛴다)
   HARU: {
     herb_potato_soup: ['정원에서 키운 걸로 만든 거야?', '생각보다 꽤 제대로인데.'],
     carrot_soup: ['달리고 나서 이런 거 먹으면 딱이지.'],
     picnic_lunchbox: ['이건 밖에서 먹어야 맛있어. 같이 나갈래?'],
   },
+  // 세라 (밤거리 · BAR)
   NOA: {
-    lavender_tea: ['향이 조용하네.', '밤에 마시면 좋겠다.'],
+    lavender_tea: ['향이 조용하네.', '가게 닫고 이걸로 마셔야겠다.'],
     moon_tea: ['이건... 어디서 났어?'],
   },
+  // 미래 (공방 주인)
   LULU: {
-    pumpkin_tart: ['잠깐, 이거 네가 만든 거야?', '다음에도 하나 남겨줘.'],
+    pumpkin_tart: ['잠깐, 이거 네가 만든 거야?', '손이 야무지네. 다음에도 하나 남겨줘.'],
     star_berry_cake: ['이걸 어떻게 만든 건지 나중에 꼭 알려줘.'],
   },
+  // 이안 (빈티지숍)
   JUNE: {
     mushroom_cream_soup: ['따뜻한 걸 받는 건 오랜만이네.'],
   },
+  // 도윤 (클라이밍장)
   RIO: {
     tomato_pasta: ['잘 먹을게. 이런 거 챙겨 먹어야 하는데.'],
   },

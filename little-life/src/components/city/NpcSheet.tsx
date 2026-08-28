@@ -225,7 +225,7 @@ function TalkTab({
       <p className="mt-2 text-center text-[12px] text-inkfaint">
         {alreadyTalked
           ? '오늘 몫은 이미 나눴어. 그냥 얘기하는 건 언제든 좋아.'
-          : '하루에 한 번, 인사하면 조금 가까워져.'}
+          : '오늘 한 번 인사하면 조금 가까워져.'}
       </p>
 
       {npc.shopId && (

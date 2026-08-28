@@ -155,7 +155,7 @@ export function applyDiscovery(state: AppState, now: Date = new Date()): Discove
   }
 
   // ── 오래된 열쇠 ──────────────────────────────────────
-  // 단서 셋(이상한 돌조각 · 낡은 금속 조각 · 하루의 이야기)이 모이면
+  // 단서 셋(이상한 돌조각 · 낡은 금속 조각 · 태오의 이야기)이 모이면
   // 그 순간 손에 들어온다. 따로 만들거나 사러 갈 데가 없다 —
   // 셋 다 이미 하고 있던 일에서 나온 것이라, 모이면 그게 곧 획득이다.
   const key = applyOldKey(next, now)

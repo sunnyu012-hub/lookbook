@@ -19,7 +19,7 @@ interface StorySheetProps {
  * 한 장은 서너 줄이다 — 폰에서 스크롤 없이 읽히는 길이.
  *
  * 아직 안 열린 장은 조건을 숫자로 알려주지 않는다.
- * "미나와 몇 번 더 이야기하면" 정도면 충분하고, 그 이상은 숙제 안내문이다.
+ * "하루와 몇 번 더 이야기하면" 정도면 충분하고, 그 이상은 숙제 안내문이다.
  */
 export function StorySheet({ npc, state, onClose, onRead }: StorySheetProps) {
   if (!npc) return null

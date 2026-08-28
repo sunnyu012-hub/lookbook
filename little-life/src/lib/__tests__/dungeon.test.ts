@@ -131,7 +131,7 @@ describe('A. 예전 저장이 그대로 열린다', () => {
 })
 
 describe('B. 이상한 돌조각에서 이야기가 시작된다', () => {
-  it('B1 하루의 다섯 번째 장이 있다', () => {
+  it('B1 태오의 다섯 번째 장이 있다', () => {
     const chapter = STORY_CHAPTERS.find((c) => c.id === OLD_KEY_CHAPTER_ID)
     expect(chapter).toBeDefined()
     expect(chapter!.npcId).toBe('HARU')
@@ -509,7 +509,7 @@ describe('O. 세 번째 단서는 길이 둘이다', () => {
    * 친밀도는 대화 하루 +2 가 주력이고 이야기는 순서대로만 열려서,
    * 아무리 많이 놀아도 안 빨라진다.
    */
-  it('O1 하루한테 안 들어도 금속 조각을 모으면 열린다', () => {
+  it('O1 태오한테 안 들어도 금속 조각을 모으면 열린다', () => {
     const s = base()
     const self: AppState = {
       ...s,
@@ -518,7 +518,7 @@ describe('O. 세 번째 단서는 길이 둘이다', () => {
         foundMineralCounts: { [STRANGE_FRAGMENT_ID]: 1, [OLD_METAL_ID]: PATTERN_PIECES },
         blockedPathSeen: true,
       },
-      // 하루와 한 마디도 안 했다
+      // 태오와 한 마디도 안 했다
       discovery: { ...s.discovery, readChapterIds: [] },
     }
     expect(hasOldKey(self)).toBe(true)
@@ -539,7 +539,7 @@ describe('O. 세 번째 단서는 길이 둘이다', () => {
     expect(hasOldKey(few)).toBe(false)
   })
 
-  it('O3 하루한테 들으면 조각 하나로도 열린다 — 듣고 가는 쪽이 더 빠르다', () => {
+  it('O3 태오한테 들으면 조각 하나로도 열린다 — 듣고 가는 쪽이 더 빠르다', () => {
     expect(hasOldKey(withClues())).toBe(true)
     expect(withClues().quarry.foundMineralCounts[OLD_METAL_ID]).toBe(1)
   })

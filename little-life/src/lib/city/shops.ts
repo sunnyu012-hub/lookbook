@@ -13,7 +13,7 @@ export const SHOPS: ShopDef[] = [
   {
     id: 'MINA_CAFE',
     hours: { open: 7, close: 20 },
-    name: '미나의 카페',
+    name: '하루의 카페',
     areaId: 'CAFE_STREET',
     npcId: 'MINA',
     icon: '☕',
@@ -27,7 +27,7 @@ export const SHOPS: ShopDef[] = [
   {
     id: 'JUNE_CLOSET',
     hours: { open: 12, close: 21 },
-    name: "June's Closet",
+    name: '이안의 옷장',
     areaId: 'CREATIVE_DISTRICT',
     npcId: 'JUNE',
     icon: '🧥',

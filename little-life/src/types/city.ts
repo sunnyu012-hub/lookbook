@@ -9,6 +9,11 @@ import type { AreaId, Bonuses, Rarity } from './rpg'
  */
 
 // ── NPC ─────────────────────────────────────────────────
+//
+// id 는 처음 만든 그대로다. 사람은 캐릭터 바이블 쪽으로 바뀌었다 —
+// MINA=윤하루 · HARU=윤태오 · LULU=오미래 · JUNE=서이안 · RIO=한도윤 · NOA=차세라.
+// 저장이 친밀도 · 읽은 이야기 · 비밀 장소 · 던전 입구를 전부 이 id 로 붙잡고
+// 있어서 이름을 따라 바꾸면 하던 사람들이 그걸 잃는다. 이름은 `city/npcs.ts` 에 있다.
 export const NPC_IDS = ['MINA', 'HARU', 'LULU', 'JUNE', 'RIO', 'NOA'] as const
 export type NpcId = (typeof NPC_IDS)[number]
 
