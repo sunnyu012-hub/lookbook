@@ -50,7 +50,7 @@ function stampServiceWorker() {
           .filter(
             (url) => !url.startsWith('/assets/characters/') || url.endsWith('/basic_day.webp'),
           )
-          // 사람 얼굴 스물넷(485KB)은 미리 받는다. 도감 그림과 달리 지도를
+          // 사람 얼굴 스물넷(480KB)은 미리 받는다. 도감 그림과 달리 지도를
           // 여는 순간 열두 장이 한꺼번에 보이는 자리라, 그때 하나씩 받으면
           // 얼굴이 뒤늦게 하나씩 떠오른다. 여기는 걸러내지 않는다.
           // 클라우드 백업 라이브러리는 백업을 켠 사람만 받는다.

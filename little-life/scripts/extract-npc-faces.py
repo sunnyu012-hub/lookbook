@@ -41,9 +41,13 @@ MIN_AREA_RATIO = 0.004
 # 시트에 손글씨로 이름이 적혀 있어서 눈으로 확인하고 적었다.
 # 왼쪽 위부터 오른쪽으로, 그다음 줄로 내려간다.
 SHEET_A = ["HARU", "RIO", "HAEIN", "LULU", "YUNA", "SIWOO"]
+#
+# 지호 자리가 None 인 건, 시트에 있는 얼굴 대신 한 장짜리 그림으로 바꿨기
+# 때문이다 (아래 SINGLES). 목록에서 빼지 않고 자리만 비운다 — 이 목록은
+# 시트를 왼쪽 위부터 세는 순서라 한 칸을 빼면 뒤가 전부 한 칸씩 밀린다.
 SHEET_B = [
     "MINA", "JUNE", "EUNCHAE", "MINJI", "JUN",
-    "HYUNWOO", "HARIN", "RAON", "JIHO", "SUA",
+    "HYUNWOO", "HARIN", "RAON", None, "SUA",
     "SUNJAE", "YEONJU", "JEONGWON",
 ]
 
@@ -58,6 +62,7 @@ SINGLES = {
     "npc-face-woosik.webp": "WOOSIK",
     "npc-face-sera.webp": "NOA",
     "npc-face-yuhyeon.webp": "YUHYEON",
+    "npc-face-jiho.webp": "JIHO",
 }
 
 # ── 얼굴로 자를 네모 ────────────────────────────────────────────────
@@ -73,6 +78,7 @@ FACE_BOX = {
     "WOOSIK": (0.78, 0.39, 0.00),
     "NOA": (0.68, 0.44, 0.02),
     "YUHYEON": (0.68, 0.48, -0.015),
+    "JIHO": (0.72, 0.48, -0.005),
 }
 FACE_BOX_DEFAULT = (1.00, 0.50, -0.02)
 
@@ -167,6 +173,8 @@ def main():
             print(f"{name} 이 없다. 건너뛴다.")
             continue
         for npc_id, box in zip(ids, boxes(sheet, len(ids))):
+            if npc_id is None:
+                continue
             save(face(cutout(sheet, box), npc_id), npc_id)
             done.append(npc_id)
 
