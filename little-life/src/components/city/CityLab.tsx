@@ -4,6 +4,7 @@ import { todayKey } from '@/lib/date'
 import { TIME_LABEL, timeBand } from '@/lib/rpg/time'
 import { SHOPS, isShopOpen, shopOpeningLabel, shopStatus } from '@/lib/city/shops'
 import { allNpcSpots, isWeekendDay, npcsAway, npcsHere } from '@/lib/city/routine'
+import { livingCandidates, workContext } from '@/lib/city/living'
 
 /**
  * 개발용 도시 검수판.
@@ -72,6 +73,35 @@ export function CityLab() {
             </span>
           </li>
         ))}
+      </ul>
+
+      <h2 className="mt-6 font-game text-[11px] tracking-[0.12em] text-inkdim">
+        생활 대사 — 지금 이 자리에서 할 말
+      </h2>
+      <ul className="mt-2 space-y-1">
+        {spots.map(({ npc, spot }) => {
+          const areaId = spot === 'OFFSCREEN' ? null : spot
+          const pool = livingCandidates({ npc, areaId, now })
+          return (
+            <li key={npc.id} className="rounded-btn bg-surface px-3 py-2 text-[12px]">
+              <span className="font-semibold">
+                {npc.avatar} {npc.name}
+              </span>
+              <span className="ml-2 text-[11px] text-inkdim">
+                {areaId ? findArea(areaId).name : '도시에 없음'} ·{' '}
+                {workContext(npc, areaId, now) === 'WORK' ? '일하는 중' : '일 밖'} · 후보{' '}
+                {pool.length}
+              </span>
+              <ul className="mt-1 space-y-0.5">
+                {pool.map((line) => (
+                  <li key={line.id} className="text-[11.5px] text-inkdim">
+                    · {line.text}
+                  </li>
+                ))}
+              </ul>
+            </li>
+          )
+        })}
       </ul>
 
       <h2 className="mt-6 font-game text-[11px] tracking-[0.12em] text-inkdim">동네</h2>
