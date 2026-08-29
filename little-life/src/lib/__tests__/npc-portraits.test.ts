@@ -33,11 +33,12 @@ describe('사람 얼굴 그림', () => {
   })
 
   /**
-   * 아직 안 온 사람. 그림이 오면 이 줄이 먼저 깨져서 목록을 고치라고 알려준다.
-   * 얼굴이 없다고 도시에서 빼지 않는다 — 이모지로 그대로 서 있는다.
+   * 사람을 새로 들이면 여기서 먼저 걸린다. 그림 없이 도시에 세워도
+   * 앱은 이모지로 멀쩡히 돌아가니까, 깨졌다고 사람을 빼는 게 아니라
+   * 그림을 요청하거나 이 줄을 고치면 된다.
    */
-  it('강유현만 아직 이모지로 서 있다', () => {
-    expect(npcsWithoutPortrait()).toEqual(['YUHYEON'])
-    expect(NPC_IDS).toContain('YUHYEON')
+  it('스물넷 다 얼굴이 있다', () => {
+    expect(npcsWithoutPortrait()).toEqual([])
+    expect(NPC_IDS).toHaveLength(24)
   })
 })

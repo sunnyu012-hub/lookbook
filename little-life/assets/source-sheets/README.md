@@ -33,6 +33,7 @@
 | `npc-face-jaehui.webp` | 김재희 한 명 |
 | `npc-face-woosik.webp` | 장우식 한 명 (그림에 이름은 없지만 사용자가 확인해줬다) |
 | `npc-face-sera.webp` | 차세라 한 명 (같은 이유) |
+| `npc-face-yuhyeon.webp` | 강유현 한 명 (흰 바탕) |
 
 ## 다시 뽑는 법
 

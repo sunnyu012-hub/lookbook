@@ -57,6 +57,7 @@ SINGLES = {
     "npc-face-jaehui.webp": "JAEHUI",
     "npc-face-woosik.webp": "WOOSIK",
     "npc-face-sera.webp": "NOA",
+    "npc-face-yuhyeon.webp": "YUHYEON",
 }
 
 # ── 얼굴로 자를 네모 ────────────────────────────────────────────────
@@ -71,6 +72,7 @@ FACE_BOX = {
     "JAEHUI": (0.64, 0.42, 0.00),
     "WOOSIK": (0.78, 0.39, 0.00),
     "NOA": (0.68, 0.44, 0.02),
+    "YUHYEON": (0.68, 0.48, -0.015),
 }
 FACE_BOX_DEFAULT = (1.00, 0.50, -0.02)
 
