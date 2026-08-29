@@ -11,6 +11,7 @@ import type {
 import { BottomSheet } from '@/components/ui/BottomSheet'
 import { Button } from '@/components/ui/Button'
 import { FriendshipHearts, ReputationBadge } from '@/components/city/CityBadges'
+import { NpcFace } from '@/components/city/NpcFace'
 import { areaActions, type HubAction } from '@/lib/city/hub'
 import { eventsForArea } from '@/lib/city/events'
 import { cn } from '@/components/ui/cn'
@@ -212,12 +213,22 @@ export function AreaHubSheet({
 function PersonChip({ action, onSelect }: { action: HubAction; onSelect: () => void }) {
   const inside = (
     <>
-      <span className="text-[17px] leading-none">{action.icon}</span>
+      {action.npc ? (
+        <NpcFace
+          id={action.npc.id}
+          avatar={action.npc.avatar}
+          size={26}
+          shape="round"
+          className={cn('bg-transparent', action.disabled && 'opacity-45 grayscale')}
+        />
+      ) : (
+        <span className="text-[17px] leading-none">{action.icon}</span>
+      )}
       <span className="text-[13.5px] font-medium">{action.title}</span>
     </>
   )
 
-  const shell = 'inline-flex items-center gap-1.5 rounded-pill border px-3 py-2'
+  const shell = 'inline-flex items-center gap-1.5 rounded-pill border py-1.5 pl-1.5 pr-3'
 
   if (action.disabled) {
     return (

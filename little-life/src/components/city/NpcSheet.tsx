@@ -9,6 +9,7 @@ import type {
   Quest,
 } from '@/types'
 import { BottomSheet } from '@/components/ui/BottomSheet'
+import { NpcFace } from '@/components/city/NpcFace'
 import { Button } from '@/components/ui/Button'
 import { CategoryBadge } from '@/components/ui/CategoryBadge'
 import { RarityBadge } from '@/components/rpg/RarityBadge'
@@ -100,9 +101,7 @@ export function NpcSheet({
   return (
     <BottomSheet open onClose={onClose} title={npc.name}>
       <div className="flex items-start gap-3">
-        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-card bg-canvas text-[32px]">
-          {npc.avatar}
-        </span>
+        <NpcFace id={npc.id} avatar={npc.avatar} size={64} />
         <div className="min-w-0 flex-1 pt-0.5">
           <h2 className="text-[20px] font-semibold text-ink">{npc.name}</h2>
           <p className="text-[12px] text-inkfaint">{npc.role}</p>

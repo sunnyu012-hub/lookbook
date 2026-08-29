@@ -151,7 +151,7 @@ export interface NpcDef {
   areaId: AreaId
   role: string
   description: string
-  /** 이모지 하나 */
+  /** 그림이 아직 없는 사람 자리에 남는 이모지 하나 (`city/portraits.ts`) */
   avatar: string
   dialogues: NpcDialogue[]
   chains: NpcQuestChainDef[]

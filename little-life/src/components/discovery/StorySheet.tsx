@@ -1,5 +1,6 @@
 import type { AppState, NpcDef } from '@/types'
 import { BottomSheet } from '@/components/ui/BottomSheet'
+import { NpcFace } from '@/components/city/NpcFace'
 import { ItemIcon } from '@/components/collection/ItemIcon'
 import { findCollectionItem } from '@/lib/collection/catalog'
 import { chapterViews, storyProgress } from '@/lib/discovery/stories'
@@ -31,9 +32,7 @@ export function StorySheet({ npc, state, onClose, onRead }: StorySheetProps) {
   return (
     <BottomSheet open onClose={onClose} title={`${npc.name}의 이야기`}>
       <div className="flex items-center gap-3">
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-card bg-canvas text-[28px]">
-          {npc.avatar}
-        </span>
+        <NpcFace id={npc.id} avatar={npc.avatar} size={56} />
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-[18px] font-semibold text-ink">{npc.name}의 이야기</h2>
           <p className="mt-0.5 text-[12.5px] text-inkdim">

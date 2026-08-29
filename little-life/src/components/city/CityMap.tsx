@@ -1,6 +1,7 @@
 import type { CityMapRegionView, PctPoint } from '@/lib/city/map'
 import { CITY_MAP_BASE_SRC, MAP_CANVAS, clampAnchor } from '@/lib/city/map'
 import { cn } from '@/components/ui/cn'
+import { NpcFace } from '@/components/city/NpcFace'
 
 interface CityMapProps {
   views: CityMapRegionView[]
@@ -129,7 +130,7 @@ function RegionOverlay({ view }: { view: CityMapRegionView }) {
         <span className="relative flex items-center gap-2" style={shiftX(clampRow(npcAnchor))}>
           {view.npcs.map((npc) => (
             <span key={npc.id} className={chipClass} title={npc.name}>
-              <span className="text-[20px] leading-none">{npc.avatar}</span>
+              <NpcFace id={npc.id} avatar={npc.avatar} size={40} shape="round" className="bg-transparent" />
             </span>
           ))}
           {view.overflow > 0 && (
@@ -167,6 +168,11 @@ function clampRow(anchor: PctPoint): PctPoint {
   return { x: Math.min(Math.max(anchor.x, 0.3), 0.7), y: anchor.y }
 }
 
-/** 얼굴 한 칸. 44 가 기본이고 좁은 폰에서는 40 으로 줄인다. */
+/**
+ * 얼굴 한 칸. 44 가 기본이고 좁은 폰에서는 40 으로 줄인다.
+ *
+ * 안쪽 그림은 40px 로 고정하고 칸만 늘린다 — 그림을 칸에 꽉 채우면
+ * 동그라미 테두리에 머리가 잘려서 지도에서 누군지 못 알아본다.
+ */
 const chipClass =
-  'inline-flex h-10 w-10 items-center justify-center rounded-full bg-surface/95 shadow-soft ring-1 ring-line min-[380px]:h-11 min-[380px]:w-11'
+  'inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-surface/95 shadow-soft ring-1 ring-line min-[380px]:h-11 min-[380px]:w-11'

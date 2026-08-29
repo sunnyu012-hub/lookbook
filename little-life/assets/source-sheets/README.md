@@ -27,6 +27,12 @@
 | `sofa.png` | 체크 소파·사이드테이블·원목 벤치 |
 | `extra.png` | 빈백·미니 식탁·별자리 러그·수납장·서랍장·별빛 화분 (1차에 빠졌던 여섯) |
 | `trophy.png` | 트로피 다섯 (나무별·기록책·별 병·달 조각·하트 병) |
+| `npc-faces-a.webp` | 도시 사람 여섯 (흰 바탕) — 태오·도윤·해인·미래·유나·시우 |
+| `npc-faces-b.webp` | 도시 사람 열셋 (투명) — 하루·이안·은채·민지·준 / 현우·하린·라온·지호·수아 / 선재·연주·정원 |
+| `npc-face-sora.webp` | 임소라 한 명 |
+| `npc-face-jaehui.webp` | 김재희 한 명 |
+| `npc-face-woosik.webp` | 장우식 한 명 (그림에 이름이 없어서 남은 자리로 맞췄다) |
+| `npc-face-sera.webp` | 차세라 한 명 (같은 이유) |
 
 ## 다시 뽑는 법
 
@@ -34,7 +40,11 @@
 npm run assets:extract    # 시트를 조각내서 public/assets/collection 으로
 npm run assets:manifest   # 분류 폴더로 옮기고 매니페스트 갱신
 npm run assets:audit      # 빠진 것 · 깨진 경로 · 중복 점검
+npm run assets:npcs       # 사람 얼굴 시트를 잘라서 public/assets/npcs 로
 ```
+
+사람 얼굴 시트는 webp 로 둔다. png 로 넣으면 여섯 장이 12MB 가 되는데
+webp 는 1.8MB 다 — 그림 품질 차이는 256px 로 줄여 쓰는 자리에서 안 보인다.
 
 ## 시트가 저장소에 없는 이유
 

@@ -1,6 +1,7 @@
 import type { Quest } from '@/types'
 import { CategoryThumb } from '@/components/ui/CategoryBadge'
 import { findNpc } from '@/lib/city/npcs'
+import { NpcFace } from '@/components/city/NpcFace'
 import { cn } from '@/components/ui/cn'
 import { DifficultyBadge } from '@/components/ui/DifficultyBadge'
 import { Button } from '@/components/ui/Button'
@@ -69,7 +70,7 @@ export function FullQuestCard({
       <div className="min-w-0 flex-1">
         {npc && (
           <p className="flex items-center gap-1 pt-0.5 text-[11.5px] text-rose-deep">
-            <span className="text-[13px] leading-none">{npc.avatar}</span>
+            <NpcFace id={npc.id} avatar={npc.avatar} size={18} shape="round" />
             <span className="truncate">{npc.name} 의 부탁</span>
             {quest.step && quest.totalSteps && (
               <span className="shrink-0 font-game text-[10px] text-inkfaint">
