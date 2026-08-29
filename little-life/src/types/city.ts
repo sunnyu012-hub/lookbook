@@ -74,6 +74,34 @@ export type GiftTag =
   | 'sweet'
   | 'tea'
 
+/**
+ * 생활 대사 한 줄.
+ *
+ * 이야기(StoryChapter)도 의뢰 대사도 아니다. 몇 번이고 다시 나와도 되는,
+ * 그 사람이 지금 그 자리에서 할 법한 말이다. 여기서 비밀을 밝히거나
+ * 관계를 진전시키지 않는다 — 그건 이야기가 할 일이다.
+ */
+export interface LivingLine {
+  /** 안정적인 이름. 글자 자체를 신원으로 쓰지 않는다 — 고치면 딴 줄이 된다. */
+  id: string
+  npcId: NpcId
+  text: string
+  /** 이 동네에 있을 때만 */
+  areaId?: AreaId
+  /** 이 시간대에만 */
+  band?: import('./rpg').TimeBand
+  /** 일하는 중인지 아닌지 */
+  context?: LivingContext
+}
+
+/**
+ * 일하는 중인가.
+ *
+ * 자기 동네에 있고 가게가 열려 있으면 일하는 중이다. 저장하지 않는다 —
+ * 동선표와 영업시간에서 그때그때 계산한다.
+ */
+export type LivingContext = 'WORK' | 'OFF_WORK'
+
 export interface NpcDialogue {
   /** 아무 때나 나오는 말 */
   text: string

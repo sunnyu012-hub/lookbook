@@ -17,6 +17,7 @@ import { findItem } from '@/lib/rpg/content'
 import { meetsLevel } from '@/lib/city/npcs'
 import { isGiftable, isLikedGift, talkedToday } from '@/lib/city/friendship'
 import { pickDialogue } from '@/lib/city/dialogue'
+import { npcAreaNow } from '@/lib/city/routine'
 import { timeBand } from '@/lib/rpg/time'
 import { todayKey } from '@/lib/date'
 import { cn } from '@/components/ui/cn'
@@ -80,7 +81,15 @@ export function NpcSheet({
   const line = useMemo(() => {
     if (!npc) return ''
     void dialogueSeed
-    return pickDialogue(npc, npcState.friendship, timeBand(), events, gardenLevel)
+    /*
+     * 어디서 언제 만났는지를 같이 넘긴다. 화면이 직접 시간대를 재거나
+     * 목록을 거르지 않는다 — 고르는 일은 전부 resolver 한 곳에서 한다.
+     */
+    const now = new Date()
+    return pickDialogue(npc, npcState.friendship, timeBand(now), events, gardenLevel, Math.random, {
+      areaId: npcAreaNow(npc.id, now),
+      now,
+    })
   }, [npc, npcState.friendship, events, dialogueSeed, gardenLevel])
 
   if (!npc) return null
