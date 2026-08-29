@@ -43,11 +43,11 @@ MIN_AREA_RATIO = 0.004
 SHEET_A = ["HARU", "RIO", "HAEIN", "LULU", None, "SIWOO"]
 #
 # 중간에 None 이 있는 건, 시트에 있는 얼굴 대신 한 장짜리 그림으로 바꾼
-# 사람이라서다 (아래 SINGLES — 유나 · 지호). 목록에서 빼지 않고 자리만
+# 사람이라서다 (아래 SINGLES — 유나 · 지호 · 민지). 목록에서 빼지 않고 자리만
 # 비운다 — 이 목록은 시트를 왼쪽 위부터 세는 순서라 한 칸을 빼면 뒤가
 # 전부 한 칸씩 밀린다.
 SHEET_B = [
-    "MINA", "JUNE", "EUNCHAE", "MINJI", "JUN",
+    "MINA", "JUNE", "EUNCHAE", None, "JUN",
     "HYUNWOO", "HARIN", "RAON", None, "SUA",
     "SUNJAE", "YEONJU", "JEONGWON",
 ]
@@ -65,6 +65,7 @@ SINGLES = {
     "npc-face-yuhyeon.webp": "YUHYEON",
     "npc-face-jiho.webp": "JIHO",
     "npc-face-yuna.webp": "YUNA",
+    "npc-face-minji.webp": "MINJI",
 }
 
 # ── 얼굴로 자를 네모 ────────────────────────────────────────────────
@@ -82,6 +83,7 @@ FACE_BOX = {
     "YUHYEON": (0.68, 0.48, -0.015),
     "JIHO": (0.72, 0.48, -0.005),
     "YUNA": (0.66, 0.50, 0.01),
+    "MINJI": (0.66, 0.37, 0.00),
 }
 FACE_BOX_DEFAULT = (1.00, 0.50, -0.02)
 
