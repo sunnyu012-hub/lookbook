@@ -31,8 +31,8 @@
 | `npc-faces-b.webp` | 도시 사람 열셋 (투명) — 하루·이안·은채·민지·준 / 현우·하린·라온·지호·수아 / 선재·연주·정원 |
 | `npc-face-sora.webp` | 임소라 한 명 |
 | `npc-face-jaehui.webp` | 김재희 한 명 |
-| `npc-face-woosik.webp` | 장우식 한 명 (그림에 이름이 없어서 남은 자리로 맞췄다) |
-| `npc-face-sera.webp` | 차세라 한 명 (같은 이유) |
+| `npc-face-woosik.webp` | 장우식 한 명 (그림에 이름은 없지만 사용자가 확인해줬다) |
+| `npc-face-sera.webp` | 차세라 한 명 (이름이 없어서 남은 자리로 맞춘 추정) |
 
 ## 다시 뽑는 법
 
