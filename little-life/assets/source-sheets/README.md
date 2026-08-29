@@ -32,7 +32,7 @@
 | `npc-face-sora.webp` | 임소라 한 명 |
 | `npc-face-jaehui.webp` | 김재희 한 명 |
 | `npc-face-woosik.webp` | 장우식 한 명 (그림에 이름은 없지만 사용자가 확인해줬다) |
-| `npc-face-sera.webp` | 차세라 한 명 (이름이 없어서 남은 자리로 맞춘 추정) |
+| `npc-face-sera.webp` | 차세라 한 명 (같은 이유) |
 
 ## 다시 뽑는 법
 
