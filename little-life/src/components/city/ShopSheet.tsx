@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { InventoryEntry, ItemDef, ShopDef, ShopEntry } from '@/types'
 import { BottomSheet } from '@/components/ui/BottomSheet'
+import { NpcFace } from '@/components/city/NpcFace'
 import { RarityBadge } from '@/components/rpg/RarityBadge'
 import { findItem } from '@/lib/rpg/content'
 import { findNpc } from '@/lib/city/npcs'
@@ -35,9 +36,13 @@ export function ShopSheet({ shop, coins, inventory, onClose, onBuy }: ShopSheetP
   return (
     <BottomSheet open onClose={onClose} title={shop.name}>
       <div className="flex items-center gap-3">
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-card bg-canvas text-[28px]">
-          {npc?.avatar ?? shop.icon}
-        </span>
+        {npc ? (
+          <NpcFace id={npc.id} avatar={npc.avatar} size={56} />
+        ) : (
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-card bg-canvas text-[28px]">
+            {shop.icon}
+          </span>
+        )}
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-[19px] font-semibold text-ink">{shop.name}</h2>
           <p className="mt-0.5 truncate text-[12.5px] text-inkdim">{shop.description}</p>

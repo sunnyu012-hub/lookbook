@@ -5,6 +5,7 @@ import { TIME_LABEL, timeBand } from '@/lib/rpg/time'
 import { SHOPS, isShopOpen, shopOpeningLabel, shopStatus } from '@/lib/city/shops'
 import { allNpcSpots, isWeekendDay, npcsAway, npcsHere } from '@/lib/city/routine'
 import { livingCandidates, workContext } from '@/lib/city/living'
+import { NpcFace } from '@/components/city/NpcFace'
 
 /**
  * 개발용 도시 검수판.
@@ -65,7 +66,7 @@ export function CityLab() {
             key={npc.id}
             className="flex items-center gap-2 rounded-btn bg-surface px-3 py-2 text-[12px]"
           >
-            <span>{npc.avatar}</span>
+            <NpcFace id={npc.id} avatar={npc.avatar} size={22} shape="round" />
             <span className="font-semibold">{npc.name}</span>
             <span className="ml-auto text-inkdim">
               {spot === 'OFFSCREEN' ? '보이지 않음' : findArea(spot).name}
@@ -84,8 +85,9 @@ export function CityLab() {
           const pool = livingCandidates({ npc, areaId, now })
           return (
             <li key={npc.id} className="rounded-btn bg-surface px-3 py-2 text-[12px]">
-              <span className="font-semibold">
-                {npc.avatar} {npc.name}
+              <span className="inline-flex items-center gap-1 font-semibold">
+                <NpcFace id={npc.id} avatar={npc.avatar} size={18} shape="round" />
+                {npc.name}
               </span>
               <span className="ml-2 text-[11px] text-inkdim">
                 {areaId ? findArea(areaId).name : '도시에 없음'} ·{' '}
