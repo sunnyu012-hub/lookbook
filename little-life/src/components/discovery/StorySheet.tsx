@@ -1,9 +1,10 @@
-import type { AppState, NpcDef } from '@/types'
+import type { AppState, NpcDef, StoryChapterDef } from '@/types'
 import { BottomSheet } from '@/components/ui/BottomSheet'
 import { NpcFace } from '@/components/city/NpcFace'
 import { ItemIcon } from '@/components/collection/ItemIcon'
 import { findCollectionItem } from '@/lib/collection/catalog'
 import { chapterViews, storyProgress } from '@/lib/discovery/stories'
+import { findNpc } from '@/lib/city/npcs'
 import { cn } from '@/components/ui/cn'
 
 interface StorySheetProps {
@@ -50,13 +51,7 @@ export function StorySheet({ npc, state, onClose, onRead }: StorySheetProps) {
             {read ? (
               <div className="rounded-card border border-line bg-surface px-3.5 py-3">
                 <p className="text-[13.5px] font-medium text-ink">{def.title}</p>
-                <div className="mt-2 space-y-1.5">
-                  {def.lines.map((line, i) => (
-                    <p key={i} className="text-[12.5px] leading-relaxed text-inkdim">
-                      {line}
-                    </p>
-                  ))}
-                </div>
+                <ChapterBody def={def} />
                 {def.rewardItemId && (
                   <div className="mt-2.5 flex items-center gap-2 border-t border-line pt-2.5">
                     {(() => {
@@ -106,5 +101,58 @@ export function StorySheet({ npc, state, onClose, onRead }: StorySheetProps) {
         읽는 게 전부야. 따로 뭘 해야 하는 건 아니야.
       </p>
     </BottomSheet>
+  )
+}
+
+/**
+ * 장 하나의 본문.
+ *
+ * 초반 열다섯 장은 그 사람이 나에게 하는 혼잣말이라 줄만 있으면 됐다.
+ * 개인 이야기(K)는 옆에 다른 사람이 같이 서 있어서 누가 말했는지를
+ * 보여줘야 한다 — 그 줄 모양은 리빙신(J)에서 쓰던 걸 그대로 쓴다.
+ *
+ * 새 화면을 만들지 않는다. 같은 시트 안에서 펼쳐진다.
+ */
+function ChapterBody({ def }: { def: StoryChapterDef }) {
+  if (def.scene) {
+    return (
+      <ul className="mt-2.5 space-y-2">
+        {def.scene.map((line, i) =>
+          line.kind === 'NARRATION' ? (
+            <li key={i} className="px-0.5 text-[12px] leading-relaxed text-inkfaint">
+              {line.text}
+            </li>
+          ) : (
+            <li key={i} className="flex items-start gap-2">
+              {(() => {
+                const npc = findNpc(line.npcId)
+                if (!npc) return null
+                return (
+                  <>
+                    <NpcFace id={npc.id} avatar={npc.avatar} size={26} shape="round" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[10.5px] text-inkfaint">{npc.name}</span>
+                      <span className="mt-0.5 block text-[12.5px] leading-relaxed text-ink">
+                        {line.text}
+                      </span>
+                    </span>
+                  </>
+                )
+              })()}
+            </li>
+          ),
+        )}
+      </ul>
+    )
+  }
+
+  return (
+    <div className="mt-2 space-y-1.5">
+      {def.lines.map((line, i) => (
+        <p key={i} className="text-[12.5px] leading-relaxed text-inkdim">
+          {line}
+        </p>
+      ))}
+    </div>
   )
 }
