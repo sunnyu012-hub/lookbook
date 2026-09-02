@@ -10,6 +10,8 @@ import { KITCHEN_RECIPES } from '@/lib/kitchen/recipes'
 import { emptyBonuses } from '@/lib/rpg/rewards'
 import { giftOutcome, isGiftable } from '@/lib/city/friendship'
 import { giftLines } from '@/lib/city/gift-lines'
+import { LIVING_SCENES, sceneCandidates } from '@/lib/city/scenes'
+import { createDefaultState } from '@/store/defaultState'
 import { NpcFace } from '@/components/city/NpcFace'
 import { cn } from '@/components/ui/cn'
 
@@ -113,6 +115,11 @@ export function CityLab() {
       </ul>
 
       <h2 className="mt-6 font-game text-[11px] tracking-[0.12em] text-inkdim">
+        리빙신 — 지금 이 시각의 후보
+      </h2>
+      <SceneLab now={now} />
+
+      <h2 className="mt-6 font-game text-[11px] tracking-[0.12em] text-inkdim">
         선물 — 사람 × 물건
       </h2>
       <GiftLab />
@@ -155,6 +162,55 @@ export function CityLab() {
         ))}
       </ul>
     </div>
+  )
+}
+
+/**
+ * 여덟 장면이 지금 왜 뜨는지 · 왜 안 뜨는지.
+ *
+ * 저장은 건드리지 않는다 — 여기서는 아무것도 안 본 새 저장으로만 따진다.
+ * 실제 저장의 seenSceneIds 를 여기서 지우면 검수하다가 진짜 기록이 날아간다.
+ */
+function SceneLab({ now }: { now: Date }) {
+  const fresh = createDefaultState()
+  const areas = [...new Set(LIVING_SCENES.map((s) => s.areaId))]
+  const rows = areas.flatMap((areaId) => sceneCandidates(fresh, areaId, now))
+
+  return (
+    <ul className="mt-2 space-y-0.5">
+      {rows.map(({ scene, seen, bandOk, hereOk }) => {
+        const on = !seen && bandOk && hereOk
+        const why = [
+          bandOk ? null : '시간대 아님',
+          hereOk ? null : '사람이 여기 없음',
+          seen ? '이미 봄' : null,
+        ].filter(Boolean)
+        return (
+          <li
+            key={scene.id}
+            className="flex items-center gap-2 rounded-btn bg-surface px-3 py-1.5 text-[11.5px]"
+          >
+            <span className={cn('font-game text-[9.5px]', on ? 'text-coral-deep' : 'text-inkfaint')}>
+              {on ? '●' : '○'}
+            </span>
+            <span className="min-w-0 flex-1 truncate">
+              {scene.id}
+              <span className="ml-1.5 text-inkfaint">
+                {findArea(scene.areaId).name} · {scene.bands.join('·')}
+              </span>
+            </span>
+            <span className="shrink-0 text-inkdim">
+              {scene.participants
+                .map((n) => allNpcSpots(now).find((s) => s.npc.id === n)?.npc.name)
+                .join(' × ')}
+            </span>
+            {why.length > 0 && (
+              <span className="shrink-0 text-[10.5px] text-inkfaint">{why.join(' · ')}</span>
+            )}
+          </li>
+        )
+      })}
+    </ul>
   )
 }
 

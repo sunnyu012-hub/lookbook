@@ -36,6 +36,7 @@ import {
 import { applyDevKitchen } from '@/lib/kitchen/dev'
 import { foodGiftLines } from '@/lib/kitchen/gifts'
 import { pickGiftLine } from '@/lib/city/gift-lines'
+import { findScene } from '@/lib/city/scenes'
 import { findKitchenRecipe as findKitchenRecipeById, recipeForFood } from '@/lib/kitchen/recipes'
 
 import type {
@@ -196,6 +197,8 @@ interface GameState {
   talkToNpc: (npcId: NpcId) => TalkResult | null
   /** 선물을 준다. 아이템이 하나 줄고 친밀도가 오른다. */
   giftToNpc: (npcId: NpcId, itemId: string) => GiftResult | null
+  /** 리빙신 하나를 봤다고 적어둔다. 오르는 건 아무것도 없다. */
+  seeLivingScene: (sceneId: string) => void
   /** 의뢰를 받는다. 첫 단계 퀘스트가 생긴다. */
   acceptChain: (chain: NpcQuestChainDef) => Quest | null
   /** 상점에서 하나 산다. */
@@ -1504,6 +1507,29 @@ export function useGameState(): GameState {
   )
 
   /**
+   * 리빙신을 봤다고 적어둔다.
+   *
+   * 여기서 오르는 건 아무것도 없다 — 코인도 경험치도 친밀도도.
+   * 적어두는 건 "이미 봤다" 하나뿐이라 두 번 눌러도 결과가 같다.
+   * 그래서 연타 자물쇠도 따로 안 둔다.
+   */
+  const seeLivingScene = useCallback(
+    (sceneId: string) => {
+      const prev = stateRef.current
+      if (!findScene(sceneId)) return
+      if (prev.discovery.seenSceneIds.includes(sceneId)) return
+      commit({
+        ...prev,
+        discovery: {
+          ...prev.discovery,
+          seenSceneIds: [...prev.discovery.seenSceneIds, sceneId],
+        },
+      })
+    },
+    [commit],
+  )
+
+  /**
    * 선물 하나.
    *
    * 하루에 한 사람당 한 번이다 (인사와 같은 모양). 두 번째부터는 아예
@@ -2625,6 +2651,7 @@ export function useGameState(): GameState {
       removeBattle,
       talkToNpc,
       giftToNpc,
+      seeLivingScene,
       acceptChain,
       buyItem,
       useConsumable,
@@ -2703,6 +2730,7 @@ export function useGameState(): GameState {
       removeBattle,
       talkToNpc,
       giftToNpc,
+      seeLivingScene,
       acceptChain,
       buyItem,
       useConsumable,

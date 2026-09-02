@@ -106,9 +106,9 @@ describe('A. 예전 저장이 그대로 열린다', () => {
     expect(loaded.user.name).toBe(s.user.name)
   })
 
-  it('A2 스키마 버전이 18 이다', () => {
-    expect(STATE_VERSION).toBe(18)
-    expect(createDefaultState().version).toBe(18)
+  it('A2 스키마 버전이 19 이다', () => {
+    expect(STATE_VERSION).toBe(19)
+    expect(createDefaultState().version).toBe(19)
   })
 
   it('A3 모르는 구역·자리가 적혀 있으면 조용히 버린다', () => {

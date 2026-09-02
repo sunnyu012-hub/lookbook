@@ -67,6 +67,7 @@ import { findCreatureStep } from '@/lib/dungeon/creatures'
 import { findKitchenRecipe } from '@/lib/kitchen/recipes'
 import { AUTO_COLLECTION_IDS, COMPANION_IDS, SECRET_IDS, SKIN_IDS } from '@/types'
 import { findChapter } from '@/lib/discovery/stories'
+import { findScene } from '@/lib/city/scenes'
 import { findRoom } from '@/lib/collection/rooms'
 
 /**
@@ -76,7 +77,7 @@ import { findRoom } from '@/lib/collection/rooms'
  * 없는 항목만 기본값으로 채우고, 있는 값은 손대지 않는다.
  */
 
-export const STATE_VERSION = 18
+export const STATE_VERSION = 19
 
 /** 구매 기록을 며칠치까지 남길지 */
 export const PURCHASE_DAYS_KEPT = 7
@@ -826,6 +827,8 @@ export function sanitizeDiscovery(raw: unknown): DiscoveryState {
     foundSecretIds: ids(d.foundSecretIds, isSecret),
     hintedSecretIds: ids(d.hintedSecretIds, isSecret),
     readChapterIds: ids(d.readChapterIds, (id) => findChapter(id) !== null),
+    // v19. 예전 저장에는 없다 — 빈 목록이면 아직 아무것도 못 본 것과 같다.
+    seenSceneIds: ids(d.seenSceneIds, (id) => findScene(id) !== null),
     companions,
     activeCompanionId,
     hintLevels,

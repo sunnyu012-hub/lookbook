@@ -110,6 +110,7 @@ describe('예전 기록이 그대로 반영된다', () => {
       'readChapterIds',
       'revealedCollectionIds',
       'seenNoteKeys',
+      'seenSceneIds',
     ])
   })
 
@@ -130,9 +131,9 @@ describe('예전 기록이 그대로 반영된다', () => {
     expect(back).toEqual(emptyDiscovery())
   })
 
-  it('스키마 버전이 18 이다', () => {
-    expect(STATE_VERSION).toBe(18)
-    expect(createDefaultState().version).toBe(18)
+  it('스키마 버전이 19 이다', () => {
+    expect(STATE_VERSION).toBe(19)
+    expect(createDefaultState().version).toBe(19)
   })
 })
 

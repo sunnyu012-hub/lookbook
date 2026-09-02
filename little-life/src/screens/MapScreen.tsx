@@ -38,6 +38,8 @@ interface MapScreenProps {
   onOpenQuarry: () => void
   /** 채석장 안쪽의 잠든 돌문. 찾기 전에는 이 칸 자체가 안 뜬다. */
   onOpenDungeon: () => void
+  /** 동네에서 뭔가 오가고 있을 때 — 잠깐 들여다본다 */
+  onPeekScene: (sceneId: string) => void
 }
 
 /**
@@ -73,6 +75,7 @@ export function MapScreen({
   onOpenGarden,
   onOpenQuarry,
   onOpenDungeon,
+  onPeekScene,
 }: MapScreenProps) {
   const [openArea, setOpenArea] = useState<AreaDef | null>(null)
   // 켜둔 채로 시간이 흘러도 도시가 아침에 멈춰 있지 않게.
@@ -197,6 +200,11 @@ export function MapScreen({
         onOpenDungeon={() => {
           setOpenArea(null)
           onOpenDungeon()
+        }}
+        onPeekScene={(sceneId) => {
+          // 동네 시트는 닫는다. 장면 위에 시트가 겹쳐 있으면 그 뒤가 안 보인다.
+          setOpenArea(null)
+          onPeekScene(sceneId)
         }}
       />
     </div>

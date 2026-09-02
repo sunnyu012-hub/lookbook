@@ -305,6 +305,6 @@ describe('지도와 동네 화면', () => {
     for (const key of ['npcLocation', 'currentNpcLocation', 'isShopOpen', 'isWeekend', 'timeBand']) {
       expect(saved).not.toContain(key)
     }
-    expect(state.version).toBe(18)
+    expect(state.version).toBe(19)
   })
 })

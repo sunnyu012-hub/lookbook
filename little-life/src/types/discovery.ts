@@ -308,6 +308,15 @@ export interface DiscoveryState {
   hintedSecretIds: string[]
   /** 읽은 이야기 장 */
   readChapterIds: string[]
+  /**
+   * 이미 본 리빙신.
+   *
+   * 이야기 장 옆에 두는 이유는 뜻이 같아서다 — 둘 다 "한 번 보면
+   * 끝나는 것을 이미 봤는가" 다. 다만 진행도는 섞지 않는다:
+   * `storyProgress` 는 이야기 장만 세고 리빙신은 어디에도 안 센다.
+   * 몇 개 봤는지 화면에 띄우면 그때부터 이건 수집 목록이 된다.
+   */
+  seenSceneIds: string[]
   /** 만난 동료 */
   companions: Record<string, CompanionState>
   /** 지금 같이 다니는 동료 */
