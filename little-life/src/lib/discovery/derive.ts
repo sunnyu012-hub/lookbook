@@ -82,6 +82,7 @@ export function emptyDiscovery(): DiscoveryState {
     foundSecretIds: [],
     hintedSecretIds: [],
     readChapterIds: [],
+    seenSceneIds: [],
     companions: {},
     activeCompanionId: null,
     hintLevels: {},

@@ -103,6 +103,37 @@ export interface LivingLine {
   context?: LivingContext
 }
 
+// ── 리빙신 ──────────────────────────────────────────────
+
+/**
+ * 도시에서 한 번만 마주치는 짧은 장면.
+ *
+ * 생활 대사(LivingLine)도 이야기 장(StoryChapter)도 아니다.
+ *
+ *   생활 대사 — 그 사람을 눌러서 듣는다. 몇 번이고 다시 나온다.
+ *   리빙신   — 그 자리에 있던 두 사람 사이의 일이다. 한 번뿐이다.
+ *   이야기 장 — 그 사람이 나에게 하는 말이다. 관계가 진전된다.
+ *
+ * 리빙신에서는 아무 일도 일어나지 않는다. 보상도 선택지도 없고
+ * 친밀도도 안 오른다. **내가 보지 않은 시간에도 이 도시가 굴러가고
+ * 있었다는 증거** 하나가 남는 게 전부다.
+ */
+export interface LivingSceneDef {
+  id: string
+  /** 어느 동네에서 */
+  areaId: AreaId
+  /** 언제 (넓게 잡는다 — 몇 시 몇 분에만 열리는 장면은 만들지 않는다) */
+  bands: import('./rpg').TimeBand[]
+  /** 이 사람들이 지금 다 그 동네에 있어야 한다 */
+  participants: NpcId[]
+  lines: LivingSceneLine[]
+}
+
+/** 한 줄. 지문이거나, 누군가의 말이거나. */
+export type LivingSceneLine =
+  | { kind: 'NARRATION'; text: string }
+  | { kind: 'SAY'; npcId: NpcId; text: string }
+
 /**
  * 일하는 중인가.
  *

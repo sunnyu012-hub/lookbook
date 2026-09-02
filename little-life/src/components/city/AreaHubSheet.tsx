@@ -12,7 +12,9 @@ import { BottomSheet } from '@/components/ui/BottomSheet'
 import { Button } from '@/components/ui/Button'
 import { FriendshipHearts, ReputationBadge } from '@/components/city/CityBadges'
 import { NpcFace } from '@/components/city/NpcFace'
+import { findNpc } from '@/lib/city/npcs'
 import { areaActions, type HubAction } from '@/lib/city/hub'
+import { sceneHere } from '@/lib/city/scenes'
 import { eventsForArea } from '@/lib/city/events'
 import { cn } from '@/components/ui/cn'
 
@@ -36,6 +38,8 @@ interface AreaHubSheetProps {
   onOpenGarden: () => void
   onOpenQuarry: () => void
   onOpenDungeon: () => void
+  /** 지금 여기서 뭔가 오가고 있으면 — 잠깐 보러 간다 */
+  onPeekScene: (sceneId: string) => void
 }
 
 /**
@@ -66,6 +70,7 @@ export function AreaHubSheet({
   onOpenGarden,
   onOpenQuarry,
   onOpenDungeon,
+  onPeekScene,
 }: AreaHubSheetProps) {
   const actions = useMemo(
     () => (area ? areaActions({ area, state, npcs, now }) : []),
@@ -87,6 +92,17 @@ export function AreaHubSheet({
    */
   const people = useMemo(() => actions.filter((a) => a.kind === 'NPC'), [actions])
   const places = useMemo(() => actions.filter((a) => a.kind !== 'NPC'), [actions])
+  /**
+   * 지금 여기서 누가 뭔가 얘기하고 있는지.
+   *
+   * 지도에 `!` 를 띄우지 않는다. 동네에 들어와서야 보이고, 문구도
+   * 그냥 관찰이다 — "새 이벤트 발생" 이라고 적는 순간 이건 우연히
+   * 마주친 게 아니라 받아야 할 콘텐츠가 된다.
+   */
+  const scene = useMemo(
+    () => (area ? sceneHere(state, area.id, now) : null),
+    [area, state, now],
+  )
 
   if (!area) return null
 
@@ -158,6 +174,39 @@ export function AreaHubSheet({
           </>
         )}
       </div>
+
+      {scene && (
+        <button
+          type="button"
+          onClick={() => onPeekScene(scene.id)}
+          className={cn(
+            'mt-5 flex w-full items-center gap-2.5 rounded-card border border-line bg-surface px-3.5 py-3 text-left',
+            'transition-transform duration-150 ease-out active:scale-[0.98]',
+          )}
+        >
+          <span className="flex -space-x-2">
+            {scene.participants.map((npcId) => {
+              const npc = findNpc(npcId)
+              return npc ? (
+                <NpcFace
+                  key={npcId}
+                  id={npc.id}
+                  avatar={npc.avatar}
+                  size={28}
+                  shape="round"
+                  className="bg-surface ring-2 ring-surface"
+                />
+              ) : null
+            })}
+          </span>
+          <span className="min-w-0 flex-1 text-[13.5px] text-ink">
+            무슨 얘기를 하고 있는 것 같다.
+          </span>
+          <span className="shrink-0 rounded-pill bg-sunken px-2.5 py-1 text-[11px] font-medium text-inkdim">
+            잠깐 보기
+          </span>
+        </button>
+      )}
 
       {people.length > 0 && (
         <div className="mt-5">

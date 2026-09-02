@@ -7,6 +7,7 @@ import type {
   CollectionShopDef,
   DiscoveryResult,
   CompanionId,
+  LivingSceneDef,
   NpcDef,
   NpcQuestChainDef,
   Quest,
@@ -22,6 +23,8 @@ import { AddQuestHub } from '@/components/quest/AddQuestHub'
 import { PackDetailSheet } from '@/components/quest/PackDetailSheet'
 import { BattleSheet } from '@/components/rpg/BattleSheet'
 import { NpcSheet } from '@/components/city/NpcSheet'
+import { LivingSceneSheet } from '@/components/city/LivingSceneSheet'
+import { findScene } from '@/lib/city/scenes'
 import { ShopSheet } from '@/components/city/ShopSheet'
 import { CollectionShopSheet } from '@/components/collection/CollectionShopSheet'
 import { DiscoverySheet } from '@/components/discovery/DiscoverySheet'
@@ -100,6 +103,7 @@ export default function App() {
     removeBattle,
     talkToNpc,
     giftToNpc,
+    seeLivingScene,
     acceptChain,
     buyItem,
     useConsumable,
@@ -461,6 +465,14 @@ export default function App() {
     null,
   )
 
+  /**
+   * 지금 들여다보고 있는 장면.
+   *
+   * 열어둔 것만 들고 있고 "봤다" 는 시트에서 끝까지 본 뒤에 적는다 —
+   * 실수로 닫았는데 영영 못 보게 되면 그건 벌이다.
+   */
+  const [peekScene, setPeekScene] = useState<LivingSceneDef | null>(null)
+
   const handleGift = useCallback(
     (itemId: string) => {
       if (!openNpc) return
@@ -761,6 +773,7 @@ export default function App() {
             onOpenGarden={() => setGardenOpen(true)}
             onOpenQuarry={() => setQuarryOpen(true)}
             onOpenDungeon={() => setDungeonOpen(true)}
+            onPeekScene={(sceneId) => setPeekScene(findScene(sceneId))}
           />
         )}
         {tab === 'bag' && (
@@ -874,6 +887,15 @@ export default function App() {
           const shop = shopInArea(openNpc.areaId)
           setOpenNpc(null)
           if (shop) setOpenShop(shop)
+        }}
+      />
+
+      <LivingSceneSheet
+        scene={peekScene}
+        onClose={() => setPeekScene(null)}
+        onDone={(sceneId) => {
+          seeLivingScene(sceneId)
+          setPeekScene(null)
         }}
       />
 
