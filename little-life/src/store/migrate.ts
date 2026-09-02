@@ -76,7 +76,7 @@ import { findRoom } from '@/lib/collection/rooms'
  * 없는 항목만 기본값으로 채우고, 있는 값은 손대지 않는다.
  */
 
-export const STATE_VERSION = 17
+export const STATE_VERSION = 18
 
 /** 구매 기록을 며칠치까지 남길지 */
 export const PURCHASE_DAYS_KEPT = 7
@@ -239,6 +239,11 @@ export function emptyNpcStates(): NpcStates {
  * 나와 도시 사람들 사이의 기록.
  * 정의가 사라진 NPC 는 버리고, 새로 생긴 NPC 는 빈 관계로 채운다.
  */
+/** 날짜 열쇠(YYYY-MM-DD)만 통과시킨다. 아니면 null. */
+function dayKeyOr(value: unknown): string | null {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null
+}
+
 export function sanitizeNpcs(raw: unknown): NpcStates {
   const states = emptyNpcStates()
   if (!raw || typeof raw !== 'object') return states
@@ -250,10 +255,10 @@ export function sanitizeNpcs(raw: unknown): NpcStates {
 
     states[id] = {
       friendship: Math.min(100, numberOr(entry.friendship, 0)),
-      lastTalkedOn:
-        typeof entry.lastTalkedOn === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(entry.lastTalkedOn)
-          ? entry.lastTalkedOn
-          : null,
+      lastTalkedOn: dayKeyOr(entry.lastTalkedOn),
+      // v18. 예전 저장에는 없다 — null 이면 오늘 아직 아무것도 안 받은 것과
+      // 같아서, 켜자마자 하나 건넬 수 있다. 잃는 기록은 없다.
+      lastGiftedOn: dayKeyOr(entry.lastGiftedOn),
       clearedChainIds: Array.isArray(entry.clearedChainIds)
         ? [...new Set(entry.clearedChainIds.filter((v): v is string => typeof v === 'string'))]
         : [],

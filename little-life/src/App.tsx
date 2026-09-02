@@ -230,20 +230,18 @@ export default function App() {
   /**
    * 만들어둔 음식 중 지금 줄 수 있는 것.
    *
-   * 친밀도가 오르는 식은 하나뿐이라 (giftGainForTags) 여기서는
-   * "좋아할지" 만 미리 본다 — 계산을 다시 하지 않는다.
+   * 예전에는 여기서 "좋아할지" 를 미리 계산해 목록을 그쪽부터 정렬했다.
+   * 그게 사실상 정답표였다 — 맨 위에 있는 걸 주면 늘 맞았다.
+   * 지금은 만든 순서 그대로 둔다. 무엇이 맞는지는 건네봐야 안다.
    */
   const giftableFoods = useCallback(
-    (s: AppState, npc: NpcDef) =>
+    (s: AppState) =>
       KITCHEN_RECIPES.map((recipe) => ({
         itemId: recipe.outputItemId,
         name: recipe.name,
         icon: recipe.icon,
         count: ownedCount(s.collection, recipe.outputItemId),
-        liked: recipe.giftTags.some((tag) => npc.likes.includes(tag)),
-      }))
-        .filter((f) => f.count > 0)
-        .sort((a, b) => Number(b.liked) - Number(a.liked)),
+      })).filter((f) => f.count > 0),
     [],
   )
 
@@ -453,16 +451,24 @@ export default function App() {
     }
   }, [openNpc, talkToNpc, feedback])
 
+  /**
+   * 방금 건넨 것에 그 사람이 한 말.
+   *
+   * 시트 안에 남겨두고 토스트는 띄우지 않는다 — `💗 +3` 이 화면 위로
+   * 지나가면 그때부터 사람들은 얼굴이 아니라 숫자를 본다.
+   */
+  const [giftReaction, setGiftReaction] = useState<{ line: string; leveledUp: boolean } | null>(
+    null,
+  )
+
   const handleGift = useCallback(
     (itemId: string) => {
       if (!openNpc) return
       const result = giftToNpc(openNpc.id, itemId)
       if (!result) return
-      feedback.notify(
-        result.liked ? `좋아하는 것 같아 · 💗 +${result.gained}` : `💗 +${result.gained}`,
-      )
+      setGiftReaction({ line: result.line, leveledUp: result.leveledUp })
     },
-    [openNpc, giftToNpc, feedback],
+    [openNpc, giftToNpc],
   )
 
   const handleAcceptChain = useCallback(
@@ -839,7 +845,7 @@ export default function App() {
 
       <NpcSheet
         gardenLevel={gardenTalkLevel}
-        foods={openNpc ? giftableFoods(state, openNpc) : []}
+        foods={openNpc ? giftableFoods(state) : []}
         npc={openNpc}
         npcState={(openNpc && state.npcs[openNpc.id]) || emptyNpcState()}
         quests={state.quests}
@@ -854,10 +860,15 @@ export default function App() {
           setOpenNpc(null)
           setStoryNpc(npc)
         }}
-        onClose={() => setOpenNpc(null)}
+        onClose={() => {
+          setOpenNpc(null)
+          setGiftReaction(null)
+        }}
         onTalk={handleTalk}
         onAcceptChain={handleAcceptChain}
         onGift={handleGift}
+        giftReaction={giftReaction}
+        onDismissGift={() => setGiftReaction(null)}
         onOpenShop={() => {
           if (!openNpc?.shopId) return
           const shop = shopInArea(openNpc.areaId)

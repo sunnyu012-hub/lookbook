@@ -59,6 +59,15 @@ export const FRIENDSHIP_LEVELS = [
 ] as const
 export type FriendshipLevel = (typeof FRIENDSHIP_LEVELS)[number]
 
+/**
+ * 건넨 물건이 그 사람에게 어떤 것이었는지.
+ *
+ * 싫어함은 없다. 잘못 고른 선물로 관계가 나빠지면 사람들이 실험을 그만둔다 —
+ * 그러면 "이거 좋아할까?" 하고 하나 건네보는 일 자체가 사라진다.
+ * NEUTRAL 도 충분히 괜찮은 결과다.
+ */
+export type GiftPreference = 'NEUTRAL' | 'LIKE' | 'LOVE'
+
 /** NPC 가 어떤 선물을 좋아하는지 — 아이템의 giftTags 와 맞춰본다. */
 export type GiftTag =
   | 'coffee'
@@ -158,6 +167,14 @@ export interface NpcDef {
   shopId: ShopId | null
   /** 좋아하는 선물 */
   likes: GiftTag[]
+  /**
+   * 딱 이것만은 특별한 것 (LOVE).
+   *
+   * 결(likes)이 아니라 물건 하나를 콕 집는다. 한 사람당 한둘이면 된다 —
+   * 스물넷이 열 개씩 들고 있으면 그건 취향이 아니라 공략표다.
+   * 가방 물건 id 든 부엌 음식 id(food_*) 든 여기 그대로 적는다.
+   */
+  loves: string[]
   /** 이 지역 Reputation 이 이만큼은 되어야 만날 수 있다 */
   requiresReputation?: number
   /** 밤에만 만날 수 있는 사람 */
@@ -169,6 +186,13 @@ export interface NpcState {
   friendship: number
   /** 하루 첫 대화를 이미 했는지 (YYYY-MM-DD) */
   lastTalkedOn: string | null
+  /**
+   * 오늘 이미 하나 받았는지 (YYYY-MM-DD).
+   *
+   * 인사와 같은 모양이다. 선물이 눌러서 올리는 버튼이 되면 스물넷에게
+   * 매일 순회하는 게 최적 플레이가 된다 — 그건 관계가 아니라 숙제다.
+   */
+  lastGiftedOn: string | null
   /** 끝낸 의뢰 */
   clearedChainIds: string[]
 }

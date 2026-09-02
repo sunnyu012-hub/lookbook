@@ -392,9 +392,9 @@ describe('H. 저장과 이관', () => {
     expect(q.attempts).toBe(DAILY_ATTEMPTS)
   })
 
-  it('스키마 버전이 17 이다', () => {
-    expect(STATE_VERSION).toBe(17)
-    expect(createDefaultState().version).toBe(17)
+  it('스키마 버전이 18 이다', () => {
+    expect(STATE_VERSION).toBe(18)
+    expect(createDefaultState().version).toBe(18)
   })
 })
 

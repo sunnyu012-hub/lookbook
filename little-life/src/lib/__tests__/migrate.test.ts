@@ -158,7 +158,26 @@ describe('sanitizeNpcs', () => {
   it('없으면 도시 사람 전부가 빈 관계로 시작한다', () => {
     const npcs = sanitizeNpcs(undefined)
     expect(Object.keys(npcs)).toHaveLength(NPCS.length)
-    expect(npcs.MINA).toEqual({ friendship: 0, lastTalkedOn: null, clearedChainIds: [] })
+    expect(npcs.MINA).toEqual({
+      friendship: 0,
+      lastTalkedOn: null,
+      lastGiftedOn: null,
+      clearedChainIds: [],
+    })
+  })
+
+  it('예전 저장에는 lastGiftedOn 이 없다 — null 로 채우고 기록은 안 건드린다 (v18)', () => {
+    const npcs = sanitizeNpcs({
+      MINA: { friendship: 42, lastTalkedOn: '2026-08-22', clearedChainIds: ['mina_focus'] },
+    })
+    expect(npcs.MINA.lastGiftedOn).toBeNull()
+    expect(npcs.MINA.friendship).toBe(42)
+    expect(npcs.MINA.lastTalkedOn).toBe('2026-08-22')
+  })
+
+  it('날짜가 아닌 lastGiftedOn 은 버린다', () => {
+    const npcs = sanitizeNpcs({ MINA: { friendship: 0, lastGiftedOn: '어제' } })
+    expect(npcs.MINA.lastGiftedOn).toBeNull()
   })
 
   it('쌓아둔 친밀도는 그대로 둔다', () => {

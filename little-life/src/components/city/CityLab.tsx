@@ -1,11 +1,17 @@
 import { useState } from 'react'
-import { AREAS, findArea } from '@/lib/rpg/content'
+import { AREAS, ITEMS, findArea } from '@/lib/rpg/content'
 import { todayKey } from '@/lib/date'
 import { TIME_LABEL, timeBand } from '@/lib/rpg/time'
 import { SHOPS, isShopOpen, shopOpeningLabel, shopStatus } from '@/lib/city/shops'
 import { allNpcSpots, isWeekendDay, npcsAway, npcsHere } from '@/lib/city/routine'
 import { livingCandidates, workContext } from '@/lib/city/living'
+import { NPCS } from '@/lib/city/npcs'
+import { KITCHEN_RECIPES } from '@/lib/kitchen/recipes'
+import { emptyBonuses } from '@/lib/rpg/rewards'
+import { giftOutcome, isGiftable } from '@/lib/city/friendship'
+import { giftLines } from '@/lib/city/gift-lines'
 import { NpcFace } from '@/components/city/NpcFace'
+import { cn } from '@/components/ui/cn'
 
 /**
  * 개발용 도시 검수판.
@@ -106,6 +112,11 @@ export function CityLab() {
         })}
       </ul>
 
+      <h2 className="mt-6 font-game text-[11px] tracking-[0.12em] text-inkdim">
+        선물 — 사람 × 물건
+      </h2>
+      <GiftLab />
+
       <h2 className="mt-6 font-game text-[11px] tracking-[0.12em] text-inkdim">동네</h2>
       <ul className="mt-2 space-y-1">
         {AREAS.map((area) => (
@@ -140,6 +151,76 @@ export function CityLab() {
               {isShopOpen(shop, now) ? '영업 중' : shopStatus(shop, now) === 'AFTER' ? '영업 종료' : '영업 전'}
               {shopOpeningLabel(shop) ? ` · ${shopOpeningLabel(shop)}` : ' · 늘 열림'}
             </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+/**
+ * 누구에게 무엇을 주면 어떻게 되는지 한 판에 본다.
+ *
+ * 저장에는 손대지 않는다 — 여기서 실제로 주지 않고, 결과만 계산해 본다.
+ * 스물넷 × 서른을 눈으로 훑는 게 목적이라 화면은 아주 촘촘하다.
+ */
+function GiftLab() {
+  const [npcId, setNpcId] = useState(NPCS[0].id)
+  const npc = NPCS.find((n) => n.id === npcId) ?? NPCS[0]
+
+  const things = [
+    ...ITEMS.filter(isGiftable).map((i) => ({
+      id: i.id,
+      name: i.name,
+      icon: i.icon,
+      tags: i.giftTags ?? [],
+    })),
+    ...KITCHEN_RECIPES.map((r) => ({
+      id: r.outputItemId,
+      name: r.name,
+      icon: r.icon,
+      tags: r.giftTags,
+    })),
+  ]
+
+  const tone = { LOVE: 'text-coral-deep', LIKE: 'text-inkdim', NEUTRAL: 'text-inkfaint' } as const
+
+  return (
+    <div className="mt-2">
+      <div className="flex flex-wrap gap-1.5">
+        {NPCS.map((n) => (
+          <Lab key={n.id} on={n.id === npcId} onClick={() => setNpcId(n.id)}>
+            {n.name}
+          </Lab>
+        ))}
+      </div>
+
+      <p className="mt-2 text-[11px] text-inkdim">
+        결 {npc.likes.join(' · ')} · 콕 집은 것 {npc.loves.length}개
+      </p>
+
+      <ul className="mt-2 space-y-0.5">
+        {things.map((thing) => {
+          const { preference, gained } = giftOutcome(npc, thing.id, thing.tags, emptyBonuses())
+          return (
+            <li
+              key={thing.id}
+              className="flex items-center gap-2 rounded-btn bg-surface px-3 py-1.5 text-[12px]"
+            >
+              <span>{thing.icon}</span>
+              <span className="min-w-0 flex-1 truncate">{thing.name}</span>
+              <span className={cn('font-game text-[10px]', tone[preference])}>{preference}</span>
+              <span className="w-6 text-right text-[11px] text-inkdim">+{gained}</span>
+            </li>
+          )
+        })}
+      </ul>
+
+      <ul className="mt-2 space-y-0.5">
+        {(['NEUTRAL', 'LIKE', 'LOVE'] as const).map((pref) => (
+          <li key={pref} className="rounded-btn bg-surface px-3 py-1.5 text-[11.5px]">
+            <span className={cn('font-game text-[10px]', tone[pref])}>{pref}</span>
+            <span className="ml-2 text-inkdim">{giftLines(npc.id, pref).join(' / ')}</span>
           </li>
         ))}
       </ul>
