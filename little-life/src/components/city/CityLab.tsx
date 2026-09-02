@@ -12,6 +12,9 @@ import { giftOutcome, isGiftable } from '@/lib/city/friendship'
 import { giftLines } from '@/lib/city/gift-lines'
 import { LIVING_SCENES, sceneCandidates } from '@/lib/city/scenes'
 import { createDefaultState } from '@/store/defaultState'
+import { chaptersOf, isChapterUnlocked, knowsSiwooBandPast } from '@/lib/discovery/stories'
+import { conditionProgress } from '@/lib/discovery/secrets'
+import { useGameState } from '@/hooks/useGameState'
 import { NpcFace } from '@/components/city/NpcFace'
 import { cn } from '@/components/ui/cn'
 
@@ -115,6 +118,11 @@ export function CityLab() {
       </ul>
 
       <h2 className="mt-6 font-game text-[11px] tracking-[0.12em] text-inkdim">
+        시우 이야기 — 여섯 장이 왜 열리고 안 열리는지
+      </h2>
+      <SiwooLab />
+
+      <h2 className="mt-6 font-game text-[11px] tracking-[0.12em] text-inkdim">
         리빙신 — 지금 이 시각의 후보
       </h2>
       <SceneLab now={now} />
@@ -160,6 +168,66 @@ export function CityLab() {
             </span>
           </li>
         ))}
+      </ul>
+    </div>
+  )
+}
+
+/**
+ * 시우 여섯 장이 지금 열리는지, 안 열리면 뭐가 모자란지.
+ *
+ * **진짜 저장을 읽기만 한다.** 여기서 장을 읽음 처리하거나 친밀도를
+ * 올리지 않는다 — 검수하다가 진짜 기록을 앞질러 읽어버리면 그 저장으로는
+ * 다시 처음부터 볼 수가 없다.
+ */
+function SiwooLab() {
+  const { state } = useGameState()
+  const chapters = chaptersOf('SIWOO')
+  const friendship = state.npcs.SIWOO?.friendship ?? 0
+
+  return (
+    <div className="mt-2">
+      <p className="text-[11px] text-inkdim">
+        시우 친밀도 {friendship} · 운동 구역 평판 {state.reputation.TRAINING_ZONE} · 창작 골목{' '}
+        {state.reputation.CREATIVE_DISTRICT} · 과거를 아는가{' '}
+        {knowsSiwooBandPast(state) ? '응' : '아직'}
+      </p>
+      <ul className="mt-2 space-y-0.5">
+        {chapters.map((def) => {
+          const isRead = state.discovery.readChapterIds.includes(def.id)
+          const open = isChapterUnlocked(state, def)
+          const missing = def.conditions
+            .filter((c) => conditionProgress(state, c) < 1)
+            .map((c) =>
+              c.kind === 'FRIENDSHIP'
+                ? `친밀도 ${c.value}`
+                : c.kind === 'AREA_REPUTATION'
+                  ? `${findArea(c.areaId).name} 평판 ${c.value}`
+                  : c.kind,
+            )
+          return (
+            <li
+              key={def.id}
+              className="flex items-center gap-2 rounded-btn bg-surface px-3 py-1.5 text-[11.5px]"
+            >
+              <span
+                className={cn(
+                  'font-game text-[9.5px]',
+                  isRead ? 'text-inkfaint' : open ? 'text-coral-deep' : 'text-inkfaint',
+                )}
+              >
+                {isRead ? '■' : open ? '●' : '○'}
+              </span>
+              <span className="min-w-0 flex-1 truncate">
+                {def.id}
+                <span className="ml-1.5 text-inkfaint">{def.title}</span>
+              </span>
+              <span className="shrink-0 text-[10.5px] text-inkfaint">
+                {isRead ? '읽음' : missing.length > 0 ? missing.join(' · ') : '앞 장 먼저'}
+              </span>
+            </li>
+          )
+        })}
       </ul>
     </div>
   )

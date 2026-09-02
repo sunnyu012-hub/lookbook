@@ -858,6 +858,7 @@ export default function App() {
 
       <NpcSheet
         gardenLevel={gardenTalkLevel}
+        readChapterIds={state.discovery.readChapterIds}
         foods={openNpc ? giftableFoods(state) : []}
         npc={openNpc}
         npcState={(openNpc && state.npcs[openNpc.id]) || emptyNpcState()}

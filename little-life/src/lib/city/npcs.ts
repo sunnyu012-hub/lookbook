@@ -914,6 +914,12 @@ export const NPCS: NpcDef[] = [
     loves: ['vintage_ribbon', 'training_band'],
     shopId: null,
     dialogues: [
+      /*
+       * 이야기를 끝까지 읽은 사람에게만 들리는 두 줄 (K).
+       * 스물넷 중 시우에게만 있다 — 시범이라 여기서 멈춘다.
+       */
+      { text: '요즘도 가끔 들어요. 예전에 하던 것들.', afterChapterId: 'SIWOO_6' },
+      { text: '그 얘기 하고 나니까 좀 이상하네요. 나쁜 쪽은 아니고.', afterChapterId: 'SIWOO_6' },
       { text: '어서 와요. 여섯 개? 열두 개?' },
       { text: '오늘 반죽이 잘 됐어요. 이런 날은 나도 기분이 좋아.' },
       { text: '천천히 드세요. 안에 뜨거워요. 진짜예요.' },

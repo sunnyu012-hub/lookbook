@@ -166,6 +166,17 @@ export interface StoryChapterDef {
   conditions: SecretCondition[]
   /** 그 사람이 하는 말. 서너 줄이면 충분하다. */
   lines: string[]
+  /**
+   * 여러 사람이 나오는 장 (K).
+   *
+   * 초반 열다섯 장은 그 사람이 나에게 하는 혼잣말이라 `lines` 하나로 됐다.
+   * 개인 이야기는 옆에 다른 사람이 같이 서 있어서 누가 말했는지가 필요하다.
+   * 줄 모양은 리빙신(J)의 것을 그대로 쓴다 — 지문과 대사를 나누는 방식이
+   * 이미 있는데 하나 더 만들 이유가 없다.
+   *
+   * 이게 있으면 `lines` 는 비워두고 화면은 이쪽을 그린다.
+   */
+  scene?: import('./city').LivingSceneLine[]
   /** 다 읽고 나서 받는 것 */
   rewardItemId: string | null
   rewardFriendship: number
