@@ -130,9 +130,9 @@ describe('예전 기록이 그대로 반영된다', () => {
     expect(back).toEqual(emptyDiscovery())
   })
 
-  it('스키마 버전이 17 이다', () => {
-    expect(STATE_VERSION).toBe(17)
-    expect(createDefaultState().version).toBe(17)
+  it('스키마 버전이 18 이다', () => {
+    expect(STATE_VERSION).toBe(18)
+    expect(createDefaultState().version).toBe(18)
   })
 })
 
@@ -245,7 +245,7 @@ describe('비밀 장소', () => {
     const def = SECRETS.find((s) => s.id === 'BACKROOM_CAFE')!
     const s = veteran({
       reputation: { ...veteran().reputation, CAFE_STREET: 40 },
-      npcs: { ...veteran().npcs, MINA: { friendship: 0, lastTalkedOn: null, clearedChainIds: [] } },
+      npcs: { ...veteran().npcs, MINA: { friendship: 0, lastTalkedOn: null, lastGiftedOn: null, clearedChainIds: [] } },
     })
     expect(secretProgress(s, def)).toBe(0)
   })

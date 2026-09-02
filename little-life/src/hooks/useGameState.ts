@@ -9,6 +9,7 @@ import type {
   CompleteResult,
   DayStat,
   DropResult,
+  GiftPreference,
   GrowthSnapshot,
   StatKey,
   EquipSlot,
@@ -34,6 +35,7 @@ import {
 } from '@/lib/kitchen/derive'
 import { applyDevKitchen } from '@/lib/kitchen/dev'
 import { foodGiftLines } from '@/lib/kitchen/gifts'
+import { pickGiftLine } from '@/lib/city/gift-lines'
 import { findKitchenRecipe as findKitchenRecipeById, recipeForFood } from '@/lib/kitchen/recipes'
 
 import type {
@@ -129,7 +131,7 @@ import {
 import { applyBattleAction, clearRarities, createBattle, undoBattleAction } from '@/lib/rpg/battle'
 import { linkQuestToBattles, unlinkQuestFromBattles } from '@/lib/rpg/link'
 import { activeEvents } from '@/lib/city/events'
-import { emptyNpcState, giftGainForTags, talkGain } from '@/lib/city/friendship'
+import { emptyNpcState, giftOutcome, giftedToday, talkGain } from '@/lib/city/friendship'
 import { FRIENDSHIP_MAX, findNpc, friendshipLevel } from '@/lib/city/npcs'
 import { reputationGain } from '@/lib/city/reputation'
 import { shopStock } from '@/lib/city/shops'
@@ -370,9 +372,10 @@ export interface TalkResult {
 export interface GiftResult {
   gained: number
   friendship: number
-  liked: boolean
-  /** 만든 음식을 줬을 때 그 사람이 하는 말. 없으면 빈 배열. */
-  lines?: string[]
+  /** 그 사람에게 어떤 것이었는지. 화면은 이걸로 말을 고른다 — 숫자를 띄우지 않는다. */
+  preference: GiftPreference
+  /** 그 사람이 하는 말 한 줄 */
+  line: string
   leveledUp: boolean
 }
 
@@ -700,6 +703,8 @@ export function useGameState(): GameState {
   const loaded = useRef(false)
   /** Welcome Gift 를 방금 줬는지 — 화면에서 안내하려고 들고 있는다 */
   const giftedRef = useRef(false)
+  /** 선물 한 번이 정말 한 번이 되게 하는 자물쇠 (연타 방지) */
+  const giftingRef = useRef(false)
   /** 밸런스 보정으로 채워준 코인. 한 번 알려주고 끝이다. */
   const rebalancedRef = useRef(0)
   /** 이번에 새로 발견한 것들. 화면에서 읽고 나면 비운다. */
@@ -1498,15 +1503,30 @@ export function useGameState(): GameState {
     [commit],
   )
 
-  /** 선물. 좋아하는 결이면 두 배쯤 오른다. */
+  /**
+   * 선물 하나.
+   *
+   * 하루에 한 사람당 한 번이다 (인사와 같은 모양). 두 번째부터는 아예
+   * 막는다 — 0이 오르는 걸 알면서 물건만 사라지게 두면 그건 함정이다.
+   *
+   * 연타는 두 겹으로 막는다. stateRef 는 이 함수 안에서 바로 갱신되니까
+   * 같은 tick 에 두 번 들어와도 두 번째는 giftedToday 에 걸리고,
+   * 그래도 새는 경우를 대비해 결과를 잠근다 (giftingRef).
+   */
   const giftToNpc = useCallback(
     (npcId: NpcId, itemId: string): GiftResult | null => {
+      if (giftingRef.current) return null
+
       const prev = stateRef.current
       const npc = findNpc(npcId)
       if (!npc) return null
 
+      const npcState: NpcState = prev.npcs[npcId] ?? emptyNpcState()
+      const dayKey = todayKey()
+      if (giftedToday(npcState, dayKey)) return null
+
       // 가방 물건인지, 부엌에서 만든 음식인지.
-      // 친밀도가 오르는 식은 둘 다 하나뿐이다 (giftGainForTags).
+      // 친밀도가 오르는 식은 둘 다 하나뿐이다 (giftOutcome).
       const item = findItem(itemId)
       const food = recipeForFood(itemId)
       const tags = item ? (item.giftTags ?? []) : (food?.giftTags ?? [])
@@ -1520,10 +1540,7 @@ export function useGameState(): GameState {
       }
 
       const bonuses = collectBonuses(bonusSources(prev))
-      const gained = giftGainForTags(npc, tags, bonuses)
-      const liked = tags.some((tag) => npc.likes.includes(tag))
-
-      const npcState: NpcState = prev.npcs[npcId] ?? emptyNpcState()
+      const { preference, gained } = giftOutcome(npc, itemId, tags, bonuses)
       const friendship = Math.min(FRIENDSHIP_MAX, npcState.friendship + gained)
 
       // 음식은 도감에서 하나 빠진다. 발견 기록은 지우지 않는다 —
@@ -1532,21 +1549,24 @@ export function useGameState(): GameState {
         ? (spendItems(prev.collection, [{ itemId, count: 1 }]) ?? prev.collection)
         : prev.collection
 
+      giftingRef.current = true
       commit({
         ...prev,
         collection,
         // 준 물건은 손에서 떠난다. 장착 중이었으면 슬롯도 비운다.
         inventory: item ? removeFromInventory(prev.inventory, itemId) : prev.inventory,
         user: { ...prev.user, equippedItems: unequipIfGone(prev.user.equippedItems, itemId) },
-        npcs: { ...prev.npcs, [npcId]: { ...npcState, friendship } },
+        npcs: { ...prev.npcs, [npcId]: { ...npcState, friendship, lastGiftedOn: dayKey } },
       })
+      giftingRef.current = false
 
       return {
         gained,
         friendship,
-        liked,
+        preference,
+        // 그 사람과 그 음식에만 붙은 말이 있으면 그게 먼저다.
+        line: pickGiftLine(npcId, preference, food ? foodGiftLines(npcId, food.id) : []),
         leveledUp: crossedFriendshipLevel(npcState.friendship, friendship),
-        lines: food ? foodGiftLines(npcId, food.id) : [],
       }
     },
     [commit],

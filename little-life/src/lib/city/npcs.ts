@@ -1,4 +1,6 @@
-import type { FriendshipLevel, NpcDef, NpcId } from '@/types'
+import type { FriendshipLevel, GiftTag, NpcDef, NpcId } from '@/types'
+import { ITEMS } from '@/lib/rpg/content'
+import { KITCHEN_RECIPES } from '@/lib/kitchen/recipes'
 import { FRIENDSHIP_LEVELS } from '@/types'
 
 /**
@@ -41,7 +43,8 @@ export const NPCS: NpcDef[] = [
     role: '카페 사장',
     description: '서른한 살. 사람도 취향도 잘 기억하는데 자기 이야기는 거의 안 한다.',
     avatar: '☕',
-    likes: ['coffee', 'book', 'sweet'],
+    likes: ['cozy', 'sweet', 'book'],
+    loves: ['favorite_mug', 'food_strawberry_toast'],
     shopId: 'MINA_CAFE',
     dialogues: [
       { text: '어서 와. 오늘은 창가 자리가 비었어.' },
@@ -102,6 +105,7 @@ export const NPCS: NpcDef[] = [
     description: '서른네 살. 스포츠 회사에 다니고 아침마다 공원을 돈다. 예전엔 안 그랬다고 한다.',
     avatar: '🏃',
     likes: ['healthy', 'nature', 'sport'],
+    loves: ['morning_sneakers', 'food_picnic_lunchbox'],
     shopId: null,
     dialogues: [
       { text: '오, 왔네. 오늘 날씨 괜찮지?' },
@@ -164,6 +168,7 @@ export const NPCS: NpcDef[] = [
     description: '예순한 살. 공방을 오래 했다. 오는 사람마다 밥은 먹었는지부터 묻는다.',
     avatar: '🧶',
     likes: ['art', 'collectible', 'sweet'],
+    loves: ['spare_button', 'food_pumpkin_tart'],
     shopId: null,
     dialogues: [
       { text: '이거 봐, 어제 만든 건데 아직 마음에 안 들어.' },
@@ -204,6 +209,7 @@ export const NPCS: NpcDef[] = [
     description: '툴툴대지만 물건도 사람도 잘 기억한다. 나이를 물으면 그냥 넘어간다.',
     avatar: '🧥',
     likes: ['collectible', 'cozy'],
+    loves: ['vintage_ribbon', 'spare_button'],
     shopId: 'JUNE_CLOSET',
     dialogues: [
       { text: '천천히 봐. 아무것도 안 사도 되고.' },
@@ -243,6 +249,7 @@ export const NPCS: NpcDef[] = [
     description: '서른세 살. 짐을 보고 루트를 짠다. 재촉하지 않고 감이 올 때까지 기다려준다.',
     avatar: '🧗',
     likes: ['sport', 'healthy'],
+    loves: ['training_band', 'food_tomato_pasta'],
     shopId: 'MOVE_STORE',
     // 혼자 존댓말을 쓴다. 코치라서 그런 것도 있지만 원래 말이 짧고 담백한 사람이다.
     // 친해져도 말을 놓지 않는다 — 대신 좋아하는 얘기가 나오면 말이 조금 길어진다.
@@ -293,6 +300,7 @@ export const NPCS: NpcDef[] = [
     description: '밤거리 안쪽에서 바를 한다. 밤 시장 가판도 자기 몫이다. 능숙한데 가까워지긴 어렵다.',
     avatar: '🌙',
     likes: ['moon', 'book', 'tea'],
+    loves: ['night_ticket', 'food_lavender_tea'],
     shopId: 'NIGHT_MARKET',
     nightOnly: true,
     dialogues: [
@@ -349,6 +357,7 @@ export const NPCS: NpcDef[] = [
     description: '서른두 살. 조용해 보이는데 성질은 급한 편이다. 꽃보다 사람 말을 더 빨리 자른다.',
     avatar: '🌷',
     likes: ['nature', 'cozy'],
+    loves: ['flower_bookmark', 'green_charm'],
     shopId: null,
     dialogues: [
       { text: '오늘 들어온 건 저쪽. 물만 갈아주면 오래 가.' },
@@ -389,7 +398,8 @@ export const NPCS: NpcDef[] = [
     role: '편의점 오전',
     description: '마흔두 살. 동네 사정을 많이 아는데 입은 무겁다. 아이 엄마이자 오래된 락 팬.',
     avatar: '🏪',
-    likes: ['cozy', 'sweet'],
+    likes: ['cozy', 'collectible', 'sweet'],
+    loves: ['vintage_ribbon', 'cozy_scarf'],
     shopId: null,
     dialogues: [
       { text: '어서 와요. 오늘 뭐 찾아요?' },
@@ -427,6 +437,7 @@ export const NPCS: NpcDef[] = [
     description: '스물네 살. 눈을 잘 안 마주친다. 어딘가에서는 아주 유명한 것 같기도 하다.',
     avatar: '🎮',
     likes: ['collectible', 'sweet'],
+    loves: ['lucky_cat_sticker', 'tiny_sketchbook'],
     shopId: null,
     dialogues: [
       { text: '...아, 네. 봉투 필요하세요?' },
@@ -464,7 +475,8 @@ export const NPCS: NpcDef[] = [
     role: '약사',
     description: '마흔여섯 살. 진지해 보이는데 아재개그를 참지 못한다. 남 일에 관심 없다면서 다 알고 있다.',
     avatar: '💊',
-    likes: ['healthy', 'tea'],
+    likes: ['healthy', 'tea', 'cozy'],
+    loves: ['lucky_cat_sticker', 'food_carrot_soup'],
     shopId: null,
     dialogues: [
       { text: '어디 아파서 온 건 아니죠? 그럼 됐어요.' },
@@ -501,6 +513,7 @@ export const NPCS: NpcDef[] = [
     description: '스물다섯 살. 늘 피곤하다. 노트북과 커피 사이에 앉아 있는 시간이 제일 길다.',
     avatar: '📓',
     likes: ['book', 'coffee'],
+    loves: ['focus_coffee', 'food_strawberry_toast'],
     shopId: null,
     dialogues: [
       { text: '이 자리 콘센트 있어서요. 그것 때문에 여기 와요.' },
@@ -542,6 +555,7 @@ export const NPCS: NpcDef[] = [
     description: '서른아홉 살. 자기 리듬을 지키는 사람. 평범한 하루를 제일 좋아한다.',
     avatar: '📚',
     likes: ['book', 'tea'],
+    loves: ['flower_bookmark', 'food_lavender_tea'],
     shopId: null,
     dialogues: [
       { text: '천천히 봐요. 다 읽고 안 사도 되고.' },
@@ -579,6 +593,7 @@ export const NPCS: NpcDef[] = [
     description: '스물일곱 살. 질문이 많다. 남은 잘 찍는데 자기 사진은 한 장도 없다.',
     avatar: '📷',
     likes: ['art', 'collectible'],
+    loves: ['tiny_sketchbook', 'night_ticket'],
     shopId: null,
     dialogues: [
       { text: '아, 잠깐만요. 지금 빛 좋은데.' },
@@ -618,6 +633,7 @@ export const NPCS: NpcDef[] = [
     description: '서른 살. 평소엔 기운이 없다가 음악 얘기만 나오면 다른 사람이 된다.',
     avatar: '🎧',
     likes: ['art', 'collectible'],
+    loves: ['vintage_ribbon', 'spare_button'],
     shopId: null,
     dialogues: [
       { text: '아 네... 편하게 보세요.' },
@@ -659,6 +675,7 @@ export const NPCS: NpcDef[] = [
     description: '쉰여덟 살. 말은 없는데 길고양이 이름은 다 안다. 이 도시가 달랐을 때를 기억한다.',
     avatar: '🧢',
     likes: ['nature', 'tea'],
+    loves: ['lucky_cat_sticker', 'food_carrot_soup'],
     shopId: null,
     dialogues: [
       { text: '어. 왔나.' },
@@ -696,6 +713,7 @@ export const NPCS: NpcDef[] = [
     description: '서른여덟 살. 사람이 싫어서가 아니라 혼자가 편한 사람. 잎 색 바뀌는 건 누구보다 빨리 안다.',
     avatar: '🪴',
     likes: ['nature', 'tea'],
+    loves: ['green_charm', 'food_herb_potato_soup'],
     shopId: null,
     dialogues: [
       { text: '물 주는 날 아니에요. 오늘은 그냥 보기만.' },
@@ -732,6 +750,7 @@ export const NPCS: NpcDef[] = [
     description: '스물한 살. 사람 이름을 다 기억한다. 혼자 있는 시간만 어려워한다.',
     avatar: '🎒',
     likes: ['sweet', 'coffee'],
+    loves: ['tiny_hair_clip', 'food_strawberry_milk'],
     shopId: null,
     dialogues: [
       { text: '어! 안녕하세요! 저 기억하시죠?' },
@@ -771,6 +790,7 @@ export const NPCS: NpcDef[] = [
     description: '서른세 살. 반듯해 보이는데 집에는 모아둔 게 산더미다. 오래된 글자를 읽을 줄 안다.',
     avatar: '📖',
     likes: ['book', 'collectible'],
+    loves: ['star_fragment', 'tiny_sketchbook'],
     shopId: null,
     dialogues: [
       { text: '마감이라 나왔어요. 집에 있으면 더 안 돼서.' },
@@ -810,7 +830,8 @@ export const NPCS: NpcDef[] = [
     role: '부동산 중개사',
     description: '쉰두 살. 동네 일은 다 안다. 말하기를 좋아하지만 옮길 말과 아닌 말은 가린다.',
     avatar: '🏡',
-    likes: ['coffee', 'sweet'],
+    likes: ['coffee', 'sweet', 'collectible'],
+    loves: ['night_ticket', 'food_pumpkin_tart'],
     shopId: null,
     dialogues: [
       { text: '어유, 오랜만이네. 밥은 먹었고?' },
@@ -848,6 +869,7 @@ export const NPCS: NpcDef[] = [
     description: '서른여섯 살. 여기서는 빈틈이 없다. 집에서는 아마 아닐 것이다.',
     avatar: '🧘',
     likes: ['healthy', 'sport'],
+    loves: ['training_band', 'food_carrot_soup'],
     shopId: null,
     dialogues: [
       { text: '어깨 내려요. 지금 올라가 있어요.' },
@@ -888,7 +910,8 @@ export const NPCS: NpcDef[] = [
     role: '타코야끼 푸드트럭',
     description: '서른두 살. 농담이 많고 느긋하다. 예전 얘기는 잘 안 하지만 부끄러워하지도 않는다.',
     avatar: '🐙',
-    likes: ['sweet', 'art'],
+    likes: ['art', 'collectible', 'sweet'],
+    loves: ['vintage_ribbon', 'training_band'],
     shopId: null,
     dialogues: [
       { text: '어서 와요. 여섯 개? 열두 개?' },
@@ -925,7 +948,8 @@ export const NPCS: NpcDef[] = [
     role: '심야영화관 직원',
     description: '스물여덟 살. 늘 웃는다. 커피가 늘어나는 날이 있는데 그날도 웃는다.',
     avatar: '🎬',
-    likes: ['coffee', 'sweet'],
+    likes: ['sweet', 'cozy', 'moon'],
+    loves: ['night_ticket', 'cozy_scarf'],
     shopId: null,
     dialogues: [
       { text: '어서 오세요! 오늘 마지막 회차 자리 많아요.' },
@@ -963,6 +987,7 @@ export const NPCS: NpcDef[] = [
     description: '서른네 살. 할 말은 하는 사람. 정작 자기가 힘들다는 말은 잘 못 한다.',
     avatar: '💼',
     likes: ['coffee', 'healthy'],
+    loves: ['focus_coffee', 'food_tomato_pasta'],
     shopId: null,
     dialogues: [
       { text: '퇴근했어요. 그 말이 이렇게 좋을 일인가 싶고.' },
@@ -998,7 +1023,8 @@ export const NPCS: NpcDef[] = [
     role: '편의점 야간',
     description: '스물아홉 살. 웬만한 일에는 안 놀란다. 밤에만 보인다.',
     avatar: '🌘',
-    likes: ['moon', 'book'],
+    likes: ['moon', 'book', 'nature'],
+    loves: ['moon_keyring', 'green_charm'],
     shopId: null,
     nightOnly: true,
     dialogues: [
@@ -1042,6 +1068,18 @@ export function npcsInArea(areaId: string): NpcDef[] {
 }
 
 export const NPC_ID_LIST: NpcId[] = NPCS.map((n) => n.id)
+
+/**
+ * 지금 실제로 쓰이고 있는 선물 결.
+ *
+ * 아무도 안 좋아하는 결이 아이템에만 붙어 있거나, 아무 아이템에도 없는
+ * 결을 사람이 좋아하고 있으면 그건 영원히 안 맞는 취향이다.
+ * 세는 건 아이템 · 음식 쪽이다 — 사람이 아니라 물건이 기준이다.
+ */
+export const GIFT_TAGS_IN_USE: ReadonlySet<GiftTag> = new Set([
+  ...ITEMS.flatMap((item) => item.giftTags ?? []),
+  ...KITCHEN_RECIPES.flatMap((recipe) => recipe.giftTags),
+])
 
 // ── 친밀도 ──────────────────────────────────────────────
 

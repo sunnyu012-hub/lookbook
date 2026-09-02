@@ -16,9 +16,13 @@ import {
 import {
   GIFT_FRIENDSHIP,
   GIFT_LIKED_FRIENDSHIP,
+  GIFT_LOVED_FRIENDSHIP,
+  NPC_QUEST_FRIENDSHIP,
   TALK_FRIENDSHIP,
   emptyNpcState,
-  giftGain,
+  giftPreferenceFor,
+  giftOutcome,
+  giftedToday,
   isGiftable,
   talkGain,
   talkedToday,
@@ -341,20 +345,41 @@ describe('친밀도', () => {
     expect(talkGain(emptyNpcState(), '2026-08-22', bonuses)).toBe(TALK_FRIENDSHIP + 2)
   })
 
-  it('좋아하는 선물이 더 많이 오른다', () => {
+  it('선물은 셋으로 갈린다 — 콕 집은 것 · 결이 맞는 것 · 나머지', () => {
     const mina = findNpc('MINA')!
-    const coffee = findItem('focus_coffee')!
-    const sneakers = findItem('daily_sneakers')!
+    const mug = findItem('favorite_mug')! // loves 에 이름이 있다
+    const scarf = findItem('cozy_scarf')! // cozy — 결만 맞는다
+    const band = findItem('training_band')! // sport — 하루와는 상관없다
 
-    expect(giftGain(mina, coffee, emptyBonuses())).toBe(GIFT_LIKED_FRIENDSHIP)
-    expect(giftGain(mina, sneakers, emptyBonuses())).toBe(GIFT_FRIENDSHIP)
+    expect(giftPreferenceFor(mina, mug)).toBe('LOVE')
+    expect(giftPreferenceFor(mina, scarf)).toBe('LIKE')
+    expect(giftPreferenceFor(mina, band)).toBe('NEUTRAL')
+
+    const b = emptyBonuses()
+    expect(giftOutcome(mina, mug.id, mug.giftTags ?? [], b).gained).toBe(GIFT_LOVED_FRIENDSHIP)
+    expect(giftOutcome(mina, scarf.id, scarf.giftTags ?? [], b).gained).toBe(GIFT_LIKED_FRIENDSHIP)
+    expect(giftOutcome(mina, band.id, band.giftTags ?? [], b).gained).toBe(GIFT_FRIENDSHIP)
+  })
+
+  it('선물은 인사보다 크지 않다 — 사서 돌리는 게 최적이 되면 안 된다', () => {
+    expect(GIFT_LOVED_FRIENDSHIP).toBeLessThanOrEqual(NPC_QUEST_FRIENDSHIP)
+    expect(GIFT_FRIENDSHIP).toBeLessThan(TALK_FRIENDSHIP)
   })
 
   it('친밀도 보너스는 선물에도 붙는다', () => {
     const mina = findNpc('MINA')!
-    const coffee = findItem('focus_coffee')!
-    const bonuses = { ...emptyBonuses(), friendshipPct: 10 }
-    expect(giftGain(mina, coffee, bonuses)).toBe(11)
+    const mug = findItem('favorite_mug')!
+    const bonuses = { ...emptyBonuses(), friendshipPct: 100 }
+    expect(giftOutcome(mina, mug.id, mug.giftTags ?? [], bonuses).gained).toBe(
+      GIFT_LOVED_FRIENDSHIP * 2,
+    )
+  })
+
+  it('하루에 한 사람당 한 번이다', () => {
+    const state = { ...emptyNpcState(), lastGiftedOn: '2026-08-22' }
+    expect(giftedToday(state, '2026-08-22')).toBe(true)
+    expect(giftedToday(state, '2026-08-23')).toBe(false)
+    expect(giftedToday(emptyNpcState(), '2026-08-22')).toBe(false)
   })
 
   it('선물할 수 있는 물건이 정해져 있다', () => {

@@ -16,7 +16,7 @@ import { RarityBadge } from '@/components/rpg/RarityBadge'
 import { FriendshipMeter } from '@/components/city/CityBadges'
 import { findItem } from '@/lib/rpg/content'
 import { meetsLevel } from '@/lib/city/npcs'
-import { isGiftable, isLikedGift, talkedToday } from '@/lib/city/friendship'
+import { giftedToday, isGiftable, talkedToday } from '@/lib/city/friendship'
 import { pickDialogue } from '@/lib/city/dialogue'
 import { npcAreaNow } from '@/lib/city/routine'
 import { timeBand } from '@/lib/rpg/time'
@@ -38,6 +38,9 @@ interface NpcSheetProps {
   onTalk: () => void
   onAcceptChain: (chain: NpcQuestChainDef) => void
   onGift: (itemId: string) => void
+  /** 방금 건넨 것에 그 사람이 한 말. 아직 안 건넸으면 null. */
+  giftReaction: { line: string; leveledUp: boolean } | null
+  onDismissGift: () => void
   onOpenShop: () => void
   /** 이 사람 이야기를 몇 장까지 읽었는지 */
   story: { read: number; total: number } | null
@@ -47,7 +50,7 @@ interface NpcSheetProps {
   /** 정원이 어디까지 열렸는지. 못 찾았으면 0 — 그 얘기는 아예 안 꺼낸다. */
   gardenLevel?: number
   /** 부엌에서 만들어둔 음식. 못 열었으면 빈 배열. */
-  foods?: Array<{ itemId: string; name: string; icon: string; count: number; liked: boolean }>
+  foods?: Array<{ itemId: string; name: string; icon: string; count: number }>
 }
 
 /**
@@ -68,6 +71,8 @@ export function NpcSheet({
   onTalk,
   onAcceptChain,
   onGift,
+  giftReaction,
+  onDismissGift,
   onOpenShop,
   story,
   storyReady,
@@ -193,7 +198,10 @@ export function NpcSheet({
             inventory={inventory}
             equippedIds={equippedIds}
             foods={foods}
+            alreadyGifted={giftedToday(npcState, todayKey())}
+            reaction={giftReaction}
             onGift={onGift}
+            onDismissReaction={onDismissGift}
           />
         )}
       </div>
@@ -364,19 +372,38 @@ function QuestTab({
   )
 }
 
+/**
+ * 뭔가 하나 건네는 자리.
+ *
+ * ── 정답표를 보여주지 않는다 ──────────────────────────
+ *
+ * 예전에는 위에 "하루 — coffee · book · sweet 쪽을 좋아해" 라고 적고,
+ * 물건마다 `💗 +10` / `좋아할 듯` 을 달아뒀다. 그러면 고르는 일이 아니라
+ * 읽는 일이 된다 — 화면이 답을 알려주는데 누가 짐작을 하겠나.
+ * 지금은 아무 힌트도 없다. 건네보고 그 사람이 하는 말로 안다.
+ *
+ * 하루에 한 사람당 하나만 건넨다. 두 번째부터 막는 건 아껴서가 아니라,
+ * 안 오르는 걸 알면서 물건만 사라지게 두면 함정이기 때문이다.
+ */
 function GiftTab({
   npc,
   inventory,
   equippedIds,
   foods,
+  alreadyGifted,
+  reaction,
   onGift,
+  onDismissReaction,
 }: {
   npc: NpcDef
   inventory: InventoryEntry[]
   equippedIds: Set<string>
   /** 부엌에서 만들어둔 음식 */
-  foods: Array<{ itemId: string; name: string; icon: string; count: number; liked: boolean }>
+  foods: Array<{ itemId: string; name: string; icon: string; count: number }>
+  alreadyGifted: boolean
+  reaction: { line: string; leveledUp: boolean } | null
   onGift: (itemId: string) => void
+  onDismissReaction: () => void
 }) {
   const rows = useMemo(
     () =>
@@ -385,17 +412,47 @@ function GiftTab({
         .filter((r): r is { entry: InventoryEntry; def: ItemDef } => r.def !== null)
         .filter((r) => isGiftable(r.def))
         // 끼고 있는 건 주지 않는다. 실수로 벗겨지면 놀란다.
-        .filter((r) => !equippedIds.has(r.def.id))
-        .sort((a, b) => Number(isLikedGift(npc, b.def)) - Number(isLikedGift(npc, a.def))),
-    [inventory, equippedIds, npc],
+        .filter((r) => !equippedIds.has(r.def.id)),
+    [inventory, equippedIds],
   )
+
+  // 방금 건넨 뒤. 숫자 대신 그 사람 얼굴과 한 마디만 남긴다.
+  if (reaction) {
+    return (
+      <div>
+        <div className="flex items-start gap-3">
+          <NpcFace id={npc.id} avatar={npc.avatar} size={56} />
+          <div className="relative min-w-0 flex-1 rounded-card bg-canvas px-4 py-3.5">
+            <span
+              aria-hidden
+              className="absolute -left-1.5 top-5 h-3 w-3 rotate-45 rounded-[2px] bg-canvas"
+            />
+            <p className="text-[14.5px] leading-relaxed text-ink">{reaction.line}</p>
+          </div>
+        </div>
+        <p className="mt-3 text-center text-[12.5px] text-inkdim">
+          {reaction.leveledUp ? '조금 더 가까워진 것 같다.' : '조금 가까워진 것 같다.'}
+        </p>
+        <Button size="lg" variant="quiet" className="mt-4 w-full" onClick={onDismissReaction}>
+          돌아가기
+        </Button>
+      </div>
+    )
+  }
+
+  if (alreadyGifted) {
+    return (
+      <div className="rounded-card border border-dashed border-line px-4 py-6 text-center">
+        <p className="text-[13.5px] text-ink">오늘은 이미 하나 받았어.</p>
+        <p className="mt-1 text-[12.5px] text-inkfaint">
+          다음에 또 와. 안 와도 어디 안 가고 여기 있어.
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div>
-      <p className="mb-3 text-[13px] leading-relaxed text-inkdim">
-        {npc.name} — {npc.likes.join(' · ')} 쪽을 좋아해.
-      </p>
-
       {/* 만들어둔 음식. 가방 물건과 나란히 두지 않고 위에 따로 둔다 —
           직접 만든 걸 주는 건 조금 다른 일이다. */}
       {foods.length > 0 && (
@@ -406,9 +463,8 @@ function GiftTab({
                 type="button"
                 onClick={() => onGift(food.itemId)}
                 className={cn(
-                  'flex w-full items-center gap-3 rounded-card border px-3.5 py-3 text-left',
+                  'flex w-full items-center gap-3 rounded-card border border-line bg-surface px-3.5 py-3 text-left',
                   'transition-transform duration-150 ease-out active:scale-[0.98]',
-                  food.liked ? 'border-coral bg-coral-soft/40' : 'border-line bg-surface',
                 )}
               >
                 <span className="text-[24px] leading-none">{food.icon}</span>
@@ -420,11 +476,9 @@ function GiftTab({
                     직접 만든 것 · {food.count}개
                   </span>
                 </span>
-                {food.liked && (
-                  <span className="shrink-0 rounded-pill bg-coral-soft px-2 py-0.5 text-[10.5px] text-coral-deep">
-                    좋아할 듯
-                  </span>
-                )}
+                <span className="shrink-0 rounded-pill bg-sunken px-2.5 py-1 text-[11px] font-medium text-inkdim">
+                  건네기
+                </span>
               </button>
             </li>
           ))}
@@ -440,40 +494,36 @@ function GiftTab({
         </div>
       ) : (
         <ul className="space-y-2">
-          {rows.map(({ entry, def }) => {
-            const liked = isLikedGift(npc, def)
-            return (
-              <li key={def.id}>
-                <button
-                  type="button"
-                  onClick={() => onGift(def.id)}
-                  className={cn(
-                    'flex w-full items-center gap-3 rounded-card border px-3.5 py-3 text-left',
-                    'transition-transform duration-150 ease-out active:scale-[0.98]',
-                    liked ? 'border-rose/60 bg-rose-soft/30' : 'border-line bg-surface',
-                  )}
-                >
-                  <span className="text-[24px] leading-none">{def.icon}</span>
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-1.5">
-                      <span className="truncate text-[14px] font-medium text-ink">{def.name}</span>
-                      {entry.quantity > 1 && (
-                        <span className="shrink-0 font-game text-[10px] text-inkfaint">
-                          ×{entry.quantity}
-                        </span>
-                      )}
-                    </span>
-                    <span className="mt-0.5 block text-[11.5px] text-inkdim">
-                      {liked ? '좋아할 것 같아 · 💗 +10' : '💗 +5'}
-                    </span>
+          {rows.map(({ entry, def }) => (
+            <li key={def.id}>
+              <button
+                type="button"
+                onClick={() => onGift(def.id)}
+                className={cn(
+                  'flex w-full items-center gap-3 rounded-card border border-line bg-surface px-3.5 py-3 text-left',
+                  'transition-transform duration-150 ease-out active:scale-[0.98]',
+                )}
+              >
+                <span className="text-[24px] leading-none">{def.icon}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-1.5">
+                    <span className="truncate text-[14px] font-medium text-ink">{def.name}</span>
+                    {entry.quantity > 1 && (
+                      <span className="shrink-0 font-game text-[10px] text-inkfaint">
+                        ×{entry.quantity}
+                      </span>
+                    )}
                   </span>
-                  <span className="shrink-0 rounded-pill bg-sunken px-2.5 py-1 text-[11px] font-medium text-inkdim">
-                    주기
+                  <span className="mt-0.5 block truncate text-[11.5px] text-inkdim">
+                    {def.description}
                   </span>
-                </button>
-              </li>
-            )
-          })}
+                </span>
+                <span className="shrink-0 rounded-pill bg-sunken px-2.5 py-1 text-[11px] font-medium text-inkdim">
+                  건네기
+                </span>
+              </button>
+            </li>
+          ))}
         </ul>
       )}
     </div>
