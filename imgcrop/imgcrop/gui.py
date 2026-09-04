@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import os
 import queue
+import subprocess
+import sys
 import threading
 import traceback
 from pathlib import Path
@@ -14,15 +17,15 @@ from PIL import Image, ImageTk
 
 from .core import (
     SUPPORTED_INPUTS,
+    preset,
     Detection,
     Settings,
     collect_images,
     detect,
     load_rgba,
-    output_name,
     padded_box,
     parse_color,
-    render_element,
+    process_file,
 )
 
 SPLIT_MODES = [
@@ -34,6 +37,7 @@ SPLIT_MODES = [
 ]
 OUTPUT_MODES = [("원본 크기 그대로", "tight"), ("정사각형", "square"), ("크기 고정", "fixed")]
 BOX_COLORS = ("#ff3b30", "#007aff", "#34c759", "#ff9500", "#af52de", "#00c7be")
+DEFAULT_OUT_LABEL = "원본 옆 <이름>_cut 폴더"
 
 
 class App:
@@ -61,7 +65,8 @@ class App:
     # ------------------------------------------------------------------ 설정 값
 
     def _build_vars(self) -> None:
-        d = Settings()
+        # GUI는 가장 자주 쓰는 형태(배경 지운 투명 PNG, 원본 크기)로 시작한다
+        d = preset("cutout")
         self.v_split = tk.StringVar(value=d.split_mode)
         self.v_cols = tk.IntVar(value=d.grid_cols)
         self.v_rows = tk.IntVar(value=d.grid_rows)
@@ -86,6 +91,8 @@ class App:
         self.v_format = tk.StringVar(value=d.image_format)
         self.v_name = tk.StringVar(value=d.name_template)
         self.v_status = tk.StringVar(value="이미지를 추가하세요.")
+        self.v_out_dir = tk.StringVar(value="")        # 비어 있으면 원본 옆에 저장
+        self.v_out_label = tk.StringVar(value=DEFAULT_OUT_LABEL)
 
     @staticmethod
     def _number(var, fallback, cast=int):
@@ -164,10 +171,25 @@ class App:
         ttk.Button(buttons, text="모두 비우기", command=self.clear_files).pack(fill="x", pady=1)
 
         ttk.Separator(parent).pack(fill="x", pady=8)
-        ttk.Button(parent, text="현재 이미지 저장", command=lambda: self.save(all_files=False)).pack(fill="x", pady=1)
-        save_all = ttk.Button(parent, text="전체 저장", command=lambda: self.save(all_files=True))
-        save_all.pack(fill="x", pady=1)
-        save_all.configure(style="Accent.TButton")
+
+        ttk.Label(parent, text="저장 위치").pack(anchor="w")
+        ttk.Label(parent, textvariable=self.v_out_label, foreground="#555555",
+                  wraplength=210, justify="left").pack(anchor="w", pady=(0, 3))
+        folder_row = ttk.Frame(parent)
+        folder_row.pack(fill="x", pady=(0, 6))
+        ttk.Button(folder_row, text="폴더 바꾸기", command=self.pick_out_dir).pack(side="left", expand=True, fill="x")
+        ttk.Button(folder_row, text="기본값", command=self.reset_out_dir).pack(side="left", padx=(3, 0))
+
+        self.save_one_button = ttk.Button(parent, text="이 이미지 자르기",
+                                          command=lambda: self.save(all_files=False))
+        self.save_one_button.pack(fill="x", pady=1)
+        self.save_all_button = ttk.Button(parent, text="전부 자르기",
+                                          command=lambda: self.save(all_files=True),
+                                          style="Accent.TButton")
+        self.save_all_button.pack(fill="x", pady=1)
+        self.open_button = ttk.Button(parent, text="저장한 폴더 열기",
+                                      command=self.open_last_folder, state="disabled")
+        self.open_button.pack(fill="x", pady=(6, 1))
 
     def _build_preview(self, parent: ttk.Frame) -> None:
         header = ttk.Frame(parent)
@@ -453,10 +475,51 @@ class App:
 
     # ------------------------------------------------------------------- 저장
 
+    # ------------------------------------------------------------- 저장 위치
+
+    def default_out_dir(self, source: Path) -> Path:
+        """따로 정하지 않았으면 원본 옆에 <이름>_cut 폴더를 만든다."""
+        return source.parent / f"{source.stem}_cut"
+
+    def out_dir_for(self, source: Path) -> Path:
+        chosen = self.v_out_dir.get().strip()
+        return Path(chosen) if chosen else self.default_out_dir(source)
+
+    def pick_out_dir(self) -> None:
+        start = self.paths[0].parent if self.paths else None
+        folder = filedialog.askdirectory(title="저장할 폴더 선택",
+                                         initialdir=str(start) if start else None)
+        if folder:
+            self.v_out_dir.set(folder)
+            self.v_out_label.set(folder)
+
+    def reset_out_dir(self) -> None:
+        self.v_out_dir.set("")
+        self.v_out_label.set(DEFAULT_OUT_LABEL)
+
+    def open_last_folder(self) -> None:
+        folder = getattr(self, "last_saved_dir", None)
+        if not folder or not Path(folder).exists():
+            return
+        try:
+            if sys.platform.startswith("win"):
+                os.startfile(folder)  # noqa: S606 - 사용자가 방금 저장한 폴더
+            elif sys.platform == "darwin":
+                subprocess.Popen(["open", str(folder)])
+            else:
+                subprocess.Popen(["xdg-open", str(folder)])
+        except Exception as exc:
+            messagebox.showinfo("폴더 열기", f"폴더를 열지 못했습니다.\n{folder}\n\n{exc}")
+
+    # ------------------------------------------------------------------- 저장
+
     def save(self, all_files: bool) -> None:
+        if getattr(self, "saving", False):
+            return
         targets = self.paths if all_files else ([self.current_path()] if self.current_path() else [])
+        targets = [t for t in targets if t]
         if not targets:
-            messagebox.showinfo("저장", "먼저 이미지를 추가하세요.")
+            messagebox.showinfo("자르기", "먼저 이미지를 추가하세요.")
             return
 
         settings = self.settings()
@@ -466,43 +529,67 @@ class App:
             messagebox.showerror("배경색 오류", str(exc))
             return
 
-        out_dir = filedialog.askdirectory(
-            title="저장할 폴더 선택", initialdir=str(targets[0].parent)
-        )
-        if not out_dir:
+        self.saving = True
+        for button in (self.save_one_button, self.save_all_button):
+            button.configure(state="disabled")
+        self.v_status.set(f"자르는 중… (0/{len(targets)})")
+
+        # tkinter 변수는 메인 스레드에서만 읽어야 한다.
+        # 워커 안에서 out_dir_for()를 부르면 그대로 멈춰 버린다.
+        jobs = [(path, self.out_dir_for(path)) for path in targets]
+
+        def work() -> None:
+            saved, failed, folders = 0, [], []
+            for i, (path, folder) in enumerate(jobs, start=1):
+                try:
+                    _, written = process_file(path, folder, settings)
+                    saved += len(written)
+                    if folder not in folders:
+                        folders.append(folder)
+                except Exception as exc:
+                    failed.append(f"{path.name}: {exc}")
+                self.save_progress.put((i, len(jobs)))
+            self.save_done.put((saved, failed, folders))
+
+        self.save_progress = queue.Queue()
+        self.save_done = queue.Queue()
+        threading.Thread(target=work, daemon=True).start()
+        self.root.after(80, self._poll_save)
+
+    def _poll_save(self) -> None:
+        try:
+            while True:
+                done, total = self.save_progress.get_nowait()
+                self.v_status.set(f"자르는 중… ({done}/{total})")
+        except queue.Empty:
+            pass
+
+        try:
+            saved, failed, folders = self.save_done.get_nowait()
+        except queue.Empty:
+            self.root.after(80, self._poll_save)
             return
 
-        self.v_status.set("저장 중…")
-        self.root.update_idletasks()
+        self.saving = False
+        for button in (self.save_one_button, self.save_all_button):
+            button.configure(state="normal")
 
-        saved, failed = 0, []
-        for path in targets:
-            try:
-                rgba = load_rgba(path)
-                result = detect(rgba, settings, path=path)
-                folder = Path(out_dir)
-                folder.mkdir(parents=True, exist_ok=True)
-                for element in result.elements:
-                    image = render_element(result, element, settings)
-                    name = output_name(path.stem, element.index, len(result.elements), settings)
-                    params = {}
-                    if settings.image_format.lower() in ("jpg", "jpeg", "webp"):
-                        params["quality"] = settings.jpeg_quality
-                    image.save(folder / name, **params)
-                    saved += 1
-            except Exception as exc:
-                failed.append(f"{path.name}: {exc}")
+        if folders:
+            self.last_saved_dir = folders[0]
+            self.open_button.configure(state="normal")
 
-        self.v_status.set(f"{saved}개 저장 완료 -> {out_dir}")
+        where = str(folders[0]) if len(folders) == 1 else f"{len(folders)}개 폴더"
+        self.v_status.set(f"{saved}개 저장 완료 -> {where}")
         if failed:
             messagebox.showwarning("일부 실패", "\n".join(failed[:10]))
+        elif saved:
+            messagebox.showinfo("완료", f"요소 {saved}개를 저장했습니다.\n\n{where}")
         else:
-            messagebox.showinfo("저장 완료", f"요소 {saved}개를 저장했습니다.\n{out_dir}")
+            messagebox.showinfo("완료", "잘라낼 요소를 찾지 못했습니다.\n"
+                                        "왼쪽 설정에서 임계값이나 최소 크기를 조절해 보세요.")
 
 
 def main(argv: list[str] | None = None) -> int:
-    import sys
-
     root = tk.Tk()
     try:
         root.call("source", "sun-valley.tcl")  # 있으면 쓰고 없으면 기본 테마

@@ -28,13 +28,28 @@ pip install .
 
 ## 실행
 
-**GUI** — 설정을 바꾸면 검출 결과가 바로 미리보기에 그려집니다.
+**GUI** — 이미지를 넣고 버튼 하나 누르면 끝납니다.
 
 ```bash
 python -m imgcrop
 ```
 
 윈도우는 `run-gui.bat`, macOS/리눅스는 `run-gui.sh` 를 실행해도 됩니다.
+
+쓰는 순서는 이렇습니다.
+
+1. **파일 추가** 또는 **폴더 추가** 로 이미지를 넣습니다
+2. 검출된 요소가 번호와 함께 미리보기에 바로 표시됩니다
+3. **전부 자르기** 를 누릅니다
+
+저장 위치를 따로 정하지 않으면 **원본 옆에 `<이름>_cut` 폴더**를 만들어 넣습니다.
+`sheet.png` 를 자르면 `sheet_cut/sheet_01.png`, `sheet_02.png` … 로 저장됩니다.
+다른 곳에 넣고 싶으면 **폴더 바꾸기**, 되돌리려면 **기본값** 을 누릅니다.
+저장이 끝나면 **저장한 폴더 열기** 로 결과를 바로 확인할 수 있습니다.
+
+GUI는 가장 자주 쓰는 형태 — **배경을 지운 투명 PNG, 잘린 크기 그대로** — 로 시작합니다.
+크기를 고정하거나 배경을 남기고 싶으면 오른쪽 설정에서 바꾸면 되고,
+바꾸는 즉시 미리보기에 반영됩니다.
 
 **CLI**
 
@@ -171,6 +186,14 @@ for element in result.elements:
 python -m unittest discover -s tests
 ```
 
+GUI 테스트는 tkinter나 화면이 없으면 알아서 건너뜁니다. 헤드리스 환경에서 함께 돌리려면
+가상 디스플레이를 띄운 뒤 실행하세요.
+
+```bash
+Xvfb :99 -screen 0 1400x900x24 &
+DISPLAY=:99 python -m unittest discover -s tests
+```
+
 ## 구조
 
 ```
@@ -183,6 +206,8 @@ imgcrop/
 │   ├── cli.py        명령줄 인터페이스
 │   └── gui.py        tkinter GUI
 └── tests/
+    ├── test_imgcrop.py  검출/크롭/저장 파이프라인
+    └── test_gui.py      GUI (화면이 없으면 건너뜀)
 ```
 
 라벨링은 numpy만으로 구현되어 있어 OpenCV나 scipy가 필요 없습니다. 6MP 이미지 기준 0.2초 정도입니다.
