@@ -25,6 +25,7 @@ class Settings:
     edge_barrier: float = 1.0         # 경계 장벽 강도(0=끔). 배경과 색이 비슷한 피사체에 필요
     connectivity: int = 8
     min_area_ratio: float = 0.0005    # 전체 면적 대비 최소 요소 크기
+    min_relative_area: float = 0.08   # 다른 요소들의 중앙값 대비 이 비율보다 작으면 버림 (0이면 끔)
     min_side: int = 8                 # 요소 최소 변 길이(px)
     merge_gap: int = 0                # 이 간격 이내의 요소는 하나로 합침(px)
     separation: int = 0               # 맞닿은 요소를 떼어낼 강도(px). 다리 폭 2*n 이하를 끊는다
@@ -226,6 +227,24 @@ def _refine_oversized(groups: list[tuple], mask: np.ndarray, settings: Settings)
     return refined
 
 
+def _drop_outlier_specks(groups: list[tuple], ratio: float) -> list[tuple]:
+    """다른 요소들에 비해 유독 작은 조각을 버린다.
+
+    시트 옆에 붙은 이름표, 반짝임 표시, 떨어져 나온 장식 조각처럼
+    "요소로 셀 만한 것"이 아닌 것들이 여기서 걸러진다. 기준을 절대 크기가
+    아니라 다른 요소들의 중앙값에 두기 때문에, 이미지 해상도가 달라져도
+    똑같이 동작한다.
+    """
+    if ratio <= 0 or len(groups) < 3:
+        return groups
+    areas = sorted((g[2] - g[0]) * (g[3] - g[1]) for g in groups)
+    median = areas[len(areas) // 2]
+    if median <= 0:
+        return groups
+    kept = [g for g in groups if (g[2] - g[0]) * (g[3] - g[1]) >= ratio * median]
+    return kept if kept else groups
+
+
 def detect(
     rgba: np.ndarray,
     settings: Settings,
@@ -285,6 +304,9 @@ def detect(
             groups = _refine_oversized(groups, mask, settings)
     else:
         raise ValueError(f"알 수 없는 분할 모드: {mode}")
+
+    if mode != "none":
+        groups = _drop_outlier_specks(groups, settings.min_relative_area)
 
     # 위 -> 아래, 왼쪽 -> 오른쪽 (읽는 순서)
     if groups:

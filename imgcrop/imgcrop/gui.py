@@ -69,6 +69,7 @@ class App:
         self.v_tol = tk.IntVar(value=32)
         self.v_edge = tk.DoubleVar(value=d.edge_barrier)
         self.v_min_area = tk.DoubleVar(value=d.min_area_ratio * 100.0)  # %
+        self.v_min_rel = tk.DoubleVar(value=d.min_relative_area * 100.0)  # %
         self.v_separation = tk.IntVar(value=d.separation)
         self.v_merge = tk.IntVar(value=d.merge_gap)
         self.v_denoise = tk.IntVar(value=d.denoise)
@@ -100,6 +101,7 @@ class App:
             denoise=self._number(self.v_denoise, 1),
             edge_barrier=self._number(self.v_edge, 1.0, float),
             min_area_ratio=max(0.0, self._number(self.v_min_area, 0.05, float) / 100.0),
+            min_relative_area=max(0.0, self._number(self.v_min_rel, 8.0, float) / 100.0),
             merge_gap=self._number(self.v_merge, 0),
             separation=self._number(self.v_separation, 0),
             split_mode=self.v_split.get(),
@@ -221,6 +223,7 @@ class App:
         self.tol_scale = self._scale(detect_box, "임계값 (클수록 배경으로 판정)", self.v_tol, 6, 140, 1)
         self._scale(detect_box, "경계 장벽 (배경과 색이 비슷할 때 ↑)", self.v_edge, 0, 2.0, 0.1)
         self._scale(detect_box, "최소 요소 크기 (%)", self.v_min_area, 0, 3.0, 0.01)
+        self._scale(detect_box, "작은 조각 버리기 (중앙값 대비 %)", self.v_min_rel, 0, 60, 1)
         self._scale(detect_box, "붙은 요소 떼어내기 (px)", self.v_separation, 0, 20, 1)
         self._scale(detect_box, "가까운 요소 합치기 (px)", self.v_merge, 0, 120, 1)
         self._scale(detect_box, "잡티 제거 (px)", self.v_denoise, 0, 8, 1)

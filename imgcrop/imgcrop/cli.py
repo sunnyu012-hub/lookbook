@@ -44,6 +44,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="경계 장벽 강도, 0이면 끔 (기본: 1.0)")
     g.add_argument("--min-area", type=float, metavar="R",
                    help="전체 대비 최소 요소 크기 비율 (기본: 0.0005)")
+    g.add_argument("--min-relative-area", type=float, metavar="R",
+                   help="다른 요소 중앙값 대비 이 비율보다 작은 조각은 버림 (기본: 0.08, 0이면 끔)")
     g.add_argument("--merge-gap", type=int, metavar="PX",
                    help="이 간격 이내 요소를 하나로 합침")
     g.add_argument("--separation", type=int, metavar="PX",
@@ -91,6 +93,8 @@ def settings_from_args(args: argparse.Namespace) -> Settings:
         s.edge_barrier = args.edge_barrier
     if args.min_area is not None:
         s.min_area_ratio = args.min_area
+    if args.min_relative_area is not None:
+        s.min_relative_area = args.min_relative_area
     if args.merge_gap is not None:
         s.merge_gap = args.merge_gap
     if args.separation is not None:

@@ -42,6 +42,9 @@ python -m imgcrop
 # 요소별로 잘라 out 폴더에 저장
 python -m imgcrop sheet.png -o out
 
+# 이름표까지 전부 남기고 싶을 때
+python -m imgcrop sheet.png -o out --min-relative-area 0
+
 # 배경을 지우고 투명 PNG로
 python -m imgcrop sheet.png -o out --preset cutout
 
@@ -94,6 +97,10 @@ python -m imgcrop sheet.png --dry-run
 | `grid` | 지정한 열 x 행으로 균등 분할한 뒤 칸마다 여백 제거 |
 | `none` | 나누지 않고 전체 여백만 제거 |
 
+묶은 뒤에는 **다른 요소들보다 유독 작은 조각을 버립니다.** 기준을 절대 크기가 아니라 다른 요소들의
+중앙값에 두기 때문에, 캐릭터 시트의 이름 텍스트나 반짝임 표시 같은 것이 해상도와 무관하게 자동으로
+빠집니다. 작은 요소까지 전부 남기려면 `--min-relative-area 0` 을 씁니다.
+
 결과는 위에서 아래, 왼쪽에서 오른쪽 순(읽는 순서)으로 번호가 붙습니다.
 
 ## 주요 옵션
@@ -107,6 +114,7 @@ python -m imgcrop sheet.png --dry-run
 | `--tolerance N\|auto` | 배경 판정 임계값. 클수록 더 많이 배경으로 봅니다 |
 | `--edge-barrier F` | 경계 장벽 강도. 배경과 피사체 색이 비슷할 때 올립니다 (0이면 끔) |
 | `--min-area R` | 전체 면적 대비 최소 요소 크기. 티끌을 걸러냅니다 |
+| `--min-relative-area R` | 다른 요소들의 중앙값 대비 이 비율보다 작은 조각을 버립니다 (기본 0.08). 이름표, 반짝임 표시, 떨어져 나온 장식 조각이 여기서 걸러집니다. `0` 이면 끕니다 |
 | `--merge-gap PX` | 이 간격 이내의 조각을 하나로 합칩니다 (이름표를 캐릭터에 붙일 때) |
 | `--separation PX` | 가늘게 붙은 요소를 떼어냅니다 |
 

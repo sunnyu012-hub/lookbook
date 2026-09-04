@@ -141,8 +141,29 @@ class DetectTests(unittest.TestCase):
     def test_min_area_filters_specks(self):
         blocks = self.blocks + [(300, 250, 310, 260, (0, 0, 0))]  # 100px 짜리 티끌
         image = np.asarray(sheet_with_blocks(blocks).convert("RGBA"))
-        self.assertEqual(len(detect(image, Settings(min_area_ratio=0.0)).elements), 4)
-        self.assertEqual(len(detect(image, Settings(min_area_ratio=0.002)).elements), 3)
+        loose = Settings(min_area_ratio=0.0, min_relative_area=0.0)
+        self.assertEqual(len(detect(image, loose).elements), 4)
+        strict = Settings(min_area_ratio=0.002, min_relative_area=0.0)
+        self.assertEqual(len(detect(image, strict).elements), 3)
+
+    def test_relative_filter_drops_odd_one_out(self):
+        """이름표처럼 다른 요소보다 유독 작은 조각은 기본값에서 빠진다."""
+        # 다른 요소는 60x70(4200), 이 조각은 20x12(240) = 6%
+        blocks = self.blocks + [(300, 250, 320, 262, (0, 0, 0))]
+        image = np.asarray(sheet_with_blocks(blocks).convert("RGBA"))
+        self.assertEqual(len(detect(image, Settings()).elements), 3)
+        self.assertEqual(len(detect(image, Settings(min_relative_area=0.0)).elements), 4)
+
+    def test_relative_filter_keeps_evenly_sized_elements(self):
+        """크기가 고만고만하면 아무것도 버리지 않는다."""
+        blocks = [
+            (20, 20, 80, 90, (200, 30, 30)),
+            (150, 20, 205, 85, (30, 120, 200)),
+            (20, 150, 75, 215, (40, 160, 60)),
+            (150, 150, 210, 220, (240, 180, 20)),
+        ]
+        image = np.asarray(sheet_with_blocks(blocks).convert("RGBA"))
+        self.assertEqual(len(detect(image, Settings()).elements), 4)
 
     def test_grid_mode_uses_requested_cells(self):
         blocks = [
