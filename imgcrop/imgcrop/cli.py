@@ -25,7 +25,8 @@ def build_parser() -> argparse.ArgumentParser:
         epilog="""예시:
   imgcrop sheet.png -o out                     # 요소별로 잘라 저장
   imgcrop sheet.png -o out --preset cutout     # 배경 지우고 투명 PNG로
-  imgcrop sheet.png -o out --mode grid --grid 4x3
+  imgcrop sheet.png -o out --grid 4x3           # 격자대로 자르기
+  imgcrop sheet.png -o out --grid auto          # 격자 모양은 알아서
   imgcrop photo.jpg -o out --preset trim       # 여백만 제거
   imgcrop assets/ -o out -r --size 512x512     # 폴더 전체를 512x512로
 """,
@@ -38,7 +39,8 @@ def build_parser() -> argparse.ArgumentParser:
     g = p.add_argument_group("검출")
     g.add_argument("--mode", choices=("auto", "components", "xycut", "grid", "none"),
                    help="분할 방식 (기본: auto)")
-    g.add_argument("--grid", metavar="CxR", help="격자 분할 크기, 예: 4x3 (--mode grid)")
+    g.add_argument("--grid", metavar="CxR|auto",
+                   help="격자 분할 크기, 예: 4x3. auto 면 배치를 보고 추정합니다")
     g.add_argument("--tolerance", metavar="N|auto", help="배경 판정 임계값 (기본: auto)")
     g.add_argument("--edge-barrier", type=float, metavar="F",
                    help="경계 장벽 강도, 0이면 끔 (기본: 1.0)")
@@ -88,7 +90,10 @@ def settings_from_args(args: argparse.Namespace) -> Settings:
     if args.mode:
         s.split_mode = args.mode
     if args.grid:
-        s.grid_cols, s.grid_rows = _parse_pair(args.grid, "--grid")
+        if args.grid.strip().lower() == "auto":
+            s.grid_cols = s.grid_rows = 0
+        else:
+            s.grid_cols, s.grid_rows = _parse_pair(args.grid, "--grid")
         if not args.mode:
             s.split_mode = "grid"
     if args.tolerance:
@@ -163,7 +168,9 @@ def main(argv: list[str] | None = None) -> int:
             total += found
             if not args.quiet:
                 tol = d.info.get("tolerance", "-")
-                print(f"{path.name}: {found}개 (배경={d.info.get('source')}, 임계값={tol})")
+                grid = d.info.get("grid")
+                shape = f", 격자={grid[0]}x{grid[1]}" if grid else ""
+                print(f"{path.name}: {found}개 (배경={d.info.get('source')}, 임계값={tol}{shape})")
                 for element, (target, size) in zip(d.elements, written):
                     source = f"{element.width}x{element.height}"
                     final = f"{size[0]}x{size[1]}"

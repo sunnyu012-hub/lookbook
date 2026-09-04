@@ -24,7 +24,7 @@ from imgcrop.core import (
     render_element,
 )
 from imgcrop.labeling import label_components, label_separated
-from imgcrop.layout import grid_cells, xy_cut
+from imgcrop.layout import grid_cells, infer_grid, xy_cut
 from imgcrop.masking import border_connected, build_mask, dilate, erode
 
 
@@ -98,6 +98,14 @@ class LayoutTests(unittest.TestCase):
         self.assertEqual(len(cells), 6)
         self.assertEqual(cells[0], (0, 0, 50, 20))
         self.assertEqual(cells[-1], (50, 40, 100, 60))
+
+    def test_infer_grid_counts_rows_and_columns(self):
+        boxes = [(x, y, x + 60, y + 60)
+                 for y in (10, 110, 210)
+                 for x in (10, 110, 210, 310)]
+        self.assertEqual(infer_grid(boxes), (4, 3))
+        self.assertEqual(infer_grid([(10, 10, 70, 70)]), (1, 1))
+        self.assertEqual(infer_grid([]), (1, 1))
 
     def test_xy_cut_splits_touching_rows(self):
         mask = np.zeros((200, 100), bool)
@@ -269,6 +277,25 @@ class DetectTests(unittest.TestCase):
         result = detect(image, Settings(edge_barrier=0.0))
         self.assertEqual(len(result.elements), 2)
         self.assertEqual(result.elements[0].box, (40, 26, 200, 200))
+
+    def test_grid_auto_infers_shape(self):
+        """grid_cols/rows 를 0으로 두면 배치를 보고 격자 모양을 정한다."""
+        blocks = [
+            (x, y, x + 60, y + 60, (200, 30, 30))
+            for y in (20, 140, 260)
+            for x in (20, 130, 240, 350)
+        ]
+        image = np.asarray(sheet_with_blocks(blocks, size=(440, 360)).convert("RGBA"))
+        result = detect(image, Settings(split_mode="grid", grid_cols=0, grid_rows=0))
+        self.assertEqual(result.info["grid"], (4, 3))
+        self.assertEqual(len(result.elements), 12)
+
+    def test_grid_keeps_explicit_shape(self):
+        blocks = [(20, 20, 80, 80, (200, 30, 30)), (250, 20, 310, 80, (30, 120, 200))]
+        image = np.asarray(sheet_with_blocks(blocks).convert("RGBA"))
+        result = detect(image, Settings(split_mode="grid", grid_cols=2, grid_rows=1))
+        self.assertEqual(result.info["grid"], (2, 1))
+        self.assertEqual(len(result.elements), 2)
 
     def test_empty_image_is_handled(self):
         blank = np.asarray(sheet_with_blocks([], size=(50, 50)).convert("RGBA"))

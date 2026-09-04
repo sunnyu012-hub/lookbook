@@ -29,6 +29,7 @@ from .core import (
     preset,
     process_file,
 )
+from .layout import infer_grid
 
 SPLIT_MODES = [
     ("자동 (권장)", "auto"),
@@ -342,6 +343,8 @@ class App:
         ttk.Label(self.grid_frame, text="행", style="Field.TLabel").pack(side="left")
         ttk.Spinbox(self.grid_frame, from_=1, to=32, width=4, textvariable=self.v_rows,
                     command=self.schedule_detect).pack(side="left", padx=6)
+        ttk.Button(self.grid_frame, text="자동", style="Quiet.TButton",
+                   command=self.guess_grid).pack(side="left", padx=(12, 0))
 
         theme.Check(body, "배경 임계값 자동", self.v_auto_tol,
                     command=self._on_auto_tolerance, font=self.fonts.small).pack(
@@ -417,6 +420,17 @@ class App:
         else:
             self.grid_frame.pack_forget()
         self.schedule_detect()
+
+    def guess_grid(self) -> None:
+        """지금 검출된 배치를 보고 열 x 행을 채워 넣는다."""
+        if self.detection is None or not self.detection.elements:
+            self.v_status.set("먼저 이미지를 불러오세요.")
+            return
+        cols, rows = infer_grid([e.box for e in self.detection.elements])
+        self.v_cols.set(cols)
+        self.v_rows.set(rows)
+        self.v_status.set(f"격자를 {cols}x{rows} 로 잡았습니다.")
+        self.schedule_detect(0)
 
     def _set_output_mode(self, value: str) -> None:
         self.v_out_mode.set(value)

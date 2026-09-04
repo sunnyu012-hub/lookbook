@@ -84,3 +84,34 @@ def xy_cut(
 
     recurse(0, 0, w, h, 0)
     return cells
+
+
+def _cluster(values: list[float], gap: float) -> int:
+    """1차원 좌표를 gap 이상 벌어진 곳에서 끊어 묶음 수를 센다."""
+    if not values:
+        return 1
+    ordered = sorted(values)
+    groups = 1
+    for prev, cur in zip(ordered, ordered[1:]):
+        if cur - prev > gap:
+            groups += 1
+    return groups
+
+
+def infer_grid(boxes: list[Rect], limit: int = 32) -> tuple[int, int]:
+    """요소 배치에서 열 x 행 수를 추정한다.
+
+    요소 중심이 몇 줄로 늘어서 있는지 세는 방식이라, 격자로 배치된 시트에서
+    잘 맞는다. 배치가 불규칙하면 그만큼 큰 값이 나오므로 결과를 그대로
+    믿지 말고 참고값으로 쓴다.
+    """
+    if not boxes:
+        return 1, 1
+    widths = sorted(b[2] - b[0] for b in boxes)
+    heights = sorted(b[3] - b[1] for b in boxes)
+    mid_w = widths[len(widths) // 2]
+    mid_h = heights[len(heights) // 2]
+
+    cols = _cluster([(b[0] + b[2]) / 2 for b in boxes], mid_w * 0.5)
+    rows = _cluster([(b[1] + b[3]) / 2 for b in boxes], mid_h * 0.5)
+    return max(1, min(cols, limit)), max(1, min(rows, limit))

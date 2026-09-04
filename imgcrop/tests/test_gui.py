@@ -183,6 +183,13 @@ class GuiTests(unittest.TestCase):
         self.app._set_split("auto")
         self.assertEqual(self.app.split_combo.get(), "자동 (권장)")
 
+    def test_grid_guess_fills_the_spinboxes(self):
+        self.assertTrue(self.pump(lambda: self.app.detection is not None))
+        self.app.v_cols.set(9)
+        self.app.v_rows.set(9)
+        self.app.guess_grid()
+        self.assertEqual((self.app.v_cols.get(), self.app.v_rows.get()), (2, 2))
+
     def test_close_cancels_pending_callbacks(self):
         """창을 닫은 뒤 예약된 콜백이 돌면 콘솔에 오류가 찍힌다."""
         self.assertTrue(self.pump(lambda: self.app.detection is not None))

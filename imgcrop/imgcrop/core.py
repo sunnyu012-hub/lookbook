@@ -11,7 +11,7 @@ import numpy as np
 from PIL import Image
 
 from .labeling import label_separated
-from .layout import grid_cells, xy_cut
+from .layout import grid_cells, infer_grid, xy_cut
 from .masking import AUTO, build_mask, dilate
 
 OVERLAP_SHARE = 0.25  # 겹친 넓이가 작은 쪽의 이 비율 이상이면 한 요소로 본다
@@ -42,8 +42,8 @@ class Settings:
     #   grid       - grid_cols x grid_rows 균등 격자
     #   none       - 나누지 않고 전체 여백만 제거
     split_mode: str = "auto"
-    grid_cols: int = 3
-    grid_rows: int = 3
+    grid_cols: int = 3                # 0이면 배치를 보고 자동 추정
+    grid_rows: int = 3                # 0이면 배치를 보고 자동 추정
     valley_ratio: float = 0.35        # xycut 골짜기 판정 (낮을수록 덜 나눔)
     oversize_factor: float = 1.7      # auto 모드에서 "유독 큰" 기준 (중앙값 대비 배수)
 
@@ -400,7 +400,19 @@ def detect(
             )
         ]
     elif mode == "grid":
-        groups = _assign_to_cells(parts, grid_cells(w, h, settings.grid_cols, settings.grid_rows))
+        cols, rows = settings.grid_cols, settings.grid_rows
+        if cols <= 0 or rows <= 0:
+            # 연결된 덩어리를 먼저 훑어 배치를 보고 격자 모양을 추정한다
+            probe = _merge_boxes([(v[0], v[1], v[2], v[3], v[4], k) for k, v in parts.items()], 0)
+            if settings.merge_overlapping:
+                probe = _merge_overlapping(probe)
+            probe = _refine_oversized(probe, mask, settings)
+            probe = _drop_outlier_specks(probe, settings.min_relative_area)
+            guess = infer_grid([(g[0], g[1], g[2], g[3]) for g in probe])
+            cols = cols if cols > 0 else guess[0]
+            rows = rows if rows > 0 else guess[1]
+        info["grid"] = (cols, rows)
+        groups = _assign_to_cells(parts, grid_cells(w, h, cols, rows))
         groups = [(g[0], g[1], g[2], g[3], g[4],
                    [m for key in g[5] for m in members.get(key, [key])]) for g in groups]
     elif mode == "xycut":
