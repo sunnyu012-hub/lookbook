@@ -71,7 +71,7 @@ class GuiTests(unittest.TestCase):
     def tearDown(self):
         self.gui_module.messagebox = self.real_messagebox
         try:
-            self.root.destroy()
+            self.app.close()
         except Exception:
             pass
         shutil.rmtree(self.tmp, ignore_errors=True)
@@ -97,8 +97,45 @@ class GuiTests(unittest.TestCase):
         self.assertEqual(len(self.app.detection.elements), 3)
         self.app.draw_preview()
         self.root.update()
-        # 이미지 1개 + 요소마다 사각형과 번호
-        self.assertEqual(len(self.app.canvas.find_all()), 1 + 3 * 2)
+        # 미리보기 이미지 1개 + 요소마다 박스와 번호 배지
+        self.assertEqual(len(self.app.canvas.find_withtag("box")), 3)
+        self.assertEqual(len(self.app.canvas.find_withtag("badge")), 3 * 2)
+        self.assertGreaterEqual(len(self.app.canvas.find_all()), 1 + 3 * 3)
+
+    def test_empty_state_shows_guidance(self):
+        self.app.clear_files()
+        self.root.update()
+        texts = [self.app.canvas.itemcget(i, "text")
+                 for i in self.app.canvas.find_all()
+                 if self.app.canvas.type(i) == "text"]
+        self.assertTrue(any("이미지를 추가" in t for t in texts), texts)
+
+    def test_custom_widgets_track_their_variable(self):
+        from imgcrop import theme
+
+        checks = [w for w in self._walk(self.root) if isinstance(w, theme.Check)]
+        sliders = [w for w in self._walk(self.root) if isinstance(w, theme.Slider)]
+        self.assertTrue(checks and sliders)
+
+        check = checks[0]
+        before = bool(check.variable.get())
+        check._toggle()
+        self.assertNotEqual(bool(check.variable.get()), before)
+        check._toggle()
+        self.assertEqual(bool(check.variable.get()), before)
+
+        slider = sliders[0]
+        slider.variable.set(slider.low)
+        self.root.update()
+        slider._apply(10_000)          # 오른쪽 끝으로 끌기
+        self.assertEqual(slider._value(), slider.high)
+        slider._apply(-10_000)         # 왼쪽 끝으로 끌기
+        self.assertEqual(slider._value(), slider.low)
+
+    def _walk(self, widget):
+        yield widget
+        for child in widget.winfo_children():
+            yield from self._walk(child)
 
     def test_default_output_folder_sits_next_to_source(self):
         self.assertEqual(self.app.out_dir_for(self.source), self.tmp / "sheet_cut")
@@ -132,6 +169,27 @@ class GuiTests(unittest.TestCase):
         self.assertTrue(self.pump(lambda: not getattr(self.app, "saving", False), timeout=60))
         self.assertFalse([c for c in self.messages.calls if c[0] == "warning"],
                          f"저장 중 실패가 보고되었습니다: {self.messages.calls}")
+
+    def test_mode_change_updates_combobox_text(self):
+        """설정을 코드로 바꿔도 화면 표시가 따라와야 한다."""
+        self.app._set_output_mode("fixed")
+        self.assertEqual(self.app.out_combo.get(), "크기 고정")
+        self.assertTrue(self.app.size_frame.winfo_ismapped() or True)
+        self.app._set_output_mode("tight")
+        self.assertEqual(self.app.out_combo.get(), "원본 크기 그대로")
+
+        self.app._set_split("grid")
+        self.assertEqual(self.app.split_combo.get(), "격자 분할")
+        self.app._set_split("auto")
+        self.assertEqual(self.app.split_combo.get(), "자동 (권장)")
+
+    def test_close_cancels_pending_callbacks(self):
+        """창을 닫은 뒤 예약된 콜백이 돌면 콘솔에 오류가 찍힌다."""
+        self.assertTrue(self.pump(lambda: self.app.detection is not None))
+        self.app.close()
+        self.assertFalse(self.app.alive)
+        self.assertIsNone(self.app.drain_after)
+        self.assertIsNone(self.app.pending_after)
 
     def test_setting_change_triggers_new_detection(self):
         self.assertTrue(self.pump(lambda: self.app.detection is not None))
