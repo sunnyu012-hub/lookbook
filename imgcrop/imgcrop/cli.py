@@ -46,6 +46,10 @@ def build_parser() -> argparse.ArgumentParser:
                    help="전체 대비 최소 요소 크기 비율 (기본: 0.0005)")
     g.add_argument("--min-relative-area", type=float, metavar="R",
                    help="다른 요소 중앙값 대비 이 비율보다 작은 조각은 버림 (기본: 0.08, 0이면 끔)")
+    g.add_argument("--attach", type=float, metavar="R",
+                   help="요소 크기 대비 이 거리 안의 작은 조각을 그 요소에 붙임 (기본: 0.05, 0이면 끔)")
+    g.add_argument("--no-merge-overlapping", action="store_true",
+                   help="박스가 깊이 겹치는 조각을 합치지 않음")
     g.add_argument("--merge-gap", type=int, metavar="PX",
                    help="이 간격 이내 요소를 하나로 합침")
     g.add_argument("--separation", type=int, metavar="PX",
@@ -95,6 +99,10 @@ def settings_from_args(args: argparse.Namespace) -> Settings:
         s.min_area_ratio = args.min_area
     if args.min_relative_area is not None:
         s.min_relative_area = args.min_relative_area
+    if args.attach is not None:
+        s.attach_ratio = args.attach
+    if args.no_merge_overlapping:
+        s.merge_overlapping = False
     if args.merge_gap is not None:
         s.merge_gap = args.merge_gap
     if args.separation is not None:

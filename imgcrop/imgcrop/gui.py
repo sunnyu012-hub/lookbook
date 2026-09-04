@@ -95,6 +95,8 @@ class App:
         self.v_edge = tk.DoubleVar(value=d.edge_barrier)
         self.v_min_area = tk.DoubleVar(value=d.min_area_ratio * 100.0)
         self.v_min_rel = tk.DoubleVar(value=d.min_relative_area * 100.0)
+        self.v_attach = tk.DoubleVar(value=d.attach_ratio * 100.0)
+        self.v_merge_overlap = tk.BooleanVar(value=d.merge_overlapping)
         self.v_separation = tk.DoubleVar(value=d.separation)
         self.v_merge = tk.DoubleVar(value=d.merge_gap)
         self.v_denoise = tk.DoubleVar(value=d.denoise)
@@ -132,6 +134,8 @@ class App:
             edge_barrier=self._number(self.v_edge, 1.0, float),
             min_area_ratio=max(0.0, self._number(self.v_min_area, 0.05, float) / 100.0),
             min_relative_area=max(0.0, self._number(self.v_min_rel, 8.0, float) / 100.0),
+            attach_ratio=max(0.0, self._number(self.v_attach, 5.0, float) / 100.0),
+            merge_overlapping=self.v_merge_overlap.get(),
             merge_gap=self._number(self.v_merge, 0),
             separation=self._number(self.v_separation, 0),
             split_mode=self.v_split.get(),
@@ -344,11 +348,15 @@ class App:
             anchor="w", pady=(0, 10))
         self.tol_scale = self._slider(body, "임계값 (클수록 배경으로 판정)", self.v_tol, 6, 140, 1)
         self._slider(body, "경계 장벽", self.v_edge, 0, 2.0, 0.1, "{:.1f}")
-        self._slider(body, "작은 조각 버리기", self.v_min_rel, 0, 60, 1, "{:.0f}%")
+        self._slider(body, "장식 붙이는 거리", self.v_attach, 0, 20, 0.5, "{:.1f}%")
+        self._slider(body, "남은 작은 조각 버리기", self.v_min_rel, 0, 60, 1, "{:.0f}%")
         self._slider(body, "최소 요소 크기", self.v_min_area, 0, 3.0, 0.01, "{:.2f}%")
         self._slider(body, "붙은 요소 떼어내기", self.v_separation, 0, 20, 1, "{:.0f}px")
         self._slider(body, "가까운 요소 합치기", self.v_merge, 0, 120, 1, "{:.0f}px")
         self._slider(body, "잡티 제거", self.v_denoise, 0, 8, 1, "{:.0f}px")
+        theme.Check(body, "쪼개진 요소 합치기", self.v_merge_overlap,
+                    command=self.schedule_detect, font=self.fonts.small).pack(
+            anchor="w", pady=(0, 4))
 
     def _build_output_section(self, body: ttk.Frame) -> None:
         ttk.Label(body, text="잘라내기 / 출력", style="Heading.TLabel").pack(anchor="w", pady=(0, 10))

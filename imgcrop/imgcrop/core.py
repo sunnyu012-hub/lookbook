@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import re
 from dataclasses import dataclass, field, replace
 from pathlib import Path
@@ -11,7 +12,9 @@ from PIL import Image
 
 from .labeling import label_separated
 from .layout import grid_cells, xy_cut
-from .masking import AUTO, build_mask
+from .masking import AUTO, build_mask, dilate
+
+OVERLAP_SHARE = 0.25  # 겹친 넓이가 작은 쪽의 이 비율 이상이면 한 요소로 본다
 
 SUPPORTED_INPUTS = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif", ".tif", ".tiff"}
 
@@ -26,6 +29,8 @@ class Settings:
     connectivity: int = 8
     min_area_ratio: float = 0.0005    # 전체 면적 대비 최소 요소 크기
     min_relative_area: float = 0.08   # 다른 요소들의 중앙값 대비 이 비율보다 작으면 버림 (0이면 끔)
+    attach_ratio: float = 0.05        # 요소 크기 대비 이 거리 안의 작은 조각은 그 요소에 붙임 (0이면 끔)
+    merge_overlapping: bool = True    # 박스가 겹치는 큰 조각끼리 합침 (한 요소가 쪼개진 경우)
     min_side: int = 8                 # 요소 최소 변 길이(px)
     merge_gap: int = 0                # 이 간격 이내의 요소는 하나로 합침(px)
     separation: int = 0               # 맞닿은 요소를 떼어낼 강도(px). 다리 폭 2*n 이하를 끊는다
@@ -227,6 +232,101 @@ def _refine_oversized(groups: list[tuple], mask: np.ndarray, settings: Settings)
     return refined
 
 
+def _attach_small_parts(
+    labels: np.ndarray,
+    parts: dict,
+    ratio: float,
+) -> tuple[dict, int]:
+    """큰 요소 가까이 있는 작은 조각을 그 요소에 붙인다.
+
+    전구의 빛살이나 별의 반짝임처럼, 떨어져 있지만 그 아이콘의 일부인
+    장식을 살리기 위한 단계다. 거리는 요소 크기에 비례해 잡으므로
+    이미지 해상도가 달라져도 같게 동작한다.
+
+    한 번만 훑는다. 붙은 조각을 발판 삼아 연쇄로 번지게 하면, 자잘한
+    조각이 많은 사진에서 서로 다른 피사체까지 줄줄이 이어져 버린다.
+    """
+    merged = {k: (v[0], v[1], v[2], v[3], v[4], [k]) for k, v in parts.items()}
+    if ratio <= 0 or len(parts) < 2:
+        return merged, 0
+
+    box_area = {k: (v[2] - v[0]) * (v[3] - v[1]) for k, v in parts.items()}
+    biggest = max(box_area.values())
+    major = [k for k, a in box_area.items() if a >= 0.2 * biggest]
+    pending = [k for k in parts if k not in set(major)]
+    if not major or not pending:
+        return merged, 0
+
+    sides = sorted(max(parts[k][2] - parts[k][0], parts[k][3] - parts[k][1]) for k in major)
+    # 올림으로 잡는다. 내림하면 기준선 바로 위에 걸친 장식이 1px 차이로 떨어져 나간다.
+    reach = max(2, math.ceil(ratio * sides[len(sides) // 2]))
+    h, w = labels.shape
+    major_set = set(major)
+    attached = 0
+
+    for k in pending:
+        x0, y0, x1, y1, _ = parts[k]
+        wx0, wy0 = max(0, x0 - reach - 1), max(0, y0 - reach - 1)
+        wx1, wy1 = min(w, x1 + reach + 1), min(h, y1 + reach + 1)
+        window = labels[wy0:wy1, wx0:wx1]
+        grown = dilate(window == k, reach)
+
+        best, overlap = None, 0
+        for label, count in zip(*np.unique(window[grown], return_counts=True)):
+            label = int(label)
+            if label in major_set and count > overlap:
+                best, overlap = label, int(count)
+        if best is None:
+            continue
+
+        bx0, by0, bx1, by1, area, members = merged[best]
+        merged[best] = (min(bx0, x0), min(by0, y0), max(bx1, x1), max(by1, y1),
+                        area + parts[k][4], members + [k])
+        merged.pop(k, None)
+        attached += 1
+
+    return merged, attached
+
+
+def _merge_overlapping(groups: list[tuple]) -> list[tuple]:
+    """박스가 서로 겹치는 큰 조각끼리 합친다.
+
+    막대그래프와 그 위에 떠 있는 화살표처럼, 떨어져 있지만 한 요소인 경우를
+    이어 붙인다. 시트에 나란히 놓인 서로 다른 요소는 박스가 겹치지 않으므로
+    잘못 합쳐지지 않는다. 작은 조각(이름표 등)은 대상에서 빼기 때문에
+    설명 글씨가 딸려 들어가지도 않는다.
+    """
+    if len(groups) < 2:
+        return groups
+    areas = [(g[2] - g[0]) * (g[3] - g[1]) for g in groups]
+    threshold = 0.2 * max(areas)
+
+    result: list[list] = []
+    for g, area in zip(groups, areas):
+        current = [g[0], g[1], g[2], g[3], g[4], list(g[5])]
+        if area < threshold:
+            result.append(current)
+            continue
+        for other, other_area in zip(result, [(r[2] - r[0]) * (r[3] - r[1]) for r in result]):
+            if other_area < threshold:
+                continue
+            wide = min(current[2], other[2]) - max(current[0], other[0])
+            tall = min(current[3], other[3]) - max(current[1], other[1])
+            smaller = min(area, other_area)
+            # 스치듯 겹친 것과 실제로 한 요소가 쪼개진 것을 넓이로 가른다.
+            # 시트에 촘촘히 놓인 요소들은 몇 픽셀만 겹치지만,
+            # 한 요소의 조각들은 서로 깊이 겹친다.
+            if wide > 0 and tall > 0 and wide * tall >= OVERLAP_SHARE * smaller:
+                other[0], other[1] = min(other[0], current[0]), min(other[1], current[1])
+                other[2], other[3] = max(other[2], current[2]), max(other[3], current[3])
+                other[4] += current[4]
+                other[5].extend(current[5])
+                break
+        else:
+            result.append(current)
+    return [tuple(r) for r in result]
+
+
 def _drop_outlier_specks(groups: list[tuple], ratio: float) -> list[tuple]:
     """다른 요소들에 비해 유독 작은 조각을 버린다.
 
@@ -268,14 +368,20 @@ def detect(
 
     labels, raw_boxes = label_separated(mask, settings.connectivity, settings.separation)
 
+    # 장식을 먼저 붙이고 나서 걸러야 한다. 순서가 반대면 전구의 빛살처럼
+    # 작은 장식이 최소 크기 필터에 먼저 걸려 사라진다.
+    raw_parts = {i + 1: box for i, box in enumerate(raw_boxes)}
+    pieces, attached = _attach_small_parts(labels, raw_parts, settings.attach_ratio)
+    info["attached"] = attached
+
     min_area = max(1, int(settings.min_area_ratio * w * h))
-    parts = {
-        i + 1: (x0, y0, x1, y1, area)
-        for i, (x0, y0, x1, y1, area) in enumerate(raw_boxes)
-        if area >= min_area
-        and (x1 - x0) >= settings.min_side
-        and (y1 - y0) >= settings.min_side
-    }
+    parts, members = {}, {}
+    for key, (x0, y0, x1, y1, area, labels_in) in pieces.items():
+        if (area >= min_area
+                and (x1 - x0) >= settings.min_side
+                and (y1 - y0) >= settings.min_side):
+            parts[key] = (x0, y0, x1, y1, area)
+            members[key] = labels_in
     if not parts:
         info["elements"] = 0
         return empty
@@ -290,16 +396,24 @@ def detect(
                 max(b[2] for b in boxes),
                 max(b[3] for b in boxes),
                 sum(b[4] for b in boxes),
-                list(parts),
+                [m for ms in members.values() for m in ms],
             )
         ]
     elif mode == "grid":
         groups = _assign_to_cells(parts, grid_cells(w, h, settings.grid_cols, settings.grid_rows))
+        groups = [(g[0], g[1], g[2], g[3], g[4],
+                   [m for key in g[5] for m in members.get(key, [key])]) for g in groups]
     elif mode == "xycut":
         groups = _assign_to_cells(parts, xy_cut(mask, valley_ratio=settings.valley_ratio))
+        groups = [(g[0], g[1], g[2], g[3], g[4],
+                   [m for key in g[5] for m in members.get(key, [key])]) for g in groups]
     elif mode in ("components", "auto"):
         candidates = [(v[0], v[1], v[2], v[3], v[4], k) for k, v in parts.items()]
         groups = _merge_boxes(candidates, settings.merge_gap)
+        groups = [(g[0], g[1], g[2], g[3], g[4],
+                   [m for key in g[5] for m in members.get(key, [key])]) for g in groups]
+        if settings.merge_overlapping:
+            groups = _merge_overlapping(groups)
         if mode == "auto":
             groups = _refine_oversized(groups, mask, settings)
     else:

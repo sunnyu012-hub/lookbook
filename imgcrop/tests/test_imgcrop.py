@@ -203,6 +203,73 @@ class DetectTests(unittest.TestCase):
         self.assertEqual(len(merged.elements), 4)
         self.assertEqual(len(refined.elements), 5)
 
+    def test_attaches_decorations_to_their_element(self):
+        """전구 빛살처럼 떨어져 있어도 아이콘의 일부인 조각은 붙어야 한다."""
+        blocks = [
+            (60, 60, 160, 160, (200, 30, 30)),     # 본체
+            (100, 44, 120, 56, (200, 30, 30)),     # 위쪽 장식 (4px 떨어짐)
+            (44, 100, 56, 120, (200, 30, 30)),     # 왼쪽 장식 (4px 떨어짐)
+            (240, 60, 340, 160, (30, 120, 200)),   # 옆 요소
+        ]
+        image = np.asarray(sheet_with_blocks(blocks).convert("RGBA"))
+        # 경계 장벽은 좁은 틈을 메워 조각을 미리 이어 버리므로, 여기서는 끄고
+        # 붙이기 단계만 확인한다
+        joined = detect(image, Settings(edge_barrier=0.0))
+        self.assertEqual(len(joined.elements), 2)
+        self.assertEqual(joined.elements[0].box, (44, 44, 160, 160))
+
+        apart = detect(image, Settings(edge_barrier=0.0, attach_ratio=0.0))
+        self.assertEqual(len(apart.elements), 2)
+        self.assertEqual(apart.elements[0].box, (60, 60, 160, 160))
+
+    def test_attach_runs_before_the_size_filter(self):
+        """순서가 반대면 작은 장식이 최소 크기 필터에 먼저 걸려 사라진다."""
+        blocks = [
+            (60, 60, 160, 160, (200, 30, 30)),
+            (100, 48, 112, 56, (200, 30, 30)),     # 96px 짜리 아주 작은 장식 (4px 떨어짐)
+            (240, 60, 340, 160, (30, 120, 200)),
+        ]
+        image = np.asarray(sheet_with_blocks(blocks).convert("RGBA"))
+        # 이 장식은 절대 최소 크기(0.001 * 120000 = 120px)보다 작다
+        result = detect(image, Settings(edge_barrier=0.0, min_area_ratio=0.001))
+        self.assertEqual(len(result.elements), 2)
+        self.assertEqual(result.elements[0].box[1], 48)
+
+    def test_merges_pieces_of_one_element_but_not_neighbours(self):
+        """막대그래프와 그 위에 뜬 화살표처럼 깊이 겹친 조각만 합친다."""
+        # 서로 닿지는 않지만 박스가 깊이 겹치는 두 조각 (ㄱ자 화살표 + 막대)
+        deep = [
+            (40, 120, 200, 220, (200, 30, 30)),    # 막대
+            (60, 60, 240, 105, (240, 180, 20)),    # 화살표 가로
+            (210, 60, 250, 200, (240, 180, 20)),   # 화살표 세로
+        ]
+        image = np.asarray(sheet_with_blocks(deep).convert("RGBA"))
+        self.assertEqual(len(detect(image, Settings()).elements), 1)
+        self.assertEqual(len(detect(image, Settings(merge_overlapping=False)).elements), 2)
+
+        # 시트에 촘촘히 놓여 박스만 몇 픽셀 스치는 이웃은 합치지 않는다.
+        # ㄴ자 요소의 오목한 자리에 옆 요소가 들어와 박스가 살짝 겹치는 모양.
+        grazing = [
+            (40, 40, 200, 120, (200, 30, 30)),     # ㄴ자 위쪽
+            (40, 120, 90, 140, (200, 30, 30)),     # ㄴ자 아래쪽
+            (110, 138, 300, 240, (30, 120, 200)),  # 옆 요소
+        ]
+        image = np.asarray(sheet_with_blocks(grazing).convert("RGBA"))
+        self.assertEqual(len(detect(image, Settings()).elements), 2)
+
+    def test_captions_stay_out_while_decorations_come_in(self):
+        """가까운 장식은 붙고, 멀찍이 놓인 설명 글씨는 버려진다."""
+        blocks = [
+            (40, 40, 200, 200, (200, 30, 30)),
+            (110, 26, 130, 36, (200, 30, 30)),     # 4px 떨어진 장식
+            (230, 110, 290, 140, (0, 0, 0)),       # 30px 떨어진 이름표
+            (40, 240, 200, 400, (30, 120, 200)),
+        ]
+        image = np.asarray(sheet_with_blocks(blocks, size=(400, 460)).convert("RGBA"))
+        result = detect(image, Settings(edge_barrier=0.0))
+        self.assertEqual(len(result.elements), 2)
+        self.assertEqual(result.elements[0].box, (40, 26, 200, 200))
+
     def test_empty_image_is_handled(self):
         blank = np.asarray(sheet_with_blocks([], size=(50, 50)).convert("RGBA"))
         self.assertEqual(len(detect(blank, Settings()).elements), 0)
