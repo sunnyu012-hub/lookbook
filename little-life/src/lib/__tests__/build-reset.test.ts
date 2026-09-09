@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BUILD_ID, buildLabel, hasFeedbackLink, FEEDBACK_URL } from '@/lib/build'
+import { BUILD_ID, buildLabel } from '@/lib/build'
 import { RESET_KEYS, clearLocalData } from '@/lib/reset'
 import { STORAGE_KEY } from '@/store/localStorage'
 import { SYNC_LOCAL_KEY } from '@/lib/sync/local'
@@ -21,17 +21,6 @@ describe('판 이름', () => {
   it('테스트에서는 빌드 값이 없어서 dev 로 떨어진다', () => {
     expect(BUILD_ID).toBe('dev')
     expect(buildLabel()).toBe('dev')
-  })
-})
-
-describe('의견 보낼 곳', () => {
-  /**
-   * 주소를 안 넣어두면 줄 자체가 안 뜬다.
-   * 눌러도 아무 데도 안 가는 버튼은 링크가 없는 것보다 나쁘다.
-   */
-  it('환경변수가 없으면 링크가 없는 것으로 친다', () => {
-    expect(FEEDBACK_URL).toBe('')
-    expect(hasFeedbackLink()).toBe(false)
   })
 })
 

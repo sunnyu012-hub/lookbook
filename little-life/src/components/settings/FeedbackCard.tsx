@@ -1,7 +1,13 @@
-import { FEEDBACK_URL } from '@/lib/build'
+import { useState } from 'react'
+import type { AppState } from '@/types'
+import { FeedbackSheet } from './FeedbackSheet'
+
+interface FeedbackCardProps {
+  state: AppState
+}
 
 /**
- * 의견 보내기.
+ * 의견 보내기 줄.
  *
  * ── 왜 앱 안에 있어야 하나 ──────────────────────────────
  *
@@ -9,30 +15,35 @@ import { FEEDBACK_URL } from '@/lib/build'
  * 사람이 앱을 닫고, 다른 앱을 열고, 어디에 말해야 하나 생각하는 사이에
  * 그 마음이 식는다. 이상하다고 느낀 그 자리에서 한 번에 가야 한다.
  *
- * ── 없으면 아예 안 뜬다 ─────────────────────────────────
+ * ── 밖으로 내보내지 않는다 ──────────────────────────────
  *
- * 주소는 `VITE_FEEDBACK_URL` 로 넣는다 (백업 설정과 같은 방식).
- * 없는데 버튼만 두면 눌러도 아무 데도 안 가는 버튼이 되고,
- * 그건 링크가 없는 것보다 나쁘다 — 한 번 속으면 다음엔 안 누른다.
+ * 처음엔 오픈카톡·구글폼 링크 한 줄이었다. 그런데 링크는 앱을 나가는
+ * 일이고, 나가는 순간 무엇이 이상했는지도 · 어느 판이었는지도 흐려진다.
+ * 지금은 이미 붙어 있는 Supabase 로 바로 보낸다 — 백업이 쓰는 그 프로젝트다.
  */
-export function FeedbackCard() {
+export function FeedbackCard({ state }: FeedbackCardProps) {
+  const [open, setOpen] = useState(false)
+
   return (
-    <a
-      href={FEEDBACK_URL}
-      target="_blank"
-      rel="noreferrer noopener"
-      className="flex w-full items-center gap-3 rounded-card border border-line/70 bg-surface px-5 py-4 text-left shadow-soft active:scale-[0.99]"
-    >
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-dusty-soft text-[16px]">
-        ✉️
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-[14px] font-medium text-ink">의견 보내기</span>
-        <span className="mt-0.5 block text-[12px] leading-relaxed text-inkdim">
-          이상한 것 · 불편한 것 · 하고 싶은 말. 한 줄이어도 좋아.
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="flex w-full items-center gap-3 rounded-card border border-line/70 bg-surface px-5 py-4 text-left shadow-soft active:scale-[0.99]"
+      >
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-dusty-soft text-[16px]">
+          ✉️
         </span>
-      </span>
-      <span className="shrink-0 text-[11px] text-inkfaint">↗</span>
-    </a>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[14px] font-medium text-ink">의견 보내기</span>
+          <span className="mt-0.5 block text-[12px] leading-relaxed text-inkdim">
+            이상한 것 · 불편한 것 · 하고 싶은 말. 한 줄이어도 좋아.
+          </span>
+        </span>
+        <span className="shrink-0 text-[11px] text-inkfaint">›</span>
+      </button>
+
+      <FeedbackSheet open={open} state={state} onClose={() => setOpen(false)} />
+    </>
   )
 }

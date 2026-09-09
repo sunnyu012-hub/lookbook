@@ -24,6 +24,16 @@ export function isSyncConfigured(): boolean {
 export const SYNC_TABLE = 'little_life_states'
 
 /**
+ * 베타 의견함 (supabase/feedback.sql).
+ *
+ * 백업과 같은 Supabase 프로젝트를 쓴다 — 의견 하나 받자고 서비스를
+ * 하나 더 붙이면 관리할 게 둘이 된다. 대신 권한 모양이 정반대라
+ * (백업은 자기 것만, 의견은 누구나 쓰고 만든 사람만 읽는다)
+ * 표는 따로 둔다.
+ */
+export const FEEDBACK_TABLE = 'little_life_feedback'
+
+/**
  * 로그인 세션을 담는 localStorage 열쇠.
  *
  * 기본값을 그대로 쓰면 같은 도메인의 다른 앱과 섞인다.
