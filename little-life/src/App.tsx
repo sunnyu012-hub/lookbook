@@ -50,6 +50,7 @@ import { WorkshopLab } from '@/components/collection/WorkshopLab'
 import { QuarryLab } from '@/components/quarry/QuarryLab'
 import { DungeonLab } from '@/components/dungeon/DungeonLab'
 import { CityLab } from '@/components/city/CityLab'
+import { FeedbackInbox } from '@/components/settings/FeedbackInbox'
 import type { CookedNote } from '@/components/kitchen/CookedOverlay'
 import type { HarvestNote } from '@/components/garden/HarvestOverlay'
 import { WorkshopSheet } from '@/components/collection/WorkshopSheet'
@@ -197,6 +198,7 @@ export default function App() {
   const devQuarry = devParam === 'quarry'
   const devDungeon = devParam === 'dungeon'
   const devCity = devParam === 'city'
+  const devFeedback = devParam === 'feedback'
 
   /**
    * 처음 여는 사람에게 한 번.
@@ -688,6 +690,11 @@ export default function App() {
 
   if (devCity) {
     return <CityLab />
+  }
+
+  // 받은 의견. 여는 건 주소로 하지만, 막는 건 서버의 RLS 다.
+  if (devFeedback) {
+    return <FeedbackInbox />
   }
 
   if (devDungeon) {

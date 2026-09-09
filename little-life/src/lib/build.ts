@@ -28,23 +28,3 @@ export function buildLabel(id: string = BUILD_ID): string {
   const [, y, mo, d, h, mi] = id.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})/)!
   return `${y}-${mo}-${d} ${h}:${mi}`
 }
-
-function envOf(key: string): string {
-  const value = (import.meta.env as Record<string, unknown>)[key]
-  return typeof value === 'string' ? value.trim() : ''
-}
-
-/**
- * 의견을 보낼 곳.
- *
- * 오픈카톡이든 구글폼이든 주소 하나면 된다. 없으면 그 줄이 아예 안 뜬다 —
- * 백업 설정과 같은 방식이다. 여기 없는 주소를 지어내서 넣으면 눌렀을 때
- * 아무 데도 안 가는 버튼이 되고, 그건 링크가 없는 것보다 나쁘다.
- *
- * `.env.local` 또는 배포 환경변수에 `VITE_FEEDBACK_URL` 로 넣는다.
- */
-export const FEEDBACK_URL = envOf('VITE_FEEDBACK_URL')
-
-export function hasFeedbackLink(): boolean {
-  return /^https?:\/\//.test(FEEDBACK_URL)
-}

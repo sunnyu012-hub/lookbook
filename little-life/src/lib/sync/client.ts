@@ -49,6 +49,26 @@ export function getClient(): Promise<SupabaseClient> | null {
 }
 
 /**
+ * 무엇이 잘못됐는지 한 줄로 꺼낸다.
+ *
+ * ⚠️ supabase-js 는 실패를 **Error 가 아니라 평범한 객체**로 돌려준다
+ * (`{ message, details, hint, code }`). 그래서 `error instanceof Error`
+ * 만 보고 나머지를 `String(error)` 로 넘기면 화면에 `[object Object]` 가
+ * 뜬다 — 실제로 그렇게 나갔었다. 메시지 칸이 있으면 그걸 쓴다.
+ */
+function messageOf(error: unknown): string {
+  if (error instanceof Error) return error.message
+  if (typeof error === 'string') return error
+  if (error && typeof error === 'object') {
+    const bag = error as Record<string, unknown>
+    if (typeof bag.message === 'string' && bag.message) return bag.message
+    // PostgrestError 는 message 가 비고 details 에만 들어오는 때가 있다
+    if (typeof bag.details === 'string' && bag.details) return bag.details
+  }
+  return ''
+}
+
+/**
  * 그냥 인터넷이 안 닿는 것인지.
  *
  * 이건 잘못된 게 아니라 지금 못 하는 것뿐이다. 앱은 원래 오프라인에서도
@@ -56,7 +76,7 @@ export function getClient(): Promise<SupabaseClient> | null {
  * 뭔가 고장 난 것처럼 보인다. 조용히 넘기고 다음에 다시 해본다.
  */
 export function isOfflineError(error: unknown): boolean {
-  const raw = (error instanceof Error ? error.message : String(error ?? '')).toLowerCase()
+  const raw = messageOf(error).toLowerCase()
   return (
     raw.includes('failed to fetch') ||
     raw.includes('networkerror') ||
@@ -73,7 +93,7 @@ export function isOfflineError(error: unknown): boolean {
  * 아는 것만 바꿔주고 모르는 건 그대로 보여준다 — 감추면 물어볼 수도 없다.
  */
 export function readableError(error: unknown): string {
-  const raw = error instanceof Error ? error.message : String(error ?? '')
+  const raw = messageOf(error)
   const lower = raw.toLowerCase()
 
   if (lower.includes('invalid login credentials')) return '이메일이나 비밀번호가 안 맞아.'

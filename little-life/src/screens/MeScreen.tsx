@@ -24,7 +24,7 @@ import { weekCompletedCount } from '@/lib/stats'
 import { weeklyInsight } from '@/lib/insights'
 import { calculateEquipmentBonus } from '@/lib/rpg/rewards'
 import { EFFECT, UI } from '@/lib/assets'
-import { buildLabel, hasFeedbackLink } from '@/lib/build'
+import { buildLabel } from '@/lib/build'
 import type { SyncApi } from '@/hooks/useSync'
 
 interface MeScreenProps {
@@ -251,11 +251,12 @@ export function MeScreen({
           </div>
         </div>
 
-        {/* 보낼 곳을 안 넣어둔 판에서는 줄 자체가 없다 (lib/build.ts) */}
-        {hasFeedbackLink() && (
+        {/* 서버가 안 붙은 판에서는 줄 자체가 없다 — 눌러도 안 가는
+            버튼을 두지 않는다. 백업 칸과 같은 조건이다. */}
+        {sync.configured && (
           <div className="mt-6">
             <SectionHeader title="의견" />
-            <FeedbackCard />
+            <FeedbackCard state={state} />
           </div>
         )}
 
