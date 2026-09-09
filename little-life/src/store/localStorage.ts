@@ -13,6 +13,7 @@ import type {
 } from '@/types'
 import { AREA_IDS, CATEGORIES, DIFFICULTIES, NPC_IDS } from '@/types'
 import { emptyCategoryStats } from '@/lib/stats'
+import { normalizeNickname } from '@/lib/nickname'
 import type { StateRepository } from './repository'
 import { createDefaultState } from './defaultState'
 import { MAX_ADVENTURE_ENERGY } from '@/lib/garden/quest'
@@ -288,7 +289,7 @@ export function sanitizeState(raw: unknown): AppState | null {
   const base: AppState = {
     version: STATE_VERSION,
     user: {
-      name: typeof user.name === 'string' && user.name.trim() ? user.name.trim() : 'Yuli',
+      name: typeof user.name === 'string' ? normalizeNickname(user.name) : '',
       level: numberOr(user.level, 1, 1),
       currentExp: numberOr(user.currentExp, 0),
       totalExp: numberOr(user.totalExp, 0),

@@ -36,6 +36,7 @@ import {
 import { applyDevKitchen } from '@/lib/kitchen/dev'
 import { foodGiftLines } from '@/lib/kitchen/gifts'
 import { pickGiftLine } from '@/lib/city/gift-lines'
+import { normalizeNickname } from '@/lib/nickname'
 import { findScene } from '@/lib/city/scenes'
 import { findKitchenRecipe as findKitchenRecipeById, recipeForFood } from '@/lib/kitchen/recipes'
 
@@ -2168,12 +2169,18 @@ export function useGameState(): GameState {
     [commit],
   )
 
+  /**
+   * 이름을 정한다. 처음 정하는 것도 나중에 고치는 것도 같은 길이다.
+   *
+   * 다듬는 규칙이 화면마다 다르면 프로필에서 고친 이름과 처음 정한 이름의
+   * 모양이 달라진다. 규칙은 `lib/nickname.ts` 한 곳에만 둔다.
+   */
   const renameUser = useCallback(
     (name: string) => {
-      const trimmed = name.trim()
-      if (!trimmed) return
+      const clean = normalizeNickname(name)
+      if (!clean) return
       const prev = stateRef.current
-      commit({ ...prev, user: { ...prev.user, name: trimmed } })
+      commit({ ...prev, user: { ...prev.user, name: clean } })
     },
     [commit],
   )

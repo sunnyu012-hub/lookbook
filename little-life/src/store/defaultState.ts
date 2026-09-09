@@ -54,7 +54,9 @@ export function createDefaultState(): AppState {
     coinRebalanceGiven: true,
     claimedWeeklyGoals: [],
     user: {
-      name: 'Yuli',
+      // 처음 켠 사람에게 만든 사람 이름으로 인사하지 않는다.
+      // 비어 있으면 화면이 먼저 물어본다 (`lib/nickname.ts`).
+      name: '',
       level: 1,
       currentExp: 0,
       totalExp: 0,

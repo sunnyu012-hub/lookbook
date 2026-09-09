@@ -23,6 +23,8 @@ import { AddQuestHub } from '@/components/quest/AddQuestHub'
 import { PackDetailSheet } from '@/components/quest/PackDetailSheet'
 import { BattleSheet } from '@/components/rpg/BattleSheet'
 import { NpcSheet } from '@/components/city/NpcSheet'
+import { NicknameGate } from '@/components/onboarding/NicknameGate'
+import { needsNickname } from '@/lib/nickname'
 import { LivingSceneSheet } from '@/components/city/LivingSceneSheet'
 import { findScene } from '@/lib/city/scenes'
 import { ShopSheet } from '@/components/city/ShopSheet'
@@ -205,8 +207,11 @@ export default function App() {
    */
   useEffect(() => {
     if (!ready || state.guideSeenAt) return
+    // 이름을 아직 안 정했으면 아직이다. 처음 켠 사람에게 읽을 것을 두 장
+    // 겹쳐 주면 둘 다 안 읽는다 — 이름 먼저, 안내는 그다음.
+    if (needsNickname(state.user.name)) return
     setGuideOpen(true)
-  }, [ready, state.guideSeenAt])
+  }, [ready, state.guideSeenAt, state.user.name])
 
   const closeGuide = useCallback(() => {
     setGuideOpen(false)
@@ -699,6 +704,19 @@ export default function App() {
 
   if (devKitchen) {
     return <KitchenLab state={state} onRun={runDevKitchen} />
+  }
+
+  /*
+   * 이름부터 정한다.
+   *
+   * 개발용 화면(?dev=) 뒤에 두는 건 일부러다 — 검수하다가 이름 화면에
+   * 막히면 그때부터 Lab 을 열 때마다 이름을 짓게 된다.
+   *
+   * 하던 사람에게는 안 뜬다. 이름 칸이 비었는지로만 판단해서,
+   * 예전 저장은 이미 이름이 들어 있다.
+   */
+  if (needsNickname(state.user.name)) {
+    return <NicknameGate onDecide={renameUser} />
   }
 
   return (
