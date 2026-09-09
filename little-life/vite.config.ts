@@ -3,6 +3,16 @@ import react from '@vitejs/plugin-react'
 import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
+/**
+ * 이 빌드의 이름.
+ *
+ * 서비스 워커가 캐시 이름으로 쓰고, 앱은 설정 맨 아래에 적어둔다.
+ * **한 번만 계산해서 둘이 같은 값을 쓰는 게 중요하다** — 따로 만들면
+ * "설정에 적힌 판" 과 "실제로 돌고 있는 판" 이 달라져서, 제보를 받아도
+ * 어느 쪽을 믿어야 할지 모른다.
+ */
+const BUILD_ID = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14)
+
 /** dist 안의 파일을 전부 URL 경로로 훑는다. */
 function listFiles(dir: string, base: string): string[] {
   return readdirSync(dir).flatMap((name) => {
@@ -59,14 +69,12 @@ function stampServiceWorker() {
           .filter((url) => !url.startsWith('/assets/supabase-'))
           .concat('/')
 
-        const buildId = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14)
-
         const stamped = readFileSync(file, 'utf8')
-          .replace('__BUILD_ID__', buildId)
+          .replace('__BUILD_ID__', BUILD_ID)
           .replace('__PRECACHE__', JSON.stringify(precache))
 
         writeFileSync(file, stamped)
-        console.log(`  sw.js  build ${buildId} · 미리 받을 파일 ${precache.length}개`)
+        console.log(`  sw.js  build ${BUILD_ID} · 미리 받을 파일 ${precache.length}개`)
       } catch {
         // sw.js 가 없으면 조용히 넘어간다
       }
@@ -76,6 +84,13 @@ function stampServiceWorker() {
 
 export default defineConfig({
   plugins: [react(), stampServiceWorker()],
+  /*
+   * 앱도 자기 판 이름을 안다. "튕겨요" 라는 제보를 받았을 때 어느 빌드인지
+   * 모르면 고칠 데를 못 찾는다. 개발 중에는 빌드가 아니라 그냥 'dev' 다.
+   */
+  define: {
+    __APP_BUILD_ID__: JSON.stringify(BUILD_ID),
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

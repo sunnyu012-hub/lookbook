@@ -314,8 +314,17 @@ describe('도시 사람 이야기', () => {
 
   it('한 장은 짧다', () => {
     for (const c of STORY_CHAPTERS) {
-      expect(c.lines.length, c.id).toBeGreaterThanOrEqual(2)
-      expect(c.lines.length, c.id).toBeLessThanOrEqual(8)
+      // 여러 사람이 나오는 장(K)은 지문이 섞여서 줄이 좀 더 길다.
+      // 그래도 폰에서 한 화면에 읽히는 선을 넘지 않는다.
+      const body = c.scene ?? c.lines
+      expect(body.length, c.id).toBeGreaterThanOrEqual(2)
+      expect(body.length, c.id).toBeLessThanOrEqual(c.scene ? 14 : 8)
+    }
+  })
+
+  it('줄이 있거나 장면이 있거나 — 둘 다 빈 장은 없다', () => {
+    for (const c of STORY_CHAPTERS) {
+      expect(c.lines.length > 0 || (c.scene?.length ?? 0) > 0, c.id).toBe(true)
     }
   })
 
@@ -599,7 +608,12 @@ describe('혼내지 않는다', () => {
     const texts = [
       ...AUTO_COLLECTIONS.flatMap((c) => [c.name, c.description]),
       ...SECRETS.flatMap((s) => [s.name, s.hint, s.reveal, s.description]),
-      ...STORY_CHAPTERS.flatMap((c) => [c.title, c.lockedHint, ...c.lines]),
+      ...STORY_CHAPTERS.flatMap((c) => [
+        c.title,
+        c.lockedHint,
+        ...c.lines,
+        ...(c.scene ?? []).map((l) => l.text),
+      ]),
       ...COMPANIONS.flatMap((c) => [c.name, c.personality, c.hint, c.reveal]),
       ...COMPANION_MEMORIES.flatMap((m) => [m.title, m.text]),
     ]

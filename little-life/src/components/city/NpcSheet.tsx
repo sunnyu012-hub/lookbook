@@ -49,6 +49,8 @@ interface NpcSheetProps {
   onOpenStory: () => void
   /** 정원이 어디까지 열렸는지. 못 찾았으면 0 — 그 얘기는 아예 안 꺼낸다. */
   gardenLevel?: number
+  /** 지금까지 읽은 이야기 장. 읽은 사람에게만 들리는 말이 있다. */
+  readChapterIds?: readonly string[]
   /** 부엌에서 만들어둔 음식. 못 열었으면 빈 배열. */
   foods?: Array<{ itemId: string; name: string; icon: string; count: number }>
 }
@@ -77,6 +79,7 @@ export function NpcSheet({
   story,
   storyReady,
   gardenLevel = 0,
+  readChapterIds = [],
   foods = [],
   onOpenStory,
 }: NpcSheetProps) {
@@ -92,11 +95,17 @@ export function NpcSheet({
      * 목록을 거르지 않는다 — 고르는 일은 전부 resolver 한 곳에서 한다.
      */
     const now = new Date()
-    return pickDialogue(npc, npcState.friendship, timeBand(now), events, gardenLevel, Math.random, {
-      areaId: npcAreaNow(npc.id, now),
-      now,
-    })
-  }, [npc, npcState.friendship, events, dialogueSeed, gardenLevel])
+    return pickDialogue(
+      npc,
+      npcState.friendship,
+      timeBand(now),
+      events,
+      gardenLevel,
+      Math.random,
+      { areaId: npcAreaNow(npc.id, now), now },
+      readChapterIds,
+    )
+  }, [npc, npcState.friendship, events, dialogueSeed, gardenLevel, readChapterIds])
 
   if (!npc) return null
 

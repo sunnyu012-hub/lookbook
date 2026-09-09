@@ -14,6 +14,8 @@ import { RecommendSettingsCard } from '@/components/profile/RecommendSettingsCar
 import { SyncCard } from '@/components/sync/SyncCard'
 import { TransferCard } from '@/components/sync/TransferCard'
 import { BackupNotice } from '@/components/sync/BackupNotice'
+import { FeedbackCard } from '@/components/settings/FeedbackCard'
+import { ResetCard } from '@/components/settings/ResetCard'
 import { CategoryGrowthBar } from '@/components/profile/CategoryGrowthBar'
 import { WeeklyInsightCard } from '@/components/profile/WeeklyInsightCard'
 import { WeeklyGoalsCard } from '@/components/home/WeeklyGoalsCard'
@@ -22,6 +24,7 @@ import { weekCompletedCount } from '@/lib/stats'
 import { weeklyInsight } from '@/lib/insights'
 import { calculateEquipmentBonus } from '@/lib/rpg/rewards'
 import { EFFECT, UI } from '@/lib/assets'
+import { buildLabel, hasFeedbackLink } from '@/lib/build'
 import type { SyncApi } from '@/hooks/useSync'
 
 interface MeScreenProps {
@@ -247,6 +250,30 @@ export function MeScreen({
             />
           </div>
         </div>
+
+        {/* 보낼 곳을 안 넣어둔 판에서는 줄 자체가 없다 (lib/build.ts) */}
+        {hasFeedbackLink() && (
+          <div className="mt-6">
+            <SectionHeader title="의견" />
+            <FeedbackCard />
+          </div>
+        )}
+
+        <div className="mt-6">
+          <SectionHeader title="정리" />
+          <ResetCard
+            state={state}
+            onSignOut={sync.signOut}
+            signedIn={sync.status !== 'OFF' && sync.status !== 'SIGNED_OUT'}
+          />
+        </div>
+
+        {/* 판 이름. "튕겨요" 라는 제보를 받았을 때 제일 먼저 물어야 할 것이고,
+            물어봤을 때 옮겨 적을 자리가 화면에 있어야 답이 온다.
+            눌리지도 않고 아무 일도 안 하는 한 줄이라 제일 아래에 둔다. */}
+        <p className="mt-8 pb-2 text-center text-[11px] text-inkfaint">
+          LITTLE LIFE · {buildLabel()}
+        </p>
       </BottomSheet>
     </div>
   )

@@ -159,6 +159,17 @@ export interface NpcDialogue {
    * 있는 줄도 모르는 곳 얘기를 먼저 꺼내면 그건 힌트가 아니라 스포일러다.
    */
   minGardenLevel?: number
+  /**
+   * 이 이야기 장을 읽은 뒤에만 나온다 (K).
+   *
+   * 이야기를 다 본 다음 날에도 그 사람이 똑같은 말만 하면, 방금 읽은 게
+   * 그 사람이 아니라 별도의 읽을거리였던 게 된다. 딱 한두 줄이면 된다 —
+   * 알게 된 사람에게만 들리는 말.
+   *
+   * 반대로 안 읽은 사람에게는 후보에도 안 든다. 아직 모르는 과거를
+   * 생활 대사가 먼저 흘리면 나중에 그 장이 이미 아는 얘기가 된다.
+   */
+  afterChapterId?: string
 }
 
 export interface NpcQuestStepDef {
