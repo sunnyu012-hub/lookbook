@@ -5,39 +5,39 @@
 <style>
 :root{
   color-scheme: light;
-  --bg:#E9EBE6; --pane:#F4F5F1; --surface:#FFFFFF; --surface2:#F3F5F0;
-  --ink:#1C201E; --ink2:#3D4642; --muted:#6C736D; --faint:#98A099;
-  --line:#DDE0D9; --line2:#EAECE6;
-  --accent:#1B6B57; --accent-ink:#FFFFFF; --accent-soft:#DCEBE3;
-  --climb:#C4433A; --run:#BF7A14; --walk:#2F7F63; --stretch:#4A62B8;
-  --climb-soft:#F6E1DF; --run-soft:#F6E9D3; --walk-soft:#DEECE5; --stretch-soft:#E1E5F6;
-  --warn:#A8531F; --warn-soft:#F6E7DA;
-  --shadow:0 1px 2px rgba(28,32,30,.05), 0 10px 26px -14px rgba(28,32,30,.22);
-  --r:16px;
+  --bg:#E4E2D8; --pane:#F2F0E8; --surface:#FAF9F3; --surface2:#EAE7DC;
+  --ink:#282A22; --ink2:#4A4E42; --muted:#787B6C; --faint:#A2A494;
+  --line:#D8D5C6; --line2:#E6E3D6;
+  --accent:#5C7353; --accent-ink:#FAF9F3; --accent-soft:#DDE4D4;
+  --clay:#9E6E56; --clay-soft:#EDDDD1;
+  --ochre:#A8862F; --ochre-soft:#EEE5CA;
+  --slate:#63808A; --slate-soft:#DCE6E8;
+  --warn:#A0603A;
+  --r:13px;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     color-scheme: dark;
-    --bg:#0F1211; --pane:#141816; --surface:#1B201D; --surface2:#232823;
-    --ink:#E9ECE5; --ink2:#C3CAC3; --muted:#98A199; --faint:#767E77;
-    --line:#2B322D; --line2:#232823;
-    --accent:#4FC0A0; --accent-ink:#0F1211; --accent-soft:#1C332C;
-    --climb:#EE7A70; --run:#DFA34A; --walk:#5CB694; --stretch:#8B9DE0;
-    --climb-soft:#33211F; --run-soft:#32271A; --walk-soft:#1B2F27; --stretch-soft:#20243A;
-    --warn:#DB9463; --warn-soft:#31241A;
-    --shadow:0 1px 2px rgba(0,0,0,.35), 0 12px 28px -16px rgba(0,0,0,.7);
+    --bg:#0E0F0B; --pane:#15170F; --surface:#1C1E16; --surface2:#24271C;
+    --ink:#E8E7D9; --ink2:#C4C5B4; --muted:#969886; --faint:#71735F;
+    --line:#2E3226; --line2:#22261B;
+    --accent:#9DB48D; --accent-ink:#15170F; --accent-soft:#252E1F;
+    --clay:#C79A80; --clay-soft:#2E241C;
+    --ochre:#C9AC63; --ochre-soft:#2C2717;
+    --slate:#8FAEB8; --slate-soft:#1D2629;
+    --warn:#CC9265;
   }
 }
 :root[data-theme="dark"]{
   color-scheme: dark;
-  --bg:#0F1211; --pane:#141816; --surface:#1B201D; --surface2:#232823;
-  --ink:#E9ECE5; --ink2:#C3CAC3; --muted:#98A199; --faint:#767E77;
-  --line:#2B322D; --line2:#232823;
-  --accent:#4FC0A0; --accent-ink:#0F1211; --accent-soft:#1C332C;
-  --climb:#EE7A70; --run:#DFA34A; --walk:#5CB694; --stretch:#8B9DE0;
-  --climb-soft:#33211F; --run-soft:#32271A; --walk-soft:#1B2F27; --stretch-soft:#20243A;
-  --warn:#DB9463; --warn-soft:#31241A;
-  --shadow:0 1px 2px rgba(0,0,0,.35), 0 12px 28px -16px rgba(0,0,0,.7);
+  --bg:#0E0F0B; --pane:#15170F; --surface:#1C1E16; --surface2:#24271C;
+  --ink:#E8E7D9; --ink2:#C4C5B4; --muted:#969886; --faint:#71735F;
+  --line:#2E3226; --line2:#22261B;
+  --accent:#9DB48D; --accent-ink:#15170F; --accent-soft:#252E1F;
+  --clay:#C79A80; --clay-soft:#2E241C;
+  --ochre:#C9AC63; --ochre-soft:#2C2717;
+  --slate:#8FAEB8; --slate-soft:#1D2629;
+  --warn:#CC9265;
 }
 
 *{box-sizing:border-box}
@@ -45,54 +45,49 @@ html,body{height:100%}
 body{
   margin:0; background:var(--bg); color:var(--ink);
   font-family:"IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", system-ui, sans-serif;
-  font-size:15px; line-height:1.5;
-  -webkit-font-smoothing:antialiased;
+  font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased;
 }
 button,input,select,textarea{font:inherit; color:inherit}
 button{cursor:pointer; background:none; border:none; padding:0}
-:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:6px}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:5px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
 
-/* ---------- shell ---------- */
 #app{
   max-width:430px; margin:0 auto; min-height:100%;
   background:var(--pane); position:relative;
-  box-shadow:0 0 0 1px var(--line2);
+  border-left:1px solid var(--line); border-right:1px solid var(--line);
   display:flex; flex-direction:column;
 }
-@media (min-width:520px){ body{padding:0} }
-
 .topbar{
   position:sticky; top:0; z-index:30;
-  background:color-mix(in srgb, var(--pane) 88%, transparent);
-  backdrop-filter:saturate(1.4) blur(12px);
-  border-bottom:1px solid var(--line2);
-  padding:14px 18px 10px;
+  background:color-mix(in srgb, var(--pane) 90%, transparent);
+  backdrop-filter:saturate(1.3) blur(10px);
+  border-bottom:1px solid var(--line);
+  padding:15px 18px 11px;
   display:flex; align-items:baseline; justify-content:space-between; gap:10px;
 }
-.topbar h1{
-  margin:0; font-size:19px; font-weight:600; letter-spacing:-.01em;
-}
+.topbar h1{margin:0; font-size:19px; font-weight:600; letter-spacing:-.01em}
 .topbar .sub{font-size:12px; color:var(--muted); font-family:"IBM Plex Mono",monospace}
 
-main{flex:1; padding:16px 16px 108px; display:flex; flex-direction:column; gap:16px}
+main{flex:1; padding:0 18px 112px; display:flex; flex-direction:column}
 .view[hidden]{display:none!important}
-.view{display:flex; flex-direction:column; gap:16px}
+.view{display:flex; flex-direction:column}
 
-/* ---------- primitives ---------- */
-.card{background:var(--surface); border-radius:var(--r); padding:16px; box-shadow:var(--shadow)}
-.card.flat{box-shadow:none; border:1px solid var(--line)}
+/* --- 라인으로 구분되는 섹션 (그림자 없음) --- */
+.card{background:transparent; border-radius:0; padding:20px 0; border-top:1px solid var(--line)}
+.view > .card:first-child, .view > .cheer:first-child{border-top:none}
+.sheet .card{border-top:none; padding:0}
 .sec-label{
-  font-size:11px; letter-spacing:.12em; text-transform:uppercase;
-  color:var(--faint); font-weight:600; margin:0 0 10px;
-  font-family:"IBM Plex Mono",monospace;
+  font-size:11px; letter-spacing:.1em; color:var(--faint); font-weight:600;
+  margin:0 0 12px; font-family:"IBM Plex Mono",monospace;
 }
 .row{display:flex; align-items:center; gap:10px}
 .between{display:flex; align-items:center; justify-content:space-between; gap:10px}
 .mono{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums}
 .muted{color:var(--muted)}
 .tiny{font-size:12px}
-.hr{height:1px; background:var(--line2); margin:14px -16px}
+.hr{height:1px; background:var(--line); margin:16px 0}
+.emptyline{color:var(--faint); font-size:13px; padding:8px 0; margin:0}
 
 .chip{
   border:1px solid var(--line); border-radius:999px; padding:7px 13px;
@@ -103,103 +98,91 @@ main{flex:1; padding:16px 16px 108px; display:flex; flex-direction:column; gap:1
 .chips{display:flex; flex-wrap:wrap; gap:7px}
 
 .btn{
-  background:var(--accent); color:var(--accent-ink); border-radius:12px;
+  background:var(--accent); color:var(--accent-ink); border-radius:11px;
   padding:13px 16px; font-weight:600; font-size:15px; width:100%; text-align:center;
 }
-.btn.ghost{background:var(--surface2); color:var(--ink); border:1px solid var(--line)}
+.btn.ghost{background:transparent; color:var(--ink2); border:1px solid var(--line)}
 .btn:active{transform:translateY(1px)}
 .link{color:var(--accent); font-weight:600; font-size:14px}
 
 .fld{display:flex; flex-direction:column; gap:6px; flex:1; min-width:0}
 .fld > span{font-size:12px; color:var(--muted); font-weight:500}
 input[type=text],input[type=number],input[type=date],input[type=time],textarea,select{
-  width:100%; background:var(--surface2); border:1px solid var(--line);
-  border-radius:11px; padding:11px 12px; font-size:15px;
+  width:100%; background:var(--surface); border:1px solid var(--line);
+  border-radius:10px; padding:11px 12px; font-size:15px;
 }
 textarea{resize:vertical; min-height:56px}
 input.big{font-family:"IBM Plex Mono",monospace; font-size:30px; font-weight:600; padding:10px 12px; letter-spacing:-.02em}
 
-.expander{border-top:1px dashed var(--line); margin-top:14px; padding-top:12px}
-.expander > button{
-  display:flex; align-items:center; gap:6px; font-size:13px;
-  color:var(--accent); font-weight:600;
-}
+.expander{border-top:1px solid var(--line2); margin-top:14px; padding-top:12px}
+.expander > button{display:flex; align-items:center; gap:6px; font-size:13px; color:var(--accent); font-weight:600}
 .expander > button .caret{transition:transform .18s}
 .expander[data-open="true"] > button .caret{transform:rotate(180deg)}
 .expander .body{display:none; flex-direction:column; gap:14px; padding-top:14px}
 .expander[data-open="true"] .body{display:flex}
 
-.emptyline{color:var(--faint); font-size:13px; padding:10px 0}
-
-/* ---------- tabbar ---------- */
+/* --- 탭바 --- */
 .tabbar{
   position:fixed; bottom:0; left:0; right:0; z-index:40;
   max-width:430px; margin:0 auto;
-  background:color-mix(in srgb, var(--surface) 92%, transparent);
-  backdrop-filter:saturate(1.5) blur(14px);
+  background:color-mix(in srgb, var(--pane) 94%, transparent);
+  backdrop-filter:saturate(1.4) blur(12px);
   border-top:1px solid var(--line);
   display:grid; grid-template-columns:repeat(5,1fr);
   padding:6px 4px calc(6px + env(safe-area-inset-bottom));
 }
-.tabbar button{
-  display:flex; flex-direction:column; align-items:center; gap:3px;
-  padding:6px 0 4px; color:var(--faint); font-size:10.5px; font-weight:600; letter-spacing:.02em;
-}
+.tabbar button{display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 0 4px; color:var(--faint); font-size:10.5px; font-weight:600}
 .tabbar button svg{width:22px; height:22px; stroke-width:1.7}
 .tabbar button[aria-current="page"]{color:var(--accent)}
 .tabbar button[aria-current="page"] svg{stroke-width:2.2}
 
-/* ---------- home ---------- */
+/* --- 세그먼트 (밑줄형) --- */
+.seg{display:flex; border-bottom:1px solid var(--line); background:transparent; padding:0; gap:0}
+.seg button{flex:1; padding:12px 0 11px; font-size:13.5px; font-weight:600; color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px}
+.seg button[aria-selected="true"]{color:var(--ink); border-bottom-color:var(--accent)}
+
+/* --- 홈 --- */
 .cheer{
-  background:var(--accent-soft); border-radius:var(--r); padding:20px 18px;
-  font-family:"Gowun Batang", serif; font-size:19px; line-height:1.62;
-  color:var(--ink); letter-spacing:-.01em; text-wrap:balance;
-  position:relative;
+  background:var(--accent-soft); border-radius:var(--r); padding:20px 18px 22px;
+  font-family:"Gowun Batang", serif; font-size:18.5px; line-height:1.65;
+  color:var(--ink); letter-spacing:-.01em; text-wrap:balance; position:relative;
+  margin:18px 0 4px;
 }
-.cheer .q{font-family:"Gowun Batang",serif; font-size:34px; color:var(--accent); opacity:.42; line-height:1; display:block; margin-bottom:2px}
-.cheer button.reroll{position:absolute; right:12px; bottom:10px; font-size:11px; color:var(--accent); opacity:.75; font-family:"IBM Plex Mono",monospace}
+.cheer .q{font-family:"Gowun Batang",serif; font-size:32px; color:var(--accent); opacity:.4; line-height:1; display:block; margin-bottom:0}
+.cheer button.reroll{position:absolute; right:14px; bottom:10px; font-size:11px; color:var(--accent); opacity:.8; font-family:"IBM Plex Mono",monospace}
 
 .plan{display:flex; flex-direction:column; gap:10px}
 .plan .headline{font-size:17px; font-weight:600; letter-spacing:-.01em}
-.plan .note{font-size:12.5px; color:var(--muted); line-height:1.5}
-.pill{
-  display:inline-flex; align-items:center; gap:6px; border-radius:999px;
-  padding:4px 10px; font-size:12px; font-weight:600;
-}
-.pill.climb{background:var(--climb-soft); color:var(--climb)}
-.pill.run{background:var(--run-soft); color:var(--run)}
-.pill.walk{background:var(--walk-soft); color:var(--walk)}
-.pill.stretch{background:var(--stretch-soft); color:var(--stretch)}
+.plan .note{font-size:12.5px; color:var(--muted); line-height:1.6; margin:0}
+.pill{display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:4px 10px; font-size:12px; font-weight:600}
+.pill.climb{background:var(--clay-soft); color:var(--clay)}
+.pill.run{background:var(--ochre-soft); color:var(--ochre)}
+.pill.walk{background:var(--accent-soft); color:var(--accent)}
+.pill.stretch{background:var(--slate-soft); color:var(--slate)}
 .pill.rest{background:var(--surface2); color:var(--muted)}
 .pill.done{background:var(--accent-soft); color:var(--accent)}
+.tag{font-size:10.5px; font-weight:600; padding:3px 7px; border-radius:5px; background:var(--surface2); color:var(--muted); flex:none}
 
-.meals{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
-.meal{
-  border:1px solid var(--line); border-radius:13px; padding:12px 6px;
-  display:flex; flex-direction:column; align-items:center; gap:5px;
-  background:var(--surface); transition:.12s;
-}
-.meal .ic{font-size:19px; line-height:1}
-.meal .nm{font-size:12.5px; font-weight:600; color:var(--ink2)}
-.meal[aria-pressed="true"]{background:var(--accent-soft); border-color:transparent}
+.meals{display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:11px; overflow:hidden}
+.meal{padding:13px 6px; display:flex; flex-direction:column; align-items:center; gap:5px; background:var(--surface); transition:background .12s}
+.meal .ic{font-size:19px; line-height:1; filter:saturate(.85)}
+.meal .nm{font-size:12.5px; font-weight:600; color:var(--muted)}
+.meal[aria-pressed="true"]{background:var(--accent-soft)}
 .meal[aria-pressed="true"] .nm{color:var(--accent)}
 
 .weight-hero{display:flex; align-items:flex-end; justify-content:space-between; gap:12px}
-.weight-hero .kg{
-  font-family:"IBM Plex Mono",monospace; font-size:42px; font-weight:600;
-  letter-spacing:-.03em; line-height:1; font-variant-numeric:tabular-nums;
-}
+.weight-hero .kg{font-family:"IBM Plex Mono",monospace; font-size:42px; font-weight:600; letter-spacing:-.03em; line-height:1; font-variant-numeric:tabular-nums}
 .weight-hero .kg small{font-size:16px; font-weight:500; color:var(--muted); margin-left:3px}
 .delta{font-size:13px; font-weight:600; font-family:"IBM Plex Mono",monospace}
-.delta.down{color:var(--accent)} .delta.up{color:var(--warn)} .delta.same{color:var(--muted)}
-.goalbar{margin-top:14px}
-.goalbar .track{height:6px; border-radius:99px; background:var(--surface2); overflow:hidden}
-.goalbar .fill{height:100%; background:var(--accent); border-radius:99px}
+.delta.down{color:var(--accent)} .delta.up{color:var(--clay)} .delta.same{color:var(--muted)}
+.goalbar{margin-top:16px}
+.goalbar .track{height:4px; border-radius:99px; background:var(--surface2); overflow:hidden}
+.goalbar .fill{height:100%; background:var(--accent); border-radius:99px; display:block}
 
 .dots{display:flex; gap:6px; align-items:center}
-.dot{width:13px; height:13px; border-radius:50%; border:1.5px solid var(--line); background:transparent}
-.dot.on.climb{background:var(--climb); border-color:var(--climb)}
-.dot.on.cardio{background:var(--run); border-color:var(--run)}
+.dot{width:12px; height:12px; border-radius:50%; border:1.5px solid var(--line); background:transparent; display:block}
+.dot.on.climb{background:var(--clay); border-color:var(--clay)}
+.dot.on.cardio{background:var(--ochre); border-color:var(--ochre)}
 .wk-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 0}
 .wk-row + .wk-row{border-top:1px solid var(--line2)}
 .wk-row .nm{font-size:14px; font-weight:600}
@@ -210,105 +193,93 @@ input.big{font-family:"IBM Plex Mono",monospace; font-size:30px; font-weight:600
 .snackrow + .snackrow{border-top:1px solid var(--line2)}
 .snackrow .when{font-size:11.5px; color:var(--faint); font-family:"IBM Plex Mono",monospace; flex:none}
 .snackrow .nm{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.tag{font-size:10.5px; font-weight:600; padding:3px 7px; border-radius:6px; background:var(--surface2); color:var(--muted); flex:none}
-
-.linkcard{
-  display:flex; align-items:center; justify-content:space-between; gap:10px;
-  width:100%; text-align:left;
-}
+.linkcard{display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; text-align:left}
 .linkcard .t{font-size:15px; font-weight:600}
 .linkcard .d{font-size:12.5px; color:var(--muted)}
 
-/* ---------- calendar ---------- */
-.cal-head{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px}
-.cal-head .m{font-size:17px; font-weight:600; font-family:"IBM Plex Mono",monospace}
-.cal-nav{width:34px; height:34px; border-radius:10px; background:var(--surface2); display:grid; place-items:center; color:var(--ink2)}
-.cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:3px}
-.cal-dow{text-align:center; font-size:10.5px; color:var(--faint); font-weight:600; padding-bottom:5px; font-family:"IBM Plex Mono",monospace}
-.cal-dow.sun{color:var(--climb)}
+/* --- 캘린더 --- */
+.cal-head{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:14px}
+.cal-head .m{font-size:16px; font-weight:600; font-family:"IBM Plex Mono",monospace}
+.cal-nav{width:32px; height:32px; border-radius:9px; border:1px solid var(--line); display:grid; place-items:center; color:var(--ink2); font-size:15px}
+.cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:2px}
+.cal-dow{text-align:center; font-size:10.5px; color:var(--faint); font-weight:600; padding-bottom:6px; font-family:"IBM Plex Mono",monospace}
+.cal-dow.sun{color:var(--clay)}
 .cal-cell{
-  aspect-ratio:1/1.18; border-radius:10px; padding:4px 2px 3px;
-  display:flex; flex-direction:column; align-items:center; gap:2px;
-  background:var(--surface2); border:1px solid transparent; min-width:0;
+  aspect-ratio:1/1; border-radius:9px; padding:8px 2px 4px; background:transparent;
+  display:flex; flex-direction:column; align-items:center; border:1px solid transparent; min-width:0;
 }
 .cal-cell.blank{background:transparent}
-.cal-cell .d{font-size:12px; font-weight:600; font-family:"IBM Plex Mono",monospace; line-height:1.1}
-.cal-cell.sun .d{color:var(--climb)}
-.cal-cell.future{opacity:.42}
+.cal-cell .d{font-size:12.5px; font-weight:600; font-family:"IBM Plex Mono",monospace; line-height:1.1; color:var(--ink2)}
+.cal-cell.sun .d{color:var(--clay)}
+.cal-cell.future .d{color:var(--faint)}
 .cal-cell.today{border-color:var(--accent)}
-.cal-cell.meals3{background:var(--accent-soft)}
-.cal-cell .w{font-size:9.5px; color:var(--muted); font-family:"IBM Plex Mono",monospace; line-height:1}
-.cal-cell .mk{display:flex; gap:2px; margin-top:auto; padding-bottom:1px}
+.cal-cell.today .d{color:var(--accent)}
+.cal-cell .mk{display:flex; gap:3px; margin-top:6px; min-height:5px}
 .mk i{width:5px; height:5px; border-radius:50%; display:block}
-.mk i.sq{border-radius:1.5px}
-.legend{display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; font-size:11px; color:var(--muted)}
-.legend span{display:inline-flex; align-items:center; gap:4px}
+.legend{display:flex; flex-wrap:wrap; gap:12px; margin-top:16px; font-size:11px; color:var(--muted)}
+.legend span{display:inline-flex; align-items:center; gap:5px}
 .legend i{width:6px; height:6px; border-radius:50%; display:block}
 
-.msum{display:grid; grid-template-columns:repeat(4,1fr); gap:8px}
-.msum div{background:var(--surface2); border-radius:11px; padding:10px 6px; text-align:center}
-.msum .v{font-family:"IBM Plex Mono",monospace; font-size:17px; font-weight:600}
-.msum .l{font-size:10.5px; color:var(--muted); margin-top:1px}
+.msum,.statgrid{display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:11px; overflow:hidden}
+.msum{grid-template-columns:repeat(4,1fr)}
+.msum div,.stat{background:var(--pane); padding:13px 8px}
+.msum div{text-align:center; padding:12px 4px}
+.msum .v,.stat .v{font-family:"IBM Plex Mono",monospace; font-size:19px; font-weight:600; letter-spacing:-.02em}
+.msum .v{font-size:17px}
+.msum .l,.stat .l{font-size:11px; color:var(--muted); margin-top:2px}
 
-/* ---------- record ---------- */
-.seg{display:grid; grid-template-columns:repeat(4,1fr); gap:3px; background:var(--surface2); padding:3px; border-radius:12px}
-.seg button{padding:9px 0; border-radius:9px; font-size:13.5px; font-weight:600; color:var(--muted)}
-.seg button[aria-selected="true"]{background:var(--surface); color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.09)}
+.wkday{display:flex; gap:12px; padding:13px 0; align-items:flex-start; width:100%; text-align:left}
+.wkday + .wkday{border-top:1px solid var(--line2)}
+.wkday.today{background:var(--accent-soft); margin:0 -10px; padding-left:10px; padding-right:10px; border-radius:9px}
+.wkday .dl{width:46px; flex:none; text-align:center}
+.wkday .dl .dn{display:block; font-family:"IBM Plex Mono",monospace; font-size:16px; font-weight:600; line-height:1.1}
+.wkday .dl .dw{display:block; font-size:10.5px; color:var(--muted)}
+.wkday.future{opacity:.5}
+.wkday .db{flex:1; min-width:0; display:flex; flex-direction:column; gap:6px}
+.wkday .kg{font-family:"IBM Plex Mono",monospace; font-size:14px; font-weight:600}
+.mini3{display:flex; gap:3px}
+.mini3 i{width:16px; height:5px; border-radius:99px; background:var(--line); display:block}
+.mini3 i.on{background:var(--accent)}
+
+/* --- 기록 --- */
 .dt{display:flex; gap:10px}
 .form{display:flex; flex-direction:column; gap:14px}
-.notice{
-  background:var(--warn-soft); border-radius:13px; padding:13px 14px;
-  font-size:12.5px; line-height:1.6; color:var(--ink2);
-  border-left:3px solid var(--warn);
-}
-.notice b{color:var(--warn)}
+.notice{background:var(--clay-soft); border-radius:11px; padding:13px 14px; font-size:12.5px; line-height:1.65; color:var(--ink2); border-left:3px solid var(--clay); margin-top:18px}
+.notice b{color:var(--clay)}
 .faces{display:flex; gap:6px}
-.faces button{flex:1; padding:9px 0; border-radius:11px; border:1px solid var(--line); font-size:21px; background:var(--surface)}
+.faces button{flex:1; padding:9px 0; border-radius:10px; border:1px solid var(--line); font-size:21px; background:var(--surface)}
 .faces button[aria-pressed="true"]{background:var(--accent-soft); border-color:var(--accent)}
 .rangewrap{display:flex; align-items:center; gap:12px}
 input[type=range]{flex:1; accent-color:var(--accent)}
 .rangeval{font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:16px; width:34px; text-align:right}
-.entry{display:flex; align-items:center; gap:10px; padding:11px 0; font-size:14px}
+.entry{display:flex; align-items:flex-start; gap:10px; padding:11px 0; font-size:14px}
 .entry + .entry{border-top:1px solid var(--line2)}
-.entry .when{font-size:11.5px; color:var(--faint); font-family:"IBM Plex Mono",monospace; flex:none; width:76px}
+.entry .when{font-size:11.5px; color:var(--faint); font-family:"IBM Plex Mono",monospace; flex:none; width:74px; padding-top:2px}
 .entry .main{flex:1; min-width:0}
 .entry .main .t{display:block; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.entry .main .s{display:block; font-size:11.5px; color:var(--muted); line-height:1.45}
-.del{color:var(--faint); font-size:17px; padding:4px 6px; line-height:1; flex:none}
+.entry .main .s{display:block; font-size:11.5px; color:var(--muted); line-height:1.5}
+.del{color:var(--faint); font-size:17px; padding:2px 4px; line-height:1; flex:none}
 
-/* ---------- habits ---------- */
-.hrow{display:flex; align-items:center; gap:12px; padding:12px 0}
-.hrow + .hrow{border-top:1px solid var(--line2)}
-.hcheck{
-  width:28px; height:28px; border-radius:9px; border:1.5px solid var(--line);
-  display:grid; place-items:center; flex:none; color:transparent; background:var(--surface);
-}
+/* --- 습관 --- */
+.hitem{padding:14px 0}
+.hitem + .hitem{border-top:1px solid var(--line2)}
+.hrow{display:flex; align-items:center; gap:12px}
+.hcheck{width:26px; height:26px; border-radius:8px; border:1.5px solid var(--line); display:grid; place-items:center; flex:none; color:transparent; background:var(--surface)}
 .hcheck[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
 .hrow .nm{flex:1; min-width:0; font-size:14.5px; font-weight:500}
 .hrow .streak{font-size:11px; color:var(--muted); font-family:"IBM Plex Mono",monospace; flex:none}
-.week7{display:flex; gap:3px; flex:none}
-.week7 i{width:7px; height:7px; border-radius:2px; background:var(--line); display:block}
-.week7 i.on{background:var(--accent)}
-.principles{counter-reset:p; display:flex; flex-direction:column}
-.principles li{
-  counter-increment:p; list-style:none; display:flex; gap:11px; padding:11px 0;
-  font-size:14.5px; line-height:1.5;
-}
+.d30{display:grid; grid-template-columns:repeat(30,1fr); gap:2px; margin:10px 0 0 38px}
+.d30 i{display:block; aspect-ratio:1; border-radius:2px; background:transparent; border:1px solid var(--line)}
+.d30 i.on{background:var(--accent); border-color:var(--accent)}
+.principles{counter-reset:p; display:flex; flex-direction:column; margin:0; padding:0}
+.principles li{counter-increment:p; list-style:none; display:flex; gap:11px; padding:11px 0; font-size:14.5px; line-height:1.55}
 .principles li + li{border-top:1px solid var(--line2)}
-.principles li::before{
-  content:counter(p,decimal-leading-zero); font-family:"IBM Plex Mono",monospace;
-  font-size:11.5px; font-weight:600; color:var(--accent); flex:none; padding-top:3px;
-}
-.principles{margin:0; padding:0}
+.principles li::before{content:counter(p,decimal-leading-zero); font-family:"IBM Plex Mono",monospace; font-size:11.5px; font-weight:600; color:var(--accent); flex:none; padding-top:3px}
 
-/* ---------- stats ---------- */
-.statgrid{display:grid; grid-template-columns:repeat(2,1fr); gap:8px}
-.stat{background:var(--surface2); border-radius:12px; padding:12px}
-.stat .v{font-family:"IBM Plex Mono",monospace; font-size:21px; font-weight:600; letter-spacing:-.02em}
-.stat .l{font-size:11.5px; color:var(--muted); margin-top:2px}
+/* --- 분석 --- */
 .barrow{display:flex; align-items:center; gap:10px; padding:7px 0; font-size:13px}
 .barrow .lb{width:84px; flex:none; color:var(--ink2); font-size:12.5px; white-space:nowrap}
-.barrow .tr{display:block; flex:1; height:9px; background:var(--surface2); border-radius:99px; overflow:hidden}
+.barrow .tr{display:block; flex:1; height:8px; background:var(--surface2); border-radius:99px; overflow:hidden}
 .barrow .fl{display:block; height:100%; border-radius:99px; background:var(--accent)}
 .barrow .vl{width:44px; text-align:right; flex:none; font-family:"IBM Plex Mono",monospace; color:var(--muted); font-size:12px}
 .wkbar{display:flex; align-items:center; gap:10px; padding:8px 0; font-size:12.5px}
@@ -318,37 +289,50 @@ input[type=range]{flex:1; accent-color:var(--accent)}
 .wkbar .cells i{width:11px; height:11px; border-radius:3px; display:block}
 svg.chart{width:100%; height:auto; display:block; overflow:visible}
 
-/* ---------- sheet ---------- */
-.sheet-back{
-  position:fixed; inset:0; z-index:60; background:rgba(15,18,17,.42);
-  display:flex; align-items:flex-end; justify-content:center;
-}
+.ckpt{position:relative; height:70px; margin:44px 0 4px}
+.ckpt .track{position:absolute; left:8px; right:8px; top:0; height:2px; background:var(--line)}
+.ckpt .fill{position:absolute; left:0; top:0; height:2px; background:var(--accent)}
+.ckpt .node{position:absolute; top:-4px; width:10px; height:10px; border-radius:50%; background:var(--pane); border:2px solid var(--line); transform:translateX(-50%)}
+.ckpt .node.passed{background:var(--accent); border-color:var(--accent)}
+.ckpt .lbl{position:absolute; top:14px; transform:translateX(-50%); font-size:10.5px; font-family:"IBM Plex Mono",monospace; color:var(--faint); white-space:nowrap}
+.ckpt .lbl.cur{color:var(--accent); font-weight:600}
+.ckpt .you{position:absolute; top:-38px; transform:translateX(-50%); white-space:nowrap; text-align:center}
+.ckpt .you b{display:block; font-family:"IBM Plex Mono",monospace; font-size:14px; font-weight:600; color:var(--ink)}
+.ckpt .you span{display:block; font-size:9.5px; color:var(--faint); font-family:"IBM Plex Mono",monospace}
+.ckpt .marker{position:absolute; top:-6px; width:14px; height:14px; border-radius:50%; background:var(--pane); border:3px solid var(--accent); transform:translateX(-50%)}
+.remind{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:13px 14px; margin-top:26px; font-size:13.5px; line-height:1.6; color:var(--ink2)}
+.remind b{display:block; font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--accent); margin-bottom:4px; letter-spacing:.06em}
+
+.hourchart{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; align-items:end; height:132px; margin-top:6px}
+.hourchart .col{display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:6px; height:100%}
+.hourchart .n{font-size:11.5px; font-family:"IBM Plex Mono",monospace; color:var(--muted)}
+.hourchart .bar{width:100%; max-width:46px; background:var(--accent-soft); border-top:2px solid var(--accent); border-radius:3px 3px 0 0; min-height:2px}
+.hourchart .lb{font-size:11px; color:var(--muted); text-align:center; line-height:1.3}
+.hourchart .lb small{display:block; font-size:9.5px; color:var(--faint); font-family:"IBM Plex Mono",monospace}
+
+/* --- 시트 --- */
+.sheet-back{position:fixed; inset:0; z-index:60; background:rgba(20,22,16,.44); display:flex; align-items:flex-end; justify-content:center}
 .sheet-back[hidden]{display:none}
 .sheet{
-  width:100%; max-width:430px; background:var(--pane);
-  border-radius:22px 22px 0 0; max-height:88vh; overflow-y:auto;
-  padding:8px 16px calc(24px + env(safe-area-inset-bottom));
-  box-shadow:0 -12px 40px rgba(0,0,0,.25);
-  animation:up .22s ease-out;
+  width:100%; max-width:430px; background:var(--pane); border-radius:20px 20px 0 0;
+  max-height:88vh; overflow-y:auto; padding:8px 18px calc(24px + env(safe-area-inset-bottom));
+  border-top:1px solid var(--line); animation:up .22s ease-out;
 }
-@keyframes up{from{transform:translateY(22px); opacity:.6} to{transform:none; opacity:1}}
-.sheet .grab{width:38px; height:4px; border-radius:99px; background:var(--line); margin:6px auto 12px}
+@keyframes up{from{transform:translateY(20px); opacity:.65} to{transform:none; opacity:1}}
+.sheet .grab{width:36px; height:4px; border-radius:99px; background:var(--line); margin:6px auto 14px}
 .sheet h2{margin:0 0 4px; font-size:19px; font-weight:600; letter-spacing:-.01em}
-.sheet .sh-sub{font-size:12.5px; color:var(--muted); margin-bottom:14px; font-family:"IBM Plex Mono",monospace}
-.sheet-sec + .sheet-sec{margin-top:14px}
+.sheet .sh-sub{font-size:12.5px; color:var(--muted); margin:0 0 16px; font-family:"IBM Plex Mono",monospace}
+.sheet-sec{padding:16px 0; border-top:1px solid var(--line2)}
+.sheet-sec:first-child{border-top:none; padding-top:0}
 .toast{
   position:fixed; left:50%; transform:translateX(-50%); bottom:96px; z-index:70;
-  background:var(--ink); color:var(--bg); padding:10px 16px; border-radius:999px;
-  font-size:13px; font-weight:600; box-shadow:var(--shadow); pointer-events:none;
-  opacity:0; transition:opacity .2s, transform .2s;
+  background:var(--ink); color:var(--pane); padding:10px 16px; border-radius:999px;
+  font-size:13px; font-weight:600; pointer-events:none; opacity:0; transition:opacity .2s, transform .2s;
 }
 .toast.show{opacity:1; transform:translateX(-50%) translateY(-6px)}
-.savebadge{
-  font-size:10.5px; font-family:"IBM Plex Mono",monospace; color:var(--faint);
-  display:flex; align-items:center; gap:5px;
-}
+.savebadge{font-size:10.5px; font-family:"IBM Plex Mono",monospace; color:var(--faint); display:flex; align-items:center; gap:5px}
 .savebadge i{width:6px; height:6px; border-radius:50%; background:var(--accent); display:block}
-.savebadge.local i{background:var(--warn)}
+.savebadge.local i{background:var(--clay)}
 </style>
 
 <div id="app">
@@ -414,26 +398,19 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
 
     <!-- ============ CALENDAR ============ -->
     <section class="view" id="view-cal" hidden>
+      <div class="seg" id="cal-seg" role="tablist">
+        <button role="tab" type="button" data-cal="day" aria-selected="false">일간</button>
+        <button role="tab" type="button" data-cal="week" aria-selected="false">주간</button>
+        <button role="tab" type="button" data-cal="month" aria-selected="true">월간</button>
+      </div>
       <div class="card">
         <div class="cal-head">
-          <button class="cal-nav" type="button" id="cal-prev" aria-label="이전 달">‹</button>
-          <span class="m" id="cal-month"></span>
-          <button class="cal-nav" type="button" id="cal-next" aria-label="다음 달">›</button>
+          <button class="cal-nav" type="button" id="cal-prev" aria-label="이전">‹</button>
+          <span class="m" id="cal-title"></span>
+          <button class="cal-nav" type="button" id="cal-next" aria-label="다음">›</button>
         </div>
-        <div class="cal-grid" id="cal-grid"></div>
-        <div class="legend">
-          <span><i style="background:var(--climb)"></i>클라이밍</span>
-          <span><i style="background:var(--run)"></i>러닝</span>
-          <span><i style="background:var(--walk)"></i>걷기</span>
-          <span><i style="background:var(--stretch)"></i>스트레칭</span>
-          <span><i style="background:var(--faint)"></i>간식</span>
-          <span><i style="background:var(--accent);border-radius:1.5px"></i>약</span>
-        </div>
-        <div class="hr"></div>
-        <p class="sec-label">이 달 요약</p>
-        <div class="msum" id="cal-summary"></div>
+        <div id="cal-body"></div>
       </div>
-      <p class="tiny muted" style="text-align:center; margin:0">날짜를 누르면 그날 기록을 볼 수 있어요</p>
     </section>
 
     <!-- ============ RECORD ============ -->
@@ -660,7 +637,8 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
 
     <!-- ============ STATS ============ -->
     <section class="view" id="view-stats" hidden>
-      <div class="seg" id="stat-seg" style="grid-template-columns:repeat(3,1fr)">
+      <div class="seg" id="stat-seg">
+        <button type="button" data-range="7" aria-selected="false">7일</button>
         <button type="button" data-range="30" aria-selected="true">30일</button>
         <button type="button" data-range="90" aria-selected="false">90일</button>
         <button type="button" data-range="9999" aria-selected="false">전체</button>
@@ -709,81 +687,96 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
    1. 상수
    ============================================================ */
 const CHEERS = [
-  "오늘도 열었네. 그게 제일 어려운 일이야.",
-  "체중계 숫자는 오늘의 컨디션이지, 너의 성적표가 아니야.",
-  "어제보다 조금 나은 하루면 충분해.",
-  "물 한 잔 마시고 시작하자.",
+  "오늘도 열었네. 기록이 먼저고, 잘하는 건 그다음이야.",
+  "48kg은 목적지지, 마감일이 아니야.",
+  "덜 먹는 것보다 제때 먹는 게 먼저야.",
+  "어제 많이 먹었어도 오늘 굶지 않기.",
+  "간식은 평가하지 말고 일단 적어두자.",
+  "죄책감은 아무것도 바꾸지 않아. 기록은 바꿔.",
+  "하루 숫자 말고 이번 주 흐름을 보자.",
+  "금지한 음식은 결국 더 크게 돌아와.",
+  "오늘 힘들면 걷기로 바꿔도 성공이야.",
+  "클라이밍은 즐기러 가는 거야. 감량은 덤이고.",
+  "약은 대신 해주지 않아. 옆에서 거들 뿐이야.",
+  "정체는 실패가 아니라 몸이 적응하는 시간이야.",
+  "세 끼 챙긴 날이 제일 안전한 날이야.",
+  "물 한 잔 마시고 천천히 시작하자.",
+  "체중계가 멈춰 있어도 옷은 먼저 알아.",
+  "무리해서 만든 몸은 무리해야 유지돼.",
+  "오늘 못 지켰다고 이번 주가 망한 건 아니야.",
+  "배고픔은 잘못이 아니라 신호야.",
+  "잘 자는 것도 오늘의 할 일이야.",
+  "기록이 쌓이면 흐름이 보이고, 흐름이 보이면 덜 불안해져.",
+  "러닝은 임시 보조야. 못 뛴 날도 괜찮아.",
   "완벽한 하루보다 이어지는 하루가 힘이 세.",
-  "오늘 안 되면 내일 하면 돼. 대신 내일은 진짜 하자.",
-  "배고픔은 적이 아니야. 그냥 신호일 뿐.",
-  "몸이 무거운 날은 걷기만 해도 성공이야.",
-  "홀드 하나 더 잡듯이, 오늘 하나만 더.",
-  "숫자가 멈춘 주에도 몸은 바뀌고 있어.",
-  "잘 자는 것도 다이어트야. 오늘은 조금 일찍 눕자.",
-  "먹었으면 기록하고, 기록했으면 넘어가자.",
-  "죄책감은 칼로리를 태우지 않아.",
-  "삼시세끼 챙긴 날이 제일 안전한 날이야.",
-  "지난달의 나는 지금의 나를 부러워할걸.",
-  "오늘의 선택 하나가 다음 주의 컨디션이 돼.",
-  "계단 한 층도 운동이야.",
-  "붓기는 지나가. 하루쯤 기다려주자.",
-  "힘든 날 목표를 낮추는 건 포기가 아니야.",
-  "러닝화 신는 것까지만 해보자. 나머진 다리가 알아서 해.",
+  "스트레스로 먹은 날도 있지. 알아차린 것만으로 충분해.",
   "남이 아니라 지난주의 나랑 비교하자.",
-  "도시락 싼 날의 나, 진짜 멋있다.",
-  "한 끼 무너져도 다음 끼니부터 다시.",
-  "천천히 가도 돼. 되돌아가지만 않으면.",
-  "오늘 흘린 땀은 어디 안 가.",
-  "약도, 운동도, 밥도 결국 나를 돌보는 방법이야.",
-  "스트레스로 먹은 날도 있지. 알아차린 것만으로 반은 이겼어.",
-  "3개월 뒤엔 이 기록들이 증거가 될 거야.",
-  "쉬는 것도 계획의 일부야.",
-  "잘하고 있어. 진심으로."
+  "사이즈 걱정 없이 옷 고르는 날, 그게 진짜 목표였지.",
+  "오늘 쉬는 것도 계획의 일부야.",
+  "숫자가 멈춘 주에도 몸은 조용히 바뀌고 있어.",
+  "도시락 싼 날의 나, 꽤 멋있다.",
+  "48kg 다음에도 계속할 수 있는 방식으로 가자.",
+  "지금 이 속도로 충분해."
 ];
 
 const DEFAULT_PRINCIPLES = [
-  "체중은 아침에 화장실 다녀온 뒤 딱 한 번만 잰다.",
-  "하루 오르내림은 물·소금·컨디션이다. 흐름만 본다.",
-  "삼시세끼는 거르지 않는다. 굶으면 밤에 돌아온다.",
-  "단백질 먼저, 채소 다음, 탄수화물은 마지막에.",
-  "간식은 참지 말고 기록한다. 기록하면 절반은 이긴 것.",
-  "운동은 의무가 아니다. 힘든 날은 걷기로 바꿔도 성공이다.",
-  "클라이밍은 즐기러 간다. 결과는 따라온다.",
-  "카페인은 오후 2시 전까지, 되도록 디카페인으로.",
-  "약은 정해진 날 정해진 시간에. 용량 변경은 의료진과 먼저.",
-  "하루 망쳤다고 한 주를 버리지 않는다. 다음 끼니부터 다시."
+  "48kg은 목적지일 뿐, 데드라인 때문에 무리하지 않는다",
+  "덜 먹기보다 규칙적으로 잘 먹는 게 먼저다",
+  "당류나 음식을 완전히 금지하지 않는다",
+  "간식은 평가하지 않고 우선 기록만 한다",
+  "클라이밍이 메인, 러닝은 임시 보조수단 — 힘들면 걷기로 대체해도 성공",
+  "약은 감량을 대신하지 않는다, 생활 유지를 돕는 보조수단일 뿐",
+  "하루 체중이 아니라 주간 평균 흐름을 본다",
+  "정체가 와도 미리 실패라 가정하지 않는다",
+  "체중만이 아니라 옷 핏도 함께 본다 (진짜 목표는 사이즈 걱정 없이 옷 고르기)",
+  "48kg이 된 다음에도 계속할 수 있는 방식으로 간다"
 ];
 
 const DEFAULT_HABITS = [
-  {id:"h1", name:"물 1.5L 마시기"},
-  {id:"h2", name:"끼니마다 단백질 챙기기"},
-  {id:"h3", name:"야식 안 먹기"},
-  {id:"h4", name:"12시 전에 눕기"},
-  {id:"h5", name:"스트레칭 5분"},
-  {id:"h6", name:"계단 이용하기"}
+  {id:"a1", name:"무알콜 유지"},
+  {id:"a2", name:"디카페인"},
+  {id:"a3", name:"삼시세끼"},
+  {id:"a4", name:"스트레칭"},
+  {id:"a5", name:"도시락"}
+];
+
+/* 감량 체크포인트 — 구간마다 스스로에게 거는 말 */
+const CHECKPOINTS = [
+  {kg:62, note:"출발점. 덜 먹기보다 규칙적으로 잘 먹는 것부터 자리잡히면 된다."},
+  {kg:58, note:"정체될 거라 미리 가정하지 않기. 흐름은 주 단위로만 확인한다."},
+  {kg:55, note:"과거 최저체중 구간, 조급해하지 않기. 여기서 속도를 올리면 되돌아온다."},
+  {kg:52, note:"숫자보다 옷 핏이 먼저 달라지는 구간. 거울과 옷장도 같이 본다."},
+  {kg:50, note:"거의 다 왔다고 무리하지 않기. 지금 방식 그대로 간다."},
+  {kg:48, note:"목적지. 이제부터는 계속할 수 있는 방식으로 유지한다."}
 ];
 
 const WTYPE = {
-  climb:  {label:"클라이밍", color:"var(--climb)",   cls:"climb",   cardio:false},
-  run:    {label:"러닝",     color:"var(--run)",     cls:"run",     cardio:true},
-  walk:   {label:"걷기",     color:"var(--walk)",    cls:"walk",    cardio:true},
-  stretch:{label:"스트레칭", color:"var(--stretch)", cls:"stretch", cardio:false}
+  climb:  {label:"클라이밍", color:"var(--clay)",   cls:"climb",   cardio:false},
+  run:    {label:"러닝",     color:"var(--ochre)",  cls:"run",     cardio:true},
+  walk:   {label:"걷기",     color:"var(--accent)", cls:"walk",    cardio:true},
+  stretch:{label:"스트레칭", color:"var(--slate)",  cls:"stretch", cardio:false}
 };
 const PLAN = {
   1:{title:"계획 없는 날", kinds:[],        hint:"몸이 가벼우면 30분 걷기 정도."},
-  2:{title:"아침 러닝",     kinds:["run"],   hint:"눈 뜨자마자 러닝화부터."},
-  3:{title:"퇴근 후 클라이밍", kinds:["climb"], hint:"퇴근길에 바로 암장으로."},
+  2:{title:"아침 러닝",     kinds:["run"],   hint:"러닝은 보조수단. 힘들면 걷기로 바꿔도 돼."},
+  3:{title:"퇴근 후 클라이밍", kinds:["climb"], hint:"메인 운동. 퇴근길에 바로 암장으로."},
   4:{title:"아침 러닝",     kinds:["run"],   hint:"이번 주 두 번째 유산소."},
-  5:{title:"계획 없는 날",  kinds:[],        hint:"한 주 잘 버텼다. 푹 쉬어도 돼."},
+  5:{title:"계획 없는 날",  kinds:[],        hint:"한 주 잘 버텼다. 쉬어도 괜찮아."},
   6:{title:"클라이밍 (토·일 중 하루)", kinds:["climb"], weekend:true, hint:"주말 둘 중 하루만 가면 돼."},
   0:{title:"클라이밍 (토·일 중 하루)", kinds:["climb"], weekend:true, hint:"주말 둘 중 하루만 가면 돼."}
 };
-const GOAL_CLIMB = 2, GOAL_CARDIO = 2;
+const GOAL_CLIMB = 2, GOAL_CARDIO = 2, GOAL_WEIGHT_DEFAULT = 48;
 const DOW = ["일","월","화","수","목","금","토"];
 const CONDS = [{v:1,e:"😞"},{v:2,e:"🙁"},{v:3,e:"😐"},{v:4,e:"🙂"},{v:5,e:"😄"}];
 const REASONS = {hungry:"진짜 배고픔", bored:"입이 심심", stress:"스트레스"};
 const CAFF = {decaf:"디카페인", regular:"일반", none:"안 마심"};
 const DRUGS = {mounjaro:"마운자로", wegovy:"위고비"};
+const HOURBANDS = [
+  {k:"dawn",  label:"새벽", range:"00-06", from:0,  to:6},
+  {k:"morn",  label:"오전", range:"06-12", from:6,  to:12},
+  {k:"after", label:"오후", range:"12-18", from:12, to:18},
+  {k:"eve",   label:"저녁", range:"18-24", from:18, to:24}
+];
 
 /* ============================================================
    2. 유틸
@@ -807,9 +800,11 @@ function weekStart(s){ const d=parseYmd(s); const off=(d.getDay()+6)%7; d.setDat
    3. 상태 + 저장소
    ============================================================ */
 const CACHE_KEY = "diet-log-v1";
+const SETTINGS_V = 2;
+const OLD_HABIT_IDS = "h1,h2,h3,h4,h5,h6";
 const state = {
   tab:"home", rec:"weight", statRange:30,
-  calMonth: todayStr().slice(0,7),
+  calMode:"month", calCursor: todayStr(),
   cheer: Math.floor(Math.random()*CHEERS.length),
   days:{},
   settings:{ goalWeight:null, principles:DEFAULT_PRINCIPLES.slice(), habits:DEFAULT_HABITS.slice() },
@@ -836,6 +831,18 @@ function mutate(date, fn){
 
 function writeCache(){
   try{ localStorage.setItem(CACHE_KEY, JSON.stringify({days:state.days, settings:state.settings})); }catch(e){}
+}
+/* 이전 버전의 기본 원칙·습관은 새 기본값으로 갈아끼운다 (직접 고친 건 그대로 둔다) */
+function migrateSettings(){
+  const st = state.settings;
+  if(st.v === SETTINGS_V) return false;
+  const ids = (st.habits||[]).map(h=>h.id).join(",");
+  if(!Array.isArray(st.habits) || !st.habits.length || ids === OLD_HABIT_IDS) st.habits = DEFAULT_HABITS.slice();
+  const p0 = (st.principles||[])[0] || "";
+  if(!Array.isArray(st.principles) || !st.principles.length || p0.indexOf("체중은 아침에 화장실") === 0) st.principles = DEFAULT_PRINCIPLES.slice();
+  if(typeof st.goalWeight !== "number") st.goalWeight = GOAL_WEIGHT_DEFAULT;
+  st.v = SETTINGS_V;
+  return true;
 }
 function readCache(){
   try{
@@ -881,11 +888,13 @@ async function initDb(){
     if(s.exists){
       const v = s.data();
       state.settings = {
+        v: v.v,
         goalWeight: typeof v.goalWeight==="number" ? v.goalWeight : null,
         principles: Array.isArray(v.principles)&&v.principles.length ? v.principles : DEFAULT_PRINCIPLES.slice(),
         habits: Array.isArray(v.habits)&&v.habits.length ? v.habits : DEFAULT_HABITS.slice()
       };
-    } else { persistSettings(); }
+      migrateSettings(); persistSettings();
+    } else { migrateSettings(); persistSettings(); }
   }catch(e){}
   db.collection("days").orderBy("date","desc").limit(600).onSnapshot(snap=>{
     snap.docs.forEach(doc=>{ const v = doc.data(); if(v && v.date) state.days[doc.id] = v; });
@@ -1069,53 +1078,162 @@ function renderHome(){
 }
 
 /* ============================================================
-   7. 렌더 — 캘린더
+   7. 렌더 — 캘린더 (일간 / 주간 / 월간)
    ============================================================ */
+function dayDetailHTML(ds){
+  const o = day(ds);
+  const sec = (label, inner) => '<div class="sheet-sec"><p class="sec-label">'+label+'</p>'+inner+'</div>';
+  let body = "";
+
+  const mealsTxt = [["b","아침"],["l","점심"],["d","저녁"]]
+    .map(([k,n])=> '<span class="pill '+(o.meals[k]?"done":"rest")+'">'+n+(o.meals[k]?" ✓":"")+'</span>').join(" ");
+  const extra = [];
+  if(o.lunchbox) extra.push("도시락 "+(o.lunchbox==="yes"?"쌈":"안 쌈"));
+  if(o.eatout) extra.push("외식 "+(o.eatout==="yes"?"함":"안 함"));
+  if(o.caffeine) extra.push("카페인 "+(CAFF[o.caffeine]||o.caffeine));
+  body += sec("삼시세끼", '<div class="chips">'+mealsTxt+'</div>'
+    + (extra.length?'<p class="tiny muted" style="margin:10px 0 0">'+esc(extra.join(" · "))+'</p>':""));
+
+  body += sec("체중", o.weights.length
+    ? o.weights.map(w=>{
+        const bits=[]; if(w.cond) bits.push((CONDS.find(c=>c.v===w.cond)||{}).e||"");
+        if(w.sleep) bits.push("수면 "+w.sleep+"h");
+        if(w.swell) bits.push(w.swell==="yes"?"붓기 있음":"붓기 없음");
+        if(w.memo) bits.push(w.memo);
+        return '<div class="entry"><span class="when">'+esc(w.t||"")+'</span><span class="main"><span class="t">'+fmt1(w.kg)+'kg</span>'+(bits.filter(Boolean).length?'<span class="s">'+esc(bits.filter(Boolean).join(" · "))+'</span>':"")+'</span></div>';
+      }).join("")
+    : '<p class="emptyline">기록 없음</p>');
+
+  body += sec("운동", o.workouts.length
+    ? o.workouts.map(w=>'<div class="entry"><span class="when">'+esc(w.t||"")+'</span><span class="main"><span class="t">'
+      + esc(WTYPE[w.type]?WTYPE[w.type].label:w.type)+(w.min?" "+w.min+"분":"")+'</span>'
+      + ((w.rpe||w.memo)?'<span class="s">'+esc([w.rpe?"힘든 정도 "+w.rpe+"/10":"", w.memo||""].filter(Boolean).join(" · "))+'</span>':"")+'</span></div>').join("")
+    : '<p class="emptyline">기록 없음</p>');
+
+  body += sec("간식", o.snacks.length
+    ? o.snacks.map(s=>'<div class="entry"><span class="when">'+esc(s.t||"")+'</span><span class="main"><span class="t">'+esc(s.name)+'</span>'
+      + ((s.reason||s.sat)?'<span class="s">'+esc([REASONS[s.reason]||"", s.sat?"만족도 "+s.sat+"/5":""].filter(Boolean).join(" · "))+'</span>':"")+'</span></div>').join("")
+    : '<p class="emptyline">기록 없음</p>');
+
+  if(o.meds.length) body += sec("약", o.meds.map(m=>'<div class="entry"><span class="when">'+esc(m.t||"")+'</span><span class="main"><span class="t">'
+    + esc(DRUGS[m.drug]||m.drug)+(m.dose?" "+esc(m.dose):"")+'</span>'+(m.memo?'<span class="s">'+esc(m.memo)+'</span>':"")+'</span></div>').join(""));
+
+  const hs = state.settings.habits || [];
+  const hd = hs.filter(h=>o.habits[h.id]);
+  if(hs.length) body += sec("습관", hd.length
+    ? '<div class="chips">'+hd.map(h=>'<span class="pill done">'+esc(h.name)+'</span>').join("")+'</div>'
+    : '<p class="emptyline">체크한 습관 없음</p>');
+
+  return body;
+}
+
+function calShift(n){
+  if(state.calMode === "day") state.calCursor = addDays(state.calCursor, n);
+  else if(state.calMode === "week") state.calCursor = addDays(state.calCursor, n*7);
+  else {
+    const [y,m] = state.calCursor.split("-").map(Number);
+    state.calCursor = ymd(new Date(y, m-1+n, 1));
+  }
+}
+
 function renderCal(){
-  const [Y,M] = state.calMonth.split("-").map(Number);
-  const first = new Date(Y, M-1, 1), lead = first.getDay(), dim = new Date(Y, M, 0).getDate();
-  $("#cal-month").textContent = Y+"년 "+M+"월";
+  $$("#cal-seg button").forEach(b=> b.setAttribute("aria-selected", String(b.dataset.cal === state.calMode)));
+  if(state.calMode === "day") renderCalDay();
+  else if(state.calMode === "week") renderCalWeek();
+  else renderCalMonth();
+}
+
+function renderCalDay(){
+  const ds = state.calCursor, t = todayStr();
+  $("#cal-title").textContent = fullLabel(ds) + (ds===t ? " · 오늘" : "");
+  $("#cal-body").innerHTML = dayDetailHTML(ds)
+    + (ds !== t ? '<button class="btn ghost" type="button" data-caltoday style="margin-top:18px">오늘로 돌아가기</button>' : "");
+}
+
+function renderCalWeek(){
+  const start = weekStart(state.calCursor), t = todayStr();
+  $("#cal-title").textContent = mdLabel(start)+" – "+mdLabel(addDays(start,6));
+  const hs = state.settings.habits || [];
+  let rows = "", kgs = [], climb = 0, cardio = 0, full = 0, tracked = 0;
+  for(let i=0;i<7;i++){
+    const ds = addDays(start,i), o = day(ds), dw = parseYmd(ds).getDay();
+    const w = o.weights.length ? o.weights[o.weights.length-1].kg : null;
+    if(w !== null) kgs.push(w);
+    o.workouts.forEach(x=>{ if(x.type==="climb") climb++; else if(WTYPE[x.type] && WTYPE[x.type].cardio) cardio++; });
+    const mealsN = ["b","l","d"].filter(k=>o.meals[k]).length;
+    if(mealsN) tracked++;
+    if(mealsN === 3) full++;
+    const hn = hs.filter(h=>o.habits[h.id]).length;
+    const future = ds > t;
+    const tags = o.workouts.map(x=>'<span class="pill '+(WTYPE[x.type]?WTYPE[x.type].cls:"rest")+'">'+esc(WTYPE[x.type]?WTYPE[x.type].label:x.type)+'</span>').join("");
+    rows += '<button class="wkday'+(ds===t?" today":"")+(future?" future":"")+'" type="button" data-day="'+ds+'">'
+      + '<span class="dl"><span class="dn">'+parseYmd(ds).getDate()+'</span><span class="dw">'+DOW[dw]+'</span></span>'
+      + '<span class="db">'
+      +   (future
+          ? '<span class="tiny" style="color:var(--faint)">아직 오지 않은 날</span>'
+          : '<span class="row" style="gap:8px">'
+            + (w!==null ? '<span class="kg">'+fmt1(w)+'kg</span>' : '<span class="tiny" style="color:var(--faint)">체중 –</span>')
+            + '<span class="mini3">'+["b","l","d"].map(k=>'<i class="'+(o.meals[k]?"on":"")+'"></i>').join("")+'</span>'
+            + (o.snacks.length ? '<span class="tag">간식 '+o.snacks.length+'</span>' : "")
+            + (hs.length ? '<span class="tiny muted mono" style="margin-left:auto">습관 '+hn+'/'+hs.length+'</span>' : "")
+            + '</span>')
+      +   (tags ? '<span class="chips">'+tags+'</span>' : "")
+      + '</span></button>';
+  }
+  const avg = kgs.length ? fmt1(kgs.reduce((a,b)=>a+b,0)/kgs.length) : "–";
+  $("#cal-body").innerHTML = rows
+    + '<div class="hr"></div><p class="sec-label">이번 주</p>'
+    + '<div class="msum">'
+    + '<div><div class="v">'+avg+'</div><div class="l">평균 체중</div></div>'
+    + '<div><div class="v">'+climb+'</div><div class="l">클라이밍</div></div>'
+    + '<div><div class="v">'+cardio+'</div><div class="l">유산소</div></div>'
+    + '<div><div class="v">'+(tracked?Math.round(full/tracked*100):0)+'%</div><div class="l">삼시세끼</div></div>'
+    + '</div>';
+}
+
+function renderCalMonth(){
+  const [Y,M] = state.calCursor.split("-").map(Number);
+  const first = new Date(Y, M-1, 1), dim = new Date(Y, M, 0).getDate();
+  $("#cal-title").textContent = Y+"년 "+M+"월";
   let cells = "";
   ["월","화","수","목","금","토","일"].forEach((n,i)=> cells += '<div class="cal-dow'+(i===6?" sun":"")+'">'+n+'</div>');
-  const leadMon = (lead+6)%7;
-  for(let i=0;i<leadMon;i++) cells += '<div class="cal-cell blank"></div>';
+  for(let i=0, lead=(first.getDay()+6)%7; i<lead; i++) cells += '<div class="cal-cell blank"></div>';
   const t = todayStr();
-  for(let dd=1; dd<=dim; dd++){
-    const ds = Y+"-"+pad(M)+"-"+pad(dd);
-    const o = day(ds), dow = parseYmd(ds).getDay();
-    const mealsAll = o.meals.b && o.meals.l && o.meals.d;
-    const w = o.weights.length ? o.weights[o.weights.length-1].kg : null;
-    let marks = "";
-    const seen = {};
-    o.workouts.forEach(x=>{ if(WTYPE[x.type] && !seen[x.type]){ seen[x.type]=1; marks += '<i style="background:'+WTYPE[x.type].color+'"></i>'; } });
-    if(o.snacks.length) marks += '<i style="background:var(--faint)"></i>';
-    if(o.meds.length)   marks += '<i class="sq" style="background:var(--accent)"></i>';
-    const cls = ["cal-cell"];
-    if(dow===0) cls.push("sun");
-    if(ds===t) cls.push("today");
-    if(mealsAll) cls.push("meals3");
-    if(ds>t) cls.push("future");
-    cells += '<button class="'+cls.join(" ")+'" type="button" data-day="'+ds+'">'
-      + '<span class="d">'+dd+'</span>'
-      + (w!==null ? '<span class="w">'+fmt1(w)+'</span>' : "")
-      + '<span class="mk">'+marks+'</span></button>';
-  }
-  $("#cal-grid").innerHTML = cells;
-
   let rec=0, climb=0, cardio=0, kgs=[];
   for(let dd=1; dd<=dim; dd++){
-    const ds = Y+"-"+pad(M)+"-"+pad(dd), o = day(ds);
-    const has = o.weights.length||o.workouts.length||o.snacks.length||o.meds.length||o.meals.b||o.meals.l||o.meals.d;
-    if(has) rec++;
-    o.workouts.forEach(x=>{ if(x.type==="climb") climb++; else if(WTYPE[x.type]&&WTYPE[x.type].cardio) cardio++; });
+    const ds = Y+"-"+pad(M)+"-"+pad(dd), o = day(ds), dw = parseYmd(ds).getDay();
+    const hasWeight = o.weights.length > 0;
+    const mealsAll = o.meals.b && o.meals.l && o.meals.d;
+    const moved = o.workouts.length > 0;
+    let marks = "";
+    if(hasWeight) marks += '<i style="background:var(--accent)"></i>';
+    if(mealsAll)  marks += '<i style="background:var(--clay)"></i>';
+    if(moved)     marks += '<i style="background:var(--ochre)"></i>';
+    const cls = ["cal-cell"];
+    if(dw===0) cls.push("sun");
+    if(ds===t) cls.push("today");
+    if(ds>t) cls.push("future");
+    cells += '<button class="'+cls.join(" ")+'" type="button" data-day="'+ds+'" aria-label="'+esc(fullLabel(ds))+'">'
+      + '<span class="d">'+dd+'</span><span class="mk">'+marks+'</span></button>';
+    if(hasWeight || moved || o.snacks.length || o.meds.length || o.meals.b || o.meals.l || o.meals.d) rec++;
+    o.workouts.forEach(x=>{ if(x.type==="climb") climb++; else if(WTYPE[x.type] && WTYPE[x.type].cardio) cardio++; });
     o.weights.forEach(x=> kgs.push(x.kg));
   }
   const avg = kgs.length ? fmt1(kgs.reduce((a,b)=>a+b,0)/kgs.length) : "–";
-  $("#cal-summary").innerHTML =
-      '<div><div class="v">'+rec+'</div><div class="l">기록한 날</div></div>'
+  $("#cal-body").innerHTML = '<div class="cal-grid">'+cells+'</div>'
+    + '<div class="legend">'
+    +   '<span><i style="background:var(--accent)"></i>체중 기록</span>'
+    +   '<span><i style="background:var(--clay)"></i>삼시세끼 완료</span>'
+    +   '<span><i style="background:var(--ochre)"></i>운동한 날</span>'
+    + '</div>'
+    + '<div class="hr"></div><p class="sec-label">이 달 요약</p>'
+    + '<div class="msum">'
+    + '<div><div class="v">'+rec+'</div><div class="l">기록한 날</div></div>'
     + '<div><div class="v">'+climb+'</div><div class="l">클라이밍</div></div>'
     + '<div><div class="v">'+cardio+'</div><div class="l">유산소</div></div>'
-    + '<div><div class="v">'+avg+'</div><div class="l">평균 체중</div></div>';
+    + '<div><div class="v">'+avg+'</div><div class="l">평균 체중</div></div>'
+    + '</div>'
+    + '<p class="tiny muted" style="margin:14px 0 0">날짜를 누르면 그날 기록 전체가 열려요.</p>';
 }
 
 /* ============================================================
@@ -1188,21 +1306,22 @@ function renderHabits(){
   const hs = state.settings.habits || [];
   $("#habit-list").innerHTML = hs.length ? hs.map(h=>{
     const on = !!d.habits[h.id], st = habitStreak(h.id);
-    let w7 = "";
-    for(let i=6;i>=0;i--) w7 += '<i class="'+(day(addDays(t,-i)).habits[h.id]?"on":"")+'"></i>';
-    return '<div class="hrow">'
-      + '<button class="hcheck" type="button" data-habit="'+h.id+'" aria-pressed="'+(on?"true":"false")+'" aria-label="'+esc(h.name)+'">'
-      + '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>'
-      + '<span class="nm">'+esc(h.name)+'</span>'
-      + '<span class="week7">'+w7+'</span>'
-      + '<span class="streak">'+(st>0?st+"일":"–")+'</span>'
-      + (state.habitEdit ? '<button class="del" type="button" data-habitdel="'+h.id+'" aria-label="삭제">×</button>' : "")
+    let d30 = "";
+    for(let i=29;i>=0;i--) d30 += '<i class="'+(day(addDays(t,-i)).habits[h.id]?"on":"")+'"></i>';
+    return '<div class="hitem">'
+      + '<div class="hrow">'
+      +   '<button class="hcheck" type="button" data-habit="'+h.id+'" aria-pressed="'+(on?"true":"false")+'" aria-label="'+esc(h.name)+'">'
+      +   '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>'
+      +   '<span class="nm">'+esc(h.name)+'</span>'
+      +   '<span class="streak">'+(st>0?"연속 "+st+"일":"–")+'</span>'
+      +   (state.habitEdit ? '<button class="del" type="button" data-habitdel="'+h.id+'" aria-label="삭제">×</button>' : "")
+      + '</div>'
+      + '<div class="d30" role="img" aria-label="최근 30일 기록">'+d30+'</div>'
       + '</div>';
   }).join("") : '<p class="emptyline">습관을 추가해 보세요.</p>';
   $("#habit-add").hidden = !state.habitEdit;
   $("#habit-edit-toggle").textContent = state.habitEdit ? "완료" : "편집";
 
-  /* 최근 7일 전체 달성률 */
   let rows = "";
   for(let i=6;i>=0;i--){
     const ds = addDays(t,-i), o = day(ds);
@@ -1228,6 +1347,39 @@ function renderHabits(){
 /* ============================================================
    10. 렌더 — 분석
    ============================================================ */
+function weeklyAverages(nWeeks){
+  const out = [];
+  let ws = weekStart(todayStr());
+  for(let i=0;i<nWeeks;i++){
+    const s = addDays(ws, -i*7);
+    let vals = [];
+    for(let k=0;k<7;k++) day(addDays(s,k)).weights.forEach(w=> vals.push(w.kg));
+    out.unshift({start:s, avg: vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null, n:vals.length});
+  }
+  return out;
+}
+function checkpointBar(cur){
+  const ks = CHECKPOINTS.map(c=>c.kg);
+  const hi = ks[0], lo = ks[ks.length-1];
+  const pos = kg => Math.max(0, Math.min(100, (hi - kg) / (hi - lo) * 100));
+  let idx = CHECKPOINTS.length - 1;
+  for(let i=0;i<CHECKPOINTS.length;i++){ if(cur > CHECKPOINTS[i].kg){ idx = i; break; } }
+  const p = cur == null ? 0 : pos(cur);
+  let nodes = "";
+  CHECKPOINTS.forEach((c,i)=>{
+    const x = pos(c.kg);
+    const passed = cur != null && cur <= c.kg;
+    nodes += '<span class="node'+(passed?" passed":"")+'" style="left:'+x+'%"></span>'
+      + '<span class="lbl'+(i===idx?" cur":"")+'" style="left:'+x+'%">'+c.kg+'</span>';
+  });
+  const marker = cur == null ? "" :
+      '<span class="fill" style="width:'+p+'%"></span>'
+    + '<span class="marker" style="left:'+p+'%"></span>'
+    + '<span class="you" style="left:'+p+'%"><b>'+fmt1(cur)+'</b><span>지금</span></span>';
+  const target = CHECKPOINTS[idx];
+  return '<div class="ckpt"><div class="track">'+marker+nodes+'</div></div>'
+    + '<div class="remind"><b>다음 체크포인트 '+target.kg+'kg</b>'+esc(target.note)+'</div>';
+}
 function renderStats(){
   const range = state.statRange, t = todayStr();
   const from = range >= 9999 ? "0000-00-00" : addDays(t, -(range-1));
@@ -1235,30 +1387,79 @@ function renderStats(){
   const dates = Object.keys(state.days).filter(inRange).sort();
 
   const ws = allWeights().filter(w=> inRange(w.date));
-  const byDay = {}; ws.forEach(w=> byDay[w.date]=w.kg);
+  const byDay = {}; ws.forEach(w=> byDay[w.date] = w.kg);
   const series = Object.keys(byDay).sort().map(d=>({d, v:byDay[d]}));
   const goal = state.settings.goalWeight;
-
+  const latest = latestWeight();
   let out = "";
 
-  /* 체중 */
-  out += '<div class="card"><p class="sec-label">체중 추이</p>' + weightChart(series, goal);
+  /* 체크포인트 */
+  out += '<div class="card"><p class="sec-label">체크포인트</p>'
+    + (latest ? checkpointBar(latest.kg)
+              : '<p class="emptyline">체중을 한 번 기록하면 지금 어느 구간인지 표시돼요.</p>')
+    + '</div>';
+
+  /* 체중 추세 */
+  out += '<div class="card"><p class="sec-label">체중 추세</p>' + weightChart(series, goal);
   if(series.length >= 2){
     const first = series[0].v, last = series[series.length-1].v, ch = last - first;
     const days = Math.max(1, (parseYmd(series[series.length-1].d) - parseYmd(series[0].d))/86400000);
     const perWeek = ch / days * 7;
-    out += '<div class="statgrid" style="margin-top:14px">'
-      + '<div class="stat"><div class="v" style="color:'+(ch<0?"var(--accent)":"var(--warn)")+'">'+(ch>0?"+":"")+fmt1(ch)+'kg</div><div class="l">기간 변화</div></div>'
+    out += '<div class="statgrid" style="margin-top:16px">'
+      + '<div class="stat"><div class="v" style="color:'+(ch<0?"var(--accent)":"var(--clay)")+'">'+(ch>0?"+":"")+fmt1(ch)+'kg</div><div class="l">기간 변화</div></div>'
       + '<div class="stat"><div class="v">'+(perWeek>0?"+":"")+fmt1(perWeek)+'kg</div><div class="l">주당 평균</div></div>'
       + '<div class="stat"><div class="v">'+fmt1(Math.min.apply(null,series.map(s=>s.v)))+'kg</div><div class="l">기간 최저</div></div>'
       + '<div class="stat"><div class="v">'+series.length+'회</div><div class="l">측정 횟수</div></div>'
       + '</div>';
-    if(typeof goal === "number" && last > goal && perWeek < -0.05){
-      const weeks = Math.ceil((last-goal)/Math.abs(perWeek));
-      out += '<p class="tiny muted" style="margin:12px 0 0">이 속도라면 목표 '+fmt1(goal)+'kg까지 약 '+weeks+'주. 숫자보다 흐름이 중요해요.</p>';
-    }
   }
   out += '</div>';
+
+  /* 주간 평균 흐름 — 하루 숫자 대신 보는 지표 */
+  const wa = weeklyAverages(6).filter(w=> w.avg !== null);
+  if(wa.length >= 2){
+    const vals = wa.map(w=>w.avg), mn = Math.min.apply(null,vals), mx = Math.max.apply(null,vals), rng = (mx-mn)||1;
+    let rows = "";
+    wa.forEach((w,i)=>{
+      const prev = i>0 ? wa[i-1].avg : null;
+      const dv = prev===null ? null : w.avg - prev;
+      const width = 20 + (w.avg - mn)/rng * 78;
+      rows += '<div class="barrow"><span class="lb mono">'+mdLabel(w.start)+'~</span>'
+        + '<span class="tr"><span class="fl" style="width:'+width.toFixed(0)+'%"></span></span>'
+        + '<span class="vl">'+fmt1(w.avg)+'</span></div>'
+        + (dv!==null ? '<p class="tiny" style="margin:-4px 0 4px 94px; color:'+(dv<0?"var(--accent)":"var(--muted)")+'">'+(dv>0?"+":"")+fmt1(dv)+'kg</p>' : "");
+    });
+    out += '<div class="card"><p class="sec-label">주간 평균 흐름</p>'+rows
+      + '<p class="tiny muted" style="margin:10px 0 0">하루 오르내림 대신 주 단위 평균으로 봅니다.</p></div>';
+  }
+
+  /* 이번주 리포트 */
+  const wkStart = weekStart(t), wk = weekCounts(t);
+  let wkKgs = [], wkFull = 0, wkTracked = 0, wkHabitDone = 0, wkHabitTotal = 0, wkDaysPassed = 0;
+  const hs = state.settings.habits || [];
+  for(let i=0;i<7;i++){
+    const ds = addDays(wkStart,i); if(ds > t) break;
+    wkDaysPassed++;
+    const o = day(ds);
+    o.weights.forEach(w=> wkKgs.push(w.kg));
+    const mn = ["b","l","d"].filter(k=>o.meals[k]).length;
+    wkTracked += 3; wkFull += mn;
+    wkHabitTotal += hs.length;
+    wkHabitDone += hs.filter(h=>o.habits[h.id]).length;
+  }
+  const prevWkKgs = [];
+  for(let i=0;i<7;i++) day(addDays(wkStart,-7+i)).weights.forEach(w=> prevWkKgs.push(w.kg));
+  const avgThis = wkKgs.length ? wkKgs.reduce((a,b)=>a+b,0)/wkKgs.length : null;
+  const avgPrev = prevWkKgs.length ? prevWkKgs.reduce((a,b)=>a+b,0)/prevWkKgs.length : null;
+  const wkChange = (avgThis!==null && avgPrev!==null) ? avgThis - avgPrev : null;
+  out += '<div class="card"><div class="between" style="margin-bottom:12px">'
+    + '<p class="sec-label" style="margin:0">이번주 리포트</p>'
+    + '<span class="tiny muted mono">'+mdLabel(wkStart)+' – '+mdLabel(addDays(wkStart,6))+'</span></div>'
+    + '<div class="statgrid">'
+    + '<div class="stat"><div class="v" style="color:'+(wkChange!==null&&wkChange<0?"var(--accent)":"var(--ink)")+'">'+(wkChange===null?"–":(wkChange>0?"+":"")+fmt1(wkChange)+"kg")+'</div><div class="l">체중 변화 (주 평균)</div></div>'
+    + '<div class="stat"><div class="v">'+(wkTracked?Math.round(wkFull/wkTracked*100):0)+'%</div><div class="l">삼시세끼 준수율</div></div>'
+    + '<div class="stat"><div class="v">'+(wk.climb+wk.cardio)+'회</div><div class="l">운동 (클 '+wk.climb+' · 유 '+wk.cardio+')</div></div>'
+    + '<div class="stat"><div class="v">'+(wkHabitTotal?Math.round(wkHabitDone/wkHabitTotal*100):0)+'%</div><div class="l">습관 준수율</div></div>'
+    + '</div></div>';
 
   /* 운동 */
   let climb=0, cardio=0, byType={climb:0,run:0,walk:0,stretch:0}, mins=0;
@@ -1268,25 +1469,54 @@ function renderStats(){
     mins += Number(w.min)||0;
   }));
   let wkRows = "";
-  const wkStarts = [];
-  for(let i=3;i>=0;i--) wkStarts.push(weekStart(addDays(t, -i*7)));
-  wkStarts.forEach(s=>{
-    const c = weekCounts(s);
+  for(let i=3;i>=0;i--){
+    const s = weekStart(addDays(t, -i*7)), c = weekCounts(s);
     let cells = "";
-    for(let i=0;i<Math.max(GOAL_CLIMB,c.climb);i++) cells += '<i style="background:'+(i<c.climb?"var(--climb)":"var(--line)")+'"></i>';
+    for(let k=0;k<Math.max(GOAL_CLIMB,c.climb);k++) cells += '<i style="background:'+(k<c.climb?"var(--clay)":"var(--line)")+'"></i>';
     cells += '<span style="width:6px"></span>';
-    for(let i=0;i<Math.max(GOAL_CARDIO,c.cardio);i++) cells += '<i style="background:'+(i<c.cardio?"var(--run)":"var(--line)")+'"></i>';
+    for(let k=0;k<Math.max(GOAL_CARDIO,c.cardio);k++) cells += '<i style="background:'+(k<c.cardio?"var(--ochre)":"var(--line)")+'"></i>';
     wkRows += '<div class="wkbar"><span class="lb">'+mdLabel(s)+'~</span><span class="cells">'+cells+'</span>'
       + '<span class="lb mono" style="width:auto;text-align:right">'+c.climb+'·'+c.cardio+'</span></div>';
-  });
-  out += '<div class="card" style="margin-top:16px"><p class="sec-label">운동</p>'
-    + '<div class="statgrid" style="margin-bottom:8px">'
-    + '<div class="stat"><div class="v">'+climb+'회</div><div class="l">클라이밍</div></div>'
-    + '<div class="stat"><div class="v">'+cardio+'회</div><div class="l">유산소</div></div>'
-    + '<div class="stat"><div class="v">'+Math.round(mins/60*10)/10+'h</div><div class="l">총 운동 시간</div></div>'
+  }
+  out += '<div class="card"><p class="sec-label">운동</p>'
+    + '<div class="statgrid">'
+    + '<div class="stat"><div class="v">'+climb+'회</div><div class="l">클라이밍 (메인)</div></div>'
+    + '<div class="stat"><div class="v">'+cardio+'회</div><div class="l">유산소 (러닝·걷기)</div></div>'
+    + '<div class="stat"><div class="v">'+(Math.round(mins/60*10)/10)+'h</div><div class="l">총 운동 시간</div></div>'
     + '<div class="stat"><div class="v">'+byType.stretch+'회</div><div class="l">스트레칭</div></div>'
     + '</div>'
-    + '<p class="sec-label" style="margin-top:14px">최근 4주 (클라이밍 · 유산소)</p>'+wkRows+'</div>';
+    + '<p class="sec-label" style="margin:18px 0 4px">최근 4주 (클라이밍 · 유산소)</p>'+wkRows+'</div>';
+
+  /* 간식 시간대 패턴 */
+  const snacks = collect("snacks").filter(s=> inRange(s.date));
+  const bands = HOURBANDS.map(b=> Object.assign({n:0}, b));
+  snacks.forEach(s=>{
+    const h = parseInt((s.t||"12:00").split(":")[0],10) || 0;
+    const b = bands.find(x=> h >= x.from && h < x.to); if(b) b.n++;
+  });
+  const maxN = Math.max(1, ...bands.map(b=>b.n));
+  out += '<div class="card"><p class="sec-label">간식 시간대</p>';
+  if(snacks.length){
+    out += '<div class="hourchart">'+bands.map(b=>
+        '<div class="col"><span class="n">'+b.n+'</span>'
+      + '<span class="bar" style="height:'+Math.max(2, Math.round(b.n/maxN*100))+'%"></span>'
+      + '<span class="lb">'+b.label+'<small>'+b.range+'</small></span></div>').join("")+'</div>';
+    const top = bands.slice().sort((a,b)=>b.n-a.n)[0];
+    const rc = {hungry:0,bored:0,stress:0}; let satSum=0, satN=0;
+    snacks.forEach(s=>{ if(rc[s.reason]!==undefined) rc[s.reason]++; if(s.sat){satSum+=Number(s.sat); satN++;} });
+    const rcTotal = rc.hungry+rc.bored+rc.stress;
+    if(top.n) out += '<p class="tiny muted" style="margin:12px 0 0">'+top.label+'('+top.range+')에 가장 많았어요. 판단하지 말고 패턴만 봅니다.</p>';
+    if(rcTotal){
+      out += '<p class="sec-label" style="margin:18px 0 4px">왜 먹었나</p>';
+      [["hungry","진짜 배고픔"],["bored","입이 심심"],["stress","스트레스"]].forEach(([k,nm])=>{
+        out += '<div class="barrow"><span class="lb">'+nm+'</span><span class="tr"><span class="fl" style="width:'+Math.round(rc[k]/rcTotal*100)+'%"></span></span><span class="vl">'+rc[k]+'회</span></div>';
+      });
+      if(satN) out += '<p class="tiny muted" style="margin:10px 0 0">평균 만족도 '+(Math.round(satSum/satN*10)/10)+' / 5</p>';
+    }
+  } else {
+    out += '<p class="emptyline">이 기간엔 간식 기록이 없어요.</p>';
+  }
+  out += '</div>';
 
   /* 식사 */
   let full=0, tracked=0, lunchbox=0, eatout=0, caff={decaf:0,regular:0,none:0};
@@ -1298,8 +1528,7 @@ function renderStats(){
     if(o.eatout==="yes") eatout++;
     if(o.caffeine && caff[o.caffeine]!==undefined) caff[o.caffeine]++;
   });
-  out += '<div class="card" style="margin-top:16px"><p class="sec-label">식사</p>'
-    + '<div class="statgrid">'
+  out += '<div class="card"><p class="sec-label">식사</p><div class="statgrid">'
     + '<div class="stat"><div class="v">'+(tracked?Math.round(full/tracked*100):0)+'%</div><div class="l">삼시세끼 완주율</div></div>'
     + '<div class="stat"><div class="v">'+full+'일</div><div class="l">세 끼 다 챙긴 날</div></div>'
     + '<div class="stat"><div class="v">'+lunchbox+'일</div><div class="l">도시락</div></div>'
@@ -1307,31 +1536,10 @@ function renderStats(){
     + '</div>';
   const caffTotal = caff.decaf+caff.regular+caff.none;
   if(caffTotal){
-    out += '<p class="sec-label" style="margin-top:16px">카페인</p>';
+    out += '<p class="sec-label" style="margin:18px 0 4px">카페인</p>';
     [["decaf","디카페인"],["regular","일반"],["none","안 마심"]].forEach(([k,nm])=>{
       out += '<div class="barrow"><span class="lb">'+nm+'</span><span class="tr"><span class="fl" style="width:'+Math.round(caff[k]/caffTotal*100)+'%"></span></span><span class="vl">'+caff[k]+'일</span></div>';
     });
-  }
-  out += '</div>';
-
-  /* 간식 */
-  const snacks = collect("snacks").filter(s=> inRange(s.date));
-  const rc = {hungry:0,bored:0,stress:0}; let satSum=0, satN=0;
-  snacks.forEach(s=>{ if(rc[s.reason]!==undefined) rc[s.reason]++; if(s.sat){satSum+=Number(s.sat); satN++;} });
-  const rcTotal = rc.hungry+rc.bored+rc.stress;
-  out += '<div class="card" style="margin-top:16px"><p class="sec-label">간식</p>'
-    + '<div class="statgrid" style="margin-bottom:6px">'
-    + '<div class="stat"><div class="v">'+snacks.length+'회</div><div class="l">전체 간식</div></div>'
-    + '<div class="stat"><div class="v">'+(dates.length?Math.round(snacks.length/Math.max(1,dates.length)*10)/10:0)+'</div><div class="l">기록일 평균</div></div>'
-    + '</div>';
-  if(rcTotal){
-    out += '<p class="sec-label" style="margin-top:14px">왜 먹었나</p>';
-    [["hungry","진짜 배고픔"],["bored","입이 심심"],["stress","스트레스"]].forEach(([k,nm])=>{
-      out += '<div class="barrow"><span class="lb">'+nm+'</span><span class="tr"><span class="fl" style="width:'+Math.round(rc[k]/rcTotal*100)+'%"></span></span><span class="vl">'+rc[k]+'회</span></div>';
-    });
-    if(satN) out += '<p class="tiny muted" style="margin:10px 0 0">평균 만족도 '+ (Math.round(satSum/satN*10)/10) +' / 5</p>';
-  } else if(!snacks.length){
-    out += '<p class="emptyline">이 기간엔 간식 기록이 없어요.</p>';
   }
   out += '</div>';
 
@@ -1340,7 +1548,7 @@ function renderStats(){
   ws.forEach(w=>{ if(w.sleep) sleeps.push(Number(w.sleep)); if(w.swell){swellN++; if(w.swell==="yes") swell++;} if(w.cond) conds.push(Number(w.cond)); });
   if(sleeps.length || swellN || conds.length){
     const avgCond = conds.length ? conds.reduce((a,b)=>a+b,0)/conds.length : null;
-    out += '<div class="card" style="margin-top:16px"><p class="sec-label">컨디션 · 수면</p><div class="statgrid">'
+    out += '<div class="card"><p class="sec-label">컨디션 · 수면</p><div class="statgrid">'
       + '<div class="stat"><div class="v">'+(sleeps.length?fmt1(sleeps.reduce((a,b)=>a+b,0)/sleeps.length)+"h":"–")+'</div><div class="l">평균 수면</div></div>'
       + '<div class="stat"><div class="v">'+(swellN?Math.round(swell/swellN*100)+"%":"–")+'</div><div class="l">붓기 있던 날</div></div>'
       + '<div class="stat"><div class="v">'+(avgCond?(CONDS[Math.round(avgCond)-1]||{}).e:"–")+'</div><div class="l">평균 컨디션</div></div>'
@@ -1351,16 +1559,16 @@ function renderStats(){
   /* 약 */
   const meds = collect("meds").filter(m=> inRange(m.date));
   const lastMed = collect("meds", 1)[0];
-  out += '<div class="card" style="margin-top:16px"><p class="sec-label">약</p>';
+  out += '<div class="card"><p class="sec-label">약</p>';
   if(lastMed){
     const gap = Math.round((parseYmd(todayStr()) - parseYmd(lastMed.date))/86400000);
     out += '<div class="between" style="margin-bottom:10px"><span style="font-weight:600">'+esc(DRUGS[lastMed.drug]||lastMed.drug)+(lastMed.dose?" "+esc(lastMed.dose):"")+'</span>'
-      + '<span class="tiny mono muted">'+mdLabel(lastMed.date)+' · '+(gap===0?"오늘":gap+"일 전")+'</span></div>';
-    out += meds.slice(0,8).map(m=>'<div class="entry" style="padding:8px 0"><span class="when">'+mdLabel(m.date)+'</span><span class="main"><span class="t">'+esc(DRUGS[m.drug]||m.drug)+(m.dose?" "+esc(m.dose):"")+'</span>'+(m.memo?'<span class="s">'+esc(m.memo)+'</span>':"")+'</span></div>').join("");
+      + '<span class="tiny mono muted">'+mdLabel(lastMed.date)+' · '+(gap===0?"오늘":gap+"일 전")+'</span></div>'
+      + meds.slice(0,8).map(m=>'<div class="entry" style="padding:9px 0"><span class="when">'+mdLabel(m.date)+'</span><span class="main"><span class="t">'+esc(DRUGS[m.drug]||m.drug)+(m.dose?" "+esc(m.dose):"")+'</span>'+(m.memo?'<span class="s">'+esc(m.memo)+'</span>':"")+'</span></div>').join("");
   } else {
     out += '<p class="emptyline">이 기간엔 투여 기록이 없어요.</p>';
   }
-  out += '<p class="tiny muted" style="margin:12px 0 0">용량 변경·전환은 처방 의료진과 상의하세요.</p></div>';
+  out += '<p class="tiny muted" style="margin:12px 0 0">약은 감량을 대신하지 않아요. 용량 변경·전환은 처방 의료진과 상의하세요.</p></div>';
 
   $("#stats-body").innerHTML = out;
 }
@@ -1398,42 +1606,9 @@ function goalSheet(){
   setTimeout(()=> $("#goal-input") && $("#goal-input").focus(), 60);
 }
 function daySheet(ds){
-  const o = day(ds);
-  let body = "";
-  const sec = (label, inner) => '<div class="sheet-sec"><p class="sec-label">'+label+'</p>'+inner+'</div>';
-  const mealsTxt = [["b","아침"],["l","점심"],["d","저녁"]].map(([k,n])=> '<span class="pill '+(o.meals[k]?"walk":"rest")+'">'+n+(o.meals[k]?" ✓":"")+'</span>').join(" ");
-  const extra = [];
-  if(o.lunchbox) extra.push("도시락 "+(o.lunchbox==="yes"?"쌈":"안 쌈"));
-  if(o.eatout) extra.push("외식 "+(o.eatout==="yes"?"함":"안 함"));
-  if(o.caffeine) extra.push("카페인 "+(CAFF[o.caffeine]||o.caffeine));
-  body += sec("식사", '<div class="chips">'+mealsTxt+'</div>'+(extra.length?'<p class="tiny muted" style="margin:8px 0 0">'+esc(extra.join(" · "))+'</p>':""));
-
-  body += sec("체중", o.weights.length
-    ? o.weights.map(w=>{
-        const bits=[]; if(w.cond) bits.push((CONDS.find(c=>c.v===w.cond)||{}).e||"");
-        if(w.sleep) bits.push("수면 "+w.sleep+"h"); if(w.swell) bits.push(w.swell==="yes"?"붓기 있음":"붓기 없음");
-        if(w.memo) bits.push(w.memo);
-        return '<div class="entry"><span class="when">'+esc(w.t||"")+'</span><span class="main"><span class="t">'+fmt1(w.kg)+'kg</span><span class="s">'+esc(bits.join(" · "))+'</span></span></div>';
-      }).join("")
-    : '<p class="emptyline">기록 없음</p>');
-
-  body += sec("운동", o.workouts.length
-    ? o.workouts.map(w=>'<div class="entry"><span class="when">'+esc(w.t||"")+'</span><span class="main"><span class="t">'+esc(WTYPE[w.type]?WTYPE[w.type].label:w.type)+(w.min?" "+w.min+"분":"")+'</span>'+((w.rpe||w.memo)?'<span class="s">'+esc([w.rpe?"힘든 정도 "+w.rpe+"/10":"", w.memo||""].filter(Boolean).join(" · "))+'</span>':"")+'</span></div>').join("")
-    : '<p class="emptyline">기록 없음</p>');
-
-  body += sec("간식", o.snacks.length
-    ? o.snacks.map(s=>'<div class="entry"><span class="when">'+esc(s.t||"")+'</span><span class="main"><span class="t">'+esc(s.name)+'</span>'+((s.reason||s.sat)?'<span class="s">'+esc([REASONS[s.reason]||"", s.sat?"만족도 "+s.sat+"/5":""].filter(Boolean).join(" · "))+'</span>':"")+'</span></div>').join("")
-    : '<p class="emptyline">기록 없음</p>');
-
-  if(o.meds.length) body += sec("약", o.meds.map(m=>'<div class="entry"><span class="when">'+esc(m.t||"")+'</span><span class="main"><span class="t">'+esc(DRUGS[m.drug]||m.drug)+(m.dose?" "+esc(m.dose):"")+'</span>'+(m.memo?'<span class="s">'+esc(m.memo)+'</span>':"")+'</span></div>').join(""));
-
-  const hs = state.settings.habits||[];
-  const hd = hs.filter(h=>o.habits[h.id]);
-  if(hs.length) body += sec("습관", hd.length ? '<div class="chips">'+hd.map(h=>'<span class="pill walk">'+esc(h.name)+'</span>').join("")+'</div>' : '<p class="emptyline">체크한 습관 없음</p>');
-
   openSheet('<h2 id="sheet-title">'+esc(fullLabel(ds))+'</h2><p class="sh-sub">'+esc(ds)+'</p>'
-    + '<div class="card">'+body+'</div>'
-    + '<button class="btn ghost" type="button" data-sheet-close style="margin-top:14px">닫기</button>');
+    + dayDetailHTML(ds)
+    + '<button class="btn ghost" type="button" data-sheet-close style="margin-top:20px">닫기</button>');
 }
 
 /* ============================================================
@@ -1646,24 +1821,22 @@ document.addEventListener("click", e=>{
     state.prinEdit = !state.prinEdit; return renderHabits();
   }
 
-  if(el.closest("#cal-prev")){ state.calMonth = shiftMonth(state.calMonth,-1); return renderCal(); }
-  if(el.closest("#cal-next")){ state.calMonth = shiftMonth(state.calMonth, 1); return renderCal(); }
+  const calBtn = el.closest("#cal-seg button[data-cal]");
+  if(calBtn){ state.calMode = calBtn.dataset.cal; return renderCal(); }
+  if(el.closest("[data-caltoday]")){ state.calCursor = todayStr(); return renderCal(); }
+  if(el.closest("#cal-prev")){ calShift(-1); return renderCal(); }
+  if(el.closest("#cal-next")){ calShift(1); return renderCal(); }
 });
 document.addEventListener("keydown", e=>{ if(e.key === "Escape" && !$("#sheet-back").hidden) closeSheet(); });
 $("#habit-new") && $("#habit-new").addEventListener("keydown", e=>{ if(e.key === "Enter"){ e.preventDefault(); $("#habit-add-btn").click(); } });
 $("#m-date").addEventListener("change", ()=> renderMealPanel());
-
-function shiftMonth(ym, n){
-  const [y,m] = ym.split("-").map(Number);
-  const d = new Date(y, m-1+n, 1);
-  return d.getFullYear()+"-"+pad(d.getMonth()+1);
-}
 
 /* ============================================================
    15. 화면 전환 + 렌더 디스패치
    ============================================================ */
 const TITLES = {home:"오늘", cal:"캘린더", rec:"기록", habit:"습관", stats:"분석"};
 function go(tab){
+  if(tab === "cal" && state.tab !== "cal") state.calCursor = todayStr();
   state.tab = tab;
   $$("#tabbar button[data-tab]").forEach(b=>{
     if(b.dataset.tab === tab) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current");
@@ -1692,7 +1865,8 @@ function render(){
    ============================================================ */
 function start(hot){
   readCache();
-  if(hot && hot.tab){ state.tab = hot.tab; state.rec = hot.rec || state.rec; state.calMonth = hot.calMonth || state.calMonth; }
+  if(migrateSettings()) writeCache();
+  if(hot && hot.tab){ state.tab = hot.tab; state.rec = hot.rec || state.rec; state.calMode = hot.calMode || state.calMode; state.calCursor = hot.calCursor || state.calCursor; }
   if(typeof (hot && hot.cheer) === "number") state.cheer = hot.cheer;
   $("#cheer-text").textContent = CHEERS[state.cheer];
   fillNow();
@@ -1700,7 +1874,7 @@ function start(hot){
   setBadge(false, "불러오는 중");
   initDb();
 }
-window.claude?.hot?.snapshot?.(()=> ({tab:state.tab, rec:state.rec, calMonth:state.calMonth, cheer:state.cheer}));
+window.claude?.hot?.snapshot?.(()=> ({tab:state.tab, rec:state.rec, calMode:state.calMode, calCursor:state.calCursor, cheer:state.cheer}));
 if(window.claude?.hot?.ready) window.claude.hot.ready(start);
 else start(window.claude?.hot?.data || {});
 
