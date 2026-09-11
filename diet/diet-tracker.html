@@ -222,6 +222,7 @@ input.big{font-family:"IBM Plex Mono",monospace; font-size:30px; font-weight:600
 .cal-cell.future .d{color:var(--faint)}
 .cal-cell.today{border-color:var(--accent)}
 .cal-cell.today .d{color:var(--accent)}
+.cal-cell.period .d{border-bottom:2px solid var(--clay); padding-bottom:1px}
 .cal-cell .mk{display:flex; gap:3px; margin-top:6px; min-height:5px}
 .mk i{width:5px; height:5px; border-radius:50%; display:block}
 .legend{display:flex; flex-wrap:wrap; gap:12px; margin-top:16px; font-size:11px; color:var(--muted)}
@@ -382,6 +383,14 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
         <div id="weight-body"></div>
       </div>
 
+      <div class="card" id="med-card" hidden>
+        <div class="between" style="margin-bottom:10px">
+          <p class="sec-label" style="margin:0">다음 주사</p>
+          <button class="link tiny" type="button" data-goto="rec:med">약 기록</button>
+        </div>
+        <div id="med-body"></div>
+      </div>
+
       <div class="card">
         <div class="between" style="margin-bottom:6px">
           <p class="sec-label" style="margin:0">이번주 운동</p>
@@ -431,6 +440,7 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
         <button role="tab" type="button" data-rec="meal" aria-selected="false">식사</button>
         <button role="tab" type="button" data-rec="workout" aria-selected="false">운동</button>
         <button role="tab" type="button" data-rec="med" aria-selected="false">약</button>
+        <button role="tab" type="button" data-rec="fit" aria-selected="false">옷 핏</button>
       </div>
 
       <!-- 체중 -->
@@ -459,7 +469,13 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
                     <button class="chip" type="button" data-v="yes" aria-pressed="false">부었어요</button>
                   </div>
                 </div>
-                <label class="fld"><span>메모</span><textarea id="w-memo" placeholder="어제 짜게 먹음, 생리 전 등"></textarea></label>
+                <div><div class="fld" style="margin-bottom:6px"><span>생리 <span class="muted" style="font-weight:400">· 누르면 그날 바로 저장돼요</span></span></div>
+                  <div class="chips" id="w-period">
+                    <button class="chip" type="button" data-v="start" aria-pressed="false">생리 시작</button>
+                    <button class="chip" type="button" data-v="on" aria-pressed="false">생리 중</button>
+                  </div>
+                </div>
+                <label class="fld"><span>메모</span><textarea id="w-memo" placeholder="어제 짜게 먹음, 컨디션 등"></textarea></label>
               </div>
             </div>
             <button class="btn" type="button" data-save="weight">체중 기록하기</button>
@@ -607,7 +623,10 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
             <div class="expander" data-exp>
               <button type="button"><span>더 자세히 기록하기</span><span class="caret">▾</span></button>
               <div class="body">
-                <label class="fld"><span>메모</span><textarea id="d-memo" placeholder="주사 부위, 속쓰림·메스꺼움 등 몸의 반응"></textarea></label>
+                <div><div class="fld" style="margin-bottom:6px"><span>몸의 반응 <span class="muted" style="font-weight:400">· 여러 개 고를 수 있어요</span></span></div>
+                  <div class="chips" id="d-se"></div>
+                </div>
+                <label class="fld"><span>메모</span><textarea id="d-memo" placeholder="주사 부위, 그 밖에 남길 것"></textarea></label>
               </div>
             </div>
             <button class="btn" type="button" data-save="med">약 기록하기</button>
@@ -616,6 +635,42 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
         <div class="card">
           <p class="sec-label">최근 투여</p>
           <div id="list-med"></div>
+        </div>
+      </div>
+      <!-- 옷 핏 -->
+      <div class="rec-panel" id="rec-fit" hidden>
+        <div class="card">
+          <p class="sec-label">옷 핏 체크</p>
+          <p class="tiny muted" style="margin:-4px 0 14px">기준이 되는 옷 하나를 정해두고 주 1회쯤 입어보세요. 체중이 멈춘 주에도 옷은 먼저 달라집니다.</p>
+          <div class="form" id="form-fit">
+            <div class="dt">
+              <label class="fld"><span>날짜</span><input type="date" id="t-date"></label>
+              <label class="fld"><span>기준 옷</span><input type="text" id="t-item" placeholder="예: 청바지"></label>
+            </div>
+            <div><div class="fld" style="margin-bottom:6px"><span>입어보니</span></div>
+              <div class="chips" id="t-fit">
+                <button class="chip" type="button" data-v="tight" aria-pressed="false">꽉 껴요</button>
+                <button class="chip" type="button" data-v="just" aria-pressed="false">딱 맞아요</button>
+                <button class="chip" type="button" data-v="loose" aria-pressed="false">헐렁해요</button>
+              </div>
+            </div>
+            <div class="expander" data-exp>
+              <button type="button"><span>더 자세히 기록하기</span><span class="caret">▾</span></button>
+              <div class="body">
+                <div class="dt">
+                  <label class="fld"><span>허리 (cm)</span><input type="number" step="0.5" min="30" max="200" id="t-waist" inputmode="decimal"></label>
+                  <label class="fld"><span>엉덩이 (cm)</span><input type="number" step="0.5" min="30" max="200" id="t-hip" inputmode="decimal"></label>
+                </div>
+                <label class="fld"><span>허벅지 (cm)</span><input type="number" step="0.5" min="20" max="120" id="t-thigh" inputmode="decimal"></label>
+                <label class="fld"><span>메모</span><textarea id="t-memo" placeholder="단추가 편해졌다, 허리가 남는다 등"></textarea></label>
+              </div>
+            </div>
+            <button class="btn" type="button" data-save="fit">옷 핏 기록하기</button>
+          </div>
+        </div>
+        <div class="card">
+          <p class="sec-label">지난 기록</p>
+          <div id="list-fit"></div>
         </div>
       </div>
     </section>
@@ -778,6 +833,13 @@ const PLAN = {
   0:{title:"클라이밍 (토·일 중 하루)", kinds:["climb"], weekend:true, hint:"주말 둘 중 하루만 가면 돼."}
 };
 const GOAL_CLIMB = 2, GOAL_CARDIO = 2, GOAL_WEIGHT_DEFAULT = 48;
+const MED_INTERVAL = 7;               /* 주 1회 주사 */
+const FITS = {loose:"헐렁해요", just:"딱 맞아요", tight:"꽉 껴요"};
+const FIT_COLOR = {loose:"var(--accent)", just:"var(--ochre)", tight:"var(--clay)"};
+const SIDE_EFFECTS = [["nausea","메스꺼움"],["heartburn","속쓰림"],["constipation","변비"],
+  ["diarrhea","설사"],["fatigue","피로"],["noappetite","식욕 없음"],["headache","두통"]];
+const SE_LABEL = SIDE_EFFECTS.reduce((o,[k,v])=>{o[k]=v; return o;}, {});
+const PERIODS = {start:"생리 시작", on:"생리 중"};
 const DOW = ["일","월","화","수","목","금","토"];
 const CONDS = [{v:1,e:"😞"},{v:2,e:"🙁"},{v:3,e:"😐"},{v:4,e:"🙂"},{v:5,e:"😄"}];
 const REASONS = {hungry:"진짜 배고픔", bored:"입이 심심", stress:"스트레스"};
@@ -826,7 +888,7 @@ const state = {
 
 function emptyDay(date){
   return { date, meals:{b:false,l:false,d:false}, lunchbox:null, eatout:null, caffeine:null,
-           weights:[], workouts:[], snacks:[], meds:[], habits:{} };
+           period:null, weights:[], workouts:[], snacks:[], meds:[], fits:[], habits:{} };
 }
 /* db가 돌려주는 문서는 얼려져 있어 그대로 고칠 수 없다.
    항상 우리 쪽 사본으로 바꿔 두고, 그 사본만 읽고 쓴다. */
@@ -834,13 +896,14 @@ function normalizeDay(src, date){
   const n = emptyDay(date);
   if(src){
     n.meals = Object.assign(n.meals, src.meals || {});
-    ["weights","workouts","snacks","meds"].forEach(k=>{
+    ["weights","workouts","snacks","meds","fits"].forEach(k=>{
       if(Array.isArray(src[k])) n[k] = src[k].map(x=> Object.assign({}, x));
     });
     n.habits = Object.assign({}, src.habits || {});
     n.lunchbox = src.lunchbox || null;
     n.eatout   = src.eatout   || null;
     n.caffeine = src.caffeine || null;
+    n.period   = src.period   || null;
   }
   Object.defineProperty(n, "__own", {value:true, enumerable:false, writable:false});
   return n;
@@ -966,6 +1029,42 @@ function weekCounts(anyDate){
   }
   return {start, end:addDays(start,6), climb, cardio, list};
 }
+/* 다음 주사 예정일 */
+function nextMed(){
+  const last = collect("meds", 1)[0];
+  if(!last) return null;
+  const next = addDays(last.date, MED_INTERVAL);
+  const diff = Math.round((parseYmd(next) - parseYmd(todayStr()))/86400000);
+  return {last, next, diff};
+}
+/* 생리 시작일들 (연속된 날의 첫날) */
+function periodStarts(){
+  const ds = Object.keys(state.days).filter(d=> day(d).period).sort();
+  return ds.filter(d=> day(d).period === "start" || !day(addDays(d,-1)).period);
+}
+function cycleInfo(){
+  const st = periodStarts();
+  if(!st.length) return null;
+  const gaps = [];
+  for(let i=1;i<st.length;i++){
+    const g = Math.round((parseYmd(st[i]) - parseYmd(st[i-1]))/86400000);
+    if(g >= 15 && g <= 60) gaps.push(g);
+  }
+  const avg = gaps.length ? Math.round(gaps.reduce((a,b)=>a+b,0)/gaps.length) : null;
+  const last = st[st.length-1];
+  return {last, avg, next: avg ? addDays(last, avg) : null, count: st.length};
+}
+/* 3주째 주간 평균이 제자리인지 */
+function plateau(){
+  const wa = weeklyAverages(4).filter(w=> w.avg !== null);
+  if(wa.length < 3) return null;
+  const last3 = wa.slice(-3);
+  const vals = last3.map(w=>w.avg);
+  const drop = vals[0] - vals[vals.length-1];
+  const span = Math.max.apply(null,vals) - Math.min.apply(null,vals);
+  if(drop < 0.3 && span < 1.0) return {from:last3[0].start, weeks:last3.length, drop};
+  return null;
+}
 function latestWeight(){ const w = allWeights(); return w.length ? w[w.length-1] : null; }
 function prevWeight(){ const w = allWeights(); return w.length>1 ? w[w.length-2] : null; }
 
@@ -987,7 +1086,8 @@ function sparkline(vals){
     + '<circle cx="'+last[0].toFixed(1)+'" cy="'+last[1].toFixed(1)+'" r="2.8" fill="var(--accent)"/></svg>';
 }
 
-function weightChart(series, goal){
+function weightChart(series, goal, opts){
+  opts = opts || {};
   if(series.length < 2) return '<p class="emptyline">체중 기록이 2개 이상 쌓이면 그래프가 그려져요.</p>';
   const W=320,H=160,L=34,R=12,T=14,B=26;
   const vals = series.map(s=>s.v);
@@ -1000,6 +1100,19 @@ function weightChart(series, goal){
   const pts = series.map((s,i)=>[x(i), y(s.v)]);
   const line = pts.map(q=>q[0].toFixed(1)+","+q[1].toFixed(1)).join(" ");
   const area = "M"+pts[0][0].toFixed(1)+","+(H-B)+" L"+line.replace(/ /g," L")+" L"+pts[pts.length-1][0].toFixed(1)+","+(H-B)+" Z";
+  let bands = "";
+  const step = series.length > 1 ? (W-L-R)/(series.length-1) : 12;
+  series.forEach((s,i)=>{
+    if(opts.periods && opts.periods[s.d]){
+      const x0 = Math.max(L, x(i)-step/2), x1 = Math.min(W-R, x(i)+step/2);
+      bands += '<rect x="'+x0.toFixed(1)+'" y="'+T+'" width="'+Math.max(1,x1-x0).toFixed(1)+'" height="'+(H-T-B)+'" fill="var(--clay-soft)" stroke="none"/>';
+    }
+  });
+  let fitMarks = "";
+  series.forEach((s,i)=>{
+    const f = opts.fits && opts.fits[s.d];
+    if(f) fitMarks += '<circle cx="'+x(i).toFixed(1)+'" cy="'+(T+3)+'" r="3.2" fill="'+FIT_COLOR[f]+'"/>';
+  });
   let g="";
   [max, (max+min)/2, min].forEach(v=>{
     g += '<line x1="'+L+'" y1="'+y(v).toFixed(1)+'" x2="'+(W-R)+'" y2="'+y(v).toFixed(1)+'" stroke="var(--line2)" stroke-width="1"/>'
@@ -1011,12 +1124,13 @@ function weightChart(series, goal){
   }
   const last = pts[pts.length-1];
   return '<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="체중 추이 그래프">'
-    + g
+    + bands + g
     + '<path d="'+area+'" fill="var(--accent-soft)" opacity=".75" stroke="none"/>'
     + '<polyline points="'+line+'" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
     + '<circle cx="'+last[0].toFixed(1)+'" cy="'+last[1].toFixed(1)+'" r="3.6" fill="var(--accent)"/>'
     + '<text x="'+L+'" y="'+(H-8)+'" font-size="9" font-family="IBM Plex Mono, monospace" fill="var(--faint)">'+mdLabel(series[0].d)+'</text>'
     + '<text x="'+(W-R)+'" y="'+(H-8)+'" text-anchor="end" font-size="9" font-family="IBM Plex Mono, monospace" fill="var(--faint)">'+mdLabel(series[series.length-1].d)+'</text>'
+    + fitMarks
     + '</svg>';
 }
 
@@ -1087,7 +1201,37 @@ function renderHome(){
       html += '<button class="btn ghost" type="button" id="set-goal" style="margin-top:14px">목표 체중 설정하기</button>';
     }
   }
+  const lastFit = collect("fits", 1)[0];
+  if(lastFit && last){
+    const bits = [];
+    if(lastFit.item) bits.push(lastFit.item);
+    if(lastFit.fit) bits.push(FITS[lastFit.fit]);
+    if(lastFit.waist) bits.push("허리 "+lastFit.waist+"cm");
+    html += '<button class="between" type="button" data-goto="rec:fit" style="width:100%; margin-top:14px; padding-top:12px; border-top:1px solid var(--line2); text-align:left">'
+      + '<span class="tiny"><span class="muted">옷 핏 · </span><span style="font-weight:600; color:'
+      + (lastFit.fit ? FIT_COLOR[lastFit.fit] : "var(--ink)") + '">' + esc(bits.join(" · ")) + '</span></span>'
+      + '<span class="tiny muted mono">' + mdLabel(lastFit.date) + ' ›</span></button>';
+  } else if(last){
+    html += '<button class="between" type="button" data-goto="rec:fit" style="width:100%; margin-top:14px; padding-top:12px; border-top:1px solid var(--line2); text-align:left">'
+      + '<span class="tiny muted">옷 핏도 같이 볼까요 — 기준 옷 하나 정해두기</span><span class="tiny muted mono">›</span></button>';
+  }
   $("#weight-body").innerHTML = html;
+
+  /* 다음 주사 */
+  const nm = nextMed();
+  $("#med-card").hidden = !nm;
+  if(nm){
+    const dLabel = nm.diff > 0 ? "D-"+nm.diff : nm.diff === 0 ? "오늘" : "D+"+(-nm.diff);
+    const tone = nm.diff < 0 ? "var(--clay)" : nm.diff <= 1 ? "var(--accent)" : "var(--ink)";
+    const note = nm.diff > 0 ? "예정일까지 "+nm.diff+"일 남았어요"
+               : nm.diff === 0 ? "오늘이 예정일이에요"
+               : nm.diff === -1 ? "예정일이 어제였어요"
+               : "예정일에서 "+(-nm.diff)+"일 지났어요";
+    $("#med-body").innerHTML =
+        '<div class="between"><span class="mono" style="font-size:26px; font-weight:600; letter-spacing:-.02em; color:'+tone+'">'+dLabel+'</span>'
+      + '<span class="tiny muted mono" style="text-align:right">'+fullLabel(nm.next)+'<br>'+esc(DRUGS[nm.last.drug]||nm.last.drug)+(nm.last.dose?" "+esc(nm.last.dose):"")+'</span></div>'
+      + '<p class="tiny muted" style="margin:10px 0 0">'+note+' · 마지막 투여 '+mdLabel(nm.last.date)+'. 주기와 용량은 처방 의료진 안내를 따르세요.</p>';
+  }
 
   /* 이번주 운동 */
   const wk = weekCounts(t);
@@ -1153,6 +1297,16 @@ function dayDetailHTML(ds){
 
   if(o.meds.length) body += sec("약", o.meds.map(m=>'<div class="entry"><span class="when">'+esc(m.t||"")+'</span><span class="main"><span class="t">'
     + esc(DRUGS[m.drug]||m.drug)+(m.dose?" "+esc(m.dose):"")+'</span>'+(m.memo?'<span class="s">'+esc(m.memo)+'</span>':"")+'</span></div>').join(""));
+
+  if(o.fits.length) body += sec("옷 핏", o.fits.map(f=>{
+    const bits=[]; if(f.waist) bits.push("허리 "+f.waist+"cm"); if(f.hip) bits.push("엉덩이 "+f.hip+"cm");
+    if(f.thigh) bits.push("허벅지 "+f.thigh+"cm"); if(f.memo) bits.push(f.memo);
+    return '<div class="entry"><span class="when">'+esc(f.t||"")+'</span><span class="main"><span class="t">'
+      + esc((f.item?f.item+" · ":"")+(f.fit?FITS[f.fit]:"둘레 기록"))+'</span>'
+      + (bits.length?'<span class="s">'+esc(bits.join(" · "))+'</span>':"")+'</span></div>';
+  }).join(""));
+
+  if(o.period) body += sec("생리", '<div class="chips"><span class="pill climb">'+esc(PERIODS[o.period]||"생리 중")+'</span></div>');
 
   const hs = state.settings.habits || [];
   const hd = hs.filter(h=>o.habits[h.id]);
@@ -1249,6 +1403,7 @@ function renderCalMonth(){
     if(dw===0) cls.push("sun");
     if(ds===t) cls.push("today");
     if(ds>t) cls.push("future");
+    if(o.period) cls.push("period");
     cells += '<button class="'+cls.join(" ")+'" type="button" data-day="'+ds+'" aria-label="'+esc(fullLabel(ds))+'">'
       + '<span class="d">'+dd+'</span><span class="mk">'+marks+'</span></button>';
     if(hasWeight || moved || o.snacks.length || o.meds.length || o.meals.b || o.meals.l || o.meals.d) rec++;
@@ -1261,6 +1416,7 @@ function renderCalMonth(){
     +   '<span><i style="background:var(--accent)"></i>체중 기록</span>'
     +   '<span><i style="background:var(--clay)"></i>삼시세끼 완료</span>'
     +   '<span><i style="background:var(--ochre)"></i>운동한 날</span>'
+    +   '<span><i style="background:var(--clay); border-radius:1px; height:2px; width:10px"></i>생리</span>'
     + '</div>'
     + '<div class="hr"></div><p class="sec-label">이 달 요약</p>'
     + '<div class="msum">'
@@ -1310,9 +1466,23 @@ function renderRecLists(){
   }).join("") : '<p class="emptyline">아직 기록이 없어요.</p>';
 
   const ml = collect("meds", 10);
-  $("#list-med").innerHTML = ml.length ? ml.map(m=>
-    entryRow(mdLabel(m.date)+" "+(m.t||""), (DRUGS[m.drug]||m.drug)+(m.dose?" "+m.dose:""), m.memo||"", "meds:"+m.date+":"+m.id)
-  ).join("") : '<p class="emptyline">아직 기록이 없어요.</p>';
+  $("#list-med").innerHTML = ml.length ? ml.map(m=>{
+    const bits = [];
+    if(m.se && m.se.length) bits.push(m.se.map(x=>SE_LABEL[x]||x).join(", "));
+    if(m.memo) bits.push(m.memo);
+    return entryRow(mdLabel(m.date)+" "+(m.t||""), (DRUGS[m.drug]||m.drug)+(m.dose?" "+m.dose:""), bits.join(" · "), "meds:"+m.date+":"+m.id);
+  }).join("") : '<p class="emptyline">아직 기록이 없어요.</p>';
+
+  const fl = collect("fits", 10);
+  $("#list-fit").innerHTML = fl.length ? fl.map(f=>{
+    const bits = [];
+    if(f.waist) bits.push("허리 "+f.waist+"cm");
+    if(f.hip) bits.push("엉덩이 "+f.hip+"cm");
+    if(f.thigh) bits.push("허벅지 "+f.thigh+"cm");
+    if(f.memo) bits.push(f.memo);
+    const title = (f.item ? f.item+" · " : "") + (f.fit ? FITS[f.fit] : "둘레 기록");
+    return entryRow(mdLabel(f.date), title, bits.join(" · "), "fits:"+f.date+":"+f.id);
+  }).join("") : '<p class="emptyline">아직 기록이 없어요.</p>';
 }
 function renderMealPanel(){
   const ds = $("#m-date").value || todayStr();
@@ -1436,7 +1606,22 @@ function renderStats(){
     + '</div>';
 
   /* 체중 추세 */
-  out += '<div class="card"><p class="sec-label">체중 추세</p>' + weightChart(series, goal);
+  const fitMap = {}, periodMap = {};
+  Object.keys(state.days).forEach(ds=>{
+    const o = day(ds);
+    const f = o.fits.filter(x=>x.fit).pop();
+    if(f) fitMap[ds] = f.fit;
+    if(o.period) periodMap[ds] = true;
+  });
+  const hasFitMark = series.some(s=> fitMap[s.d]);
+  const hasPeriod  = series.some(s=> periodMap[s.d]);
+  out += '<div class="card"><p class="sec-label">체중 추세</p>' + weightChart(series, goal, {fits:fitMap, periods:periodMap});
+  if(hasFitMark || hasPeriod){
+    out += '<div class="legend" style="margin-top:10px">'
+      + (hasFitMark ? '<span><i style="background:var(--clay)"></i>꽉 낌</span><span><i style="background:var(--ochre)"></i>딱 맞음</span><span><i style="background:var(--accent)"></i>헐렁</span>' : "")
+      + (hasPeriod ? '<span><i style="background:var(--clay-soft); border-radius:2px; width:12px; height:8px"></i>생리</span>' : "")
+      + '</div>';
+  }
   if(series.length >= 2){
     const first = series[0].v, last = series[series.length-1].v, ch = last - first;
     const days = Math.max(1, (parseYmd(series[series.length-1].d) - parseYmd(series[0].d))/86400000);
@@ -1449,6 +1634,42 @@ function renderStats(){
       + '</div>';
   }
   out += '</div>';
+
+  /* 옷 핏 · 둘레 — 숫자가 멈춘 주에 먼저 달라지는 것 */
+  const fits = collect("fits").filter(f=> inRange(f.date));
+  const waists = fits.filter(f=> f.waist).slice(0,8).reverse();
+  if(fits.length){
+    const lastF = fits[0];
+    out += '<div class="card"><p class="sec-label">옷 핏</p>'
+      + '<div class="between" style="margin-bottom:12px">'
+      + '<span style="font-weight:600">'+esc((lastF.item?lastF.item+" · ":"")+(lastF.fit?FITS[lastF.fit]:"둘레 기록"))+'</span>'
+      + '<span class="tiny muted mono">'+mdLabel(lastF.date)+'</span></div>';
+    const counts = {tight:0, just:0, loose:0};
+    fits.forEach(f=>{ if(counts[f.fit] !== undefined) counts[f.fit]++; });
+    const ct = counts.tight+counts.just+counts.loose;
+    if(ct){
+      ["tight","just","loose"].forEach(k=>{
+        out += '<div class="barrow"><span class="lb">'+FITS[k]+'</span><span class="tr"><span class="fl" style="width:'
+          + Math.round(counts[k]/ct*100)+'%; background:'+FIT_COLOR[k]+'"></span></span><span class="vl">'+counts[k]+'회</span></div>';
+      });
+    }
+    if(waists.length >= 2){
+      const first = waists[0], lastW = waists[waists.length-1];
+      const dw = lastW.waist - first.waist;
+      out += '<div class="hr"></div><p class="sec-label">허리 둘레</p>'
+        + '<div class="statgrid">'
+        + '<div class="stat"><div class="v">'+lastW.waist+'cm</div><div class="l">가장 최근</div></div>'
+        + '<div class="stat"><div class="v" style="color:'+(dw<0?"var(--accent)":"var(--ink)")+'">'+(dw>0?"+":"")+(Math.round(dw*10)/10)+'cm</div><div class="l">'+mdLabel(first.date)+' 이후</div></div>'
+        + '</div>';
+    } else if(!waists.length){
+      out += '<p class="tiny muted" style="margin:12px 0 0">허리 둘레도 같이 남기면 변화가 더 또렷하게 보여요.</p>';
+    }
+    out += '</div>';
+  } else {
+    out += '<div class="card"><p class="sec-label">옷 핏</p>'
+      + '<p class="emptyline">기준이 되는 옷 하나를 정해두고 주 1회쯤 입어보세요. 체중이 멈춘 주에도 옷은 먼저 달라집니다.</p>'
+      + '<button class="btn ghost" type="button" data-goto="rec:fit" style="margin-top:6px">옷 핏 기록하기</button></div>';
+  }
 
   /* 주간 평균 흐름 — 하루 숫자 대신 보는 지표 */
   const wa = weeklyAverages(6).filter(w=> w.avg !== null);
@@ -1466,6 +1687,30 @@ function renderStats(){
     });
     out += '<div class="card"><p class="sec-label">주간 평균 흐름</p>'+rows
       + '<p class="tiny muted" style="margin:10px 0 0">하루 오르내림 대신 주 단위 평균으로 봅니다.</p></div>';
+  }
+
+  /* 정체 구간 — 원칙 8을 꺼내고, 그 사이 유지된 것을 보여준다 */
+  const pl = plateau();
+  if(pl){
+    const hsP = state.settings.habits || [];
+    let hDone=0, hTot=0, mFull=0, mTot=0, climbN=0, cardioN=0, nDays=0, cur = pl.from;
+    while(cur <= t && nDays < 40){
+      const o = day(cur); nDays++;
+      hTot += hsP.length; hDone += hsP.filter(h=> o.habits[h.id]).length;
+      mTot += 3; mFull += ["b","l","d"].filter(k=> o.meals[k]).length;
+      o.workouts.forEach(w=>{ if(w.type==="climb") climbN++; else if(WTYPE[w.type] && WTYPE[w.type].cardio) cardioN++; });
+      cur = addDays(cur,1);
+    }
+    out += '<div class="card"><p class="sec-label">지금은 정체 구간</p>'
+      + '<div class="remind" style="margin-top:0"><b>원칙 08</b>정체가 와도 미리 실패라 가정하지 않는다</div>'
+      + '<p class="tiny muted" style="margin:12px 0 12px">'+pl.weeks+'주째 주간 평균이 거의 그대로예요 ('+mdLabel(pl.from)+'부터). 그 대신 이 기간에 이런 것들이 유지됐어요.</p>'
+      + '<div class="statgrid">'
+      + '<div class="stat"><div class="v">'+(hTot?Math.round(hDone/hTot*100):0)+'%</div><div class="l">습관 준수율</div></div>'
+      + '<div class="stat"><div class="v">'+(mTot?Math.round(mFull/mTot*100):0)+'%</div><div class="l">삼시세끼 준수율</div></div>'
+      + '<div class="stat"><div class="v">'+climbN+'회</div><div class="l">클라이밍</div></div>'
+      + '<div class="stat"><div class="v">'+cardioN+'회</div><div class="l">유산소</div></div>'
+      + '</div>'
+      + '<p class="tiny muted" style="margin:12px 0 0">체중이 멈춘 구간에도 몸은 적응하는 중이에요. 이럴 때일수록 옷 핏과 둘레를 같이 보세요.</p></div>';
   }
 
   /* 이번주 리포트 */
@@ -1592,6 +1837,21 @@ function renderStats(){
       + '</div></div>';
   }
 
+  /* 생리 주기 */
+  const ci = cycleInfo();
+  if(ci){
+    const dLeft = ci.next ? Math.round((parseYmd(ci.next) - parseYmd(t))/86400000) : null;
+    out += '<div class="card"><p class="sec-label">생리 주기</p><div class="statgrid">'
+      + '<div class="stat"><div class="v">'+(ci.avg ? ci.avg+"일" : "–")+'</div><div class="l">평균 주기</div></div>'
+      + '<div class="stat"><div class="v">'+mdLabel(ci.last)+'</div><div class="l">마지막 시작</div></div>'
+      + '<div class="stat"><div class="v">'+(ci.next ? mdLabel(ci.next) : "–")+'</div><div class="l">다음 예상</div></div>'
+      + '<div class="stat"><div class="v">'+(dLeft===null ? "–" : (dLeft>0 ? "D-"+dLeft : dLeft===0 ? "오늘" : "D+"+(-dLeft)))+'</div><div class="l">예상까지</div></div>'
+      + '</div>'
+      + '<p class="tiny muted" style="margin:12px 0 0">'
+      + (ci.avg ? '기록한 주기 '+ci.count+'번의 평균이에요. ' : '시작일이 두 번 이상 쌓이면 평균 주기가 계산돼요. ')
+      + '이 시기 체중과 붓기는 오르내리기 쉬우니, 그 주는 숫자보다 흐름만 보세요.</p></div>';
+  }
+
   /* 약 */
   const meds = collect("meds").filter(m=> inRange(m.date));
   const lastMed = collect("meds", 1)[0];
@@ -1604,9 +1864,83 @@ function renderStats(){
   } else {
     out += '<p class="emptyline">이 기간엔 투여 기록이 없어요.</p>';
   }
+  const nmS = nextMed();
+  if(nmS){
+    out += '<div class="hr"></div><div class="between"><span class="tiny muted">다음 주사 예정</span>'
+      + '<span class="tiny mono" style="font-weight:600">'+fullLabel(nmS.next)+' · '
+      + (nmS.diff>0?"D-"+nmS.diff : nmS.diff===0?"오늘" : "D+"+(-nmS.diff))+'</span></div>';
+  }
+  const seCount = {};
+  meds.forEach(m=> (m.se||[]).forEach(k=> seCount[k] = (seCount[k]||0)+1));
+  const seKeys = Object.keys(seCount).sort((a,b)=> seCount[b]-seCount[a]);
+  if(seKeys.length){
+    const seMax = seCount[seKeys[0]];
+    out += '<div class="hr"></div><p class="sec-label">몸의 반응</p>';
+    seKeys.forEach(k=>{
+      out += '<div class="barrow"><span class="lb">'+esc(SE_LABEL[k]||k)+'</span><span class="tr"><span class="fl" style="width:'
+        + Math.round(seCount[k]/seMax*100)+'%; background:var(--clay)"></span></span><span class="vl">'+seCount[k]+'회</span></div>';
+    });
+    out += '<p class="tiny muted" style="margin:10px 0 0">진료 때 이 기록을 그대로 보여주세요.</p>';
+  }
   out += '<p class="tiny muted" style="margin:12px 0 0">약은 감량을 대신하지 않아요. 용량 변경·전환은 처방 의료진과 상의하세요.</p></div>';
 
+  out += '<div class="card"><p class="sec-label">기록 내보내기</p>'
+    + '<p class="tiny muted" style="margin:-4px 0 14px">쌓인 기록을 파일로 받아 백업하거나 진료 때 보여줄 수 있어요.</p>'
+    + '<div class="row" style="gap:8px; align-items:stretch">'
+    + '<button class="btn ghost" type="button" data-export="csv">표 파일 (CSV)</button>'
+    + '<button class="btn ghost" type="button" data-export="json">전체 백업 (JSON)</button>'
+    + '</div></div>';
+
   $("#stats-body").innerHTML = out;
+}
+
+function csvCell(v){
+  const x = v == null ? "" : String(v);
+  return /[",\r\n]/.test(x) ? '"'+x.replace(/"/g,'""')+'"' : x;
+}
+function buildCsv(){
+  const hs = state.settings.habits || [];
+  const rows = [["날짜","요일","체중(kg)","컨디션(1-5)","수면(h)","붓기","생리","아침","점심","저녁",
+    "도시락","외식","카페인","운동","간식","약","몸의 반응","옷 핏","기준 옷","허리(cm)","엉덩이(cm)","허벅지(cm)",
+    "습관 달성","습관 전체","메모"]];
+  Object.keys(state.days).sort().forEach(ds=>{
+    const o = day(ds);
+    const w = o.weights[o.weights.length-1];
+    const pick = (arr, f) => arr.map(f).filter(function(v){ return v !== "" && v != null; }).join(" | ");
+    rows.push([ds, DOW[parseYmd(ds).getDay()],
+      w ? w.kg : "", w && w.cond ? w.cond : "", w && w.sleep ? w.sleep : "",
+      w && w.swell ? (w.swell === "yes" ? "있음" : "없음") : "",
+      o.period ? (PERIODS[o.period] || "생리 중") : "",
+      o.meals.b?"O":"", o.meals.l?"O":"", o.meals.d?"O":"",
+      o.lunchbox ? (o.lunchbox==="yes"?"O":"X") : "",
+      o.eatout ? (o.eatout==="yes"?"O":"X") : "",
+      o.caffeine ? (CAFF[o.caffeine]||o.caffeine) : "",
+      pick(o.workouts, x=> (WTYPE[x.type]?WTYPE[x.type].label:x.type)+(x.min?" "+x.min+"분":"")+(x.rpe?" 강도"+x.rpe:"")),
+      pick(o.snacks, x=> x.name+(x.reason?" ("+(REASONS[x.reason]||x.reason)+")":"")),
+      pick(o.meds, x=> (DRUGS[x.drug]||x.drug)+(x.dose?" "+x.dose:"")),
+      pick(o.meds, x=> (x.se||[]).map(k=>SE_LABEL[k]||k).join(", ")),
+      pick(o.fits, x=> x.fit ? FITS[x.fit] : ""),
+      pick(o.fits, x=> x.item || ""),
+      pick(o.fits, x=> x.waist || ""), pick(o.fits, x=> x.hip || ""), pick(o.fits, x=> x.thigh || ""),
+      hs.filter(h=> o.habits[h.id]).length, hs.length,
+      pick([].concat(w&&w.memo?[{m:w.memo}]:[], o.workouts, o.meds, o.fits), x=> x.m || x.memo || "")
+    ]);
+  });
+  return rows.map(r=> r.map(csvCell).join(",")).join("\r\n");
+}
+async function exportFile(kind){
+  let dl = null;
+  try{ dl = await (window.claude && window.claude.use ? window.claude.use("downloads") : null); }catch(e){ dl = null; }
+  if(!dl) return toast("이 화면에서는 파일 저장을 쓸 수 없어요");
+  try{
+    if(kind === "csv") await dl.save({filename:"다이어트기록_"+todayStr()+".csv", data:"\uFEFF"+buildCsv()});
+    else await dl.save({filename:"다이어트기록_백업_"+todayStr()+".json", data:JSON.stringify({days:state.days, settings:state.settings}, null, 1)});
+    toast("내보냈어요");
+  }catch(err){
+    if(err && err.code === "declined") return;
+    console.error(err);
+    toast(err && err.code === "rate_limited" ? "잠시 뒤에 다시 눌러 주세요" : "내보내지 못했어요");
+  }
 }
 
 /* ============================================================
@@ -1678,6 +2012,28 @@ $("#w-cond").addEventListener("click", e=>{
   $$('button[data-v]', $("#w-cond")).forEach(x=> x.setAttribute("aria-pressed", String(x.dataset.v===next)));
 });
 
+function initChipsMulti(el){
+  el.addEventListener("click", e=>{
+    const b = e.target.closest("button[data-v]"); if(!b) return;
+    const cur = (el.dataset.value || "").split(",").filter(Boolean);
+    const i = cur.indexOf(b.dataset.v);
+    if(i >= 0) cur.splice(i,1); else cur.push(b.dataset.v);
+    el.dataset.value = cur.join(",");
+    $$('button[data-v]', el).forEach(x=> x.setAttribute("aria-pressed", String(cur.indexOf(x.dataset.v) >= 0)));
+  });
+}
+function chipValsMulti(el){ return (el.dataset.value || "").split(",").filter(Boolean); }
+function setChipsMulti(el, arr){
+  const a = arr || [];
+  el.dataset.value = a.join(",");
+  $$('button[data-v]', el).forEach(x=> x.setAttribute("aria-pressed", String(a.indexOf(x.dataset.v) >= 0)));
+}
+
+$("#d-se").innerHTML = SIDE_EFFECTS.map(([k,v])=>
+  '<button class="chip" type="button" data-v="'+k+'" aria-pressed="false">'+v+'</button>').join("");
+initChipsMulti($("#d-se"));
+initChips($("#t-fit"));
+initChips($("#w-period"), v=>{ const ds = $("#w-date").value || todayStr(); mutate(ds, d=> d.period = v); });
 initChips($("#w-swell"));
 initChips($("#s-reason"));
 initChips($("#e-type"));
@@ -1702,7 +2058,7 @@ function resetDT(dSel, tSel){
 }
 function fillNow(){
   const t = todayStr(), n = hm(new Date());
-  ["#w-date","#s-date","#e-date","#d-date"].forEach(s=>{ if(!$(s).value || $(s).dataset.touched!=="1") $(s).value = t; });
+  ["#w-date","#s-date","#e-date","#d-date","#t-date"].forEach(s=>{ if(!$(s).value || $(s).dataset.touched!=="1") $(s).value = t; });
   ["#w-time","#s-time","#e-time","#d-time"].forEach(s=>{ if(!$(s).value || $(s).dataset.touched!=="1") $(s).value = n; });
   if(!$("#m-date").value || $("#m-date").dataset.touched!=="1") $("#m-date").value = t;
 }
@@ -1761,11 +2117,32 @@ function saveMed(){
   const ds = $("#d-date").value || todayStr();
   const rec = { id:uid(), t:$("#d-time").value || hm(new Date()), drug };
   const dose = $("#d-dose").value.trim(); if(dose) rec.dose = dose;
+  const se = chipValsMulti($("#d-se")); if(se.length) rec.se = se;
   const memo = $("#d-memo").value.trim(); if(memo) rec.memo = memo;
   mutate(ds, d=>{ d.meds.push(rec); d.meds.sort((a,b)=> (a.t||"")<(b.t||"")?-1:1); });
-  $("#d-dose").value=""; $("#d-memo").value=""; setChip($("#d-drug"), null);
+  $("#d-dose").value=""; $("#d-memo").value=""; setChip($("#d-drug"), null); setChipsMulti($("#d-se"), []);
   resetDT("#d-date","#d-time");
   toast((DRUGS[drug]||drug)+" 기록했어요");
+}
+
+function saveFit(){
+  const fit = chipVal($("#t-fit"));
+  const waist = parseFloat($("#t-waist").value), hip = parseFloat($("#t-hip").value), thigh = parseFloat($("#t-thigh").value);
+  if(!fit && !(waist>0) && !(hip>0) && !(thigh>0)) return toast("입어본 느낌이나 둘레 중 하나는 남겨 주세요");
+  const ds = $("#t-date").value || todayStr();
+  const rec = { id:uid(), t:hm(new Date()) };
+  const item = $("#t-item").value.trim();
+  if(item){ rec.item = item; state.settings.fitItem = item; persistSettings(); }
+  if(fit) rec.fit = fit;
+  if(waist > 0) rec.waist = waist;
+  if(hip > 0) rec.hip = hip;
+  if(thigh > 0) rec.thigh = thigh;
+  const memo = $("#t-memo").value.trim(); if(memo) rec.memo = memo;
+  mutate(ds, d=>{ d.fits.push(rec); });
+  ["#t-waist","#t-hip","#t-thigh","#t-memo"].forEach(x=> $(x).value = "");
+  setChip($("#t-fit"), null);
+  resetDT("#t-date","#t-date");
+  toast(fit ? FITS[fit].replace(/[.!]$/,"") + " — 기록했어요" : "둘레를 기록했어요");
 }
 
 /* 폼 제출이 아니라 버튼이므로, 입력칸에서 엔터로도 저장되게 한다 */
@@ -1785,6 +2162,9 @@ document.addEventListener("click", e=>{
 function handleClick(e){
   const el = e.target;
 
+  const expBtn = el.closest("[data-export]");
+  if(expBtn){ exportFile(expBtn.dataset.export); return; }
+
   const saveBtn = el.closest("[data-save]");
   if(saveBtn){
     const k = saveBtn.dataset.save;
@@ -1792,6 +2172,7 @@ function handleClick(e){
     if(k === "snack")   return saveSnack();
     if(k === "workout") return saveWorkout();
     if(k === "med")     return saveMed();
+    if(k === "fit")     return saveFit();
   }
 
   const tabBtn = el.closest("#tabbar button[data-tab]");
@@ -1907,7 +2288,9 @@ function render(){
     else if(state.tab === "cal") renderCal();
     else if(state.tab === "rec"){
       $$("#rec-seg button").forEach(b=> b.setAttribute("aria-selected", String(b.dataset.rec === state.rec)));
-      ["weight","meal","workout","med"].forEach(k=> $("#rec-"+k).hidden = (k !== state.rec));
+      ["weight","meal","workout","med","fit"].forEach(k=> $("#rec-"+k).hidden = (k !== state.rec));
+      setChip($("#w-period"), day($("#w-date").value || todayStr()).period);
+      if(!$("#t-item").value && state.settings.fitItem) $("#t-item").value = state.settings.fitItem;
       renderMealPanel(); renderRecLists();
     }
     else if(state.tab === "habit") renderHabits();
