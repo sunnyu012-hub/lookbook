@@ -244,6 +244,23 @@
   .src{font-size:10.5px;margin-left:6px;padding:1px 6px;border-radius:999px;background:var(--sunk);color:var(--muted)}
   .src.hand{background:var(--accent-soft);color:var(--accent);font-weight:700}
   .spark{display:block}
+  .trend .kwline{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .trend .nv{display:inline-flex;gap:4px}
+  .trend .nv a{font:700 11px/1 "Gothic A1",sans-serif;text-decoration:none;color:var(--accent);background:var(--surface);
+    border:1px solid var(--line);border-radius:6px;padding:4px 7px}
+  .trend .nv a:hover{border-color:var(--accent);background:var(--accent-soft)}
+  .trend .nv a:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  .histbtn{background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:3px 8px;cursor:pointer;
+    font:600 12px "IBM Plex Mono",monospace;color:var(--ink-2);white-space:nowrap}
+  .histbtn:hover,.histbtn[aria-expanded="true"]{border-color:var(--accent);color:var(--accent)}
+  .trend tr.histrow td{background:var(--sunk);padding:12px 14px}
+  .hist{display:flex;flex-wrap:wrap;gap:6px;max-height:240px;overflow:auto}
+  .hc{display:inline-flex;align-items:baseline;gap:6px;background:var(--surface);border:1px solid var(--line-soft);
+    border-radius:8px;padding:5px 9px;cursor:pointer;font:500 12px "Gothic A1",sans-serif;color:var(--ink-2)}
+  .hc:hover{border-color:var(--accent)}
+  .hc .hd{font-family:"IBM Plex Mono",monospace;color:var(--muted)}
+  .hc b{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .hc .up,.hc .down,.hc .d0{font-size:11px}
   .trend .vol{font:600 11.5px "IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;color:var(--ink-2);background:var(--sunk);border:1px solid var(--line-soft);border-radius:999px;padding:0 7px;margin-left:4px}
   .trbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
   .trbar label{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);font-weight:500}
@@ -400,7 +417,7 @@
       </div>
     </div>
     <p class="foot">매일 네이버에서 직접 확인한 순위를 적습니다. 숫자를 넣고 <b>Enter</b>를 누르면 다음 칸으로 넘어갑니다. <b>0</b>은 100위 밖, 칸을 비우면 그 날 기록이 지워집니다. 기록 날짜를 바꾸면 빠뜨린 날도 채울 수 있습니다.<br>
-    <b>발행</b> 상태 글의 메인키워드는 자동으로 올라오고, 그 밖의 키워드는 위 칸에서 채널을 골라 추가합니다. 줄은 <b>발행일 최신순</b>이고, 직접 추가한 키워드는 그 아래에 추가한 날짜 순으로 놓입니다. 키워드 옆 <b>월 검색량</b>은 <b>검색량 갱신</b>으로 불러오며(PC+모바일 합계, 마우스를 올리면 나눠서 보입니다), 키워드 탭에서 조회해둔 값이 있으면 그대로 씁니다. <b>직전 대비</b>는 바로 앞 기록과, <b>시작 대비</b>는 첫 기록과 비교한 변동 폭입니다. 추이 그래프는 위로 갈수록 상위이며 날짜 간격대로 그려집니다.</p>
+    <b>발행</b> 상태 글의 메인키워드는 자동으로 올라오고, 그 밖의 키워드는 위 칸에서 채널을 골라 추가합니다. 줄은 <b>발행일 최신순</b>이고, 직접 추가한 키워드는 그 아래에 추가한 날짜 순으로 놓입니다. 키워드 옆 <b>월 검색량</b>은 <b>검색량 갱신</b>으로 불러오며(PC+모바일 합계, 마우스를 올리면 나눠서 보입니다), 키워드 탭에서 조회해둔 값이 있으면 그대로 씁니다.<br>키워드 옆 <b>통합</b> · <b>블로그</b>를 누르면 네이버 검색 결과가 새 탭으로 열립니다. <b>기록 N회</b>를 누르면 그동안의 날짜별 순위가 펼쳐지고, 날짜를 누르면 그 날 기록을 고칠 수 있습니다. <b>직전 대비</b>는 바로 앞 기록과, <b>시작 대비</b>는 첫 기록과 비교한 변동 폭입니다. 추이 그래프는 위로 갈수록 상위이며 날짜 간격대로 그려집니다.</p>
   </section>
 
   <!-- ══ 키워드 보드 (아이디어) ══ -->
@@ -959,12 +976,12 @@ function sparkline(hist,color){
     '<title>'+esc(hist.slice(-12).map(h=>fmtD(h.d)+' '+(h.r?h.r+'위':'밖')).join(' · '))+'</title></svg>';
 }
 // 두 기록 비교. 순위는 숫자가 작을수록 좋으므로 이전-현재가 양수면 상승이다.
-function cmp(p,c){
-  if(!p&&!c) return '<span class="d0">계속 밖</span>';
+function cmp(p,c,short){
+  if(!p&&!c) return '<span class="d0">'+(short?'—':'계속 밖')+'</span>';
   if(!p) return '<span class="up">▲ 진입</span>';
   if(!c) return '<span class="down">▼ 밖으로</span>';
   const d=p-c;
-  if(!d) return '<span class="d0">변동 없음</span>';
+  if(!d) return '<span class="d0">'+(short?'—':'변동 없음')+'</span>';
   return d>0?'<span class="up">▲ '+d+'</span>':'<span class="down">▼ '+(-d)+'</span>';
 }
 const delta=h=>h.length<2?'<span class="d0">—</span>':cmp(h[h.length-2].r,h[h.length-1].r);
@@ -996,9 +1013,9 @@ function renderTrend(){
       const h=histOf(r.ch,r.kw);
       const at=h.find(x=>x.d===d);
       const before=h.filter(x=>x.d<d).pop();
-      const best=bestOf(h), last=h[h.length-1];
+      const best=bestOf(h), last=h[h.length-1], open=openHist.has(rkey(r.ch,r.kw));
       return '<tr>'+
-        '<td><div class="kwc">'+esc(r.kw)+'</div><div class="sub">'+chBadge(r.ch)+
+        '<td><div class="kwline"><span class="kwc">'+esc(r.kw)+'</span>'+nvLinks(r.kw)+'</div><div class="sub">'+chBadge(r.ch)+
           (r.manual
             ? ' <span class="src hand">직접 추가</span>'+(r.date?' <span>'+fmtD(r.date)+' 추가</span>':'')
             : ' <span>발행 '+(r.date?fmtD(r.date):'날짜 없음')+(r.n>1?' · 글 '+r.n+'건':'')+'</span>')+volTag(r.kw)+'</div></td>'+
@@ -1009,9 +1026,13 @@ function renderTrend(){
         '<td>'+sinceStart(h)+'</td>'+
         '<td>'+(best?'<span class="rank">'+best+'위</span>':'<span class="none">—</span>')+'</td>'+
         '<td>'+(h.length?sparkline(h,chColor(r.ch)):'<span class="none">—</span>')+'</td>'+
-        '<td><span class="sub">'+(h.length?fmtD(h[0].d)+'~'+fmtD(last.d)+' · '+h.length+'회':'없음')+'</span></td>'+
+        '<td>'+(h.length
+          ? '<button class="histbtn" data-hist="'+idx+'" type="button" aria-expanded="'+open+'">'+(open?'▾':'▸')+' 기록 '+h.length+'회</button>'+
+            '<div class="sub">'+fmtD(h[0].d)+'~'+fmtD(last.d)+'</div>'
+          : '<span class="sub">없음</span>')+'</td>'+
         '<td style="text-align:right">'+(r.manual?'<button class="mini" data-untrack="'+idx+'" type="button" title="추적 해제">×</button>':'')+'</td>'+
-      '</tr>';
+      '</tr>'+
+      (open?'<tr class="histrow"><td colspan="8">'+histDetail(h,idx)+'</td></tr>':'');
     }).join('');
 }
 
@@ -1065,6 +1086,41 @@ $('#tradd').onclick=()=>{
   const el=$('#trendTbl input[data-mr="'+i+'"]'); if(el) el.focus();
 };
 $('#trkw').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#tradd').click() });
+// 네이버 바로가기 — 매일 순위를 확인할 때 검색창에 키워드를 다시 칠 필요가 없다.
+// 블로그 탭은 ssc=tab.blog.all 이어야 한다 (where=post·where=blog 는 이제 통합검색으로 떨어진다)
+const NV_ALL='https://search.naver.com/search.naver?query=';
+const NV_BLOG='https://search.naver.com/search.naver?ssc=tab.blog.all&query=';
+function nvLinks(kw){
+  const q=encodeURIComponent(kw);
+  return '<span class="nv">'+
+    '<a href="'+NV_ALL+q+'" target="_blank" rel="noopener" title="네이버 통합검색 — '+esc(kw)+'">통합</a>'+
+    '<a href="'+NV_BLOG+q+'" target="_blank" rel="noopener" title="네이버 블로그 탭 — '+esc(kw)+'">블로그</a></span>';
+}
+// 그동안의 기록 전체. 날짜 순, 칸마다 그날 순위와 앞 기록 대비 등락. 날짜를 누르면 그 날로 가서 고친다.
+const openHist=new Set();   // 펼친 키워드 (화면 상태라 저장하지 않는다)
+function histDetail(h,idx){
+  return '<div class="hist">'+h.map((x,i)=>
+    '<button type="button" class="hc" data-jump="'+x.d+'" data-row="'+idx+'" title="'+x.d+' 기록 고치기">'+
+      '<span class="hd">'+fmtD(x.d)+'</span><b>'+(x.r?x.r+'위':'밖')+'</b>'+
+      (i?cmp(h[i-1].r,x.r,true):'<span class="d0">시작</span>')+
+    '</button>').join('')+'</div>';
+}
+$('#trendTbl').addEventListener('click',e=>{
+  const t=e.target.closest('button[data-hist]');
+  if(t){
+    const row=trendList()[+t.dataset.hist]; if(!row) return;
+    const k=rkey(row.ch,row.kw);
+    openHist.has(k)?openHist.delete(k):openHist.add(k);
+    renderTrend(); return;
+  }
+  const j=e.target.closest('button[data-jump]');
+  if(j){
+    $('#trendDate').value=j.dataset.jump; renderTrend();
+    const el=$('#trendTbl input[data-mr="'+j.dataset.row+'"]');
+    if(el){ el.focus(); try{ el.select() }catch(err){} }
+    $('#trendMsg').textContent=fmtD(j.dataset.jump)+' 기록을 고칠 수 있습니다. 다 고치면 기록 날짜를 오늘로 돌려두세요.';
+  }
+});
 // 월간 검색량: 추세에서 불러온 값, 없으면 키워드 보드에서 이미 조회해둔 값을 쓴다
 function volOf(kw){
   if(vols[kw]) return vols[kw];
@@ -1303,5 +1359,8 @@ console.assert(sinceStart([{d:'a',r:20},{d:'b',r:9},{d:'c',r:4}]).includes('▲ 
 console.assert(bestOf([{r:0},{r:12},{r:4},{r:30}])===4&&bestOf([{r:0}])===0,'최고 순위는 밖(0)을 빼고 가장 작은 값');
 console.assert(fmtD('2026-09-01')==='9/1','날짜 표기');
 console.assert(volTag('__없는키워드__')==='','검색량 없으면 표시하지 않음');
+console.assert(nvLinks('국회직공무원').includes('ssc=tab.blog.all&query=%EA%B5%AD')&&nvLinks('국회직공무원').includes('search.naver?query=%EA%B5%AD'),'네이버 바로가기 주소');
+console.assert(cmp(3,3,true).includes('—')&&cmp(0,0,true).includes('—')&&cmp(9,3,true).includes('▲ 6'),'펼친 기록의 짧은 등락 표기');
+console.assert((histDetail([{d:'2026-09-01',r:9},{d:'2026-09-02',r:3}],0).match(/class="hc"/g)||[]).length===2,'펼친 기록은 날짜마다 한 칸');
 console.assert(normalizeProxy('p.workers.dev/')==='https://p.workers.dev'&&normalizeProxy('https://a.dev')==='https://a.dev'&&normalizeProxy('')==='','프록시 주소는 https:// 보정 + 끝 슬래시 제거');
 </script>
