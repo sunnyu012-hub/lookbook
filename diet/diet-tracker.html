@@ -654,11 +654,18 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
           <p class="tiny muted" style="margin:-6px 0 14px">누르면 그 날짜에 바로 저장돼요. 위 날짜를 바꾸면 그 날로 들어갑니다.</p>
 
           <div class="fld" style="margin-bottom:7px"><span>식욕</span></div>
-          <div class="chips" id="b-app" style="margin-bottom:16px">
+          <div class="chips" id="b-app" style="margin-bottom:14px">
             <button class="chip" type="button" data-v="none" aria-pressed="false">없음</button>
             <button class="chip" type="button" data-v="low" aria-pressed="false">적음</button>
             <button class="chip" type="button" data-v="ok" aria-pressed="false">적당</button>
             <button class="chip" type="button" data-v="high" aria-pressed="false">많음</button>
+          </div>
+
+          <div class="fld" style="margin-bottom:7px"><span>식사량</span></div>
+          <div class="chips" id="b-intake" style="margin-bottom:16px">
+            <button class="chip" type="button" data-v="less" aria-pressed="false">조금</button>
+            <button class="chip" type="button" data-v="same" aria-pressed="false">원래대로</button>
+            <button class="chip" type="button" data-v="more" aria-pressed="false">많이</button>
           </div>
           <div class="hr"></div>
           <div class="fld" style="margin-bottom:7px"><span>배변</span></div>
@@ -1106,6 +1113,8 @@ const MEALS3 = [["b","아침","🌅"],["l","점심","🍚"],["d","저녁","🌙"
 const MEAL_KIND = {home:"집밥", out:"외식·배달", conv:"간편식"};
 const APPETITE = {none:"없음", low:"적음", ok:"적당", high:"많음"};
 const APP_SCORE = {none:0, low:1, ok:2, high:3};
+const INTAKE = {less:"조금", same:"원래대로", more:"많이"};
+const INTAKE_SCORE = {less:0, same:1, more:2};
 const POOP = {none:"못 봄", once:"1회", many:"2회 이상"};
 const POOP_TYPE = {hard:"딱딱함", normal:"보통", loose:"무름"};
 const FLOW = {light:"적음", normal:"보통", heavy:"많음"};
@@ -1162,7 +1171,7 @@ const state = {
 function emptyDay(date){
   return { date, meals:{b:false,l:false,d:false}, lunchbox:null, eatout:null, caffeine:null,
            mealNotes:{b:"",l:"",d:""}, mealKind:{b:null,l:null,d:null},
-           appetite:null, period:null, flow:null, poop:null, poopType:null, review:null, weights:[], workouts:[], snacks:[], meds:[], fits:[], habits:{} };
+           appetite:null, intake:null, period:null, flow:null, poop:null, poopType:null, review:null, weights:[], workouts:[], snacks:[], meds:[], fits:[], habits:{} };
 }
 /* db가 돌려주는 문서는 얼려져 있어 그대로 고칠 수 없다.
    항상 우리 쪽 사본으로 바꿔 두고, 그 사본만 읽고 쓴다. */
@@ -1180,6 +1189,7 @@ function normalizeDay(src, date){
     n.eatout   = src.eatout   || null;
     n.caffeine = src.caffeine || null;
     n.appetite = src.appetite || null;
+    n.intake   = src.intake   || null;
     n.period   = src.period   || null;
     n.flow     = src.flow     || null;
     n.poop     = src.poop     || null;
@@ -1667,9 +1677,10 @@ function dayDetailHTML(ds){
       + (bits.length?'<span class="s">'+esc(bits.join(" · "))+'</span>':"")+'</span></div>';
   }).join(""));
 
-  if(o.period || o.poop || o.appetite){
+  if(o.period || o.poop || o.appetite || o.intake){
     const bits = [];
     if(o.appetite) bits.push('<span class="pill '+(APP_SCORE[o.appetite]>=2?"run":"walk")+'">식욕 '+esc(APPETITE[o.appetite])+'</span>');
+    if(o.intake) bits.push('<span class="pill '+(o.intake==="more"?"run":o.intake==="same"?"walk":"rest")+'">식사량 '+esc(INTAKE[o.intake])+'</span>');
     if(o.poop) bits.push('<span class="pill '+(o.poop==="none"?"rest":"walk")+'">배변 '+esc(POOP[o.poop])+(o.poopType?" · "+esc(POOP_TYPE[o.poopType]):"")+'</span>');
     if(o.period) bits.push('<span class="pill climb">'+esc(PERIODS[o.period]||"생리 중")+(o.flow?" · "+esc(FLOW[o.flow]):"")+'</span>');
     body += sec("몸 상태", '<div class="chips">'+bits.join("")+'</div>');
@@ -1874,6 +1885,7 @@ function renderBodyPanel(){
   const ds = bodyDate(), o = day(ds);
   $("#b-datelabel").textContent = fullLabel(ds);
   setChip($("#b-app"), o.appetite);
+  setChip($("#b-intake"), o.intake);
   setChip($("#b-poop"), o.poop);
   setChip($("#b-poop-type"), o.poopType);
   setChip($("#w-period"), o.period);
@@ -2139,6 +2151,10 @@ function appetiteAfterMed(inRange){
 function appLabel(score){
   const keys = ["none","low","ok","high"];
   return APPETITE[keys[Math.max(0, Math.min(3, Math.round(score)))]];
+}
+function intakeLabel(score){
+  const keys = ["less","same","more"];
+  return INTAKE[keys[Math.max(0, Math.min(2, Math.round(score)))]];
 }
 function logStreak(){
   let cur = todayStr(), n = 0;
@@ -2635,6 +2651,33 @@ function secBody(c){
   } else out += needMore("기록 > 체중 화면의 '몸 상태'에서 식욕을 눌러두면, 주사 이후 언제 돌아오는지까지 정리해 드려요.");
   out += '</div>';
 
+  /* 식사량 — 식욕(먹고 싶은 마음)과 실제로 먹은 양은 다를 수 있어서 따로 본다 */
+  const inDays = c.dates.filter(ds=> day(ds).intake);
+  out += '<div class="card"><p class="sec-label">식사량</p>';
+  if(inDays.length >= 4){
+    const icnt = {less:0, same:0, more:0};
+    let isum = 0;
+    inDays.forEach(ds=>{ const v = day(ds).intake; icnt[v]++; isum += INTAKE_SCORE[v]; });
+    out += '<div class="statgrid" style="margin-bottom:6px">'
+      + '<div class="stat"><div class="v">'+esc(intakeLabel(isum/inDays.length))+'</div><div class="l">평균 식사량</div></div>'
+      + '<div class="stat"><div class="v">'+Math.round(icnt.less/inDays.length*100)+'%</div><div class="l">평소보다 적게 먹은 날</div></div>'
+      + '</div>';
+    out += '<p class="sec-label" style="margin:18px 0 4px">분포</p>';
+    [["more","많이","var(--clay)"],["same","원래대로","var(--mint)"],["less","조금","var(--slate)"]].forEach(([k,nm,col])=>{
+      out += '<div class="barrow"><span class="lb">'+nm+'</span><span class="tr"><span class="fl" style="width:'
+        + Math.round(icnt[k]/inDays.length*100)+'%; background:'+col+'"></span></span><span class="vl">'+icnt[k]+'일</span></div>';
+    });
+    const gap = c.dates.filter(ds=>{ const o = day(ds); return o.intake === "less" && o.appetite && APP_SCORE[o.appetite] >= 2; }).length;
+    if(gap >= 2){
+      out += '<p class="tiny muted" style="margin:12px 0 0">식욕은 적당 이상인데 실제로는 적게 먹은 날이 <b>'+gap+'일</b>이에요. '
+        + '참고 넘긴 날일 수 있어요. 덜 먹기보다 규칙적으로 잘 먹는 게 먼저입니다.</p>';
+    }
+    out += compareBlock("많이 먹은 날 vs 적게 먹은 날", "보통 이상", "조금",
+      splitCompare(c.inRange, o=> o.intake ? (INTAKE_SCORE[o.intake] >= 1) : null),
+      "그날 먹은 양이 다음날 숫자로 어떻게 이어지는지 봅니다.");
+  } else out += needMore("기록 > 체중 화면의 '몸 상태'에서 식사량을 눌러두면, 먹고 싶은 마음과 실제로 먹은 양이 얼마나 붙어 다니는지 정리해 드려요.");
+  out += '</div>';
+
   /* 배변 */
   const pDays = c.dates.filter(ds=> day(ds).poop);
   out += '<div class="card"><p class="sec-label">배변</p>';
@@ -2786,7 +2829,7 @@ function csvCell(v){
 function buildCsv(){
   const hs = state.settings.habits || [];
   const rows = [["날짜","요일","체중(kg)","컨디션(1-5)","수면(h)","붓기","생리","아침","점심","저녁",
-    "도시락","외식","카페인","아침 메뉴","점심 메뉴","저녁 메뉴","끼니 종류","식욕","배변","배변 상태","생리 양","운동","간식","약","몸의 반응","옷 핏","기준 옷","허리(cm)","엉덩이(cm)","허벅지(cm)",
+    "도시락","외식","카페인","아침 메뉴","점심 메뉴","저녁 메뉴","끼니 종류","식욕","식사량","배변","배변 상태","생리 양","운동","간식","약","몸의 반응","옷 핏","기준 옷","허리(cm)","엉덩이(cm)","허벅지(cm)",
     "습관 달성","습관 전체","메모"]];
   Object.keys(state.days).sort().forEach(ds=>{
     const o = day(ds);
@@ -2803,6 +2846,7 @@ function buildCsv(){
       o.mealNotes.b || "", o.mealNotes.l || "", o.mealNotes.d || "",
       MEALS3.filter(([k])=> o.mealKind[k]).map(([k,n])=> n+" "+MEAL_KIND[o.mealKind[k]]).join(" | "),
       o.appetite ? APPETITE[o.appetite] : "",
+      o.intake ? INTAKE[o.intake] : "",
       o.poop ? POOP[o.poop] : "",
       o.poopType ? POOP_TYPE[o.poopType] : "",
       o.flow ? FLOW[o.flow] : "",
@@ -3102,6 +3146,21 @@ function clinicSheet(){
     out += '</div>';
   }
 
+  const iDays = Object.keys(state.days).filter(ds=> inR(ds) && day(ds).intake);
+  if(iDays.length >= 4){
+    const icnt = {less:0, same:0, more:0}; let isum = 0;
+    iDays.forEach(ds=>{ const v = day(ds).intake; icnt[v]++; isum += INTAKE_SCORE[v]; });
+    out += '<div class="sheet-sec"><p class="sec-label">식사량</p><div class="statgrid" style="margin-bottom:6px">'
+      + '<div class="stat"><div class="v">'+esc(intakeLabel(isum/iDays.length))+'</div><div class="l">평균 식사량</div></div>'
+      + '<div class="stat"><div class="v">'+Math.round(icnt.less/iDays.length*100)+'%</div><div class="l">평소보다 적게 먹은 날</div></div>'
+      + '</div>'
+      + [["more","많이"],["same","원래대로"],["less","조금"]].map(function(x){
+          return '<div class="barrow"><span class="lb">'+x[1]+'</span><span class="tr"><span class="fl" style="width:'
+            + Math.round(icnt[x[0]]/iDays.length*100)+'%; background:var(--mint)"></span></span><span class="vl">'+icnt[x[0]]+'일</span></div>';
+        }).join("")
+      + '</div>';
+  }
+
   const pDays = Object.keys(state.days).filter(ds=> inR(ds) && day(ds).poop);
   if(pDays.length >= 4){
     let none = 0; pDays.forEach(ds=>{ if(day(ds).poop === "none") none++; });
@@ -3192,6 +3251,7 @@ function bodyDate(){ return recDate(); }
 initChips($("#w-period"),    v=>{ mutate(bodyDate(), d=>{ d.period = v; if(!v) d.flow = null; }); });
 initChips($("#b-flow"),      v=>{ mutate(bodyDate(), d=> d.flow = v); });
 initChips($("#b-app"),       v=>{ mutate(bodyDate(), d=> d.appetite = v); });
+initChips($("#b-intake"),    v=>{ mutate(bodyDate(), d=> d.intake = v); });
 initChips($("#b-poop"),      v=>{ mutate(bodyDate(), d=>{ d.poop = v; if(!v || v === "none") d.poopType = null; }); });
 initChips($("#b-poop-type"), v=>{ mutate(bodyDate(), d=> d.poopType = v); });
 
