@@ -816,17 +816,40 @@ function emptyDay(date){
   return { date, meals:{b:false,l:false,d:false}, lunchbox:null, eatout:null, caffeine:null,
            weights:[], workouts:[], snacks:[], meds:[], habits:{} };
 }
-function day(date){
+/* db가 돌려주는 문서는 얼려져 있어 그대로 고칠 수 없다.
+   항상 우리 쪽 사본으로 바꿔 두고, 그 사본만 읽고 쓴다. */
+function normalizeDay(src, date){
+  const n = emptyDay(date);
+  if(src){
+    n.meals = Object.assign(n.meals, src.meals || {});
+    ["weights","workouts","snacks","meds"].forEach(k=>{
+      if(Array.isArray(src[k])) n[k] = src[k].map(x=> Object.assign({}, x));
+    });
+    n.habits = Object.assign({}, src.habits || {});
+    n.lunchbox = src.lunchbox || null;
+    n.eatout   = src.eatout   || null;
+    n.caffeine = src.caffeine || null;
+  }
+  Object.defineProperty(n, "__own", {value:true, enumerable:false, writable:false});
+  return n;
+}
+function day(date, create){
   const d = state.days[date];
-  if(!d) return emptyDay(date);
-  d.meals = d.meals || {b:false,l:false,d:false};
-  ["weights","workouts","snacks","meds"].forEach(k=>{ if(!Array.isArray(d[k])) d[k]=[]; });
-  d.habits = d.habits || {};
-  return d;
+  if(d && d.__own) return d;
+  const n = normalizeDay(d, date);
+  if(d || create) state.days[date] = n;
+  return n;
 }
 function mutate(date, fn){
-  const d = state.days[date] || (state.days[date] = emptyDay(date));
-  day(date); fn(state.days[date]); persistDay(date); render();
+  try{
+    const d = day(date, true);
+    fn(d);
+    persistDay(date);
+    render();
+  }catch(err){
+    console.error(err);
+    toast("저장하지 못했어요. 앱을 새로고침해 주세요");
+  }
 }
 
 function writeCache(){
@@ -853,6 +876,7 @@ function readCache(){
   }catch(e){}
 }
 function persistDay(date){
+  if(!state.days[date]) return;
   writeCache();
   if(state.db){
     state.db.doc("days/"+date).set(JSON.parse(JSON.stringify(state.days[date])))
@@ -1743,6 +1767,10 @@ function saveMed(){
    14. 전역 클릭 처리
    ============================================================ */
 document.addEventListener("click", e=>{
+  try{ handleClick(e); }
+  catch(err){ console.error(err); toast("처리하지 못했어요. 앱을 새로고침해 주세요"); }
+});
+function handleClick(e){
   const el = e.target;
 
   const saveBtn = el.closest("[data-save]");
@@ -1838,7 +1866,7 @@ document.addEventListener("click", e=>{
   if(el.closest("[data-caltoday]")){ state.calCursor = todayStr(); return renderCal(); }
   if(el.closest("#cal-prev")){ calShift(-1); return renderCal(); }
   if(el.closest("#cal-next")){ calShift(1); return renderCal(); }
-});
+}
 document.addEventListener("keydown", e=>{ if(e.key === "Escape" && !$("#sheet-back").hidden) closeSheet(); });
 $("#habit-new") && $("#habit-new").addEventListener("keydown", e=>{ if(e.key === "Enter"){ e.preventDefault(); $("#habit-add-btn").click(); } });
 $("#m-date").addEventListener("change", ()=> renderMealPanel());
@@ -1860,16 +1888,23 @@ function go(tab){
   window.scrollTo({top:0, behavior:"instant"});
   render();
 }
+const VIEW_FALLBACK = {home:"#weight-body", cal:"#cal-body", habit:"#habit-list", stats:"#stats-body", rec:"#list-weight"};
 function render(){
-  if(state.tab === "home") renderHome();
-  else if(state.tab === "cal") renderCal();
-  else if(state.tab === "rec"){
-    $$("#rec-seg button").forEach(b=> b.setAttribute("aria-selected", String(b.dataset.rec === state.rec)));
-    ["weight","meal","workout","med"].forEach(k=> $("#rec-"+k).hidden = (k !== state.rec));
-    renderMealPanel(); renderRecLists();
+  try{
+    if(state.tab === "home") renderHome();
+    else if(state.tab === "cal") renderCal();
+    else if(state.tab === "rec"){
+      $$("#rec-seg button").forEach(b=> b.setAttribute("aria-selected", String(b.dataset.rec === state.rec)));
+      ["weight","meal","workout","med"].forEach(k=> $("#rec-"+k).hidden = (k !== state.rec));
+      renderMealPanel(); renderRecLists();
+    }
+    else if(state.tab === "habit") renderHabits();
+    else if(state.tab === "stats") renderStats();
+  }catch(err){
+    console.error(err);
+    const box = $(VIEW_FALLBACK[state.tab] || "");
+    if(box) box.innerHTML = '<p class="emptyline">화면을 그리는 중 문제가 생겼어요. 새로고침하면 기록은 그대로 남아 있어요.</p>';
   }
-  else if(state.tab === "habit") renderHabits();
-  else if(state.tab === "stats") renderStats();
 }
 
 /* ============================================================
