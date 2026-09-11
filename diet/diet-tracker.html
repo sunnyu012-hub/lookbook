@@ -2516,7 +2516,7 @@ function secBody(c){
     out += compareBlock("붓기 있던 날 vs 없던 날", "붓기 있음", "붓기 없음",
       splitCompare(c.inRange, o=>{ const w = o.weights[o.weights.length-1]; return (w && w.swell) ? w.swell === "yes" : null; }),
       "붓기 있던 날의 숫자는 그날의 몸 상태예요. 다음날 돌아오는지만 보세요.");
-  } else out += needMore("체중 기록의 '더 자세히'에서 컨디션·수면·붓기를 남기면 여기에 정리돼요.");
+  } else out += needMore("기록 > 체중 화면에서 '더 자세히 기록하기'를 펴고 컨디션·수면·붓기를 남기면 여기에 정리돼요.");
   out += '</div>';
 
   /* 배변 */
@@ -2575,7 +2575,7 @@ function secBody(c){
           + ' 변비가 이어지면 진료 때 이 기록을 보여주세요.</p>';
       }
     }
-  } else out += needMore("체중 기록 화면의 '몸 상태'에서 배변을 눌러두면, 규칙성과 약과의 관계를 정리해 드려요.");
+  } else out += needMore("기록 > 체중 화면의 '몸 상태'에서 배변을 눌러두면, 규칙성과 약과의 관계를 정리해 드려요.");
   out += '</div>';
 
   /* 생리 주기 */
@@ -2613,7 +2613,7 @@ function secBody(c){
     out += '<p class="tiny muted" style="margin:10px 0 0">'
       + (hasRhythm ? '' : (ci.avg ? '기록한 주기 '+ci.count+'번의 평균이에요. ' : '시작일이 두 번 이상 쌓이면 평균 주기가 계산돼요. '))
       + '이 시기 체중과 붓기는 오르내리기 쉬우니, 그 주는 숫자보다 흐름만 보세요.</p>';
-  } else out += needMore("체중 기록의 '더 자세히'에서 생리 시작일을 눌러두면, 주기에 따른 체중 리듬을 정리해 드려요.");
+  } else out += needMore("기록 > 체중 화면의 '몸 상태'에서 생리 시작일을 눌러두면, 주기에 따른 체중 리듬을 정리해 드려요.");
   out += '</div>';
 
   /* 약 */
