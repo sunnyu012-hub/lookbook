@@ -199,6 +199,12 @@ input.big{font-family:"IBM Plex Mono",monospace; font-size:31px; font-weight:600
   background:rgba(255,255,255,.18); padding:5px 11px; border-radius:999px;
 }
 
+.card.warm{
+  background:linear-gradient(150deg, var(--ochre-soft) 0%, var(--surface) 58%);
+  border-color:color-mix(in srgb, var(--ochre) 28%, transparent);
+}
+.plan .note.warm{color:var(--ink2); font-size:13.5px; line-height:1.65}
+.hooray{font-size:16px}
 .plan{display:flex; flex-direction:column; gap:11px}
 .plan .headline{font-size:18px; font-weight:700; letter-spacing:-.02em}
 .plan .note{font-size:12.5px; color:var(--muted); line-height:1.6; margin:0}
@@ -888,7 +894,16 @@ const PLAN = {
   2:{title:"아침 러닝",     kinds:["run"],   hint:"러닝은 보조수단. 힘들면 걷기로 바꿔도 돼."},
   3:{title:"퇴근 후 클라이밍", kinds:["climb"], hint:"메인 운동. 퇴근길에 바로 암장으로."},
   4:{title:"아침 러닝",     kinds:["run"],   hint:"이번 주 두 번째 유산소."},
-  5:{title:"계획 없는 날",  kinds:[],        hint:"한 주 잘 버텼다. 쉬어도 괜찮아."},
+  5:{title:"본가 가는 날", kinds:[], warm:true, restLabel:"한 주 끝!", restCls:"run",
+     lines:[
+       "한 주 고생했어. 오늘은 본가 가서 가족들이랑 맛있는 거 먹자.",
+       "금요일이다. 잘 먹고 푹 쉬는 것도 계획의 일부야.",
+       "이번 주도 잘 버텼어. 오늘 저녁은 마음 편하게.",
+       "엄마 밥은 죄책감 없이 먹는 거야. 기록만 하고 넘어가자.",
+       "한 주 끝. 오늘은 숫자 말고 사람들 얼굴을 보자.",
+       "고생한 나한테 주는 저녁. 잘 먹는 것도 다이어트야.",
+       "가족이랑 먹는 밥은 평가하지 말자. 그냥 맛있게."
+     ]},
   6:{title:"클라이밍 (토·일 중 하루)", kinds:["climb"], weekend:true, hint:"주말 둘 중 하루만 가면 돼."},
   0:{title:"클라이밍 (토·일 중 하루)", kinds:["climb"], weekend:true, hint:"주말 둘 중 하루만 가면 돼."}
 };
@@ -1236,6 +1251,13 @@ function weightChart(series, goal, opts){
 /* ============================================================
    6. 렌더 — 홈
    ============================================================ */
+/* 같은 날엔 같은 문구, 주가 바뀌면 다음 문구 */
+function planLine(plan, ds){
+  if(!plan.lines || !plan.lines.length) return plan.hint || "";
+  const week = Math.floor(parseYmd(ds).getTime()/86400000/7);
+  const n = plan.lines.length;
+  return plan.lines[((week % n) + n) % n];
+}
 function renderHome(){
   const t = todayStr(), d = day(t), dow = parseYmd(t).getDay(), plan = PLAN[dow];
 
@@ -1252,14 +1274,16 @@ function renderHome(){
   if(planMet){ status = "계획대로 완료"; statusCls = "done"; }
   else if(anyMove){ status = "몸 움직였음 · 성공"; statusCls = "done"; }
   else if(plan.weekend && weekendDone){ status = "주말 클라이밍 이미 완료"; statusCls = "walk"; }
-  else if(plan.kinds.length===0){ status = "쉬는 날"; statusCls = "rest"; }
+  else if(plan.kinds.length===0){ status = plan.restLabel || "쉬는 날"; statusCls = plan.restCls || "rest"; }
   else { status = "아직 전"; statusCls = "rest"; }
 
+  $("#plan-card").classList.toggle("warm", !!plan.warm);
   $("#plan-body").innerHTML =
-      '<div class="between"><span class="headline">'+esc(plan.title)+'</span>'
+      '<div class="between"><span class="headline">'+esc(plan.title)+(plan.warm?' <span class="hooray">🎉</span>':"")+'</span>'
     + '<span class="pill '+statusCls+'">'+esc(status)+'</span></div>'
     + (plan.kinds.length ? '<div class="chips">'+plan.kinds.map(k=>'<span class="pill '+WTYPE[k].cls+'">'+WTYPE[k].label+'</span>').join("")+'</div>' : "")
-    + '<p class="note">'+esc(plan.hint)+'<br>전부 의무는 아니에요. 힘들면 <b>걷기로 바꿔도 성공</b>이에요.</p>'
+    + '<p class="note'+(plan.warm?" warm":"")+'">'+esc(planLine(plan, t))
+    + (plan.kinds.length ? '<br>전부 의무는 아니에요. 힘들면 <b>걷기로 바꿔도 성공</b>이에요.' : "")+'</p>'
     + (d.workouts.length ? '<div class="chips" style="margin-top:2px">'+d.workouts.map(w=>'<span class="tag">'+esc(WTYPE[w.type]?WTYPE[w.type].label:w.type)+(w.min?" "+w.min+"분":"")+'</span>').join("")+'</div>' : "");
 
   /* 삼시세끼 */
