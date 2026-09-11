@@ -5,347 +5,398 @@
 <style>
 :root{
   color-scheme: light;
-  --bg:#E4E2D8; --pane:#F2F0E8; --surface:#FAF9F3; --surface2:#EAE7DC;
-  --ink:#282A22; --ink2:#4A4E42; --muted:#787B6C; --faint:#A2A494;
-  --line:#D8D5C6; --line2:#E6E3D6;
-  --accent:#5C7353; --accent-ink:#FAF9F3; --accent-soft:#DDE4D4;
-  --clay:#9E6E56; --clay-soft:#EDDDD1;
-  --ochre:#A8862F; --ochre-soft:#EEE5CA;
-  --slate:#63808A; --slate-soft:#DCE6E8;
-  --warn:#A0603A;
-  --r:13px;
+  /* 레퍼런스: 라벤더 미스트 바탕 + 선명한 바이올렛 + 파스텔 코랄/민트 */
+  --bg:#E7E4FB; --pane:#F7F6FF; --surface:#FFFFFF; --surface2:#F2F1FE;
+  --ink:#1A1A33; --ink2:#454468; --muted:#8886AB; --faint:#AAA8C6;
+  --line:#E8E6F8; --line2:#F0EEFB;
+  --accent:#5B4CF0; --accent-ink:#FFFFFF; --accent-soft:#EBE8FF; --accent-deep:#4436D6;
+  --clay:#F0628A;  --clay-soft:#FFE4EC;   /* 클라이밍 · 생리 · 증가 */
+  --ochre:#EF9B34; --ochre-soft:#FFF0DC;  /* 러닝 */
+  --mint:#16B183;  --mint-soft:#DAF6EC;   /* 걷기 · 감소 · 성공 */
+  --slate:#3BA3F0; --slate-soft:#E0F1FE;  /* 스트레칭 */
+  --hero-from:#5B4CF0; --hero-to:#8B54C9;
+  --shadow:0 1px 2px rgba(35,28,90,.04), 0 10px 30px -14px rgba(70,56,200,.28);
+  --shadow-sm:0 1px 2px rgba(35,28,90,.05);
+  --r:18px;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     color-scheme: dark;
-    --bg:#0E0F0B; --pane:#15170F; --surface:#1C1E16; --surface2:#24271C;
-    --ink:#E8E7D9; --ink2:#C4C5B4; --muted:#969886; --faint:#71735F;
-    --line:#2E3226; --line2:#22261B;
-    --accent:#9DB48D; --accent-ink:#15170F; --accent-soft:#252E1F;
-    --clay:#C79A80; --clay-soft:#2E241C;
-    --ochre:#C9AC63; --ochre-soft:#2C2717;
-    --slate:#8FAEB8; --slate-soft:#1D2629;
-    --warn:#CC9265;
+    --bg:#0D0C1E; --pane:#17162C; --surface:#201E3B; --surface2:#282648;
+    --ink:#ECEBFC; --ink2:#C2BFE6; --muted:#918DBC; --faint:#6E6A9B;
+    --line:#2E2B54; --line2:#252247;
+    --accent:#8D7DFF; --accent-ink:#12112A; --accent-soft:#292455; --accent-deep:#A99BFF;
+    --clay:#FF83A4;  --clay-soft:#3A2036;
+    --ochre:#F2B15C; --ochre-soft:#38291A;
+    --mint:#43D2A5;  --mint-soft:#12352C;
+    --slate:#6FBDFF; --slate-soft:#162B40;
+    --hero-from:#4436B8; --hero-to:#7A3B96;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 30px -16px rgba(0,0,0,.8);
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4);
   }
 }
 :root[data-theme="dark"]{
   color-scheme: dark;
-  --bg:#0E0F0B; --pane:#15170F; --surface:#1C1E16; --surface2:#24271C;
-  --ink:#E8E7D9; --ink2:#C4C5B4; --muted:#969886; --faint:#71735F;
-  --line:#2E3226; --line2:#22261B;
-  --accent:#9DB48D; --accent-ink:#15170F; --accent-soft:#252E1F;
-  --clay:#C79A80; --clay-soft:#2E241C;
-  --ochre:#C9AC63; --ochre-soft:#2C2717;
-  --slate:#8FAEB8; --slate-soft:#1D2629;
-  --warn:#CC9265;
+  --bg:#0D0C1E; --pane:#17162C; --surface:#201E3B; --surface2:#282648;
+  --ink:#ECEBFC; --ink2:#C2BFE6; --muted:#918DBC; --faint:#6E6A9B;
+  --line:#2E2B54; --line2:#252247;
+  --accent:#8D7DFF; --accent-ink:#12112A; --accent-soft:#292455; --accent-deep:#A99BFF;
+  --clay:#FF83A4;  --clay-soft:#3A2036;
+  --ochre:#F2B15C; --ochre-soft:#38291A;
+  --mint:#43D2A5;  --mint-soft:#12352C;
+  --slate:#6FBDFF; --slate-soft:#162B40;
+  --hero-from:#4436B8; --hero-to:#7A3B96;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 30px -16px rgba(0,0,0,.8);
+  --shadow-sm:0 1px 2px rgba(0,0,0,.4);
 }
 
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
-  margin:0; background:var(--bg); color:var(--ink);
+  margin:0; color:var(--ink);
+  background:
+    radial-gradient(680px 420px at 88% -6%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 62%),
+    radial-gradient(520px 380px at -10% 42%, color-mix(in srgb, var(--clay) 17%, transparent), transparent 60%),
+    radial-gradient(560px 420px at 12% 104%, color-mix(in srgb, var(--slate) 16%, transparent), transparent 62%),
+    var(--bg);
+  background-attachment:fixed;
   font-family:"IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", system-ui, sans-serif;
   font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased;
 }
 button,input,select,textarea{font:inherit; color:inherit}
 button{cursor:pointer; background:none; border:none; padding:0}
-:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:5px}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:8px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
 
 #app{
   max-width:430px; margin:0 auto; min-height:100%;
-  background:var(--pane); position:relative;
-  border-left:1px solid var(--line); border-right:1px solid var(--line);
-  display:flex; flex-direction:column;
+  background:linear-gradient(180deg, var(--pane) 0%, color-mix(in srgb, var(--pane) 88%, var(--bg)) 100%);
+  position:relative; display:flex; flex-direction:column;
+}
+@media (min-width:560px){
+  #app{ box-shadow:0 24px 70px -30px rgba(50,36,150,.45) }
 }
 .topbar{
   position:sticky; top:0; z-index:30;
-  background:color-mix(in srgb, var(--pane) 90%, transparent);
-  backdrop-filter:saturate(1.3) blur(10px);
-  border-bottom:1px solid var(--line);
-  padding:15px 18px 11px;
+  background:color-mix(in srgb, var(--pane) 86%, transparent);
+  backdrop-filter:saturate(1.5) blur(14px);
+  padding:16px 18px 12px;
   display:flex; align-items:baseline; justify-content:space-between; gap:10px;
 }
-.topbar h1{margin:0; font-size:19px; font-weight:600; letter-spacing:-.01em}
+.topbar h1{margin:0; font-size:21px; font-weight:700; letter-spacing:-.02em}
 .topbar .sub{font-size:12px; color:var(--muted); font-family:"IBM Plex Mono",monospace}
 
-main{flex:1; padding:0 18px 112px; display:flex; flex-direction:column}
+main{flex:1; padding:2px 16px 116px; display:flex; flex-direction:column; gap:14px}
 .view[hidden]{display:none!important}
-.view{display:flex; flex-direction:column}
+.view{display:flex; flex-direction:column; gap:14px}
 
-/* --- 라인으로 구분되는 섹션 (그림자 없음) --- */
-.card{background:transparent; border-radius:0; padding:20px 0; border-top:1px solid var(--line)}
-.view > .card:first-child, .view > .cheer:first-child{border-top:none}
-.sheet .card{border-top:none; padding:0}
+/* ---------- 카드 ---------- */
+.card{
+  background:var(--surface); border-radius:var(--r); padding:18px;
+  box-shadow:var(--shadow); border:1px solid color-mix(in srgb, var(--line) 60%, transparent);
+}
+.sheet .card{box-shadow:none; border:none; padding:0; background:transparent}
 .sec-label{
-  font-size:11px; letter-spacing:.1em; color:var(--faint); font-weight:600;
-  margin:0 0 12px; font-family:"IBM Plex Mono",monospace;
+  font-size:11px; letter-spacing:.06em; color:var(--muted); font-weight:600;
+  margin:0 0 12px; text-transform:uppercase; font-family:"IBM Plex Mono",monospace;
 }
 .row{display:flex; align-items:center; gap:10px}
 .between{display:flex; align-items:center; justify-content:space-between; gap:10px}
 .mono{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums}
 .muted{color:var(--muted)}
 .tiny{font-size:12px}
-.hr{height:1px; background:var(--line); margin:16px 0}
+.hr{height:1px; background:var(--line2); margin:16px -18px}
 .emptyline{color:var(--faint); font-size:13px; padding:8px 0; margin:0}
 
 .chip{
-  border:1px solid var(--line); border-radius:999px; padding:7px 13px;
-  font-size:13px; font-weight:500; color:var(--ink2); background:var(--surface);
-  transition:background .12s, border-color .12s, color .12s;
+  border:1px solid var(--line); border-radius:999px; padding:8px 14px;
+  font-size:13px; font-weight:500; color:var(--ink2); background:var(--surface2);
+  transition:background .14s, border-color .14s, color .14s, box-shadow .14s;
 }
-.chip[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
-.chips{display:flex; flex-wrap:wrap; gap:7px}
+.chip[aria-pressed="true"]{
+  background:var(--accent); border-color:var(--accent); color:var(--accent-ink);
+  box-shadow:0 4px 12px -4px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+.chips{display:flex; flex-wrap:wrap; gap:8px}
 
 .btn{
-  background:var(--accent); color:var(--accent-ink); border-radius:11px;
-  padding:13px 16px; font-weight:600; font-size:15px; width:100%; text-align:center;
+  background:var(--accent); color:var(--accent-ink); border-radius:14px;
+  padding:14px 16px; font-weight:600; font-size:15px; width:100%; text-align:center;
+  box-shadow:0 6px 18px -8px color-mix(in srgb, var(--accent) 75%, transparent);
+  transition:transform .1s, box-shadow .14s;
 }
-.btn.ghost{background:transparent; color:var(--ink2); border:1px solid var(--line)}
+.btn.ghost{background:var(--surface2); color:var(--ink2); border:1px solid var(--line); box-shadow:none}
 .btn:active{transform:translateY(1px)}
 .link{color:var(--accent); font-weight:600; font-size:14px}
 
-.fld{display:flex; flex-direction:column; gap:6px; flex:1; min-width:0}
+.fld{display:flex; flex-direction:column; gap:7px; flex:1; min-width:0}
 .fld > span{font-size:12px; color:var(--muted); font-weight:500}
 input[type=text],input[type=number],input[type=date],input[type=time],textarea,select{
-  width:100%; background:var(--surface); border:1px solid var(--line);
-  border-radius:10px; padding:11px 12px; font-size:15px;
+  width:100%; background:var(--surface2); border:1px solid transparent;
+  border-radius:13px; padding:12px 13px; font-size:15px; transition:border-color .14s, background .14s;
 }
-textarea{resize:vertical; min-height:56px}
-input.big{font-family:"IBM Plex Mono",monospace; font-size:30px; font-weight:600; padding:10px 12px; letter-spacing:-.02em}
+input:focus,textarea:focus{background:var(--surface); border-color:var(--accent)}
+textarea{resize:vertical; min-height:58px}
+input.big{font-family:"IBM Plex Mono",monospace; font-size:31px; font-weight:600; padding:12px 13px; letter-spacing:-.02em}
 
-.expander{border-top:1px solid var(--line2); margin-top:14px; padding-top:12px}
+.expander{border-top:1px solid var(--line2); margin-top:15px; padding-top:13px}
 .expander > button{display:flex; align-items:center; gap:6px; font-size:13px; color:var(--accent); font-weight:600}
 .expander > button .caret{transition:transform .18s}
 .expander[data-open="true"] > button .caret{transform:rotate(180deg)}
-.expander .body{display:none; flex-direction:column; gap:14px; padding-top:14px}
+.expander .body{display:none; flex-direction:column; gap:15px; padding-top:15px}
 .expander[data-open="true"] .body{display:flex}
 
-/* --- 탭바 --- */
+/* ---------- 탭바 ---------- */
 .tabbar{
   position:fixed; bottom:0; left:0; right:0; z-index:40;
   max-width:430px; margin:0 auto;
-  background:color-mix(in srgb, var(--pane) 94%, transparent);
-  backdrop-filter:saturate(1.4) blur(12px);
-  border-top:1px solid var(--line);
+  background:color-mix(in srgb, var(--surface) 90%, transparent);
+  backdrop-filter:saturate(1.6) blur(16px);
+  border-top:1px solid var(--line2);
   display:grid; grid-template-columns:repeat(5,1fr);
-  padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+  padding:8px 4px calc(8px + env(safe-area-inset-bottom));
+  box-shadow:0 -8px 26px -20px rgba(60,44,160,.5);
 }
-.tabbar button{display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 0 4px; color:var(--faint); font-size:10.5px; font-weight:600}
-.tabbar button svg{width:22px; height:22px; stroke-width:1.7}
+.tabbar button{display:flex; flex-direction:column; align-items:center; gap:4px; padding:2px 0 2px; color:var(--faint); font-size:10.5px; font-weight:600}
+.tabbar button svg{
+  width:22px; height:22px; stroke-width:1.8; padding:5px 10px; box-sizing:content-box;
+  border-radius:12px; transition:background .16s, color .16s;
+}
 .tabbar button[aria-current="page"]{color:var(--accent)}
-.tabbar button[aria-current="page"] svg{stroke-width:2.2}
+.tabbar button[aria-current="page"] svg{background:var(--accent-soft); stroke-width:2.2}
 
-/* --- 세그먼트 (밑줄형) --- */
-.seg{display:flex; border-bottom:1px solid var(--line); background:transparent; padding:0; gap:0}
-.seg button{flex:1; padding:12px 0 11px; font-size:13.5px; font-weight:600; color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px}
-.seg button[aria-selected="true"]{color:var(--ink); border-bottom-color:var(--accent)}
+/* ---------- 세그먼트 (알약형) ---------- */
+.seg{display:flex; gap:3px; background:var(--surface2); padding:4px; border-radius:14px}
+.seg button{
+  flex:1; padding:9px 2px; border-radius:11px; font-size:13.5px; font-weight:600;
+  color:var(--muted); transition:background .14s, color .14s, box-shadow .14s;
+}
+.seg button[aria-selected="true"]{background:var(--surface); color:var(--accent); box-shadow:var(--shadow-sm)}
 
-/* --- 홈 --- */
+/* ---------- 홈 ---------- */
 .cheer{
-  background:var(--accent-soft); border-radius:var(--r); padding:18px 18px 16px;
-  margin:18px 0 4px;
+  border-radius:22px; padding:22px 20px 18px; margin:4px 0 0; position:relative; overflow:hidden;
+  background:linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+  color:#fff; box-shadow:0 14px 34px -16px color-mix(in srgb, var(--hero-from) 80%, transparent);
 }
-.cheer .q{font-family:"Gowun Batang",serif; font-size:32px; color:var(--accent); opacity:.4; line-height:1; display:block; margin-bottom:-2px}
+.cheer::after{
+  content:""; position:absolute; right:-42px; top:-52px; width:150px; height:150px; border-radius:50%;
+  background:rgba(255,255,255,.14); pointer-events:none;
+}
+.cheer .q{font-family:"Gowun Batang",serif; font-size:34px; color:#fff; opacity:.5; line-height:1; display:block; margin-bottom:-4px}
 .cheer-t{
-  margin:0; font-family:"Gowun Batang", serif; font-size:18px; line-height:1.7;
-  color:var(--ink); letter-spacing:-.01em; text-wrap:pretty;
+  margin:0; font-family:"Gowun Batang", serif; font-size:18px; line-height:1.72;
+  color:#fff; letter-spacing:-.01em; text-wrap:pretty; position:relative;
 }
-.cheer-foot{display:flex; align-items:baseline; justify-content:space-between; gap:14px; margin-top:13px}
+.cheer-foot{display:flex; align-items:baseline; justify-content:space-between; gap:14px; margin-top:15px; position:relative}
 .cheer-by{
-  font-style:normal; font-size:11.5px; line-height:1.5; color:var(--accent);
+  font-style:normal; font-size:11.5px; line-height:1.5; color:rgba(255,255,255,.82);
   font-family:"IBM Plex Sans KR",sans-serif; font-weight:600; flex:1; min-width:0;
 }
 .cheer-by::before{content:"— "}
-.cheer button.reroll{font-size:11px; color:var(--accent); opacity:.75; font-family:"IBM Plex Mono",monospace; flex:none; white-space:nowrap}
+.cheer button.reroll{
+  font-size:11px; color:#fff; font-family:"IBM Plex Mono",monospace; flex:none; white-space:nowrap;
+  background:rgba(255,255,255,.18); padding:5px 11px; border-radius:999px;
+}
 
-.plan{display:flex; flex-direction:column; gap:10px}
-.plan .headline{font-size:17px; font-weight:600; letter-spacing:-.01em}
+.plan{display:flex; flex-direction:column; gap:11px}
+.plan .headline{font-size:18px; font-weight:700; letter-spacing:-.02em}
 .plan .note{font-size:12.5px; color:var(--muted); line-height:1.6; margin:0}
-.pill{display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:4px 10px; font-size:12px; font-weight:600}
+.pill{display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:5px 11px; font-size:12px; font-weight:600}
 .pill.climb{background:var(--clay-soft); color:var(--clay)}
 .pill.run{background:var(--ochre-soft); color:var(--ochre)}
-.pill.walk{background:var(--accent-soft); color:var(--accent)}
+.pill.walk{background:var(--mint-soft); color:var(--mint)}
 .pill.stretch{background:var(--slate-soft); color:var(--slate)}
 .pill.rest{background:var(--surface2); color:var(--muted)}
-.pill.done{background:var(--accent-soft); color:var(--accent)}
-.tag{font-size:10.5px; font-weight:600; padding:3px 7px; border-radius:5px; background:var(--surface2); color:var(--muted); flex:none}
+.pill.done{background:var(--mint-soft); color:var(--mint)}
+.tag{font-size:10.5px; font-weight:600; padding:4px 8px; border-radius:7px; background:var(--surface2); color:var(--muted); flex:none}
 
-.meals{display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:11px; overflow:hidden}
-.meal{padding:13px 6px; display:flex; flex-direction:column; align-items:center; gap:5px; background:var(--surface); transition:background .12s}
-.meal .ic{font-size:19px; line-height:1; filter:saturate(.85)}
+.meals{display:grid; grid-template-columns:repeat(3,1fr); gap:9px}
+.meal{
+  padding:15px 6px; display:flex; flex-direction:column; align-items:center; gap:6px;
+  background:var(--surface2); border:1.5px solid transparent; border-radius:15px; transition:.14s;
+}
+.meal .ic{font-size:20px; line-height:1}
 .meal .nm{font-size:12.5px; font-weight:600; color:var(--muted)}
-.meal[aria-pressed="true"]{background:var(--accent-soft)}
+.meal[aria-pressed="true"]{background:var(--accent-soft); border-color:color-mix(in srgb, var(--accent) 35%, transparent)}
 .meal[aria-pressed="true"] .nm{color:var(--accent)}
 
 .weight-hero{display:flex; align-items:flex-end; justify-content:space-between; gap:12px}
-.weight-hero .kg{font-family:"IBM Plex Mono",monospace; font-size:42px; font-weight:600; letter-spacing:-.03em; line-height:1; font-variant-numeric:tabular-nums}
+.weight-hero .kg{font-family:"IBM Plex Mono",monospace; font-size:44px; font-weight:600; letter-spacing:-.035em; line-height:1; font-variant-numeric:tabular-nums}
 .weight-hero .kg small{font-size:16px; font-weight:500; color:var(--muted); margin-left:3px}
 .delta{font-size:13px; font-weight:600; font-family:"IBM Plex Mono",monospace}
-.delta.down{color:var(--accent)} .delta.up{color:var(--clay)} .delta.same{color:var(--muted)}
+.delta.down{color:var(--mint)} .delta.up{color:var(--clay)} .delta.same{color:var(--muted)}
 .goalbar{margin-top:16px}
-.goalbar .track{height:4px; border-radius:99px; background:var(--surface2); overflow:hidden}
-.goalbar .fill{height:100%; background:var(--accent); border-radius:99px; display:block}
+.goalbar .track{height:8px; border-radius:99px; background:var(--surface2); overflow:hidden}
+.goalbar .fill{height:100%; border-radius:99px; display:block; background:linear-gradient(90deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 60%, var(--clay)) 100%)}
 
-.dots{display:flex; gap:6px; align-items:center}
-.dot{width:12px; height:12px; border-radius:50%; border:1.5px solid var(--line); background:transparent; display:block}
+.dots{display:flex; gap:7px; align-items:center}
+.dot{width:13px; height:13px; border-radius:50%; border:2px solid var(--line); background:transparent; display:block}
 .dot.on.climb{background:var(--clay); border-color:var(--clay)}
 .dot.on.cardio{background:var(--ochre); border-color:var(--ochre)}
-.wk-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 0}
+.wk-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0}
 .wk-row + .wk-row{border-top:1px solid var(--line2)}
 .wk-row .nm{font-size:14px; font-weight:600}
 .wk-row .ct{font-size:12px; color:var(--muted); font-family:"IBM Plex Mono",monospace}
 
 .snacklist{display:flex; flex-direction:column}
-.snackrow{display:flex; align-items:center; gap:10px; padding:9px 0; font-size:14px}
+.snackrow{display:flex; align-items:center; gap:10px; padding:10px 0; font-size:14px}
 .snackrow + .snackrow{border-top:1px solid var(--line2)}
 .snackrow .when{font-size:11.5px; color:var(--faint); font-family:"IBM Plex Mono",monospace; flex:none}
 .snackrow .nm{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .linkcard{display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; text-align:left}
-.linkcard .t{font-size:15px; font-weight:600}
+.linkcard .t{font-size:15px; font-weight:700}
 .linkcard .d{font-size:12.5px; color:var(--muted)}
 
-/* --- 캘린더 --- */
+/* ---------- 캘린더 ---------- */
 .cal-head{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:14px}
-.cal-head .m{font-size:16px; font-weight:600; font-family:"IBM Plex Mono",monospace}
-.cal-nav{width:32px; height:32px; border-radius:9px; border:1px solid var(--line); display:grid; place-items:center; color:var(--ink2); font-size:15px}
-.cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:2px}
-.cal-dow{text-align:center; font-size:10.5px; color:var(--faint); font-weight:600; padding-bottom:6px; font-family:"IBM Plex Mono",monospace}
+.cal-head .m{font-size:16px; font-weight:700; font-family:"IBM Plex Mono",monospace}
+.cal-nav{width:34px; height:34px; border-radius:11px; background:var(--surface2); display:grid; place-items:center; color:var(--ink2); font-size:15px}
+.cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:3px}
+.cal-dow{text-align:center; font-size:10.5px; color:var(--faint); font-weight:600; padding-bottom:7px; font-family:"IBM Plex Mono",monospace}
 .cal-dow.sun{color:var(--clay)}
 .cal-cell{
-  aspect-ratio:1/1; border-radius:9px; padding:8px 2px 4px; background:transparent;
-  display:flex; flex-direction:column; align-items:center; border:1px solid transparent; min-width:0;
+  aspect-ratio:1/1; border-radius:12px; padding:8px 2px 4px; background:transparent;
+  display:flex; flex-direction:column; align-items:center; border:1.5px solid transparent; min-width:0;
+  transition:background .14s;
 }
 .cal-cell.blank{background:transparent}
 .cal-cell .d{font-size:12.5px; font-weight:600; font-family:"IBM Plex Mono",monospace; line-height:1.1; color:var(--ink2)}
 .cal-cell.sun .d{color:var(--clay)}
 .cal-cell.future .d{color:var(--faint)}
-.cal-cell.today{border-color:var(--accent)}
+.cal-cell.today{background:var(--accent-soft); border-color:color-mix(in srgb, var(--accent) 40%, transparent)}
 .cal-cell.today .d{color:var(--accent)}
 .cal-cell.period .d{border-bottom:2px solid var(--clay); padding-bottom:1px}
 .cal-cell .mk{display:flex; gap:3px; margin-top:6px; min-height:5px}
 .mk i{width:5px; height:5px; border-radius:50%; display:block}
 .legend{display:flex; flex-wrap:wrap; gap:12px; margin-top:16px; font-size:11px; color:var(--muted)}
 .legend span{display:inline-flex; align-items:center; gap:5px}
-.legend i{width:6px; height:6px; border-radius:50%; display:block}
+.legend i{width:7px; height:7px; border-radius:50%; display:block}
 
-.msum,.statgrid{display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:11px; overflow:hidden}
-.msum{grid-template-columns:repeat(4,1fr)}
-.msum div,.stat{background:var(--pane); padding:13px 8px}
+.msum,.statgrid{display:grid; grid-template-columns:repeat(2,1fr); gap:9px}
+.msum{grid-template-columns:repeat(4,1fr); gap:7px}
+.msum div,.stat{background:var(--surface2); border-radius:14px; padding:14px 12px}
 .msum div{text-align:center; padding:12px 4px}
-.msum .v,.stat .v{font-family:"IBM Plex Mono",monospace; font-size:19px; font-weight:600; letter-spacing:-.02em}
+.msum .v,.stat .v{font-family:"IBM Plex Mono",monospace; font-size:20px; font-weight:600; letter-spacing:-.025em}
 .msum .v{font-size:17px}
-.msum .l,.stat .l{font-size:11px; color:var(--muted); margin-top:2px}
+.msum .l,.stat .l{font-size:11px; color:var(--muted); margin-top:3px}
 
 .wkday{display:flex; gap:12px; padding:13px 0; align-items:flex-start; width:100%; text-align:left}
 .wkday + .wkday{border-top:1px solid var(--line2)}
-.wkday.today{background:var(--accent-soft); margin:0 -10px; padding-left:10px; padding-right:10px; border-radius:9px}
-.wkday .dl{width:46px; flex:none; text-align:center}
-.wkday .dl .dn{display:block; font-family:"IBM Plex Mono",monospace; font-size:16px; font-weight:600; line-height:1.1}
-.wkday .dl .dw{display:block; font-size:10.5px; color:var(--muted)}
+.wkday.today{background:var(--accent-soft); margin:0 -10px; padding-left:10px; padding-right:10px; border-radius:13px}
 .wkday.future{opacity:.5}
-.wkday .db{flex:1; min-width:0; display:flex; flex-direction:column; gap:6px}
+.wkday .dl{width:46px; flex:none; text-align:center}
+.wkday .dl .dn{display:block; font-family:"IBM Plex Mono",monospace; font-size:17px; font-weight:700; line-height:1.1}
+.wkday .dl .dw{display:block; font-size:10.5px; color:var(--muted)}
+.wkday .db{flex:1; min-width:0; display:flex; flex-direction:column; gap:7px}
 .wkday .kg{font-family:"IBM Plex Mono",monospace; font-size:14px; font-weight:600}
 .mini3{display:flex; gap:3px}
 .mini3 i{width:16px; height:5px; border-radius:99px; background:var(--line); display:block}
 .mini3 i.on{background:var(--accent)}
 
-/* --- 기록 --- */
+/* ---------- 기록 ---------- */
 .dt{display:flex; gap:10px}
-.form{display:flex; flex-direction:column; gap:14px}
-.notice{background:var(--clay-soft); border-radius:11px; padding:13px 14px; font-size:12.5px; line-height:1.65; color:var(--ink2); border-left:3px solid var(--clay); margin-top:18px}
+.form{display:flex; flex-direction:column; gap:15px}
+.notice{
+  background:var(--clay-soft); border-radius:16px; padding:14px 16px; font-size:12.5px;
+  line-height:1.65; color:var(--ink2); border-left:3px solid var(--clay);
+}
 .notice b{color:var(--clay)}
-.faces{display:flex; gap:6px}
-.faces button{flex:1; padding:9px 0; border-radius:10px; border:1px solid var(--line); font-size:21px; background:var(--surface)}
-.faces button[aria-pressed="true"]{background:var(--accent-soft); border-color:var(--accent)}
+.faces{display:flex; gap:7px}
+.faces button{flex:1; padding:10px 0; border-radius:13px; border:1.5px solid transparent; font-size:22px; background:var(--surface2); transition:.14s}
+.faces button[aria-pressed="true"]{background:var(--accent-soft); border-color:color-mix(in srgb, var(--accent) 40%, transparent)}
 .rangewrap{display:flex; align-items:center; gap:12px}
 input[type=range]{flex:1; accent-color:var(--accent)}
 .rangeval{font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:16px; width:34px; text-align:right}
-.entry{display:flex; align-items:flex-start; gap:10px; padding:11px 0; font-size:14px}
+.entry{display:flex; align-items:flex-start; gap:10px; padding:12px 0; font-size:14px}
 .entry + .entry{border-top:1px solid var(--line2)}
 .entry .when{font-size:11.5px; color:var(--faint); font-family:"IBM Plex Mono",monospace; flex:none; width:74px; padding-top:2px}
 .entry .main{flex:1; min-width:0}
 .entry .main .t{display:block; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .entry .main .s{display:block; font-size:11.5px; color:var(--muted); line-height:1.5}
-.del{color:var(--faint); font-size:17px; padding:2px 4px; line-height:1; flex:none}
+.del{color:var(--faint); font-size:18px; padding:2px 6px; line-height:1; flex:none; border-radius:8px}
 
-/* --- 습관 --- */
+/* ---------- 습관 ---------- */
 .hitem{padding:14px 0}
 .hitem + .hitem{border-top:1px solid var(--line2)}
 .hrow{display:flex; align-items:center; gap:12px}
-.hcheck{width:26px; height:26px; border-radius:8px; border:1.5px solid var(--line); display:grid; place-items:center; flex:none; color:transparent; background:var(--surface)}
-.hcheck[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+.hcheck{width:28px; height:28px; border-radius:10px; border:1.5px solid var(--line); display:grid; place-items:center; flex:none; color:transparent; background:var(--surface2); transition:.14s}
+.hcheck[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:var(--accent-ink); box-shadow:0 4px 12px -4px color-mix(in srgb, var(--accent) 65%, transparent)}
 .hrow .nm{flex:1; min-width:0; font-size:14.5px; font-weight:500}
 .hrow .streak{font-size:11px; color:var(--muted); font-family:"IBM Plex Mono",monospace; flex:none}
-.d30{display:grid; grid-template-columns:repeat(30,1fr); gap:2px; margin:10px 0 0 38px}
-.d30 i{display:block; aspect-ratio:1; border-radius:2px; background:transparent; border:1px solid var(--line)}
-.d30 i.on{background:var(--accent); border-color:var(--accent)}
+.d30{display:grid; grid-template-columns:repeat(30,1fr); gap:2px; margin:11px 0 0 40px}
+.d30 i{display:block; aspect-ratio:1; border-radius:3px; background:var(--surface2); border:none}
+.d30 i.on{background:var(--accent)}
 .principles{counter-reset:p; display:flex; flex-direction:column; margin:0; padding:0}
-.principles li{counter-increment:p; list-style:none; display:flex; gap:11px; padding:11px 0; font-size:14.5px; line-height:1.55}
+.principles li{counter-increment:p; list-style:none; display:flex; gap:12px; padding:12px 0; font-size:14.5px; line-height:1.55}
 .principles li + li{border-top:1px solid var(--line2)}
-.principles li::before{content:counter(p,decimal-leading-zero); font-family:"IBM Plex Mono",monospace; font-size:11.5px; font-weight:600; color:var(--accent); flex:none; padding-top:3px}
+.principles li::before{
+  content:counter(p,decimal-leading-zero); font-family:"IBM Plex Mono",monospace; font-size:11px;
+  font-weight:700; color:var(--accent); flex:none; padding-top:4px;
+}
 
-/* --- 분석 --- */
+/* ---------- 분석 ---------- */
 .barrow{display:flex; align-items:center; gap:10px; padding:7px 0; font-size:13px}
 .barrow .lb{width:84px; flex:none; color:var(--ink2); font-size:12.5px; white-space:nowrap}
-.barrow .tr{display:block; flex:1; height:8px; background:var(--surface2); border-radius:99px; overflow:hidden}
+.barrow .tr{display:block; flex:1; height:9px; background:var(--surface2); border-radius:99px; overflow:hidden}
 .barrow .fl{display:block; height:100%; border-radius:99px; background:var(--accent)}
 .barrow .vl{width:44px; text-align:right; flex:none; font-family:"IBM Plex Mono",monospace; color:var(--muted); font-size:12px}
-.wkbar{display:flex; align-items:center; gap:10px; padding:8px 0; font-size:12.5px}
+.wkbar{display:flex; align-items:center; gap:10px; padding:9px 0; font-size:12.5px}
 .wkbar + .wkbar{border-top:1px solid var(--line2)}
 .wkbar .lb{width:52px; flex:none; font-family:"IBM Plex Mono",monospace; color:var(--muted)}
 .wkbar .cells{display:flex; gap:4px; flex:1; flex-wrap:wrap}
-.wkbar .cells i{width:11px; height:11px; border-radius:3px; display:block}
+.wkbar .cells i{width:12px; height:12px; border-radius:4px; display:block}
 svg.chart{width:100%; height:auto; display:block; overflow:visible}
 
 .ckpt{position:relative; height:70px; margin:44px 0 4px}
-.ckpt .track{position:absolute; left:8px; right:8px; top:0; height:2px; background:var(--line)}
-.ckpt .fill{position:absolute; left:0; top:0; height:2px; background:var(--accent)}
-.ckpt .node{position:absolute; top:-4px; width:10px; height:10px; border-radius:50%; background:var(--pane); border:2px solid var(--line); transform:translateX(-50%)}
+.ckpt .track{position:absolute; left:8px; right:8px; top:0; height:3px; border-radius:99px; background:var(--surface2)}
+.ckpt .fill{position:absolute; left:0; top:0; height:3px; border-radius:99px; background:var(--accent)}
+.ckpt .node{position:absolute; top:-4px; width:11px; height:11px; border-radius:50%; background:var(--surface); border:2px solid var(--line); transform:translateX(-50%)}
 .ckpt .node.passed{background:var(--accent); border-color:var(--accent)}
-.ckpt .lbl{position:absolute; top:14px; transform:translateX(-50%); font-size:10.5px; font-family:"IBM Plex Mono",monospace; color:var(--faint); white-space:nowrap}
-.ckpt .lbl.cur{color:var(--accent); font-weight:600}
+.ckpt .lbl{position:absolute; top:15px; transform:translateX(-50%); font-size:10.5px; font-family:"IBM Plex Mono",monospace; color:var(--faint); white-space:nowrap}
+.ckpt .lbl.cur{color:var(--accent); font-weight:700}
 .ckpt .you{position:absolute; top:-38px; transform:translateX(-50%); white-space:nowrap; text-align:center}
-.ckpt .you b{display:block; font-family:"IBM Plex Mono",monospace; font-size:14px; font-weight:600; color:var(--ink)}
+.ckpt .you b{display:block; font-family:"IBM Plex Mono",monospace; font-size:14px; font-weight:700; color:var(--ink)}
 .ckpt .you span{display:block; font-size:9.5px; color:var(--faint); font-family:"IBM Plex Mono",monospace}
-.ckpt .marker{position:absolute; top:-6px; width:14px; height:14px; border-radius:50%; background:var(--pane); border:3px solid var(--accent); transform:translateX(-50%)}
-.rvcard{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:13px 14px}
-.rvline{margin:0 0 8px; font-size:13.5px; line-height:1.55; color:var(--ink2)}
+.ckpt .marker{position:absolute; top:-6px; width:15px; height:15px; border-radius:50%; background:var(--surface); border:3.5px solid var(--accent); transform:translateX(-50%); box-shadow:0 3px 10px -3px color-mix(in srgb, var(--accent) 70%, transparent)}
+.remind{background:var(--accent-soft); border-radius:15px; padding:14px 16px; margin-top:26px; font-size:13.5px; line-height:1.6; color:var(--ink2)}
+.remind b{display:block; font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--accent); margin-bottom:4px; letter-spacing:.06em}
+.rvcard{background:var(--surface2); border-radius:15px; padding:14px 16px}
+.rvline{margin:0 0 9px; font-size:13.5px; line-height:1.55; color:var(--ink2)}
 .rvline:last-child{margin-bottom:0}
 .rvline b{display:block; font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.06em; color:var(--faint); font-weight:600; margin-bottom:2px}
-.remind{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:13px 14px; margin-top:26px; font-size:13.5px; line-height:1.6; color:var(--ink2)}
-.remind b{display:block; font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--accent); margin-bottom:4px; letter-spacing:.06em}
 
 .hourchart{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; align-items:end; height:132px; margin-top:6px}
-.hourchart .col{display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:6px; height:100%}
+.hourchart .col{display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:7px; height:100%}
 .hourchart .n{font-size:11.5px; font-family:"IBM Plex Mono",monospace; color:var(--muted)}
-.hourchart .bar{width:100%; max-width:46px; background:var(--accent-soft); border-top:2px solid var(--accent); border-radius:3px 3px 0 0; min-height:2px}
+.hourchart .bar{width:100%; max-width:46px; background:linear-gradient(180deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 45%, var(--surface)) 100%); border-radius:8px 8px 4px 4px; min-height:3px}
 .hourchart .lb{font-size:11px; color:var(--muted); text-align:center; line-height:1.3}
 .hourchart .lb small{display:block; font-size:9.5px; color:var(--faint); font-family:"IBM Plex Mono",monospace}
 
-/* --- 시트 --- */
-.sheet-back{position:fixed; inset:0; z-index:60; background:rgba(20,22,16,.44); display:flex; align-items:flex-end; justify-content:center}
+/* ---------- 시트 ---------- */
+.sheet-back{position:fixed; inset:0; z-index:60; background:rgba(26,20,60,.42); backdrop-filter:blur(3px); display:flex; align-items:flex-end; justify-content:center}
 .sheet-back[hidden]{display:none}
 .sheet{
-  width:100%; max-width:430px; background:var(--pane); border-radius:20px 20px 0 0;
+  width:100%; max-width:430px; background:var(--pane); border-radius:26px 26px 0 0;
   max-height:88vh; overflow-y:auto; padding:8px 18px calc(24px + env(safe-area-inset-bottom));
-  border-top:1px solid var(--line); animation:up .22s ease-out;
+  animation:up .24s cubic-bezier(.2,.8,.25,1);
 }
-@keyframes up{from{transform:translateY(20px); opacity:.65} to{transform:none; opacity:1}}
-.sheet .grab{width:36px; height:4px; border-radius:99px; background:var(--line); margin:6px auto 14px}
-.sheet h2{margin:0 0 4px; font-size:19px; font-weight:600; letter-spacing:-.01em}
+@keyframes up{from{transform:translateY(24px); opacity:.6} to{transform:none; opacity:1}}
+.sheet .grab{width:40px; height:4px; border-radius:99px; background:var(--line); margin:6px auto 14px}
+.sheet h2{margin:0 0 4px; font-size:21px; font-weight:700; letter-spacing:-.02em}
 .sheet .sh-sub{font-size:12.5px; color:var(--muted); margin:0 0 16px; font-family:"IBM Plex Mono",monospace}
 .sheet-sec{padding:16px 0; border-top:1px solid var(--line2)}
 .sheet-sec:first-child{border-top:none; padding-top:0}
 .toast{
-  position:fixed; left:50%; transform:translateX(-50%); bottom:96px; z-index:70;
-  background:var(--ink); color:var(--pane); padding:10px 16px; border-radius:999px;
-  font-size:13px; font-weight:600; pointer-events:none; opacity:0; transition:opacity .2s, transform .2s;
+  position:fixed; left:50%; transform:translateX(-50%); bottom:100px; z-index:70;
+  background:var(--ink); color:var(--pane); padding:11px 18px; border-radius:999px;
+  font-size:13px; font-weight:600; pointer-events:none; opacity:0;
+  transition:opacity .2s, transform .2s; box-shadow:0 10px 26px -10px rgba(30,20,80,.6);
 }
 .toast.show{opacity:1; transform:translateX(-50%) translateY(-6px)}
 .savebadge{font-size:10.5px; font-family:"IBM Plex Mono",monospace; color:var(--faint); display:flex; align-items:center; gap:5px}
-.savebadge i{width:6px; height:6px; border-radius:50%; background:var(--accent); display:block}
-.savebadge.local i{background:var(--clay)}
+.savebadge i{width:7px; height:7px; border-radius:50%; background:var(--mint); display:block}
+.savebadge.local i{background:var(--ochre)}
 </style>
 
 <div id="app">
@@ -829,7 +880,7 @@ const CHECKPOINTS = [
 const WTYPE = {
   climb:  {label:"클라이밍", color:"var(--clay)",   cls:"climb",   cardio:false},
   run:    {label:"러닝",     color:"var(--ochre)",  cls:"run",     cardio:true},
-  walk:   {label:"걷기",     color:"var(--accent)", cls:"walk",    cardio:true},
+  walk:   {label:"걷기",     color:"var(--mint)",   cls:"walk",    cardio:true},
   stretch:{label:"스트레칭", color:"var(--slate)",  cls:"stretch", cardio:false}
 };
 const PLAN = {
@@ -844,7 +895,7 @@ const PLAN = {
 const GOAL_CLIMB = 2, GOAL_CARDIO = 2, GOAL_WEIGHT_DEFAULT = 48;
 const MED_INTERVAL = 7;               /* 주 1회 주사 */
 const FITS = {loose:"헐렁해요", just:"딱 맞아요", tight:"꽉 껴요"};
-const FIT_COLOR = {loose:"var(--accent)", just:"var(--ochre)", tight:"var(--clay)"};
+const FIT_COLOR = {loose:"var(--mint)", just:"var(--ochre)", tight:"var(--clay)"};
 const SIDE_EFFECTS = [["nausea","메스꺼움"],["heartburn","속쓰림"],["constipation","변비"],
   ["diarrhea","설사"],["fatigue","피로"],["noappetite","식욕 없음"],["headache","두통"]];
 const SE_LABEL = SIDE_EFFECTS.reduce((o,[k,v])=>{o[k]=v; return o;}, {});
@@ -1242,7 +1293,7 @@ function renderHome(){
       const remain = last.kg - goal;
       html += '<div class="goalbar"><div class="between tiny" style="margin-bottom:6px">'
         + '<span class="muted">목표 '+fmt1(goal)+'kg 까지</span>'
-        + '<span class="mono" style="font-weight:600;color:var(--accent)">'+(remain>0?fmt1(remain)+"kg 남음":"달성 🎉")+'</span></div>'
+        + '<span class="mono" style="font-weight:600;color:'+(remain>0?"var(--accent)":"var(--mint)")+'">'+(remain>0?fmt1(remain)+"kg 남음":"달성 🎉")+'</span></div>'
         + '<div class="track"><div class="fill" style="width:'+(total>0?Math.round(done/total*100):100)+'%"></div></div>'
         + '<div class="tiny muted mono" style="margin-top:6px">시작 '+fmt1(start)+'kg · 지금까지 '+fmt1(Math.max(0,start-last.kg))+'kg 감량</div></div>';
     } else {
@@ -1622,7 +1673,7 @@ function renderHabits(){
 
 function weekStatGrid(wr){
   return '<div class="statgrid">'
-    + '<div class="stat"><div class="v" style="color:'+(wr.change !== null && wr.change < 0 ? "var(--accent)" : "var(--ink)")+'">'
+    + '<div class="stat"><div class="v" style="color:'+(wr.change !== null && wr.change < 0 ? "var(--mint)" : "var(--ink)")+'">'
     +   (wr.change === null ? "–" : (wr.change > 0 ? "+" : "")+fmt1(wr.change)+"kg")+'</div><div class="l">체중 변화 (주 평균)</div></div>'
     + '<div class="stat"><div class="v">'+wr.mealsPct+'%</div><div class="l">삼시세끼 준수율</div></div>'
     + '<div class="stat"><div class="v">'+(wr.climb+wr.cardio)+'회</div><div class="l">운동 (클 '+wr.climb+' · 유 '+wr.cardio+')</div></div>'
@@ -1712,7 +1763,7 @@ function renderStats(){
   out += '<div class="card"><p class="sec-label">체중 추세</p>' + weightChart(series, goal, {fits:fitMap, periods:periodMap});
   if(hasFitMark || hasPeriod){
     out += '<div class="legend" style="margin-top:10px">'
-      + (hasFitMark ? '<span><i style="background:var(--clay)"></i>꽉 낌</span><span><i style="background:var(--ochre)"></i>딱 맞음</span><span><i style="background:var(--accent)"></i>헐렁</span>' : "")
+      + (hasFitMark ? '<span><i style="background:var(--clay)"></i>꽉 낌</span><span><i style="background:var(--ochre)"></i>딱 맞음</span><span><i style="background:var(--mint)"></i>헐렁</span>' : "")
       + (hasPeriod ? '<span><i style="background:var(--clay-soft); border-radius:2px; width:12px; height:8px"></i>생리</span>' : "")
       + '</div>';
   }
@@ -1721,7 +1772,7 @@ function renderStats(){
     const days = Math.max(1, (parseYmd(series[series.length-1].d) - parseYmd(series[0].d))/86400000);
     const perWeek = ch / days * 7;
     out += '<div class="statgrid" style="margin-top:16px">'
-      + '<div class="stat"><div class="v" style="color:'+(ch<0?"var(--accent)":"var(--clay)")+'">'+(ch>0?"+":"")+fmt1(ch)+'kg</div><div class="l">기간 변화</div></div>'
+      + '<div class="stat"><div class="v" style="color:'+(ch<0?"var(--mint)":"var(--clay)")+'">'+(ch>0?"+":"")+fmt1(ch)+'kg</div><div class="l">기간 변화</div></div>'
       + '<div class="stat"><div class="v">'+(perWeek>0?"+":"")+fmt1(perWeek)+'kg</div><div class="l">주당 평균</div></div>'
       + '<div class="stat"><div class="v">'+fmt1(Math.min.apply(null,series.map(s=>s.v)))+'kg</div><div class="l">기간 최저</div></div>'
       + '<div class="stat"><div class="v">'+series.length+'회</div><div class="l">측정 횟수</div></div>'
@@ -1777,7 +1828,7 @@ function renderStats(){
       rows += '<div class="barrow"><span class="lb mono">'+mdLabel(w.start)+'~</span>'
         + '<span class="tr"><span class="fl" style="width:'+width.toFixed(0)+'%"></span></span>'
         + '<span class="vl">'+fmt1(w.avg)+'</span></div>'
-        + (dv!==null ? '<p class="tiny" style="margin:-4px 0 4px 94px; color:'+(dv<0?"var(--accent)":"var(--muted)")+'">'+(dv>0?"+":"")+fmt1(dv)+'kg</p>' : "");
+        + (dv!==null ? '<p class="tiny" style="margin:-4px 0 4px 94px; color:'+(dv<0?"var(--mint)":"var(--muted)")+'">'+(dv>0?"+":"")+fmt1(dv)+'kg</p>' : "");
     });
     out += '<div class="card"><p class="sec-label">주간 평균 흐름</p>'+rows
       + '<p class="tiny muted" style="margin:10px 0 0">하루 오르내림 대신 주 단위 평균으로 봅니다.</p></div>';
@@ -1975,7 +2026,7 @@ function renderStats(){
     + '<p class="tiny muted" style="margin:-4px 0 14px">쌓인 기록을 파일로 받아 백업하거나 진료 때 보여줄 수 있어요.</p>'
     + '<div class="row" style="gap:8px; align-items:stretch">'
     + '<button class="btn ghost" type="button" data-export="csv">표 파일 (CSV)</button>'
-    + '<button class="btn ghost" type="button" data-export="json">전체 백업 (JSON)</button>'
+    + '<button class="btn ghost" type="button" data-export="json">백업 (JSON)</button>'
     + '</div></div>';
 
   $("#stats-body").innerHTML = out;
