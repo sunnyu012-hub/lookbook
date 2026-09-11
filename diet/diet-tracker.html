@@ -342,6 +342,30 @@ input[type=range]{flex:1; accent-color:var(--accent)}
 }
 
 /* ---------- 분석 ---------- */
+.periodrow{display:flex; gap:7px; flex-wrap:wrap}
+.periodrow button{
+  border:1px solid var(--line); background:var(--surface); border-radius:999px;
+  padding:7px 14px; font-size:12.5px; font-weight:600; color:var(--muted); transition:.14s;
+}
+.periodrow button[aria-selected="true"]{background:var(--accent-soft); border-color:transparent; color:var(--accent)}
+
+.dowtable{display:grid; grid-template-columns:30px 1fr 1fr 1fr 1fr; font-size:12.5px; font-family:"IBM Plex Mono",monospace}
+.dowtable > div{padding:9px 2px; text-align:right; border-top:1px solid var(--line2); color:var(--ink2)}
+.dowtable > div.head{
+  border-top:none; color:var(--faint); font-size:10px; font-weight:600; padding-bottom:6px;
+  text-transform:uppercase; letter-spacing:.04em;
+}
+.dowtable > div.nm{text-align:left; font-family:"IBM Plex Sans KR",sans-serif; font-weight:600; color:var(--ink)}
+.dowtable > div.nm.sun{color:var(--clay)}
+.dowtable > div.hot{color:var(--clay); font-weight:700}
+
+.cmp{display:flex; flex-direction:column}
+.cmp-h, .cmp-r{display:grid; grid-template-columns:1.35fr .8fr .8fr 1fr; gap:6px; align-items:center}
+.cmp-h{font-size:10px; color:var(--faint); font-weight:600; letter-spacing:.04em; padding-bottom:6px}
+.cmp-h span:not(:first-child), .cmp-r span:not(:first-child){text-align:right; font-family:"IBM Plex Mono",monospace}
+.cmp-r{padding:10px 0; border-top:1px solid var(--line2); font-size:13px; color:var(--ink2)}
+.cmp-lb{font-weight:600; color:var(--ink); font-size:13px}
+.cmp-lb small{color:var(--faint); font-weight:500; font-size:10.5px; font-family:"IBM Plex Mono",monospace; margin-left:4px}
 .barrow{display:flex; align-items:center; gap:10px; padding:7px 0; font-size:13px}
 .barrow .lb{width:84px; flex:none; color:var(--ink2); font-size:12.5px; white-space:nowrap}
 .barrow .tr{display:block; flex:1; height:9px; background:var(--surface2); border-radius:99px; overflow:hidden}
@@ -769,7 +793,13 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
 
     <!-- ============ STATS ============ -->
     <section class="view" id="view-stats" hidden>
-      <div class="seg" id="stat-seg">
+      <div class="seg" id="stat-sec" role="tablist">
+        <button role="tab" type="button" data-sec="summary" aria-selected="true">요약</button>
+        <button role="tab" type="button" data-sec="weight" aria-selected="false">체중</button>
+        <button role="tab" type="button" data-sec="life" aria-selected="false">생활</button>
+        <button role="tab" type="button" data-sec="body" aria-selected="false">몸</button>
+      </div>
+      <div class="periodrow" id="stat-seg">
         <button type="button" data-range="7" aria-selected="false">7일</button>
         <button type="button" data-range="30" aria-selected="true">30일</button>
         <button type="button" data-range="90" aria-selected="false">90일</button>
@@ -954,7 +984,7 @@ const CACHE_KEY = "diet-log-v1";
 const SETTINGS_V = 2;
 const OLD_HABIT_IDS = "h1,h2,h3,h4,h5,h6";
 const state = {
-  tab:"home", rec:"weight", statRange:30,
+  tab:"home", rec:"weight", statRange:30, statSec:"summary",
   calMode:"month", calCursor: todayStr(),
   cheer: Math.floor(Math.random()*CHEERS.length),
   days:{},
@@ -1755,115 +1785,155 @@ function checkpointBar(cur){
   return '<div class="ckpt"><div class="track">'+marker+nodes+'</div></div>'
     + '<div class="remind"><b>다음 체크포인트 '+target.kg+'kg</b>'+esc(target.note)+'</div>';
 }
-function renderStats(){
-  const range = state.statRange, t = todayStr();
+
+/* ---------- 패턴 계산 ---------- */
+function lastKg(ds){ const w = day(ds).weights; return w.length ? w[w.length-1].kg : null; }
+function avg(a){ return a.length ? a.reduce((x,y)=>x+y,0)/a.length : null; }
+
+function dailyDiffs(inRange){
+  const out = [];
+  Object.keys(state.days).filter(inRange).sort().forEach(ds=>{
+    const k = lastKg(ds), p = lastKg(addDays(ds,-1));
+    if(k !== null && p !== null) out.push({d:ds, v:k - p});
+  });
+  return out;
+}
+function dowPatterns(inRange){
+  const rows = [];
+  for(let i=0;i<7;i++) rows.push({n:0, diffs:[], snacks:0, workouts:0, mealsDone:0, mealsTot:0});
+  Object.keys(state.days).filter(inRange).sort().forEach(ds=>{
+    const o = day(ds), r = rows[parseYmd(ds).getDay()];
+    r.n++;
+    const k = lastKg(ds), p = lastKg(addDays(ds,-1));
+    if(k !== null && p !== null) r.diffs.push(k - p);
+    r.snacks += o.snacks.length;
+    r.workouts += o.workouts.length;
+    r.mealsTot += 3; r.mealsDone += ["b","l","d"].filter(x=> o.meals[x]).length;
+  });
+  return rows;
+}
+function monthlyTrend(n){
+  const out = [], now = new Date();
+  for(let i=n-1;i>=0;i--){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const key = d.getFullYear()+"-"+pad(d.getMonth()+1);
+    const dim = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
+    let kgs=[], climb=0, cardio=0, logged=0;
+    for(let k=1;k<=dim;k++){
+      const ds = key+"-"+pad(k);
+      if(!state.days[ds]) continue;
+      const o = day(ds);
+      o.weights.forEach(w=> kgs.push(w.kg));
+      if(o.weights.length) logged++;
+      o.workouts.forEach(w=>{ if(w.type==="climb") climb++; else if(WTYPE[w.type] && WTYPE[w.type].cardio) cardio++; });
+    }
+    out.push({key, label:(d.getMonth()+1)+"월", avg:avg(kgs), climb, cardio, logged});
+  }
+  return out;
+}
+/* 조건이 참인 날과 거짓인 날을 나눠 비교 (null이면 그 날은 뺀다) */
+function splitCompare(inRange, predicate){
+  const mk = ()=>({n:0, snacks:0, mealsDone:0, mealsTot:0, next:[]});
+  const A = mk(), B = mk();
+  Object.keys(state.days).filter(inRange).sort().forEach(ds=>{
+    const o = day(ds), p = predicate(o, ds);
+    if(p === null || p === undefined) return;
+    const g = p ? A : B;
+    g.n++; g.snacks += o.snacks.length;
+    g.mealsTot += 3; g.mealsDone += ["b","l","d"].filter(x=> o.meals[x]).length;
+    const k = lastKg(ds), nx = lastKg(addDays(ds,1));
+    if(k !== null && nx !== null) g.next.push(nx - k);
+  });
+  return {A, B};
+}
+/* 생리 주기 일차별 체중 편차 */
+function cycleRhythm(){
+  const starts = periodStarts();
+  if(!starts.length) return null;
+  const buckets = {};
+  let cycles = 0;
+  starts.forEach((st, i)=>{
+    const end = starts[i+1] || addDays(st, 35);
+    const pts = [];
+    let cur = st, idx = 0;
+    while(cur < end && idx < 40){
+      const k = lastKg(cur);
+      if(k !== null) pts.push({idx, kg:k});
+      cur = addDays(cur, 1); idx++;
+    }
+    if(pts.length < 8) return;
+    cycles++;
+    const m = avg(pts.map(p=>p.kg));
+    pts.forEach(p=>{ (buckets[p.idx] = buckets[p.idx] || []).push(p.kg - m); });
+  });
+  if(!cycles) return null;
+  const pts = Object.keys(buckets).map(Number).sort((a,b)=>a-b)
+    .map(k=>({idx:k, dev:avg(buckets[k]), n:buckets[k].length}));
+  return {cycles, pts};
+}
+function logStreak(){
+  let cur = todayStr(), n = 0;
+  if(!day(cur).weights.length) cur = addDays(cur,-1);
+  while(day(cur).weights.length){ n++; cur = addDays(cur,-1); if(n > 500) break; }
+  return n;
+}
+/* 0을 기준선으로 두는 편차 그래프 */
+function devChart(pts, unit){
+  if(pts.length < 3) return "";
+  const W=320,H=130,L=32,R=10,T=14,B=24;
+  const maxAbs = Math.max(0.3, Math.max.apply(null, pts.map(p=>Math.abs(p.dev))));
+  const maxIdx = Math.max.apply(null, pts.map(p=>p.idx)) || 1;
+  const x = i => L + (i/maxIdx)*(W-L-R);
+  const y = v => T + (maxAbs - v)/(2*maxAbs)*(H-T-B);
+  const line = pts.map(p=> x(p.idx).toFixed(1)+","+y(p.dev).toFixed(1)).join(" ");
+  const zero = y(0);
+  let g = '<line x1="'+L+'" y1="'+zero.toFixed(1)+'" x2="'+(W-R)+'" y2="'+zero.toFixed(1)+'" stroke="var(--line)" stroke-width="1"/>'
+    + '<text x="'+(L-6)+'" y="'+(y(maxAbs)+4).toFixed(1)+'" text-anchor="end" font-size="9" font-family="IBM Plex Mono, monospace" fill="var(--faint)">+'+fmt1(maxAbs)+'</text>'
+    + '<text x="'+(L-6)+'" y="'+(zero+3.5).toFixed(1)+'" text-anchor="end" font-size="9" font-family="IBM Plex Mono, monospace" fill="var(--faint)">0</text>'
+    + '<text x="'+(L-6)+'" y="'+(y(-maxAbs)+2).toFixed(1)+'" text-anchor="end" font-size="9" font-family="IBM Plex Mono, monospace" fill="var(--faint)">-'+fmt1(maxAbs)+'</text>';
+  let dots = pts.map(p=>'<circle cx="'+x(p.idx).toFixed(1)+'" cy="'+y(p.dev).toFixed(1)+'" r="2.4" fill="'+(p.dev>0?"var(--clay)":"var(--mint)")+'"/>').join("");
+  return '<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="주기 일차별 체중 편차">'
+    + g
+    + '<polyline points="'+line+'" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
+    + dots
+    + '<text x="'+L+'" y="'+(H-7)+'" font-size="9" font-family="IBM Plex Mono, monospace" fill="var(--faint)">시작일</text>'
+    + '<text x="'+(W-R)+'" y="'+(H-7)+'" text-anchor="end" font-size="9" font-family="IBM Plex Mono, monospace" fill="var(--faint)">'+maxIdx+'일차</text>'
+    + '</svg>';
+}
+function needMore(msg){ return '<p class="emptyline">'+esc(msg)+'</p>'; }
+
+/* ---------- 섹션 ---------- */
+function statCtx(){
+  const t = todayStr(), range = state.statRange;
   const from = range >= 9999 ? "0000-00-00" : addDays(t, -(range-1));
   const inRange = ds => ds >= from && ds <= t;
   const dates = Object.keys(state.days).filter(inRange).sort();
-
   const ws = allWeights().filter(w=> inRange(w.date));
   const byDay = {}; ws.forEach(w=> byDay[w.date] = w.kg);
   const series = Object.keys(byDay).sort().map(d=>({d, v:byDay[d]}));
-  const goal = state.settings.goalWeight;
-  const latest = latestWeight();
-  let out = "";
+  return {t, range, from, inRange, dates, ws, series, goal:state.settings.goalWeight};
+}
 
-  /* 체크포인트 */
+function secSummary(c){
+  let out = "";
+  const latest = latestWeight();
   out += '<div class="card"><p class="sec-label">체크포인트</p>'
-    + (latest ? checkpointBar(latest.kg)
-              : '<p class="emptyline">체중을 한 번 기록하면 지금 어느 구간인지 표시돼요.</p>')
+    + (latest ? checkpointBar(latest.kg) : needMore("체중을 한 번 기록하면 지금 어느 구간인지 표시돼요."))
     + '</div>';
 
-  /* 체중 추세 */
-  const fitMap = {}, periodMap = {};
-  Object.keys(state.days).forEach(ds=>{
-    const o = day(ds);
-    const f = o.fits.filter(x=>x.fit).pop();
-    if(f) fitMap[ds] = f.fit;
-    if(o.period) periodMap[ds] = true;
-  });
-  const hasFitMark = series.some(s=> fitMap[s.d]);
-  const hasPeriod  = series.some(s=> periodMap[s.d]);
-  out += '<div class="card"><p class="sec-label">체중 추세</p>' + weightChart(series, goal, {fits:fitMap, periods:periodMap});
-  if(hasFitMark || hasPeriod){
-    out += '<div class="legend" style="margin-top:10px">'
-      + (hasFitMark ? '<span><i style="background:var(--clay)"></i>꽉 낌</span><span><i style="background:var(--ochre)"></i>딱 맞음</span><span><i style="background:var(--mint)"></i>헐렁</span>' : "")
-      + (hasPeriod ? '<span><i style="background:var(--clay-soft); border-radius:2px; width:12px; height:8px"></i>생리</span>' : "")
-      + '</div>';
-  }
-  if(series.length >= 2){
-    const first = series[0].v, last = series[series.length-1].v, ch = last - first;
-    const days = Math.max(1, (parseYmd(series[series.length-1].d) - parseYmd(series[0].d))/86400000);
-    const perWeek = ch / days * 7;
-    out += '<div class="statgrid" style="margin-top:16px">'
-      + '<div class="stat"><div class="v" style="color:'+(ch<0?"var(--mint)":"var(--clay)")+'">'+(ch>0?"+":"")+fmt1(ch)+'kg</div><div class="l">기간 변화</div></div>'
-      + '<div class="stat"><div class="v">'+(perWeek>0?"+":"")+fmt1(perWeek)+'kg</div><div class="l">주당 평균</div></div>'
-      + '<div class="stat"><div class="v">'+fmt1(Math.min.apply(null,series.map(s=>s.v)))+'kg</div><div class="l">기간 최저</div></div>'
-      + '<div class="stat"><div class="v">'+series.length+'회</div><div class="l">측정 횟수</div></div>'
-      + '</div>';
-  }
-  out += '</div>';
+  const wkStart = weekStart(c.t), wr = weekReport(wkStart);
+  out += '<div class="card"><div class="between" style="margin-bottom:12px">'
+    + '<p class="sec-label" style="margin:0">이번주 리포트</p>'
+    + '<span class="tiny muted mono">'+mdLabel(wkStart)+' – '+mdLabel(addDays(wkStart,6))+'</span></div>'
+    + weekStatGrid(wr)
+    + '<p class="tiny muted" style="margin:12px 0 0">간식 '+wr.snacks+'회 · 기록한 날 '+wr.days+'일'
+    + (wr.avg !== null ? ' · 주 평균 '+fmt1(wr.avg)+'kg' : '')+'</p></div>';
 
-  /* 옷 핏 · 둘레 — 숫자가 멈춘 주에 먼저 달라지는 것 */
-  const fits = collect("fits").filter(f=> inRange(f.date));
-  const waists = fits.filter(f=> f.waist).slice(0,8).reverse();
-  if(fits.length){
-    const lastF = fits[0];
-    out += '<div class="card"><p class="sec-label">옷 핏</p>'
-      + '<div class="between" style="margin-bottom:12px">'
-      + '<span style="font-weight:600">'+esc((lastF.item?lastF.item+" · ":"")+(lastF.fit?FITS[lastF.fit]:"둘레 기록"))+'</span>'
-      + '<span class="tiny muted mono">'+mdLabel(lastF.date)+'</span></div>';
-    const counts = {tight:0, just:0, loose:0};
-    fits.forEach(f=>{ if(counts[f.fit] !== undefined) counts[f.fit]++; });
-    const ct = counts.tight+counts.just+counts.loose;
-    if(ct){
-      ["tight","just","loose"].forEach(k=>{
-        out += '<div class="barrow"><span class="lb">'+FITS[k]+'</span><span class="tr"><span class="fl" style="width:'
-          + Math.round(counts[k]/ct*100)+'%; background:'+FIT_COLOR[k]+'"></span></span><span class="vl">'+counts[k]+'회</span></div>';
-      });
-    }
-    if(waists.length >= 2){
-      const first = waists[0], lastW = waists[waists.length-1];
-      const dw = lastW.waist - first.waist;
-      out += '<div class="hr"></div><p class="sec-label">허리 둘레</p>'
-        + '<div class="statgrid">'
-        + '<div class="stat"><div class="v">'+lastW.waist+'cm</div><div class="l">가장 최근</div></div>'
-        + '<div class="stat"><div class="v" style="color:'+(dw<0?"var(--accent)":"var(--ink)")+'">'+(dw>0?"+":"")+(Math.round(dw*10)/10)+'cm</div><div class="l">'+mdLabel(first.date)+' 이후</div></div>'
-        + '</div>';
-    } else if(!waists.length){
-      out += '<p class="tiny muted" style="margin:12px 0 0">허리 둘레도 같이 남기면 변화가 더 또렷하게 보여요.</p>';
-    }
-    out += '</div>';
-  } else {
-    out += '<div class="card"><p class="sec-label">옷 핏</p>'
-      + '<p class="emptyline">기준이 되는 옷 하나를 정해두고 주 1회쯤 입어보세요. 체중이 멈춘 주에도 옷은 먼저 달라집니다.</p>'
-      + '<button class="btn ghost" type="button" data-goto="rec:fit" style="margin-top:6px">옷 핏 기록하기</button></div>';
-  }
-
-  /* 주간 평균 흐름 — 하루 숫자 대신 보는 지표 */
-  const wa = weeklyAverages(6).filter(w=> w.avg !== null);
-  if(wa.length >= 2){
-    const vals = wa.map(w=>w.avg), mn = Math.min.apply(null,vals), mx = Math.max.apply(null,vals), rng = (mx-mn)||1;
-    let rows = "";
-    wa.forEach((w,i)=>{
-      const prev = i>0 ? wa[i-1].avg : null;
-      const dv = prev===null ? null : w.avg - prev;
-      const width = 20 + (w.avg - mn)/rng * 78;
-      rows += '<div class="barrow"><span class="lb mono">'+mdLabel(w.start)+'~</span>'
-        + '<span class="tr"><span class="fl" style="width:'+width.toFixed(0)+'%"></span></span>'
-        + '<span class="vl">'+fmt1(w.avg)+'</span></div>'
-        + (dv!==null ? '<p class="tiny" style="margin:-4px 0 4px 94px; color:'+(dv<0?"var(--mint)":"var(--muted)")+'">'+(dv>0?"+":"")+fmt1(dv)+'kg</p>' : "");
-    });
-    out += '<div class="card"><p class="sec-label">주간 평균 흐름</p>'+rows
-      + '<p class="tiny muted" style="margin:10px 0 0">하루 오르내림 대신 주 단위 평균으로 봅니다.</p></div>';
-  }
-
-  /* 정체 구간 — 원칙 8을 꺼내고, 그 사이 유지된 것을 보여준다 */
   const pl = plateau();
   if(pl){
     const hsP = state.settings.habits || [];
     let hDone=0, hTot=0, mFull=0, mTot=0, climbN=0, cardioN=0, nDays=0, cur = pl.from;
-    while(cur <= t && nDays < 40){
+    while(cur <= c.t && nDays < 40){
       const o = day(cur); nDays++;
       hTot += hsP.length; hDone += hsP.filter(h=> o.habits[h.id]).length;
       mTot += 3; mFull += ["b","l","d"].filter(k=> o.meals[k]).length;
@@ -1882,20 +1952,12 @@ function renderStats(){
       + '<p class="tiny muted" style="margin:12px 0 0">체중이 멈춘 구간에도 몸은 적응하는 중이에요. 이럴 때일수록 옷 핏과 둘레를 같이 보세요.</p></div>';
   }
 
-  /* 이번주 리포트 */
-  const wkStart = weekStart(t), wr = weekReport(wkStart);
-  out += '<div class="card"><div class="between" style="margin-bottom:12px">'
-    + '<p class="sec-label" style="margin:0">이번주 리포트</p>'
-    + '<span class="tiny muted mono">'+mdLabel(wkStart)+' – '+mdLabel(addDays(wkStart,6))+'</span></div>'
-    + weekStatGrid(wr) + '</div>';
-
-  /* 주간 돌아보기 */
   const myRv = reviewOf(wkStart);
   out += '<div class="card"><div class="between" style="margin-bottom:12px">'
     + '<p class="sec-label" style="margin:0">주간 돌아보기</p>'
     + '<button class="link tiny" type="button" data-review="'+wkStart+'">'+(myRv?"고치기":"쓰기")+'</button></div>'
     + (myRv ? reviewCardHTML(wkStart, myRv)
-            : '<p class="emptyline">한 주에 한 번, 1분이면 돼요. 잘 지켜진 것 하나와 다음 주에 바꿀 것 하나만 적어두면 흐름이 이어집니다.</p>'
+            : needMore("한 주에 한 번, 1분이면 돼요. 잘 지켜진 것 하나와 다음 주에 바꿀 것 하나만 적어두면 흐름이 이어집니다.")
               + '<button class="btn ghost" type="button" data-review="'+wkStart+'" style="margin-top:6px">이번 주 돌아보기 쓰기</button>');
   const past = allReviews().filter(r=> r.ws !== wkStart).slice(0,3);
   if(past.length){
@@ -1904,45 +1966,242 @@ function renderStats(){
   }
   out += '</div>';
 
+  const logged = c.dates.filter(ds=> day(ds).weights.length).length;
+  const span = c.range >= 9999
+    ? (c.dates.length ? Math.round((parseYmd(c.t) - parseYmd(c.dates[0]))/86400000) + 1 : 0)
+    : c.range;
+  out += '<div class="card"><p class="sec-label">기록 습관</p><div class="statgrid">'
+    + '<div class="stat"><div class="v">'+logStreak()+'일</div><div class="l">연속 기록</div></div>'
+    + '<div class="stat"><div class="v">'+(span?Math.round(logged/span*100):0)+'%</div><div class="l">체중 기록률</div></div>'
+    + '<div class="stat"><div class="v">'+logged+'일</div><div class="l">기록한 날</div></div>'
+    + '<div class="stat"><div class="v">'+allReviews().length+'개</div><div class="l">돌아보기</div></div>'
+    + '</div><p class="tiny muted" style="margin:12px 0 0">기록이 쌓일수록 아래 분석들이 또렷해져요.</p></div>';
+
+  out += '<div class="card"><p class="sec-label">기록 내보내기</p>'
+    + '<p class="tiny muted" style="margin:-4px 0 14px">쌓인 기록을 파일로 받아 백업하거나 진료 때 보여줄 수 있어요.</p>'
+    + '<div class="row" style="gap:8px; align-items:stretch">'
+    + '<button class="btn ghost" type="button" data-export="csv">표 파일 (CSV)</button>'
+    + '<button class="btn ghost" type="button" data-export="json">백업 (JSON)</button>'
+    + '</div></div>';
+  return out;
+}
+
+function secWeight(c){
+  let out = "";
+  const fitMap = {}, periodMap = {};
+  Object.keys(state.days).forEach(ds=>{
+    const o = day(ds);
+    const f = o.fits.filter(x=>x.fit).pop();
+    if(f) fitMap[ds] = f.fit;
+    if(o.period) periodMap[ds] = true;
+  });
+  const hasFitMark = c.series.some(s=> fitMap[s.d]);
+  const hasPeriod  = c.series.some(s=> periodMap[s.d]);
+  out += '<div class="card"><p class="sec-label">체중 추세</p>' + weightChart(c.series, c.goal, {fits:fitMap, periods:periodMap});
+  if(hasFitMark || hasPeriod){
+    out += '<div class="legend" style="margin-top:10px">'
+      + (hasFitMark ? '<span><i style="background:var(--clay)"></i>꽉 낌</span><span><i style="background:var(--ochre)"></i>딱 맞음</span><span><i style="background:var(--mint)"></i>헐렁</span>' : "")
+      + (hasPeriod ? '<span><i style="background:var(--clay-soft); border-radius:2px; width:12px; height:8px"></i>생리</span>' : "")
+      + '</div>';
+  }
+  if(c.series.length >= 2){
+    const first = c.series[0].v, last = c.series[c.series.length-1].v, ch = last - first;
+    const days = Math.max(1, (parseYmd(c.series[c.series.length-1].d) - parseYmd(c.series[0].d))/86400000);
+    const perWeek = ch / days * 7;
+    out += '<div class="statgrid" style="margin-top:16px">'
+      + '<div class="stat"><div class="v" style="color:'+(ch<0?"var(--mint)":"var(--clay)")+'">'+(ch>0?"+":"")+fmt1(ch)+'kg</div><div class="l">기간 변화</div></div>'
+      + '<div class="stat"><div class="v">'+(perWeek>0?"+":"")+fmt1(perWeek)+'kg</div><div class="l">주당 평균</div></div>'
+      + '<div class="stat"><div class="v">'+fmt1(Math.min.apply(null,c.series.map(s=>s.v)))+'kg</div><div class="l">기간 최저</div></div>'
+      + '<div class="stat"><div class="v">'+c.series.length+'회</div><div class="l">측정 횟수</div></div>'
+      + '</div>';
+    if(typeof c.goal === "number" && last > c.goal && perWeek < -0.05){
+      const weeks = Math.ceil((last-c.goal)/Math.abs(perWeek));
+      out += '<p class="tiny muted" style="margin:12px 0 0">이 속도라면 목표 '+fmt1(c.goal)+'kg까지 약 '+weeks+'주. 숫자보다 흐름이 중요해요.</p>';
+    }
+  }
+  out += '</div>';
+
+  /* 하루 오르내림 */
+  const diffs = dailyDiffs(c.inRange);
+  out += '<div class="card"><p class="sec-label">하루 오르내림</p>';
+  if(diffs.length >= 5){
+    const absAvg = avg(diffs.map(d=>Math.abs(d.v)));
+    const up = diffs.filter(d=>d.v>0), down = diffs.filter(d=>d.v<0);
+    const maxUp = Math.max.apply(null, diffs.map(d=>d.v));
+    const maxDown = Math.min.apply(null, diffs.map(d=>d.v));
+    out += '<div class="statgrid">'
+      + '<div class="stat"><div class="v">±'+fmt1(absAvg)+'kg</div><div class="l">평균 하루 변동</div></div>'
+      + '<div class="stat"><div class="v">'+Math.round(down.length/diffs.length*100)+'%</div><div class="l">내려간 날</div></div>'
+      + '<div class="stat"><div class="v" style="color:var(--clay)">+'+fmt1(maxUp)+'kg</div><div class="l">가장 많이 오른 날</div></div>'
+      + '<div class="stat"><div class="v" style="color:var(--mint)">'+fmt1(maxDown)+'kg</div><div class="l">가장 많이 내린 날</div></div>'
+      + '</div>'
+      + '<p class="tiny muted" style="margin:12px 0 0">하루 ±'+fmt1(absAvg)+'kg은 물·소금·컨디션으로도 충분히 생기는 폭이에요. '
+      + '오른 날이 '+Math.round(up.length/diffs.length*100)+'%인데도 흐름은 내려가고 있다면, 그게 정상입니다.</p>';
+  } else out += needMore("체중을 며칠 더 이어서 기록하면 하루 변동 폭을 알려드릴게요.");
+  out += '</div>';
+
+  /* 주간 평균 흐름 */
+  const wa = weeklyAverages(8).filter(w=> w.avg !== null);
+  if(wa.length >= 2){
+    const vals = wa.map(w=>w.avg), mn = Math.min.apply(null,vals), mx = Math.max.apply(null,vals), rng = (mx-mn)||1;
+    let rows = "";
+    wa.forEach((w,i)=>{
+      const prev = i>0 ? wa[i-1].avg : null;
+      const dv = prev===null ? null : w.avg - prev;
+      const width = 20 + (w.avg - mn)/rng * 78;
+      rows += '<div class="barrow"><span class="lb mono">'+mdLabel(w.start)+'~</span>'
+        + '<span class="tr"><span class="fl" style="width:'+width.toFixed(0)+'%"></span></span>'
+        + '<span class="vl">'+fmt1(w.avg)+'</span></div>'
+        + (dv!==null ? '<p class="tiny" style="margin:-4px 0 4px 94px; color:'+(dv<0?"var(--mint)":"var(--muted)")+'">'+(dv>0?"+":"")+fmt1(dv)+'kg</p>' : "");
+    });
+    out += '<div class="card"><p class="sec-label">주간 평균 흐름 (8주)</p>'+rows
+      + '<p class="tiny muted" style="margin:10px 0 0">하루 오르내림 대신 주 단위 평균으로 봅니다.</p></div>';
+  }
+
+  /* 월별 흐름 */
+  const mt = monthlyTrend(6).filter(m=> m.avg !== null);
+  if(mt.length >= 2){
+    const vals = mt.map(m=>m.avg), mn = Math.min.apply(null,vals), mx = Math.max.apply(null,vals), rng = (mx-mn)||1;
+    let rows = "";
+    mt.forEach((m,i)=>{
+      const dv = i>0 ? m.avg - mt[i-1].avg : null;
+      rows += '<div class="barrow"><span class="lb mono">'+m.label+'</span>'
+        + '<span class="tr"><span class="fl" style="width:'+(20 + (m.avg-mn)/rng*78).toFixed(0)+'%"></span></span>'
+        + '<span class="vl">'+fmt1(m.avg)+'</span></div>'
+        + (dv!==null ? '<p class="tiny" style="margin:-4px 0 4px 94px; color:'+(dv<0?"var(--mint)":"var(--muted)")+'">'+(dv>0?"+":"")+fmt1(dv)+'kg · 기록 '+m.logged+'일</p>' : "");
+    });
+    out += '<div class="card"><p class="sec-label">월별 흐름</p>'+rows+'</div>';
+  }
+
+  /* 옷 핏 */
+  const fits = collect("fits").filter(f=> c.inRange(f.date));
+  const waists = fits.filter(f=> f.waist).slice(0,8).reverse();
+  if(fits.length){
+    const lastF = fits[0];
+    out += '<div class="card"><p class="sec-label">옷 핏</p>'
+      + '<div class="between" style="margin-bottom:12px">'
+      + '<span style="font-weight:600">'+esc((lastF.item?lastF.item+" · ":"")+(lastF.fit?FITS[lastF.fit]:"둘레 기록"))+'</span>'
+      + '<span class="tiny muted mono">'+mdLabel(lastF.date)+'</span></div>';
+    const counts = {tight:0, just:0, loose:0};
+    fits.forEach(f=>{ if(counts[f.fit] !== undefined) counts[f.fit]++; });
+    const ct = counts.tight+counts.just+counts.loose;
+    if(ct) ["tight","just","loose"].forEach(k=>{
+      out += '<div class="barrow"><span class="lb">'+FITS[k]+'</span><span class="tr"><span class="fl" style="width:'
+        + Math.round(counts[k]/ct*100)+'%; background:'+FIT_COLOR[k]+'"></span></span><span class="vl">'+counts[k]+'회</span></div>';
+    });
+    if(waists.length >= 2){
+      const first = waists[0], lastW = waists[waists.length-1];
+      const dw = lastW.waist - first.waist;
+      out += '<div class="hr"></div><p class="sec-label">허리 둘레</p><div class="statgrid">'
+        + '<div class="stat"><div class="v">'+lastW.waist+'cm</div><div class="l">가장 최근</div></div>'
+        + '<div class="stat"><div class="v" style="color:'+(dw<0?"var(--mint)":"var(--ink)")+'">'+(dw>0?"+":"")+(Math.round(dw*10)/10)+'cm</div><div class="l">'+mdLabel(first.date)+' 이후</div></div>'
+        + '</div>';
+    } else out += '<p class="tiny muted" style="margin:12px 0 0">허리 둘레도 같이 남기면 변화가 더 또렷하게 보여요.</p>';
+    out += '</div>';
+  } else {
+    out += '<div class="card"><p class="sec-label">옷 핏</p>'
+      + needMore("기준이 되는 옷 하나를 정해두고 주 1회쯤 입어보세요. 체중이 멈춘 주에도 옷은 먼저 달라집니다.")
+      + '<button class="btn ghost" type="button" data-goto="rec:fit" style="margin-top:6px">옷 핏 기록하기</button></div>';
+  }
+  return out;
+}
+
+function compareBlock(title, labelA, labelB, g, note){
+  const rows = [[labelA, g.A],[labelB, g.B]];
+  if(g.A.n < 3 || g.B.n < 3) return "";
+  let h = '<div class="hr"></div><p class="sec-label">'+esc(title)+'</p>'
+    + '<div class="cmp">'
+    + '<div class="cmp-h"><span></span><span>간식/일</span><span>삼시세끼</span><span>다음날 체중</span></div>';
+  rows.forEach(([lb, g2])=>{
+    const nx = avg(g2.next);
+    h += '<div class="cmp-r"><span class="cmp-lb">'+esc(lb)+' <small>'+g2.n+'일</small></span>'
+      + '<span>'+(Math.round(g2.snacks/g2.n*10)/10)+'</span>'
+      + '<span>'+(g2.mealsTot?Math.round(g2.mealsDone/g2.mealsTot*100):0)+'%</span>'
+      + '<span style="color:'+(nx!==null && nx<0?"var(--mint)":"var(--ink2)")+'">'+(nx===null?"–":(nx>0?"+":"")+fmt1(nx)+"kg")+'</span></div>';
+  });
+  h += '</div>';
+  if(note) h += '<p class="tiny muted" style="margin:10px 0 0">'+esc(note)+'</p>';
+  return h;
+}
+
+function secLife(c){
+  let out = "";
   /* 운동 */
-  let climb=0, cardio=0, byType={climb:0,run:0,walk:0,stretch:0}, mins=0;
-  dates.forEach(ds=> day(ds).workouts.forEach(w=>{
-    if(byType[w.type]!==undefined) byType[w.type]++;
-    if(w.type==="climb") climb++; else if(WTYPE[w.type]&&WTYPE[w.type].cardio) cardio++;
+  let climb=0, cardio=0, byType={climb:0,run:0,walk:0,stretch:0}, mins=0, rpes=[], typeMins={climb:0,run:0,walk:0,stretch:0};
+  c.dates.forEach(ds=> day(ds).workouts.forEach(w=>{
+    if(byType[w.type]!==undefined){ byType[w.type]++; typeMins[w.type] += Number(w.min)||0; }
+    if(w.type==="climb") climb++; else if(WTYPE[w.type] && WTYPE[w.type].cardio) cardio++;
     mins += Number(w.min)||0;
+    if(w.rpe) rpes.push(Number(w.rpe));
   }));
   let wkRows = "";
-  for(let i=3;i>=0;i--){
-    const s = weekStart(addDays(t, -i*7)), c = weekCounts(s);
+  for(let i=5;i>=0;i--){
+    const s = weekStart(addDays(c.t, -i*7)), cnt = weekCounts(s);
     let cells = "";
-    for(let k=0;k<Math.max(GOAL_CLIMB,c.climb);k++) cells += '<i style="background:'+(k<c.climb?"var(--clay)":"var(--line)")+'"></i>';
+    for(let k=0;k<Math.max(GOAL_CLIMB,cnt.climb);k++) cells += '<i style="background:'+(k<cnt.climb?"var(--clay)":"var(--line)")+'"></i>';
     cells += '<span style="width:6px"></span>';
-    for(let k=0;k<Math.max(GOAL_CARDIO,c.cardio);k++) cells += '<i style="background:'+(k<c.cardio?"var(--ochre)":"var(--line)")+'"></i>';
+    for(let k=0;k<Math.max(GOAL_CARDIO,cnt.cardio);k++) cells += '<i style="background:'+(k<cnt.cardio?"var(--ochre)":"var(--line)")+'"></i>';
+    const met = cnt.climb >= GOAL_CLIMB && cnt.cardio >= GOAL_CARDIO;
     wkRows += '<div class="wkbar"><span class="lb">'+mdLabel(s)+'~</span><span class="cells">'+cells+'</span>'
-      + '<span class="lb mono" style="width:auto;text-align:right">'+c.climb+'·'+c.cardio+'</span></div>';
+      + '<span class="lb mono" style="width:auto;text-align:right;color:'+(met?"var(--mint)":"var(--muted)")+'">'+cnt.climb+'·'+cnt.cardio+(met?" ✓":"")+'</span></div>';
   }
-  out += '<div class="card"><p class="sec-label">운동</p>'
-    + '<div class="statgrid">'
+  out += '<div class="card"><p class="sec-label">운동</p><div class="statgrid">'
     + '<div class="stat"><div class="v">'+climb+'회</div><div class="l">클라이밍 (메인)</div></div>'
     + '<div class="stat"><div class="v">'+cardio+'회</div><div class="l">유산소 (러닝·걷기)</div></div>'
     + '<div class="stat"><div class="v">'+(Math.round(mins/60*10)/10)+'h</div><div class="l">총 운동 시간</div></div>'
-    + '<div class="stat"><div class="v">'+byType.stretch+'회</div><div class="l">스트레칭</div></div>'
-    + '</div>'
-    + '<p class="sec-label" style="margin:18px 0 4px">최근 4주 (클라이밍 · 유산소)</p>'+wkRows+'</div>';
+    + '<div class="stat"><div class="v">'+(rpes.length?(Math.round(avg(rpes)*10)/10):"–")+'</div><div class="l">평균 힘든 정도</div></div>'
+    + '</div>';
+  const totMin = mins || 1;
+  if(mins){
+    out += '<p class="sec-label" style="margin:18px 0 4px">종류별 시간</p>';
+    ["climb","run","walk","stretch"].forEach(k=>{
+      if(!typeMins[k]) return;
+      out += '<div class="barrow"><span class="lb">'+WTYPE[k].label+'</span><span class="tr"><span class="fl" style="width:'
+        + Math.round(typeMins[k]/totMin*100)+'%; background:'+WTYPE[k].color+'"></span></span>'
+        + '<span class="vl">'+Math.round(typeMins[k]/60*10)/10+'h</span></div>';
+    });
+  }
+  out += '<p class="sec-label" style="margin:18px 0 4px">최근 6주 (클라이밍 · 유산소)</p>'+wkRows+'</div>';
 
-  /* 간식 시간대 패턴 */
-  const snacks = collect("snacks").filter(s=> inRange(s.date));
+  /* 요일 패턴 */
+  const rows = dowPatterns(c.inRange);
+  const order = [1,2,3,4,5,6,0];
+  const hasData = rows.some(r=> r.n >= 2);
+  out += '<div class="card"><p class="sec-label">요일 패턴</p>';
+  if(hasData){
+    const snackPerDay = order.map(i=> rows[i].n ? rows[i].snacks/rows[i].n : 0);
+    const maxSnack = Math.max.apply(null, snackPerDay);
+    out += '<div class="dowtable"><div class="head"></div><div class="head">체중</div><div class="head">간식</div><div class="head">운동</div><div class="head">세끼</div>';
+    order.forEach((i, k)=>{
+      const r = rows[i], dv = avg(r.diffs);
+      const sp = r.n ? r.snacks/r.n : 0;
+      const hot = maxSnack > 0.2 && sp === maxSnack;
+      out += '<div class="nm'+(i===0?" sun":"")+'">'+DOW[i]+'</div>'
+        + '<div style="color:'+(dv===null?"var(--faint)":(dv<0?"var(--mint)":dv>0?"var(--clay)":"var(--muted)"))+'">'+(dv===null?"–":(dv>0?"+":"")+fmt1(dv))+'</div>'
+        + '<div'+(hot?' class="hot"':'')+'>'+(Math.round(sp*10)/10)+'</div>'
+        + '<div>'+(r.n?Math.round(r.workouts/r.n*10)/10:"–")+'</div>'
+        + '<div>'+(r.mealsTot?Math.round(r.mealsDone/r.mealsTot*100):0)+'%</div>';
+    });
+    out += '</div>';
+    const worst = order.reduce((a,b)=> (rows[b].n? rows[b].snacks/rows[b].n:0) > (rows[a].n? rows[a].snacks/rows[a].n:0) ? b : a, order[0]);
+    if(maxSnack > 0.3) out += '<p class="tiny muted" style="margin:12px 0 0">간식은 <b>'+DOW[worst]+'요일</b>에 가장 많았어요. 그날 저녁에 뭘 미리 챙겨두면 좋을지만 생각해 보세요.</p>';
+    out += '<p class="tiny muted" style="margin:8px 0 0">체중은 전날 대비 평균 변화, 간식·운동은 하루 평균 횟수예요.</p>';
+  } else out += needMore("2주쯤 기록이 쌓이면 요일별 패턴이 보여요.");
+  out += '</div>';
+
+  /* 간식 */
+  const snacks = collect("snacks").filter(s=> c.inRange(s.date));
   const bands = HOURBANDS.map(b=> Object.assign({n:0}, b));
   snacks.forEach(s=>{
     const h = parseInt((s.t||"12:00").split(":")[0],10) || 0;
-    const b = bands.find(x=> h >= x.from && h < x.to); if(b) b.n++;
+    const bd = bands.find(x=> h >= x.from && h < x.to); if(bd) bd.n++;
   });
-  const maxN = Math.max(1, ...bands.map(b=>b.n));
-  out += '<div class="card"><p class="sec-label">간식 시간대</p>';
+  const maxN = Math.max(1, Math.max.apply(null, bands.map(b=>b.n)));
+  out += '<div class="card"><p class="sec-label">간식</p>';
   if(snacks.length){
     out += '<div class="hourchart">'+bands.map(b=>
         '<div class="col"><span class="n">'+b.n+'</span>'
-      + '<span class="bar" style="height:'+Math.max(2, Math.round(b.n/maxN*100))+'%"></span>'
+      + '<span class="bar" style="height:'+Math.max(3, Math.round(b.n/maxN*100))+'%"></span>'
       + '<span class="lb">'+b.label+'<small>'+b.range+'</small></span></div>').join("")+'</div>';
     const top = bands.slice().sort((a,b)=>b.n-a.n)[0];
     const rc = {hungry:0,bored:0,stress:0}; let satSum=0, satN=0;
@@ -1954,18 +2213,16 @@ function renderStats(){
       [["hungry","진짜 배고픔"],["bored","입이 심심"],["stress","스트레스"]].forEach(([k,nm])=>{
         out += '<div class="barrow"><span class="lb">'+nm+'</span><span class="tr"><span class="fl" style="width:'+Math.round(rc[k]/rcTotal*100)+'%"></span></span><span class="vl">'+rc[k]+'회</span></div>';
       });
-      if(satN) out += '<p class="tiny muted" style="margin:10px 0 0">평균 만족도 '+(Math.round(satSum/satN*10)/10)+' / 5</p>';
+      if(satN) out += '<p class="tiny muted" style="margin:10px 0 0">평균 만족도 '+(Math.round(satSum/satN*10)/10)+' / 5'
+        + (satN>=5 && satSum/satN < 3 ? ' — 만족도가 낮은 간식이 많아요. 정말 먹고 싶은 걸 제대로 먹는 쪽이 나을 수도 있어요.' : '')+'</p>';
     }
-  } else {
-    out += '<p class="emptyline">이 기간엔 간식 기록이 없어요.</p>';
-  }
+  } else out += needMore("이 기간엔 간식 기록이 없어요.");
   out += '</div>';
 
   /* 식사 */
   let full=0, tracked=0, lunchbox=0, eatout=0, caff={decaf:0,regular:0,none:0};
-  dates.forEach(ds=>{ const o=day(ds);
-    const any = o.meals.b||o.meals.l||o.meals.d;
-    if(any) tracked++;
+  c.dates.forEach(ds=>{ const o=day(ds);
+    if(o.meals.b||o.meals.l||o.meals.d) tracked++;
     if(o.meals.b&&o.meals.l&&o.meals.d) full++;
     if(o.lunchbox==="yes") lunchbox++;
     if(o.eatout==="yes") eatout++;
@@ -1984,76 +2241,118 @@ function renderStats(){
       out += '<div class="barrow"><span class="lb">'+nm+'</span><span class="tr"><span class="fl" style="width:'+Math.round(caff[k]/caffTotal*100)+'%"></span></span><span class="vl">'+caff[k]+'일</span></div>';
     });
   }
+  out += compareBlock("운동한 날 vs 안 한 날", "운동한 날", "안 한 날",
+    splitCompare(c.inRange, o=> o.workouts.length > 0),
+    "운동이 그날 식사와 간식에 어떻게 이어지는지 봅니다. 좋고 나쁨이 아니라 패턴이에요.");
+  out += compareBlock("도시락 싼 날 vs 아닌 날", "도시락", "아니요",
+    splitCompare(c.inRange, o=> o.lunchbox ? o.lunchbox === "yes" : null), "");
   out += '</div>';
+  return out;
+}
 
+function secBody(c){
+  let out = "";
   /* 컨디션 · 수면 */
   let sleeps=[], swell=0, swellN=0, conds=[];
-  ws.forEach(w=>{ if(w.sleep) sleeps.push(Number(w.sleep)); if(w.swell){swellN++; if(w.swell==="yes") swell++;} if(w.cond) conds.push(Number(w.cond)); });
+  c.ws.forEach(w=>{
+    if(w.sleep) sleeps.push(Number(w.sleep));
+    if(w.swell){ swellN++; if(w.swell==="yes") swell++; }
+    if(w.cond) conds.push(Number(w.cond));
+  });
+  out += '<div class="card"><p class="sec-label">컨디션 · 수면</p>';
   if(sleeps.length || swellN || conds.length){
-    const avgCond = conds.length ? conds.reduce((a,b)=>a+b,0)/conds.length : null;
-    out += '<div class="card"><p class="sec-label">컨디션 · 수면</p><div class="statgrid">'
-      + '<div class="stat"><div class="v">'+(sleeps.length?fmt1(sleeps.reduce((a,b)=>a+b,0)/sleeps.length)+"h":"–")+'</div><div class="l">평균 수면</div></div>'
+    const ac = avg(conds);
+    out += '<div class="statgrid">'
+      + '<div class="stat"><div class="v">'+(sleeps.length?fmt1(avg(sleeps))+"h":"–")+'</div><div class="l">평균 수면</div></div>'
       + '<div class="stat"><div class="v">'+(swellN?Math.round(swell/swellN*100)+"%":"–")+'</div><div class="l">붓기 있던 날</div></div>'
-      + '<div class="stat"><div class="v">'+(avgCond?(CONDS[Math.round(avgCond)-1]||{}).e:"–")+'</div><div class="l">평균 컨디션</div></div>'
+      + '<div class="stat"><div class="v">'+(ac?(CONDS[Math.round(ac)-1]||{}).e:"–")+'</div><div class="l">평균 컨디션</div></div>'
       + '<div class="stat"><div class="v">'+conds.length+'회</div><div class="l">컨디션 기록</div></div>'
-      + '</div></div>';
-  }
+      + '</div>';
+    out += compareBlock("잘 잔 날 vs 못 잔 날", "7시간 이상", "7시간 미만",
+      splitCompare(c.inRange, o=>{ const w = o.weights[o.weights.length-1]; return (w && w.sleep) ? Number(w.sleep) >= 7 : null; }),
+      "잠이 다음날 식욕과 체중에 어떻게 이어지는지 봅니다.");
+    out += compareBlock("붓기 있던 날 vs 없던 날", "붓기 있음", "붓기 없음",
+      splitCompare(c.inRange, o=>{ const w = o.weights[o.weights.length-1]; return (w && w.swell) ? w.swell === "yes" : null; }),
+      "붓기 있던 날의 숫자는 그날의 몸 상태예요. 다음날 돌아오는지만 보세요.");
+  } else out += needMore("체중 기록의 '더 자세히'에서 컨디션·수면·붓기를 남기면 여기에 정리돼요.");
+  out += '</div>';
 
   /* 생리 주기 */
   const ci = cycleInfo();
+  out += '<div class="card"><p class="sec-label">생리 주기</p>';
   if(ci){
-    const dLeft = ci.next ? Math.round((parseYmd(ci.next) - parseYmd(t))/86400000) : null;
-    out += '<div class="card"><p class="sec-label">생리 주기</p><div class="statgrid">'
+    const dLeft = ci.next ? Math.round((parseYmd(ci.next) - parseYmd(c.t))/86400000) : null;
+    out += '<div class="statgrid">'
       + '<div class="stat"><div class="v">'+(ci.avg ? ci.avg+"일" : "–")+'</div><div class="l">평균 주기</div></div>'
       + '<div class="stat"><div class="v">'+mdLabel(ci.last)+'</div><div class="l">마지막 시작</div></div>'
       + '<div class="stat"><div class="v">'+(ci.next ? mdLabel(ci.next) : "–")+'</div><div class="l">다음 예상</div></div>'
       + '<div class="stat"><div class="v">'+(dLeft===null ? "–" : (dLeft>0 ? "D-"+dLeft : dLeft===0 ? "오늘" : "D+"+(-dLeft)))+'</div><div class="l">예상까지</div></div>'
-      + '</div>'
-      + '<p class="tiny muted" style="margin:12px 0 0">'
-      + (ci.avg ? '기록한 주기 '+ci.count+'번의 평균이에요. ' : '시작일이 두 번 이상 쌓이면 평균 주기가 계산돼요. ')
-      + '이 시기 체중과 붓기는 오르내리기 쉬우니, 그 주는 숫자보다 흐름만 보세요.</p></div>';
-  }
+      + '</div>';
+    const rh = cycleRhythm();
+    const hasRhythm = !!(rh && rh.pts.length >= 5);
+    if(hasRhythm){
+      const peak = rh.pts.reduce((a,b)=> b.dev > a.dev ? b : a);
+      const low  = rh.pts.reduce((a,b)=> b.dev < a.dev ? b : a);
+      out += '<div class="hr"></div><p class="sec-label">주기에 따른 체중 리듬</p>'
+        + devChart(rh.pts)
+        + '<p class="tiny muted" style="margin:10px 0 0">기록한 주기 '+rh.cycles+'번의 평균이에요. '
+        + '주기 평균보다 <b style="color:var(--clay)">'+(peak.idx+1)+'일차에 +'+fmt1(peak.dev)+'kg</b>으로 가장 높고, '
+        + '<b style="color:var(--mint)">'+(low.idx+1)+'일차에 '+fmt1(low.dev)+'kg</b>으로 가장 낮았어요. '
+        + '이 폭은 몸의 리듬이지 감량 실패가 아닙니다.</p>';
+    } else {
+      out += '<p class="tiny muted" style="margin:12px 0 0">주기를 두 번쯤 기록하면 주기에 따른 체중 리듬을 그려드릴게요.</p>';
+    }
+    out += '<p class="tiny muted" style="margin:10px 0 0">'
+      + (hasRhythm ? '' : (ci.avg ? '기록한 주기 '+ci.count+'번의 평균이에요. ' : '시작일이 두 번 이상 쌓이면 평균 주기가 계산돼요. '))
+      + '이 시기 체중과 붓기는 오르내리기 쉬우니, 그 주는 숫자보다 흐름만 보세요.</p>';
+  } else out += needMore("체중 기록의 '더 자세히'에서 생리 시작일을 눌러두면, 주기에 따른 체중 리듬을 정리해 드려요.");
+  out += '</div>';
 
   /* 약 */
-  const meds = collect("meds").filter(m=> inRange(m.date));
+  const meds = collect("meds").filter(m=> c.inRange(m.date));
   const lastMed = collect("meds", 1)[0];
   out += '<div class="card"><p class="sec-label">약</p>';
   if(lastMed){
-    const gap = Math.round((parseYmd(todayStr()) - parseYmd(lastMed.date))/86400000);
+    const gap = Math.round((parseYmd(c.t) - parseYmd(lastMed.date))/86400000);
     out += '<div class="between" style="margin-bottom:10px"><span style="font-weight:600">'+esc(DRUGS[lastMed.drug]||lastMed.drug)+(lastMed.dose?" "+esc(lastMed.dose):"")+'</span>'
       + '<span class="tiny mono muted">'+mdLabel(lastMed.date)+' · '+(gap===0?"오늘":gap+"일 전")+'</span></div>'
-      + meds.slice(0,8).map(m=>'<div class="entry" style="padding:9px 0"><span class="when">'+mdLabel(m.date)+'</span><span class="main"><span class="t">'+esc(DRUGS[m.drug]||m.drug)+(m.dose?" "+esc(m.dose):"")+'</span>'+(m.memo?'<span class="s">'+esc(m.memo)+'</span>':"")+'</span></div>').join("");
-  } else {
-    out += '<p class="emptyline">이 기간엔 투여 기록이 없어요.</p>';
-  }
-  const nmS = nextMed();
-  if(nmS){
-    out += '<div class="hr"></div><div class="between"><span class="tiny muted">다음 주사 예정</span>'
-      + '<span class="tiny mono" style="font-weight:600">'+fullLabel(nmS.next)+' · '
-      + (nmS.diff>0?"D-"+nmS.diff : nmS.diff===0?"오늘" : "D+"+(-nmS.diff))+'</span></div>';
-  }
-  const seCount = {};
-  meds.forEach(m=> (m.se||[]).forEach(k=> seCount[k] = (seCount[k]||0)+1));
-  const seKeys = Object.keys(seCount).sort((a,b)=> seCount[b]-seCount[a]);
-  if(seKeys.length){
-    const seMax = seCount[seKeys[0]];
-    out += '<div class="hr"></div><p class="sec-label">몸의 반응</p>';
-    seKeys.forEach(k=>{
-      out += '<div class="barrow"><span class="lb">'+esc(SE_LABEL[k]||k)+'</span><span class="tr"><span class="fl" style="width:'
-        + Math.round(seCount[k]/seMax*100)+'%; background:var(--clay)"></span></span><span class="vl">'+seCount[k]+'회</span></div>';
-    });
-    out += '<p class="tiny muted" style="margin:10px 0 0">진료 때 이 기록을 그대로 보여주세요.</p>';
-  }
+      + meds.slice(0,8).map(m=>'<div class="entry" style="padding:9px 0"><span class="when">'+mdLabel(m.date)+'</span><span class="main"><span class="t">'
+        + esc(DRUGS[m.drug]||m.drug)+(m.dose?" "+esc(m.dose):"")+'</span>'
+        + ((m.se&&m.se.length)||m.memo ? '<span class="s">'+esc([(m.se||[]).map(k=>SE_LABEL[k]||k).join(", "), m.memo||""].filter(Boolean).join(" · "))+'</span>' : "")
+        + '</span></div>').join("");
+    const nmS = nextMed();
+    if(nmS){
+      out += '<div class="hr"></div><div class="between"><span class="tiny muted">다음 주사 예정</span>'
+        + '<span class="tiny mono" style="font-weight:600">'+fullLabel(nmS.next)+' · '
+        + (nmS.diff>0?"D-"+nmS.diff : nmS.diff===0?"오늘" : "D+"+(-nmS.diff))+'</span></div>';
+    }
+    const seCount = {};
+    meds.forEach(m=> (m.se||[]).forEach(k=> seCount[k] = (seCount[k]||0)+1));
+    const seKeys = Object.keys(seCount).sort((a,b)=> seCount[b]-seCount[a]);
+    if(seKeys.length){
+      const seMax = seCount[seKeys[0]];
+      out += '<div class="hr"></div><p class="sec-label">몸의 반응</p>';
+      seKeys.forEach(k=>{
+        out += '<div class="barrow"><span class="lb">'+esc(SE_LABEL[k]||k)+'</span><span class="tr"><span class="fl" style="width:'
+          + Math.round(seCount[k]/seMax*100)+'%; background:var(--clay)"></span></span><span class="vl">'+seCount[k]+'회</span></div>';
+      });
+      out += '<p class="tiny muted" style="margin:10px 0 0">진료 때 이 기록을 그대로 보여주세요.</p>';
+    }
+  } else out += needMore("이 기간엔 투여 기록이 없어요.");
   out += '<p class="tiny muted" style="margin:12px 0 0">약은 감량을 대신하지 않아요. 용량 변경·전환은 처방 의료진과 상의하세요.</p></div>';
+  return out;
+}
 
-  out += '<div class="card"><p class="sec-label">기록 내보내기</p>'
-    + '<p class="tiny muted" style="margin:-4px 0 14px">쌓인 기록을 파일로 받아 백업하거나 진료 때 보여줄 수 있어요.</p>'
-    + '<div class="row" style="gap:8px; align-items:stretch">'
-    + '<button class="btn ghost" type="button" data-export="csv">표 파일 (CSV)</button>'
-    + '<button class="btn ghost" type="button" data-export="json">백업 (JSON)</button>'
-    + '</div></div>';
-
-  $("#stats-body").innerHTML = out;
+function renderStats(){
+  $$("#stat-sec button").forEach(b=> b.setAttribute("aria-selected", String(b.dataset.sec === state.statSec)));
+  $$("#stat-seg button").forEach(b=> b.setAttribute("aria-selected", String(Number(b.dataset.range) === state.statRange)));
+  const c = statCtx();
+  const sec = state.statSec;
+  $("#stats-body").innerHTML =
+      sec === "weight" ? secWeight(c)
+    : sec === "life"   ? secLife(c)
+    : sec === "body"   ? secBody(c)
+    : secSummary(c);
 }
 
 function csvCell(v){
@@ -2397,12 +2696,11 @@ function handleClick(e){
   const recBtn = el.closest("#rec-seg button[data-rec]");
   if(recBtn){ state.rec = recBtn.dataset.rec; return go("rec"); }
 
+  const secBtn = el.closest("#stat-sec button[data-sec]");
+  if(secBtn){ state.statSec = secBtn.dataset.sec; window.scrollTo({top:0, behavior:"instant"}); return renderStats(); }
+
   const statBtn = el.closest("#stat-seg button[data-range]");
-  if(statBtn){
-    state.statRange = Number(statBtn.dataset.range);
-    $$("#stat-seg button").forEach(b=> b.setAttribute("aria-selected", String(b===statBtn)));
-    return renderStats();
-  }
+  if(statBtn){ state.statRange = Number(statBtn.dataset.range); return renderStats(); }
 
   const meal = el.closest("[data-meal]");
   if(meal){ const k = meal.dataset.meal; return mutate(todayStr(), d=> d.meals[k] = !d.meals[k]); }
@@ -2522,7 +2820,7 @@ function setCheer(i){
 function start(hot){
   readCache();
   if(migrateSettings()) writeCache();
-  if(hot && hot.tab){ state.tab = hot.tab; state.rec = hot.rec || state.rec; state.calMode = hot.calMode || state.calMode; state.calCursor = hot.calCursor || state.calCursor; }
+  if(hot && hot.tab){ state.tab = hot.tab; state.rec = hot.rec || state.rec; state.calMode = hot.calMode || state.calMode; state.calCursor = hot.calCursor || state.calCursor; state.statSec = hot.statSec || state.statSec; }
   if(typeof (hot && hot.cheer) === "number") state.cheer = hot.cheer;
   setCheer(state.cheer);
   fillNow();
@@ -2530,7 +2828,7 @@ function start(hot){
   setBadge(false, "불러오는 중");
   initDb();
 }
-window.claude?.hot?.snapshot?.(()=> ({tab:state.tab, rec:state.rec, calMode:state.calMode, calCursor:state.calCursor, cheer:state.cheer}));
+window.claude?.hot?.snapshot?.(()=> ({tab:state.tab, rec:state.rec, calMode:state.calMode, calCursor:state.calCursor, statSec:state.statSec, cheer:state.cheer}));
 if(window.claude?.hot?.ready) window.claude.hot.ready(start);
 else start(window.claude?.hot?.data || {});
 
