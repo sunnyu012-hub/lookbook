@@ -143,13 +143,21 @@ input.big{font-family:"IBM Plex Mono",monospace; font-size:30px; font-weight:600
 
 /* --- 홈 --- */
 .cheer{
-  background:var(--accent-soft); border-radius:var(--r); padding:20px 18px 22px;
-  font-family:"Gowun Batang", serif; font-size:18.5px; line-height:1.65;
-  color:var(--ink); letter-spacing:-.01em; text-wrap:balance; position:relative;
+  background:var(--accent-soft); border-radius:var(--r); padding:18px 18px 16px;
   margin:18px 0 4px;
 }
-.cheer .q{font-family:"Gowun Batang",serif; font-size:32px; color:var(--accent); opacity:.4; line-height:1; display:block; margin-bottom:0}
-.cheer button.reroll{position:absolute; right:14px; bottom:10px; font-size:11px; color:var(--accent); opacity:.8; font-family:"IBM Plex Mono",monospace}
+.cheer .q{font-family:"Gowun Batang",serif; font-size:32px; color:var(--accent); opacity:.4; line-height:1; display:block; margin-bottom:-2px}
+.cheer-t{
+  margin:0; font-family:"Gowun Batang", serif; font-size:18px; line-height:1.7;
+  color:var(--ink); letter-spacing:-.01em; text-wrap:pretty;
+}
+.cheer-foot{display:flex; align-items:baseline; justify-content:space-between; gap:14px; margin-top:13px}
+.cheer-by{
+  font-style:normal; font-size:11.5px; line-height:1.5; color:var(--accent);
+  font-family:"IBM Plex Sans KR",sans-serif; font-weight:600; flex:1; min-width:0;
+}
+.cheer-by::before{content:"— "}
+.cheer button.reroll{font-size:11px; color:var(--accent); opacity:.75; font-family:"IBM Plex Mono",monospace; flex:none; white-space:nowrap}
 
 .plan{display:flex; flex-direction:column; gap:10px}
 .plan .headline{font-size:17px; font-weight:600; letter-spacing:-.01em}
@@ -347,11 +355,14 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
   <main>
     <!-- ============ HOME ============ -->
     <section class="view" id="view-home">
-      <div class="cheer" id="cheer">
+      <figure class="cheer" id="cheer">
         <span class="q">“</span>
-        <span id="cheer-text">오늘도 열었네. 그게 제일 어려운 일이야.</span>
-        <button class="reroll" id="cheer-reroll" type="button">다른 말 ↻</button>
-      </div>
+        <blockquote class="cheer-t" id="cheer-text">음식을 먹어라. 너무 많이는 말고. 대부분 식물로.</blockquote>
+        <figcaption class="cheer-foot">
+          <cite class="cheer-by" id="cheer-by">마이클 폴란 《행복한 밥상》</cite>
+          <button class="reroll" id="cheer-reroll" type="button">다른 말 ↻</button>
+        </figcaption>
+      </figure>
 
       <div class="card" id="plan-card">
         <p class="sec-label">오늘의 계획</p>
@@ -686,37 +697,38 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
 /* ============================================================
    1. 상수
    ============================================================ */
+/* 실제 인용문 30개 — 번역은 우리말로 다듬었고, 출처를 함께 표시한다 */
 const CHEERS = [
-  "오늘도 열었네. 기록이 먼저고, 잘하는 건 그다음이야.",
-  "48kg은 목적지지, 마감일이 아니야.",
-  "덜 먹는 것보다 제때 먹는 게 먼저야.",
-  "어제 많이 먹었어도 오늘 굶지 않기.",
-  "간식은 평가하지 말고 일단 적어두자.",
-  "죄책감은 아무것도 바꾸지 않아. 기록은 바꿔.",
-  "하루 숫자 말고 이번 주 흐름을 보자.",
-  "금지한 음식은 결국 더 크게 돌아와.",
-  "오늘 힘들면 걷기로 바꿔도 성공이야.",
-  "클라이밍은 즐기러 가는 거야. 감량은 덤이고.",
-  "약은 대신 해주지 않아. 옆에서 거들 뿐이야.",
-  "정체는 실패가 아니라 몸이 적응하는 시간이야.",
-  "세 끼 챙긴 날이 제일 안전한 날이야.",
-  "물 한 잔 마시고 천천히 시작하자.",
-  "체중계가 멈춰 있어도 옷은 먼저 알아.",
-  "무리해서 만든 몸은 무리해야 유지돼.",
-  "오늘 못 지켰다고 이번 주가 망한 건 아니야.",
-  "배고픔은 잘못이 아니라 신호야.",
-  "잘 자는 것도 오늘의 할 일이야.",
-  "기록이 쌓이면 흐름이 보이고, 흐름이 보이면 덜 불안해져.",
-  "러닝은 임시 보조야. 못 뛴 날도 괜찮아.",
-  "완벽한 하루보다 이어지는 하루가 힘이 세.",
-  "스트레스로 먹은 날도 있지. 알아차린 것만으로 충분해.",
-  "남이 아니라 지난주의 나랑 비교하자.",
-  "사이즈 걱정 없이 옷 고르는 날, 그게 진짜 목표였지.",
-  "오늘 쉬는 것도 계획의 일부야.",
-  "숫자가 멈춘 주에도 몸은 조용히 바뀌고 있어.",
-  "도시락 싼 날의 나, 꽤 멋있다.",
-  "48kg 다음에도 계속할 수 있는 방식으로 가자.",
-  "지금 이 속도로 충분해."
+  {t:"음식을 먹어라. 너무 많이는 말고. 대부분 식물로.", by:"마이클 폴란 《행복한 밥상》"},
+  {t:"증조할머니가 음식으로 알아보지 못할 것은 먹지 마라.", by:"마이클 폴란 《푸드 룰》"},
+  {t:"살기 위해 먹어야지, 먹기 위해 살아서는 안 된다.", by:"벤저민 프랭클린"},
+  {t:"잘 먹지 못한 사람은 잘 생각할 수도, 잘 사랑할 수도, 잘 잘 수도 없다.", by:"버지니아 울프 《자기만의 방》"},
+  {t:"누구에게나 알맞은 양의 영양과 운동을, 너무 적지도 너무 많지도 않게 줄 수 있다면 그것이 건강에 이르는 가장 안전한 길이다.", by:"히포크라테스 《섭생론》"},
+  {t:"첫 번째 재산은 건강이다.", by:"랠프 월도 에머슨"},
+  {t:"건강은 병이 오기 전까지 그 값을 모른다.", by:"토머스 풀러"},
+  {t:"몸을 돌봐라. 당신이 살아야 할 유일한 곳이다.", by:"짐 론"},
+  {t:"나를 돌보는 일은 방종이 아니라 나를 지키는 일이다.", by:"오드리 로드 《빛의 섬광》"},
+  {t:"성공은 매일의 습관이 만드는 결과지, 일생에 한 번뿐인 대변신이 아니다.", by:"제임스 클리어 《아주 작은 습관의 힘》"},
+  {t:"습관은 자기 계발의 복리 이자다.", by:"제임스 클리어"},
+  {t:"목표는 방향을 정하는 데 좋고, 실제로 나아가게 하는 건 시스템이다.", by:"제임스 클리어"},
+  {t:"우리는 목표의 수준으로 올라가지 않는다. 시스템의 수준으로 떨어진다.", by:"제임스 클리어"},
+  {t:"우리는 반복하는 행동의 결과다. 그러므로 탁월함은 행위가 아니라 습관이다.", by:"윌 듀랜트 (아리스토텔레스를 요약하며)"},
+  {t:"동기는 시작하게 하고, 습관은 계속하게 한다.", by:"짐 라이언"},
+  {t:"나아가는 길은 빠르지도 쉽지도 않다고 나는 배웠다.", by:"마리 퀴리"},
+  {t:"나는 느리게 걷는 사람이다. 그러나 결코 뒤로 걷지는 않는다.", by:"에이브러햄 링컨"},
+  {t:"변화는 느리고 점진적이다. 노력과 약간의 운, 어느 정도의 희생, 그리고 많은 인내가 필요하다.", by:"로버트 그린"},
+  {t:"자신에게 인내심을 가져라. 자기 성장은 연약한 것이고, 거룩한 땅이다.", by:"스티븐 코비"},
+  {t:"천 리 길도 한 걸음에서 시작된다.", by:"노자 《도덕경》"},
+  {t:"일곱 번 넘어지면 여덟 번 일어난다.", by:"일본 속담"},
+  {t:"느려도 꾸준한 쪽이 결국 이긴다.", by:"이솝 우화 〈토끼와 거북이〉"},
+  {t:"조금씩 쌓인 조금이 결국 많은 것이 된다.", by:"탄자니아 속담"},
+  {t:"더 좋은 것이 좋은 것의 적이다.", by:"볼테르"},
+  {t:"무엇보다, 걷고 싶은 마음을 잃지 마라. 나는 매일 걸어서 안녕에 이르고, 모든 병에서 걸어 나온다.", by:"쇠렌 키르케고르, 1847년 편지"},
+  {t:"움직임은 몸과 마음의 상태를 바꾸는 약이다.", by:"캐럴 웰치"},
+  {t:"체력은 건강한 몸의 열쇠일 뿐 아니라, 활기차고 창조적인 정신 활동의 바탕이다.", by:"존 F. 케네디"},
+  {t:"일찍 자고 일찍 일어나는 것이 사람을 건강하고, 넉넉하고, 지혜롭게 만든다.", by:"벤저민 프랭클린"},
+  {t:"잠은 최고의 명상이다.", by:"달라이 라마"},
+  {t:"플러그를 잠깐 뽑았다 다시 꽂으면 거의 모든 것이 다시 작동한다. 당신도 포함해서.", by:"앤 라모트"}
 ];
 
 const DEFAULT_PRINCIPLES = [
@@ -1843,7 +1855,7 @@ function handleClick(e){
   if(el.closest("#cheer-reroll")){
     let n = state.cheer;
     while(n === state.cheer && CHEERS.length > 1) n = Math.floor(Math.random()*CHEERS.length);
-    state.cheer = n; $("#cheer-text").textContent = CHEERS[n]; return;
+    state.cheer = n; setCheer(n); return;
   }
 
   if(el.closest("#habit-edit-toggle")){ state.habitEdit = !state.habitEdit; return renderHabits(); }
@@ -1910,12 +1922,17 @@ function render(){
 /* ============================================================
    16. 시작
    ============================================================ */
+function setCheer(i){
+  const q = CHEERS[i] || CHEERS[0];
+  $("#cheer-text").textContent = q.t;
+  $("#cheer-by").textContent = q.by;
+}
 function start(hot){
   readCache();
   if(migrateSettings()) writeCache();
   if(hot && hot.tab){ state.tab = hot.tab; state.rec = hot.rec || state.rec; state.calMode = hot.calMode || state.calMode; state.calCursor = hot.calCursor || state.calCursor; }
   if(typeof (hot && hot.cheer) === "number") state.cheer = hot.cheer;
-  $("#cheer-text").textContent = CHEERS[state.cheer];
+  setCheer(state.cheer);
   fillNow();
   go(state.tab);
   setBadge(false, "불러오는 중");
