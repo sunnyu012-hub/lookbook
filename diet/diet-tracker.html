@@ -309,6 +309,10 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
 .ckpt .you b{display:block; font-family:"IBM Plex Mono",monospace; font-size:14px; font-weight:600; color:var(--ink)}
 .ckpt .you span{display:block; font-size:9.5px; color:var(--faint); font-family:"IBM Plex Mono",monospace}
 .ckpt .marker{position:absolute; top:-6px; width:14px; height:14px; border-radius:50%; background:var(--pane); border:3px solid var(--accent); transform:translateX(-50%)}
+.rvcard{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:13px 14px}
+.rvline{margin:0 0 8px; font-size:13.5px; line-height:1.55; color:var(--ink2)}
+.rvline:last-child{margin-bottom:0}
+.rvline b{display:block; font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.06em; color:var(--faint); font-weight:600; margin-bottom:2px}
 .remind{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:13px 14px; margin-top:26px; font-size:13.5px; line-height:1.6; color:var(--ink2)}
 .remind b{display:block; font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--accent); margin-bottom:4px; letter-spacing:.06em}
 
@@ -368,6 +372,11 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
       <div class="card" id="plan-card">
         <p class="sec-label">오늘의 계획</p>
         <div class="plan" id="plan-body"></div>
+      </div>
+
+      <div class="card" id="review-card" hidden>
+        <p class="sec-label" id="review-label">주간 돌아보기</p>
+        <div id="review-body"></div>
       </div>
 
       <div class="card">
@@ -840,6 +849,8 @@ const SIDE_EFFECTS = [["nausea","메스꺼움"],["heartburn","속쓰림"],["cons
   ["diarrhea","설사"],["fatigue","피로"],["noappetite","식욕 없음"],["headache","두통"]];
 const SE_LABEL = SIDE_EFFECTS.reduce((o,[k,v])=>{o[k]=v; return o;}, {});
 const PERIODS = {start:"생리 시작", on:"생리 중"};
+const MOODS = [{v:1,e:"😞",l:"힘들었어요"},{v:2,e:"🙁",l:"버거웠어요"},{v:3,e:"😐",l:"그럭저럭"},
+               {v:4,e:"🙂",l:"괜찮았어요"},{v:5,e:"😄",l:"좋았어요"}];
 const DOW = ["일","월","화","수","목","금","토"];
 const CONDS = [{v:1,e:"😞"},{v:2,e:"🙁"},{v:3,e:"😐"},{v:4,e:"🙂"},{v:5,e:"😄"}];
 const REASONS = {hungry:"진짜 배고픔", bored:"입이 심심", stress:"스트레스"};
@@ -888,7 +899,7 @@ const state = {
 
 function emptyDay(date){
   return { date, meals:{b:false,l:false,d:false}, lunchbox:null, eatout:null, caffeine:null,
-           period:null, weights:[], workouts:[], snacks:[], meds:[], fits:[], habits:{} };
+           period:null, review:null, weights:[], workouts:[], snacks:[], meds:[], fits:[], habits:{} };
 }
 /* db가 돌려주는 문서는 얼려져 있어 그대로 고칠 수 없다.
    항상 우리 쪽 사본으로 바꿔 두고, 그 사본만 읽고 쓴다. */
@@ -904,6 +915,7 @@ function normalizeDay(src, date){
     n.eatout   = src.eatout   || null;
     n.caffeine = src.caffeine || null;
     n.period   = src.period   || null;
+    n.review   = src.review ? Object.assign({}, src.review) : null;
   }
   Object.defineProperty(n, "__own", {value:true, enumerable:false, writable:false});
   return n;
@@ -1054,6 +1066,42 @@ function cycleInfo(){
   const last = st[st.length-1];
   return {last, avg, next: avg ? addDays(last, avg) : null, count: st.length};
 }
+/* 한 주의 성적표 — 주간 리포트와 돌아보기가 함께 쓴다 */
+function weekReport(ws){
+  const t = todayStr(), hs = state.settings.habits || [];
+  let kgs=[], prevKgs=[], mealsDone=0, mealsTot=0, hDone=0, hTot=0, climb=0, cardio=0, snacks=0, days=0;
+  for(let i=0;i<7;i++){
+    const ds = addDays(ws,i);
+    if(ds > t) break;
+    const o = day(ds); days++;
+    o.weights.forEach(w=> kgs.push(w.kg));
+    mealsTot += 3; mealsDone += ["b","l","d"].filter(k=> o.meals[k]).length;
+    hTot += hs.length; hDone += hs.filter(h=> o.habits[h.id]).length;
+    o.workouts.forEach(w=>{ if(w.type==="climb") climb++; else if(WTYPE[w.type] && WTYPE[w.type].cardio) cardio++; });
+    snacks += o.snacks.length;
+  }
+  for(let i=0;i<7;i++) day(addDays(ws,-7+i)).weights.forEach(w=> prevKgs.push(w.kg));
+  const avg = kgs.length ? kgs.reduce((a,b)=>a+b,0)/kgs.length : null;
+  const prevAvg = prevKgs.length ? prevKgs.reduce((a,b)=>a+b,0)/prevKgs.length : null;
+  return { ws, days, avg,
+    change: (avg !== null && prevAvg !== null) ? avg - prevAvg : null,
+    mealsPct: mealsTot ? Math.round(mealsDone/mealsTot*100) : 0,
+    habitPct: hTot ? Math.round(hDone/hTot*100) : 0,
+    climb, cardio, snacks };
+}
+function reviewOf(ws){ return day(ws).review; }
+function allReviews(){
+  return Object.keys(state.days).filter(d=> day(d).review).sort().reverse()
+    .map(d=> Object.assign({ws:d}, day(d).review));
+}
+/* 돌아보기를 권할 때: 일요일엔 이번 주, 월요일엔 지난 주 */
+function reviewDue(){
+  const t = todayStr(), dw = parseYmd(t).getDay();
+  if(dw === 0){ const ws = weekStart(t); return reviewOf(ws) ? null : ws; }
+  if(dw === 1){ const ws = addDays(weekStart(t), -7); return reviewOf(ws) ? null : ws; }
+  return null;
+}
+
 /* 3주째 주간 평균이 제자리인지 */
 function plateau(){
   const wa = weeklyAverages(4).filter(w=> w.avg !== null);
@@ -1217,6 +1265,23 @@ function renderHome(){
   }
   $("#weight-body").innerHTML = html;
 
+  /* 주간 돌아보기 권하기 (일요일엔 이번 주, 월요일엔 지난 주) */
+  const due = reviewDue();
+  $("#review-card").hidden = !due;
+  if(due){
+    const wr = weekReport(due);
+    const isThis = due === weekStart(t);
+    $("#review-label").textContent = isThis ? "이번 주 돌아보기" : "지난 주 돌아보기";
+    $("#review-body").innerHTML =
+        '<p class="plan note" style="margin:0 0 12px">'
+      + (isThis ? "한 주가 끝나가요. " : "지난 주는 아직 안 적었어요. ")
+      + '1분이면 돼요 — 잘 지켜진 것 하나와 다음 주에 바꿀 것 하나.</p>'
+      + '<p class="tiny muted mono" style="margin:0 0 12px">'+mdLabel(due)+' – '+mdLabel(addDays(due,6))
+      + (wr.change !== null ? ' · 주 평균 '+(wr.change>0?"+":"")+fmt1(wr.change)+'kg' : '')
+      + ' · 운동 '+(wr.climb+wr.cardio)+'회 · 습관 '+wr.habitPct+'%</p>'
+      + '<button class="btn ghost" type="button" data-review="'+due+'">돌아보기 쓰기</button>';
+  }
+
   /* 다음 주사 */
   const nm = nextMed();
   $("#med-card").hidden = !nm;
@@ -1371,8 +1436,13 @@ function renderCalWeek(){
       + '</span></button>';
   }
   const avg = kgs.length ? fmt1(kgs.reduce((a,b)=>a+b,0)/kgs.length) : "–";
-  $("#cal-body").innerHTML = rows
-    + '<div class="hr"></div><p class="sec-label">이번 주</p>'
+  const wrv = reviewOf(start);
+  const rvBlock = '<div class="hr"></div>'
+    + '<div class="between" style="margin-bottom:10px"><p class="sec-label" style="margin:0">주간 돌아보기</p>'
+    + '<button class="link tiny" type="button" data-review="'+start+'">'+(wrv ? "고치기" : "쓰기")+'</button></div>'
+    + (wrv ? reviewCardHTML(start, wrv) : '<p class="emptyline">이 주는 아직 안 적었어요.</p>');
+  $("#cal-body").innerHTML = rows + rvBlock
+    + '<div class="hr"></div><p class="sec-label">이 주 요약</p>'
     + '<div class="msum">'
     + '<div><div class="v">'+avg+'</div><div class="l">평균 체중</div></div>'
     + '<div><div class="v">'+climb+'</div><div class="l">클라이밍</div></div>'
@@ -1550,6 +1620,30 @@ function renderHabits(){
   }
 }
 
+function weekStatGrid(wr){
+  return '<div class="statgrid">'
+    + '<div class="stat"><div class="v" style="color:'+(wr.change !== null && wr.change < 0 ? "var(--accent)" : "var(--ink)")+'">'
+    +   (wr.change === null ? "–" : (wr.change > 0 ? "+" : "")+fmt1(wr.change)+"kg")+'</div><div class="l">체중 변화 (주 평균)</div></div>'
+    + '<div class="stat"><div class="v">'+wr.mealsPct+'%</div><div class="l">삼시세끼 준수율</div></div>'
+    + '<div class="stat"><div class="v">'+(wr.climb+wr.cardio)+'회</div><div class="l">운동 (클 '+wr.climb+' · 유 '+wr.cardio+')</div></div>'
+    + '<div class="stat"><div class="v">'+wr.habitPct+'%</div><div class="l">습관 준수율</div></div>'
+    + '</div>';
+}
+function reviewCardHTML(ws, rv, compact){
+  const mood = MOODS.find(m=> m.v === rv.mood);
+  let h = '<div class="rvcard">'
+    + '<div class="between" style="margin-bottom:8px">'
+    + '<span class="tiny mono muted">'+mdLabel(ws)+' – '+mdLabel(addDays(ws,6))+'</span>'
+    + (mood ? '<span class="tiny">'+mood.e+' '+esc(mood.l)+'</span>' : "")
+    + '</div>';
+  if(rv.keep)   h += '<p class="rvline"><b>잘 지켜진 것</b>'+esc(rv.keep)+'</p>';
+  if(rv.change) h += '<p class="rvline"><b>다음 주에 바꿀 것</b>'+esc(rv.change)+'</p>';
+  if(rv.note && !compact) h += '<p class="rvline"><b>메모</b>'+esc(rv.note)+'</p>';
+  if(!rv.keep && !rv.change && !rv.note && !mood) h += '<p class="emptyline" style="padding:0">적어둔 말은 없어요.</p>';
+  if(compact) h += '<button class="link tiny" type="button" data-review="'+ws+'" style="margin-top:6px">열기</button>';
+  return h + '</div>';
+}
+
 /* ============================================================
    10. 렌더 — 분석
    ============================================================ */
@@ -1714,33 +1808,26 @@ function renderStats(){
   }
 
   /* 이번주 리포트 */
-  const wkStart = weekStart(t), wk = weekCounts(t);
-  let wkKgs = [], wkFull = 0, wkTracked = 0, wkHabitDone = 0, wkHabitTotal = 0, wkDaysPassed = 0;
-  const hs = state.settings.habits || [];
-  for(let i=0;i<7;i++){
-    const ds = addDays(wkStart,i); if(ds > t) break;
-    wkDaysPassed++;
-    const o = day(ds);
-    o.weights.forEach(w=> wkKgs.push(w.kg));
-    const mn = ["b","l","d"].filter(k=>o.meals[k]).length;
-    wkTracked += 3; wkFull += mn;
-    wkHabitTotal += hs.length;
-    wkHabitDone += hs.filter(h=>o.habits[h.id]).length;
-  }
-  const prevWkKgs = [];
-  for(let i=0;i<7;i++) day(addDays(wkStart,-7+i)).weights.forEach(w=> prevWkKgs.push(w.kg));
-  const avgThis = wkKgs.length ? wkKgs.reduce((a,b)=>a+b,0)/wkKgs.length : null;
-  const avgPrev = prevWkKgs.length ? prevWkKgs.reduce((a,b)=>a+b,0)/prevWkKgs.length : null;
-  const wkChange = (avgThis!==null && avgPrev!==null) ? avgThis - avgPrev : null;
+  const wkStart = weekStart(t), wr = weekReport(wkStart);
   out += '<div class="card"><div class="between" style="margin-bottom:12px">'
     + '<p class="sec-label" style="margin:0">이번주 리포트</p>'
     + '<span class="tiny muted mono">'+mdLabel(wkStart)+' – '+mdLabel(addDays(wkStart,6))+'</span></div>'
-    + '<div class="statgrid">'
-    + '<div class="stat"><div class="v" style="color:'+(wkChange!==null&&wkChange<0?"var(--accent)":"var(--ink)")+'">'+(wkChange===null?"–":(wkChange>0?"+":"")+fmt1(wkChange)+"kg")+'</div><div class="l">체중 변화 (주 평균)</div></div>'
-    + '<div class="stat"><div class="v">'+(wkTracked?Math.round(wkFull/wkTracked*100):0)+'%</div><div class="l">삼시세끼 준수율</div></div>'
-    + '<div class="stat"><div class="v">'+(wk.climb+wk.cardio)+'회</div><div class="l">운동 (클 '+wk.climb+' · 유 '+wk.cardio+')</div></div>'
-    + '<div class="stat"><div class="v">'+(wkHabitTotal?Math.round(wkHabitDone/wkHabitTotal*100):0)+'%</div><div class="l">습관 준수율</div></div>'
-    + '</div></div>';
+    + weekStatGrid(wr) + '</div>';
+
+  /* 주간 돌아보기 */
+  const myRv = reviewOf(wkStart);
+  out += '<div class="card"><div class="between" style="margin-bottom:12px">'
+    + '<p class="sec-label" style="margin:0">주간 돌아보기</p>'
+    + '<button class="link tiny" type="button" data-review="'+wkStart+'">'+(myRv?"고치기":"쓰기")+'</button></div>'
+    + (myRv ? reviewCardHTML(wkStart, myRv)
+            : '<p class="emptyline">한 주에 한 번, 1분이면 돼요. 잘 지켜진 것 하나와 다음 주에 바꿀 것 하나만 적어두면 흐름이 이어집니다.</p>'
+              + '<button class="btn ghost" type="button" data-review="'+wkStart+'" style="margin-top:6px">이번 주 돌아보기 쓰기</button>');
+  const past = allReviews().filter(r=> r.ws !== wkStart).slice(0,3);
+  if(past.length){
+    out += '<div class="hr"></div><p class="sec-label">지난 돌아보기</p>'
+      + past.map(r=> reviewCardHTML(r.ws, r, true)).join('<div style="height:10px"></div>');
+  }
+  out += '</div>';
 
   /* 운동 */
   let climb=0, cardio=0, byType={climb:0,run:0,walk:0,stretch:0}, mins=0;
@@ -1975,6 +2062,38 @@ function goalSheet(){
     + '<button class="btn ghost" type="button" data-sheet-close style="margin-top:8px">취소</button>');
   setTimeout(()=> $("#goal-input") && $("#goal-input").focus(), 60);
 }
+function reviewSheet(ws){
+  const wr = weekReport(ws), rv = reviewOf(ws) || {};
+  const isThis = ws === weekStart(todayStr());
+  openSheet('<h2 id="sheet-title">주간 돌아보기</h2>'
+    + '<p class="sh-sub">'+mdLabel(ws)+' – '+mdLabel(addDays(ws,6))+(isThis ? " · 이번 주" : "")+'</p>'
+    + '<div class="sheet-sec"><p class="sec-label">이 주의 기록</p>'+weekStatGrid(wr)
+    +   '<p class="tiny muted" style="margin:10px 0 0">간식 '+wr.snacks+'회 · 기록한 날 '+wr.days+'일'
+    +   (wr.avg !== null ? ' · 주 평균 '+fmt1(wr.avg)+'kg' : '')+'</p></div>'
+    + '<div class="sheet-sec"><p class="sec-label">이번 주는 어땠나요</p>'
+    +   '<div class="faces" id="rv-mood" data-value="'+(rv.mood||"")+'">'
+    +   MOODS.map(m=>'<button type="button" data-rvmood="'+m.v+'" aria-pressed="'+(rv.mood===m.v?"true":"false")+'" aria-label="'+esc(m.l)+'">'+m.e+'</button>').join("")
+    +   '</div></div>'
+    + '<div class="sheet-sec"><div class="form">'
+    +   '<label class="fld"><span>잘 지켜진 것 하나</span><input type="text" id="rv-keep" value="'+esc(rv.keep||"")+'" placeholder="예: 바쁜 주였는데 삼시세끼는 지켰다"></label>'
+    +   '<label class="fld"><span>다음 주에 하나만 바꾼다면</span><input type="text" id="rv-change" value="'+esc(rv.change||"")+'" placeholder="예: 야식 대신 물 한 잔"></label>'
+    +   '<label class="fld"><span>남기고 싶은 말 (선택)</span><textarea id="rv-note" placeholder="몸 상태, 옷 핏, 마음에 걸리는 것">'+esc(rv.note||"")+'</textarea></label>'
+    + '</div></div>'
+    + '<button class="btn" type="button" data-rvsave="'+ws+'" style="margin-top:16px">저장</button>'
+    + '<button class="btn ghost" type="button" data-sheet-close style="margin-top:8px">닫기</button>'
+    + '<p class="tiny muted" style="text-align:center; margin:12px 0 0">숫자를 평가하려는 게 아니라, 다음 주를 한 줄로 정하려는 거예요.</p>');
+}
+function saveReview(ws){
+  const moodEl = $("#rv-mood");
+  const mood = moodEl && moodEl.dataset.value ? Number(moodEl.dataset.value) : null;
+  const keep = ($("#rv-keep").value || "").trim();
+  const change = ($("#rv-change").value || "").trim();
+  const note = ($("#rv-note").value || "").trim();
+  mutate(ws, d=>{ d.review = {at:new Date().toISOString(), mood, keep, change, note}; });
+  closeSheet();
+  toast("이번 주 돌아보기를 남겼어요");
+}
+
 function daySheet(ds){
   openSheet('<h2 id="sheet-title">'+esc(fullLabel(ds))+'</h2><p class="sh-sub">'+esc(ds)+'</p>'
     + dayDetailHTML(ds)
@@ -2161,6 +2280,21 @@ document.addEventListener("click", e=>{
 });
 function handleClick(e){
   const el = e.target;
+
+  const rvBtn = el.closest("[data-review]");
+  if(rvBtn) return reviewSheet(rvBtn.dataset.review);
+
+  const rvSave = el.closest("[data-rvsave]");
+  if(rvSave) return saveReview(rvSave.dataset.rvsave);
+
+  const rvMood = el.closest("[data-rvmood]");
+  if(rvMood){
+    const box = $("#rv-mood");
+    const next = box.dataset.value === rvMood.dataset.rvmood ? "" : rvMood.dataset.rvmood;
+    box.dataset.value = next;
+    $$('button[data-rvmood]', box).forEach(x=> x.setAttribute("aria-pressed", String(x.dataset.rvmood === next)));
+    return;
+  }
 
   const expBtn = el.closest("[data-export]");
   if(expBtn){ exportFile(expBtn.dataset.export); return; }
