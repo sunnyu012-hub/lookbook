@@ -503,7 +503,7 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
             <button class="qw-more" id="qw-more" type="button">자세히 기록 ›</button>
           </div>
           <div class="qw-row">
-            <input type="number" id="qw-kg" step="0.1" min="20" max="300" inputmode="decimal" placeholder="0.0" aria-label="오늘 체중 (kg)">
+            <input type="number" id="qw-kg" step="0.01" min="20" max="300" inputmode="decimal" placeholder="0.00" aria-label="오늘 체중 (kg)">
             <span class="qw-unit">kg</span>
             <button class="qw-btn" id="qw-save" type="button">기록</button>
           </div>
@@ -579,7 +579,7 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
               <label class="fld"><span>시간</span><input type="time" id="w-time" required></label>
             </div>
             <label class="fld"><span>체중 (kg)</span>
-              <input class="big mono" type="number" step="0.1" min="20" max="300" id="w-kg" inputmode="decimal" placeholder="0.0" required>
+              <input class="big mono" type="number" step="0.01" min="20" max="300" id="w-kg" inputmode="decimal" placeholder="0.00" required>
             </label>
             <div class="expander" data-exp>
               <button type="button"><span>더 자세히 기록하기</span><span class="caret">▾</span></button>
@@ -1044,6 +1044,8 @@ const parseYmd = s => { const [y,m,d]=s.split("-").map(Number); return new Date(
 const todayStr = () => ymd(new Date());
 const addDays = (s,n)=>{ const d=parseYmd(s); d.setDate(d.getDate()+n); return ymd(d); };
 const fmt1 = n => (Math.round(n*10)/10).toFixed(1);
+/* 실제로 잰 값은 반올림하지 않는다 — 소수점 둘째 자리까지, 뒤의 0은 떼고 */
+const fmtKg = n => String(Math.round(n*100)/100);
 const uid = () => Math.random().toString(36).slice(2,9);
 function mdLabel(s){ const d=parseYmd(s); return (d.getMonth()+1)+"/"+d.getDate(); }
 function fullLabel(s){ const d=parseYmd(s); return (d.getMonth()+1)+"월 "+d.getDate()+"일 ("+DOW[d.getDay()]+")"; }
@@ -1408,10 +1410,10 @@ function renderHome(){
   } else {
     const diff = prev ? last.kg - prev.kg : 0;
     const cls = !prev ? "same" : (diff < -0.05 ? "down" : diff > 0.05 ? "up" : "same");
-    const arrow = !prev ? "첫 기록" : (diff < -0.05 ? "▼ " : diff > 0.05 ? "▲ " : "— ") + (prev ? fmt1(Math.abs(diff)) + "kg" : "");
+    const arrow = !prev ? "첫 기록" : (diff < -0.05 ? "▼ " : diff > 0.05 ? "▲ " : "— ") + (prev ? fmtKg(Math.abs(diff)) + "kg" : "");
     const sparkVals = ws.slice(-14).map(w=>w.kg);
     html = '<div class="weight-hero"><div>'
-      + '<div class="kg">'+fmt1(last.kg)+'<small>kg</small></div>'
+      + '<div class="kg">'+fmtKg(last.kg)+'<small>kg</small></div>'
       + '<div class="tiny muted" style="margin-top:5px">'+mdLabel(last.date)+' '+esc(last.t||"")+' · <span class="delta '+cls+'">'+esc(arrow)+'</span></div>'
       + '</div>'+sparkline(sparkVals)+'</div>';
     if(typeof goal === "number"){
@@ -1420,17 +1422,17 @@ function renderHome(){
       const done = Math.max(0, Math.min(total, start - last.kg));
       const remain = last.kg - goal;
       html += '<div class="goalbar"><div class="between tiny" style="margin-bottom:6px">'
-        + '<span class="muted">목표 '+fmt1(goal)+'kg 까지</span>'
-        + '<span class="mono" style="font-weight:600;color:'+(remain>0?"var(--accent)":"var(--mint)")+'">'+(remain>0?fmt1(remain)+"kg 남음":"달성 🎉")+'</span></div>'
+        + '<span class="muted">목표 '+fmtKg(goal)+'kg 까지</span>'
+        + '<span class="mono" style="font-weight:600;color:'+(remain>0?"var(--accent)":"var(--mint)")+'">'+(remain>0?fmtKg(remain)+"kg 남음":"달성 🎉")+'</span></div>'
         + '<div class="track"><div class="fill" style="width:'+(total>0?Math.round(done/total*100):100)+'%"></div></div>'
-        + '<div class="tiny muted mono" style="margin-top:6px">시작 '+fmt1(start)+'kg · 지금까지 '+fmt1(Math.max(0,start-last.kg))+'kg 감량</div></div>';
+        + '<div class="tiny muted mono" style="margin-top:6px">시작 '+fmtKg(start)+'kg · 지금까지 '+fmtKg(Math.max(0,start-last.kg))+'kg 감량</div></div>';
     } else {
       html += '<button class="btn ghost" type="button" id="set-goal" style="margin-top:14px">목표 체중 설정하기</button>';
     }
   }
   const todayW = d.weights.length ? d.weights[d.weights.length-1] : null;
-  $("#qw-label").textContent = todayW ? "오늘 "+fmt1(todayW.kg)+"kg 기록함 · 한 번 더" : "오늘 체중";
-  $("#qw-kg").placeholder = last ? fmt1(last.kg) : "0.0";
+  $("#qw-label").textContent = todayW ? "오늘 "+fmtKg(todayW.kg)+"kg 기록함 · 한 번 더" : "오늘 체중";
+  $("#qw-kg").placeholder = last ? fmtKg(last.kg) : "0.00";
   $("#quick-weight").classList.toggle("done", !!todayW);
 
   const lastFit = collect("fits", 1)[0];
@@ -1529,7 +1531,7 @@ function dayDetailHTML(ds){
         if(w.sleep) bits.push("수면 "+w.sleep+"h");
         if(w.swell) bits.push(w.swell==="yes"?"붓기 있음":"붓기 없음");
         if(w.memo) bits.push(w.memo);
-        return '<div class="entry"><span class="when">'+esc(w.t||"")+'</span><span class="main"><span class="t">'+fmt1(w.kg)+'kg</span>'+(bits.filter(Boolean).length?'<span class="s">'+esc(bits.filter(Boolean).join(" · "))+'</span>':"")+'</span></div>';
+        return '<div class="entry"><span class="when">'+esc(w.t||"")+'</span><span class="main"><span class="t">'+fmtKg(w.kg)+'kg</span>'+(bits.filter(Boolean).length?'<span class="s">'+esc(bits.filter(Boolean).join(" · "))+'</span>':"")+'</span></div>';
       }).join("")
     : '<p class="emptyline">기록 없음</p>');
 
@@ -1616,7 +1618,7 @@ function renderCalWeek(){
       +   (future
           ? '<span class="tiny" style="color:var(--faint)">아직 오지 않은 날</span>'
           : '<span class="row" style="gap:8px">'
-            + (w!==null ? '<span class="kg">'+fmt1(w)+'kg</span>' : '<span class="tiny" style="color:var(--faint)">체중 –</span>')
+            + (w!==null ? '<span class="kg">'+fmtKg(w)+'kg</span>' : '<span class="tiny" style="color:var(--faint)">체중 –</span>')
             + '<span class="mini3">'+["b","l","d"].map(k=>'<i class="'+(o.meals[k]?"on":"")+'"></i>').join("")+'</span>'
             + (o.snacks.length ? '<span class="tag">간식 '+o.snacks.length+'</span>' : "")
             + (hs.length ? '<span class="tiny muted mono" style="margin-left:auto">습관 '+hn+'/'+hs.length+'</span>' : "")
@@ -1704,7 +1706,7 @@ function renderRecLists(){
     if(w.sleep) bits.push("수면 "+w.sleep+"h");
     if(w.swell) bits.push(w.swell==="yes" ? "붓기 있음" : "붓기 없음");
     if(w.memo) bits.push(w.memo);
-    return entryRow(mdLabel(w.date)+" "+(w.t||""), fmt1(w.kg)+"kg", bits.join(" · "), "weights:"+w.date+":"+w.id);
+    return entryRow(mdLabel(w.date)+" "+(w.t||""), fmtKg(w.kg)+"kg", bits.join(" · "), "weights:"+w.date+":"+w.id);
   }).join("") : '<p class="emptyline">아직 기록이 없어요.</p>';
 
   const sl = collect("snacks", 10);
@@ -1874,7 +1876,7 @@ function checkpointBar(cur){
   const marker = cur == null ? "" :
       '<span class="fill" style="width:'+p+'%"></span>'
     + '<span class="marker" style="left:'+p+'%"></span>'
-    + '<span class="you" style="left:'+p+'%"><b>'+fmt1(cur)+'</b><span>지금</span></span>';
+    + '<span class="you" style="left:'+p+'%"><b>'+fmtKg(cur)+'</b><span>지금</span></span>';
   const target = CHECKPOINTS[idx];
   return '<div class="ckpt"><div class="track">'+marker+nodes+'</div></div>'
     + '<div class="remind"><b>다음 체크포인트 '+target.kg+'kg</b>'+esc(target.note)+'</div>';
@@ -2103,14 +2105,14 @@ function secWeight(c){
     const days = Math.max(1, (parseYmd(c.series[c.series.length-1].d) - parseYmd(c.series[0].d))/86400000);
     const perWeek = ch / days * 7;
     out += '<div class="statgrid" style="margin-top:16px">'
-      + '<div class="stat"><div class="v" style="color:'+(ch<0?"var(--mint)":"var(--clay)")+'">'+(ch>0?"+":"")+fmt1(ch)+'kg</div><div class="l">기간 변화</div></div>'
+      + '<div class="stat"><div class="v" style="color:'+(ch<0?"var(--mint)":"var(--clay)")+'">'+(ch>0?"+":"")+fmtKg(ch)+'kg</div><div class="l">기간 변화</div></div>'
       + '<div class="stat"><div class="v">'+(perWeek>0?"+":"")+fmt1(perWeek)+'kg</div><div class="l">주당 평균</div></div>'
-      + '<div class="stat"><div class="v">'+fmt1(Math.min.apply(null,c.series.map(s=>s.v)))+'kg</div><div class="l">기간 최저</div></div>'
+      + '<div class="stat"><div class="v">'+fmtKg(Math.min.apply(null,c.series.map(s=>s.v)))+'kg</div><div class="l">기간 최저</div></div>'
       + '<div class="stat"><div class="v">'+c.series.length+'회</div><div class="l">측정 횟수</div></div>'
       + '</div>';
     if(typeof c.goal === "number" && last > c.goal && perWeek < -0.05){
       const weeks = Math.ceil((last-c.goal)/Math.abs(perWeek));
-      out += '<p class="tiny muted" style="margin:12px 0 0">이 속도라면 목표 '+fmt1(c.goal)+'kg까지 약 '+weeks+'주. 숫자보다 흐름이 중요해요.</p>';
+      out += '<p class="tiny muted" style="margin:12px 0 0">이 속도라면 목표 '+fmtKg(c.goal)+'kg까지 약 '+weeks+'주. 숫자보다 흐름이 중요해요.</p>';
     }
   }
   out += '</div>';
@@ -2126,8 +2128,8 @@ function secWeight(c){
     out += '<div class="statgrid">'
       + '<div class="stat"><div class="v">±'+fmt1(absAvg)+'kg</div><div class="l">평균 하루 변동</div></div>'
       + '<div class="stat"><div class="v">'+Math.round(down.length/diffs.length*100)+'%</div><div class="l">내려간 날</div></div>'
-      + '<div class="stat"><div class="v" style="color:var(--clay)">+'+fmt1(maxUp)+'kg</div><div class="l">가장 많이 오른 날</div></div>'
-      + '<div class="stat"><div class="v" style="color:var(--mint)">'+fmt1(maxDown)+'kg</div><div class="l">가장 많이 내린 날</div></div>'
+      + '<div class="stat"><div class="v" style="color:var(--clay)">+'+fmtKg(maxUp)+'kg</div><div class="l">가장 많이 오른 날</div></div>'
+      + '<div class="stat"><div class="v" style="color:var(--mint)">'+fmtKg(maxDown)+'kg</div><div class="l">가장 많이 내린 날</div></div>'
       + '</div>'
       + '<p class="tiny muted" style="margin:12px 0 0">하루 ±'+fmt1(absAvg)+'kg은 물·소금·컨디션으로도 충분히 생기는 폭이에요. '
       + '오른 날이 '+Math.round(up.length/diffs.length*100)+'%인데도 흐름은 내려가고 있다면, 그게 정상입니다.</p>';
@@ -2594,7 +2596,7 @@ function goalSheet(){
   openSheet('<h2 id="sheet-title">목표 체중</h2>'
     + '<p class="sh-sub">홈 화면에 남은 거리가 표시돼요</p>'
     + '<div class="card"><label class="fld"><span>목표 체중 (kg)</span>'
-    + '<input class="big mono" type="number" step="0.1" min="20" max="300" id="goal-input" inputmode="decimal" value="'+(cur!=null?cur:"")+'" placeholder="0.0"></label></div>'
+    + '<input class="big mono" type="number" step="0.01" min="20" max="300" id="goal-input" inputmode="decimal" value="'+(cur!=null?cur:"")+'" placeholder="0.00"></label></div>'
     + '<button class="btn" type="button" id="goal-save" style="margin-top:14px">저장</button>'
     + '<button class="btn ghost" type="button" data-sheet-close style="margin-top:8px">취소</button>');
   setTimeout(()=> $("#goal-input") && $("#goal-input").focus(), 60);
@@ -2728,17 +2730,17 @@ $$('input[type=date], input[type=time]').forEach(i=> i.addEventListener("change"
 function saveQuickWeight(){
   const kg = parseFloat($("#qw-kg").value);
   if(!(kg > 0)){ $("#qw-kg").focus(); return toast("체중을 입력해 주세요"); }
-  const rec = { id:uid(), t:hm(new Date()), kg:Math.round(kg*10)/10 };
+  const rec = { id:uid(), t:hm(new Date()), kg:Math.round(kg*100)/100 };
   mutate(todayStr(), d=>{ d.weights.push(rec); d.weights.sort((a,b)=> (a.t||"")<(b.t||"")?-1:1); });
   $("#qw-kg").value = "";
   $("#qw-kg").blur();
-  toast(fmt1(rec.kg)+"kg 기록했어요");
+  toast(fmtKg(rec.kg)+"kg 기록했어요");
 }
 function saveWeight(){
   const kg = parseFloat($("#w-kg").value);
   if(!(kg > 0)) return toast("체중을 입력해 주세요");
   const ds = $("#w-date").value || todayStr();
-  const rec = { id:uid(), t:$("#w-time").value || hm(new Date()), kg:Math.round(kg*10)/10 };
+  const rec = { id:uid(), t:$("#w-time").value || hm(new Date()), kg:Math.round(kg*100)/100 };
   const c = $("#w-cond").dataset.value; if(c) rec.cond = Number(c);
   const sl = parseFloat($("#w-sleep").value); if(sl > 0) rec.sleep = sl;
   const sw = chipVal($("#w-swell")); if(sw) rec.swell = sw;
@@ -2748,7 +2750,7 @@ function saveWeight(){
   setChip($("#w-swell"), null);
   $("#w-cond").dataset.value=""; $$('button[data-v]', $("#w-cond")).forEach(x=>x.setAttribute("aria-pressed","false"));
   resetDT("#w-date","#w-time");
-  toast(fmt1(rec.kg)+"kg 기록했어요");
+  toast(fmtKg(rec.kg)+"kg 기록했어요");
 }
 
 function saveSnack(){
@@ -2922,9 +2924,9 @@ function handleClick(e){
 
   if(el.closest("#goal-save")){
     const v = parseFloat($("#goal-input").value);
-    state.settings.goalWeight = (v > 0) ? Math.round(v*10)/10 : null;
+    state.settings.goalWeight = (v > 0) ? Math.round(v*100)/100 : null;
     persistSettings(); closeSheet(); render();
-    return toast(state.settings.goalWeight ? "목표를 "+fmt1(state.settings.goalWeight)+"kg으로 정했어요" : "목표를 지웠어요");
+    return toast(state.settings.goalWeight ? "목표를 "+fmtKg(state.settings.goalWeight)+"kg으로 정했어요" : "목표를 지웠어요");
   }
 
   if(el.closest("#cheer-reroll")){
