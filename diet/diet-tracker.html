@@ -425,7 +425,7 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
       <!-- 체중 -->
       <div class="rec-panel" id="rec-weight">
         <div class="card">
-          <form class="form" id="form-weight">
+          <div class="form" id="form-weight">
             <div class="dt">
               <label class="fld"><span>날짜</span><input type="date" id="w-date" required></label>
               <label class="fld"><span>시간</span><input type="time" id="w-time" required></label>
@@ -451,8 +451,8 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
                 <label class="fld"><span>메모</span><textarea id="w-memo" placeholder="어제 짜게 먹음, 생리 전 등"></textarea></label>
               </div>
             </div>
-            <button class="btn" type="submit">체중 기록하기</button>
-          </form>
+            <button class="btn" type="button" data-save="weight">체중 기록하기</button>
+          </div>
         </div>
         <div class="card">
           <p class="sec-label">최근 체중</p>
@@ -497,7 +497,7 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
 
         <div class="card">
           <p class="sec-label">간식 기록</p>
-          <form class="form" id="form-snack">
+          <div class="form" id="form-snack">
             <div class="dt">
               <label class="fld"><span>날짜</span><input type="date" id="s-date" required></label>
               <label class="fld"><span>시간</span><input type="time" id="s-time" required></label>
@@ -521,8 +521,8 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
                 </div>
               </div>
             </div>
-            <button class="btn" type="submit">간식 기록하기</button>
-          </form>
+            <button class="btn" type="button" data-save="snack">간식 기록하기</button>
+          </div>
         </div>
         <div class="card">
           <p class="sec-label">최근 간식</p>
@@ -533,7 +533,7 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
       <!-- 운동 -->
       <div class="rec-panel" id="rec-workout" hidden>
         <div class="card">
-          <form class="form" id="form-workout">
+          <div class="form" id="form-workout">
             <div class="dt">
               <label class="fld"><span>날짜</span><input type="date" id="e-date" required></label>
               <label class="fld"><span>시간</span><input type="time" id="e-time" required></label>
@@ -560,8 +560,8 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
                 <label class="fld"><span>메모</span><textarea id="e-memo" placeholder="빨강 5개 완등, 무릎 약간 뻐근"></textarea></label>
               </div>
             </div>
-            <button class="btn" type="submit">운동 기록하기</button>
-          </form>
+            <button class="btn" type="button" data-save="workout">운동 기록하기</button>
+          </div>
         </div>
         <div class="card">
           <p class="sec-label">최근 운동</p>
@@ -576,7 +576,7 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
           전환 시점과 시작 용량은 처방 의료진과 상의하세요. 이 기록은 참고용이며 복약 지시를 대신하지 않아요.
         </div>
         <div class="card">
-          <form class="form" id="form-med">
+          <div class="form" id="form-med">
             <div class="dt">
               <label class="fld"><span>날짜</span><input type="date" id="d-date" required></label>
               <label class="fld"><span>시간</span><input type="time" id="d-time" required></label>
@@ -599,8 +599,8 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
                 <label class="fld"><span>메모</span><textarea id="d-memo" placeholder="주사 부위, 속쓰림·메스꺼움 등 몸의 반응"></textarea></label>
               </div>
             </div>
-            <button class="btn" type="submit">약 기록하기</button>
-          </form>
+            <button class="btn" type="button" data-save="med">약 기록하기</button>
+          </div>
         </div>
         <div class="card">
           <p class="sec-label">최근 투여</p>
@@ -1672,8 +1672,7 @@ function fillNow(){
 }
 $$('input[type=date], input[type=time]').forEach(i=> i.addEventListener("change", ()=> i.dataset.touched = "1"));
 
-$("#form-weight").addEventListener("submit", e=>{
-  e.preventDefault();
+function saveWeight(){
   const kg = parseFloat($("#w-kg").value);
   if(!(kg > 0)) return toast("체중을 입력해 주세요");
   const ds = $("#w-date").value || todayStr();
@@ -1688,10 +1687,9 @@ $("#form-weight").addEventListener("submit", e=>{
   $("#w-cond").dataset.value=""; $$('button[data-v]', $("#w-cond")).forEach(x=>x.setAttribute("aria-pressed","false"));
   resetDT("#w-date","#w-time");
   toast(fmt1(rec.kg)+"kg 기록했어요");
-});
+}
 
-$("#form-snack").addEventListener("submit", e=>{
-  e.preventDefault();
+function saveSnack(){
   const name = $("#s-name").value.trim();
   if(!name) return toast("무엇을 먹었는지 적어 주세요");
   const ds = $("#s-date").value || todayStr();
@@ -1704,10 +1702,9 @@ $("#form-snack").addEventListener("submit", e=>{
   $("#s-sat").value = 3; $("#s-sat-v").textContent = "3";
   resetDT("#s-date","#s-time");
   toast("간식 기록 완료. 이제 넘어가자");
-});
+}
 
-$("#form-workout").addEventListener("submit", e=>{
-  e.preventDefault();
+function saveWorkout(){
   const type = chipVal($("#e-type"));
   if(!type) return toast("운동 종류를 골라 주세요");
   const ds = $("#e-date").value || todayStr();
@@ -1720,10 +1717,9 @@ $("#form-workout").addEventListener("submit", e=>{
   $("#e-min").value=""; $("#e-memo").value=""; setChip($("#e-type"), null);
   resetDT("#e-date","#e-time");
   toast(WTYPE[type].label+" 기록했어요. 잘했어!");
-});
+}
 
-$("#form-med").addEventListener("submit", e=>{
-  e.preventDefault();
+function saveMed(){
   const drug = chipVal($("#d-drug"));
   if(!drug) return toast("약을 골라 주세요");
   const ds = $("#d-date").value || todayStr();
@@ -1734,13 +1730,29 @@ $("#form-med").addEventListener("submit", e=>{
   $("#d-dose").value=""; $("#d-memo").value=""; setChip($("#d-drug"), null);
   resetDT("#d-date","#d-time");
   toast((DRUGS[drug]||drug)+" 기록했어요");
-});
+}
+
+/* 폼 제출이 아니라 버튼이므로, 입력칸에서 엔터로도 저장되게 한다 */
+[["#w-kg", saveWeight], ["#s-name", saveSnack], ["#e-min", saveWorkout], ["#d-dose", saveMed]]
+  .forEach(([sel, fn])=>{
+    const el = $(sel);
+    if(el) el.addEventListener("keydown", ev=>{ if(ev.key === "Enter"){ ev.preventDefault(); fn(); } });
+  });
 
 /* ============================================================
    14. 전역 클릭 처리
    ============================================================ */
 document.addEventListener("click", e=>{
   const el = e.target;
+
+  const saveBtn = el.closest("[data-save]");
+  if(saveBtn){
+    const k = saveBtn.dataset.save;
+    if(k === "weight")  return saveWeight();
+    if(k === "snack")   return saveSnack();
+    if(k === "workout") return saveWorkout();
+    if(k === "med")     return saveMed();
+  }
 
   const tabBtn = el.closest("#tabbar button[data-tab]");
   if(tabBtn) return go(tabBtn.dataset.tab);
