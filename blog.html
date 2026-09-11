@@ -244,6 +244,7 @@
   .src{font-size:10.5px;margin-left:6px;padding:1px 6px;border-radius:999px;background:var(--sunk);color:var(--muted)}
   .src.hand{background:var(--accent-soft);color:var(--accent);font-weight:700}
   .spark{display:block}
+  .trend .vol{font:600 11.5px "IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;color:var(--ink-2);background:var(--sunk);border:1px solid var(--line-soft);border-radius:999px;padding:0 7px;margin-left:4px}
   .trbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
   .trbar label{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);font-weight:500}
   .trbar input[type=date]{width:auto}
@@ -387,6 +388,7 @@
     <div class="trbar">
       <label>기록 날짜 <input type="date" id="trendDate"></label>
       <span class="count" id="trendCount"></span>
+      <button class="ghost" id="volTrend" type="button">검색량 갱신</button>
       <span class="state" id="trendMsg"></span>
     </div>
     <div class="card">
@@ -398,7 +400,7 @@
       </div>
     </div>
     <p class="foot">매일 네이버에서 직접 확인한 순위를 적습니다. 숫자를 넣고 <b>Enter</b>를 누르면 다음 칸으로 넘어갑니다. <b>0</b>은 100위 밖, 칸을 비우면 그 날 기록이 지워집니다. 기록 날짜를 바꾸면 빠뜨린 날도 채울 수 있습니다.<br>
-    <b>발행</b> 상태 글의 메인키워드는 자동으로 올라오고, 그 밖의 키워드는 위 칸에서 채널을 골라 추가합니다. <b>직전 대비</b>는 바로 앞 기록과, <b>시작 대비</b>는 첫 기록과 비교한 변동 폭입니다. 추이 그래프는 위로 갈수록 상위이며 날짜 간격대로 그려집니다.</p>
+    <b>발행</b> 상태 글의 메인키워드는 자동으로 올라오고, 그 밖의 키워드는 위 칸에서 채널을 골라 추가합니다. 줄은 <b>발행일 최신순</b>이고, 직접 추가한 키워드는 그 아래에 추가한 날짜 순으로 놓입니다. 키워드 옆 <b>월 검색량</b>은 <b>검색량 갱신</b>으로 불러오며(PC+모바일 합계, 마우스를 올리면 나눠서 보입니다), 키워드 탭에서 조회해둔 값이 있으면 그대로 씁니다. <b>직전 대비</b>는 바로 앞 기록과, <b>시작 대비</b>는 첫 기록과 비교한 변동 폭입니다. 추이 그래프는 위로 갈수록 상위이며 날짜 간격대로 그려집니다.</p>
   </section>
 
   <!-- ══ 키워드 보드 (아이디어) ══ -->
@@ -424,7 +426,7 @@ const $$=s=>[...document.querySelectorAll(s)];
 // 저장소 접두어가 다르므로 데이터도 동기화 슬롯도 완전히 분리된다.
 const WS=/^(personal|yuring)$/i.test(new URLSearchParams(location.search).get('ws')||'')?'personal':'work';
 const P=WS==='personal'?'bcy.':'bc.';
-const SYNCED=['posts','ideas','presets','blogs','ranks','tracked'].map(k=>P+k);
+const SYNCED=['posts','ideas','presets','blogs','ranks','tracked','vols'].map(k=>P+k);
 let applyingRemote=false;   // 서버 내용을 받아 넣는 동안에는 되쏘지 않는다
 const DB={
   get(k,d){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}},
@@ -460,7 +462,8 @@ let blogs=DB.get(P+'blogs',{});
 let posts=DB.get(P+'posts',[]);
 let ideas=DB.get(P+'ideas',[]);
 let ranks=DB.get(P+'ranks',{});   // 키워드별 순위 이력 (직접 기록)
-let tracked=DB.get(P+'tracked',[]); // 추세에 직접 추가한 키워드 [{ch,kw}]
+let tracked=DB.get(P+'tracked',[]); // 추세에 직접 추가한 키워드 [{ch,kw,at}]
+let vols=DB.get(P+'vols',{});       // 추세 키워드 월간 검색량 {kw:{pc,mobile,total,d}}
 let editingId=null, activeCh=null, selDate=null;
 let cur=new Date(); cur.setDate(1);
 
@@ -919,16 +922,18 @@ function trendList(){
   posts.forEach(p=>{
     if(!p.kw||p.status!=='발행') return;
     const k=rkey(p.ch,p.kw);
-    if(!m.has(k)) m.set(k,{ch:p.ch,kw:p.kw,n:0,manual:false});
-    m.get(k).n++;
+    if(!m.has(k)) m.set(k,{ch:p.ch,kw:p.kw,n:0,manual:false,date:''});
+    const e=m.get(k); e.n++;
+    if((p.date||'')>e.date) e.date=p.date||'';   // 같은 키워드 글이 여럿이면 가장 최근 발행일
   });
   tracked.forEach(t=>{
     const k=rkey(t.ch,t.kw);
-    if(!m.has(k)) m.set(k,{ch:t.ch,kw:t.kw,n:0,manual:true});
+    if(!m.has(k)) m.set(k,{ch:t.ch,kw:t.kw,n:0,manual:true,date:t.at||''});
   });
-  // 줄 순서가 매일 같아야 입력이 편하다: 채널 순서, 그다음 가나다
-  const order=channels();
-  return [...m.values()].sort((a,b)=>(order.indexOf(a.ch)-order.indexOf(b.ch))||a.kw.localeCompare(b.kw,'ko'));
+  // 발행일 최신순. 직접 추가한 키워드는 발행일이 없으므로 그 아래에 추가한 날짜 최신순으로 둔다.
+  // 순위를 적어도 순서는 바뀌지 않으므로 Enter 로 이어 입력하는 흐름이 유지된다.
+  return [...m.values()].sort((a,b)=>
+    (a.manual-b.manual)||(b.date||'').localeCompare(a.date||'')||a.kw.localeCompare(b.kw,'ko'));
 }
 const rankVal=r=>r?r:101;               // 0(100위 밖)은 101로 두고 그린다
 const histOf=(ch,kw)=>ranks[rkey(ch,kw)]||[];
@@ -994,7 +999,9 @@ function renderTrend(){
       const best=bestOf(h), last=h[h.length-1];
       return '<tr>'+
         '<td><div class="kwc">'+esc(r.kw)+'</div><div class="sub">'+chBadge(r.ch)+
-          (r.manual?' <span class="src hand">직접 추가</span>':' <span>글 '+r.n+'건</span>')+'</div></td>'+
+          (r.manual
+            ? ' <span class="src hand">직접 추가</span>'+(r.date?' <span>'+fmtD(r.date)+' 추가</span>':'')
+            : ' <span>발행 '+(r.date?fmtD(r.date):'날짜 없음')+(r.n>1?' · 글 '+r.n+'건':'')+'</span>')+volTag(r.kw)+'</div></td>'+
         '<td><input type="number" class="rankin" data-mr="'+idx+'" min="0" max="1000" '+
           'value="'+(at?at.r:'')+'" placeholder="'+(before?(before.r||'밖'):'—')+'" '+
           'title="숫자 입력 후 Enter · 0 = 100위 밖 · 비우면 이 날 기록 삭제"></td>'+
@@ -1049,14 +1056,40 @@ $('#tradd').onclick=()=>{
   const kw=$('#trkw').value.trim(), ch=$('#trch').value;
   if(!kw){ $('#trkw').focus(); return }
   if(trendList().some(r=>r.ch===ch&&r.kw===kw)){ $('#trendMsg').textContent='“'+kw+'”는 이미 추적 중입니다.'; return }
-  tracked.push({ch,kw});
+  tracked.push({ch,kw,at:TODAY});
   DB.set(P+'tracked',tracked);
   $('#trkw').value=''; renderTrend(); renderNav();
   $('#trendMsg').textContent='“'+kw+'” 추적을 시작했습니다. 오늘 순위를 적어 두세요.';
+  if(proxyUrl()&&!volOf(kw)) refreshVols([{kw}]);
   const i=trendList().findIndex(r=>r.ch===ch&&r.kw===kw);
   const el=$('#trendTbl input[data-mr="'+i+'"]'); if(el) el.focus();
 };
 $('#trkw').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#tradd').click() });
+// 월간 검색량: 추세에서 불러온 값, 없으면 키워드 보드에서 이미 조회해둔 값을 쓴다
+function volOf(kw){
+  if(vols[kw]) return vols[kw];
+  const i=ideas.find(x=>x.kw===kw&&x.vol);
+  return i?i.vol:null;
+}
+function volTag(kw){
+  const v=volOf(kw);
+  return v?' <span class="vol" title="PC '+num(v.pc)+' · 모바일 '+num(v.mobile)+(v.d?' · '+fmtD(v.d)+' 기준':'')+'">월 '+num(v.total)+'</span>':'';
+}
+// 검색량은 검색광고 API가 정확히 주므로 순위와 달리 자동으로 가져온다 (한 번에 5개씩)
+async function refreshVols(list){
+  const msg=t=>$('#trendMsg').textContent=t;
+  const kws=[...new Set(list.map(r=>r.kw))];
+  if(!kws.length){ msg('검색량을 불러올 키워드가 없습니다.'); return }
+  msg('검색량 불러오는 중… ('+kws.length+'개)');
+  try{
+    const v=await volumes(kws);
+    kws.forEach(k=>{ if(v[k]) vols[k]={pc:v[k].pc,mobile:v[k].mobile,total:v[k].total,d:TODAY} });
+    DB.set(P+'vols',vols); renderTrend();
+    const got=kws.filter(k=>v[k]).length;
+    msg('검색량 '+got+' / '+kws.length+'개 갱신'+(got<kws.length?' · 나머지는 검색량 자료가 없는 키워드입니다':''));
+  }catch(e){ msg('검색량 조회 실패: '+e.message) }
+}
+$('#volTrend').onclick=()=>refreshVols(trendList());
 $('#trendDate').value=TODAY;
 $('#trendDate').addEventListener('change',renderTrend);
 
@@ -1078,7 +1111,7 @@ function fillChannelSelects(){
 $('#bkBtn').onclick=()=>{
   const b=$('#backup'); b.classList.toggle('hide');
   if(!b.classList.contains('hide')){
-    $('#bkText').value=JSON.stringify({v:1,presets:mine,blogs,posts,ideas,ranks,tracked},null,1);
+    $('#bkText').value=JSON.stringify({v:1,presets:mine,blogs,posts,ideas,ranks,tracked,vols},null,1);
     msg('#bkMsg','');
   }
 };
@@ -1097,12 +1130,13 @@ function applyData(d,quiet){
   blogs=d.blogs&&typeof d.blogs==='object'?d.blogs:{};
   ranks=d.ranks&&typeof d.ranks==='object'?d.ranks:{};
   tracked=Array.isArray(d.tracked)?d.tracked:[];
+  vols=d.vols&&typeof d.vols==='object'?d.vols:{};
   applyingRemote=!!quiet;
-  savePosts(); saveIdeas(); DB.set(P+'presets',mine); DB.set(P+'blogs',blogs); DB.set(P+'ranks',ranks); DB.set(P+'tracked',tracked);
+  savePosts(); saveIdeas(); DB.set(P+'presets',mine); DB.set(P+'blogs',blogs); DB.set(P+'ranks',ranks); DB.set(P+'tracked',tracked); DB.set(P+'vols',vols);
   applyingRemote=false;
   setEditing(null); tabs(); fillChannelSelects(); $('#blogUrl').value=blogOf(activeCh); renderAll();
 }
-const snapshot=()=>({presets:mine,blogs,posts,ideas,ranks,tracked});
+const snapshot=()=>({presets:mine,blogs,posts,ideas,ranks,tracked,vols});
 
 $('#bkRestore').onclick=()=>{
   let d;
@@ -1268,5 +1302,6 @@ console.assert(!sparkline([{d:'2026-09-01',r:5},{d:'2026-09-02',r:3},{d:'2026-09
 console.assert(sinceStart([{d:'a',r:20},{d:'b',r:9},{d:'c',r:4}]).includes('▲ 16'),'시작 대비는 첫 기록과 비교');
 console.assert(bestOf([{r:0},{r:12},{r:4},{r:30}])===4&&bestOf([{r:0}])===0,'최고 순위는 밖(0)을 빼고 가장 작은 값');
 console.assert(fmtD('2026-09-01')==='9/1','날짜 표기');
+console.assert(volTag('__없는키워드__')==='','검색량 없으면 표시하지 않음');
 console.assert(normalizeProxy('p.workers.dev/')==='https://p.workers.dev'&&normalizeProxy('https://a.dev')==='https://a.dev'&&normalizeProxy('')==='','프록시 주소는 https:// 보정 + 끝 슬래시 제거');
 </script>
