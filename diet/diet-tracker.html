@@ -227,6 +227,20 @@ input.big{font-family:"IBM Plex Mono",monospace; font-size:31px; font-weight:600
 .meal[aria-pressed="true"]{background:var(--accent-soft); border-color:color-mix(in srgb, var(--accent) 35%, transparent)}
 .meal[aria-pressed="true"] .nm{color:var(--accent)}
 
+.mealrows{display:flex; flex-direction:column; gap:12px}
+.mealrow{padding:13px 14px; background:var(--surface2); border-radius:15px; border:1.5px solid transparent; transition:background .14s, border-color .14s}
+.mealrow.done{background:var(--accent-soft); border-color:color-mix(in srgb, var(--accent) 24%, transparent)}
+.mr-top{display:flex; align-items:center; gap:9px; margin-bottom:10px}
+.mr-nm{font-size:13.5px; font-weight:600; flex:none}
+.mr-kind{margin-left:auto; gap:4px; flex-wrap:nowrap}
+.chip.xs{padding:5px 9px; font-size:11.5px; background:var(--surface)}
+.chip.xs[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+.mr-note{background:var(--surface); border:1px solid var(--line); font-size:14px; padding:10px 12px}
+.mealrow.done .mr-note{border-color:transparent}
+.menubank{margin-top:16px; padding-top:14px; border-top:1px solid var(--line2)}
+.mealnote-line{display:block; width:100%; text-align:left; margin-top:12px; font-size:12.5px; color:var(--ink2); line-height:1.55}
+.mealnote-line.empty{color:var(--muted)}
+
 .weight-hero{display:flex; align-items:flex-end; justify-content:space-between; gap:12px}
 .weight-hero .kg{font-family:"IBM Plex Mono",monospace; font-size:44px; font-weight:600; letter-spacing:-.035em; line-height:1; font-variant-numeric:tabular-nums}
 .weight-hero .kg small{font-size:16px; font-weight:500; color:var(--muted); margin-left:3px}
@@ -492,6 +506,7 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
           <span class="tiny muted" id="meals-status"></span>
         </div>
         <div class="meals" id="home-meals"></div>
+        <div id="home-meal-notes"></div>
       </div>
 
       <div class="card" id="weight-card">
@@ -654,7 +669,54 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
             <span class="tiny muted mono" id="m-datelabel"></span>
           </div>
           <label class="fld" style="margin-bottom:14px"><span>날짜</span><input type="date" id="m-date"></label>
-          <div class="meals" id="m-meals"></div>
+          <div class="mealrows">
+            <div class="mealrow" id="mrow-b">
+              <div class="mr-top">
+                <button class="hcheck" type="button" data-mmeal="b" aria-pressed="false" aria-label="아침 먹음">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>
+                <span class="mr-nm">🌅 아침</span>
+                <span class="chips mr-kind" id="mk-b">
+                  <button class="chip xs" type="button" data-v="home" aria-pressed="false">집밥</button>
+                  <button class="chip xs" type="button" data-v="out" aria-pressed="false">외식</button>
+                  <button class="chip xs" type="button" data-v="conv" aria-pressed="false">간편식</button>
+                </span>
+              </div>
+              <input type="text" class="mr-note" id="mn-b" data-mn="b" placeholder="뭘 먹었나요 (쉼표로 나눠서)">
+            </div>
+            <div class="mealrow" id="mrow-l">
+              <div class="mr-top">
+                <button class="hcheck" type="button" data-mmeal="l" aria-pressed="false" aria-label="점심 먹음">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>
+                <span class="mr-nm">🍚 점심</span>
+                <span class="chips mr-kind" id="mk-l">
+                  <button class="chip xs" type="button" data-v="home" aria-pressed="false">집밥</button>
+                  <button class="chip xs" type="button" data-v="out" aria-pressed="false">외식</button>
+                  <button class="chip xs" type="button" data-v="conv" aria-pressed="false">간편식</button>
+                </span>
+              </div>
+              <input type="text" class="mr-note" id="mn-l" data-mn="l" placeholder="뭘 먹었나요 (쉼표로 나눠서)">
+            </div>
+            <div class="mealrow" id="mrow-d">
+              <div class="mr-top">
+                <button class="hcheck" type="button" data-mmeal="d" aria-pressed="false" aria-label="저녁 먹음">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>
+                <span class="mr-nm">🌙 저녁</span>
+                <span class="chips mr-kind" id="mk-d">
+                  <button class="chip xs" type="button" data-v="home" aria-pressed="false">집밥</button>
+                  <button class="chip xs" type="button" data-v="out" aria-pressed="false">외식</button>
+                  <button class="chip xs" type="button" data-v="conv" aria-pressed="false">간편식</button>
+                </span>
+              </div>
+              <input type="text" class="mr-note" id="mn-d" data-mn="d" placeholder="뭘 먹었나요 (쉼표로 나눠서)">
+            </div>
+          </div>
+          <div class="menubank" id="menubank" hidden>
+            <div class="between" style="margin-bottom:8px">
+              <span class="tiny muted" style="font-weight:600">자주 먹은 것</span>
+              <span class="tiny mono" id="menubank-target" style="color:var(--accent)"></span>
+            </div>
+            <div class="chips" id="menubank-chips"></div>
+          </div>
           <div class="expander" data-exp>
             <button type="button"><span>더 자세히 기록하기</span><span class="caret">▾</span></button>
             <div class="body">
@@ -662,12 +724,6 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
                 <div class="chips" id="m-lunchbox">
                   <button class="chip" type="button" data-v="yes" aria-pressed="false">싸 왔어요</button>
                   <button class="chip" type="button" data-v="no" aria-pressed="false">아니요</button>
-                </div>
-              </div>
-              <div><div class="fld" style="margin-bottom:6px"><span>외식</span></div>
-                <div class="chips" id="m-eatout">
-                  <button class="chip" type="button" data-v="no" aria-pressed="false">안 했어요</button>
-                  <button class="chip" type="button" data-v="yes" aria-pressed="false">했어요</button>
                 </div>
               </div>
               <div><div class="fld" style="margin-bottom:6px"><span>카페인</span></div>
@@ -1014,6 +1070,8 @@ const SIDE_EFFECTS = [["nausea","메스꺼움"],["heartburn","속쓰림"],["cons
   ["diarrhea","설사"],["fatigue","피로"],["noappetite","식욕 없음"],["headache","두통"]];
 const SE_LABEL = SIDE_EFFECTS.reduce((o,[k,v])=>{o[k]=v; return o;}, {});
 const PERIODS = {start:"생리 시작", on:"생리 중"};
+const MEALS3 = [["b","아침","🌅"],["l","점심","🍚"],["d","저녁","🌙"]];
+const MEAL_KIND = {home:"집밥", out:"외식·배달", conv:"간편식"};
 const POOP = {none:"못 봄", once:"1회", many:"2회 이상"};
 const POOP_TYPE = {hard:"딱딱함", normal:"보통", loose:"무름"};
 const FLOW = {light:"적음", normal:"보통", heavy:"많음"};
@@ -1058,7 +1116,7 @@ const CACHE_KEY = "diet-log-v1";
 const SETTINGS_V = 2;
 const OLD_HABIT_IDS = "h1,h2,h3,h4,h5,h6";
 const state = {
-  tab:"home", rec:"weight", statRange:30, statSec:"summary",
+  tab:"home", rec:"weight", statRange:30, statSec:"summary", mealTarget:null,
   calMode:"month", calCursor: todayStr(),
   cheer: Math.floor(Math.random()*CHEERS.length),
   days:{},
@@ -1069,6 +1127,7 @@ const state = {
 
 function emptyDay(date){
   return { date, meals:{b:false,l:false,d:false}, lunchbox:null, eatout:null, caffeine:null,
+           mealNotes:{b:"",l:"",d:""}, mealKind:{b:null,l:null,d:null},
            period:null, flow:null, poop:null, poopType:null, review:null, weights:[], workouts:[], snacks:[], meds:[], fits:[], habits:{} };
 }
 /* db가 돌려주는 문서는 얼려져 있어 그대로 고칠 수 없다.
@@ -1077,6 +1136,8 @@ function normalizeDay(src, date){
   const n = emptyDay(date);
   if(src){
     n.meals = Object.assign(n.meals, src.meals || {});
+    n.mealNotes = Object.assign(n.mealNotes, src.mealNotes || {});
+    n.mealKind  = Object.assign(n.mealKind,  src.mealKind  || {});
     ["weights","workouts","snacks","meds","fits"].forEach(k=>{
       if(Array.isArray(src[k])) n[k] = src[k].map(x=> Object.assign({}, x));
     });
@@ -1286,6 +1347,13 @@ function plateau(){
   if(drop < 0.3 && span < 1.0) return {from:last3[0].start, weeks:last3.length, drop};
   return null;
 }
+/* 외식 여부 — 끼니 종류가 있으면 그것으로, 없으면 예전 하루 단위 값으로 */
+function ateOut(o){
+  if(MEALS3.some(([k])=> o.mealKind[k] === "out")) return true;
+  if(MEALS3.some(([k])=> o.mealKind[k])) return false;
+  if(o.eatout) return o.eatout === "yes";
+  return null;
+}
 function latestWeight(){ const w = allWeights(); return w.length ? w[w.length-1] : null; }
 function prevWeight(){ const w = allWeights(); return w.length>1 ? w[w.length-2] : null; }
 
@@ -1398,6 +1466,10 @@ function renderHome(){
   $("#home-meals").innerHTML = mealDefs.map(([k,nm,ic])=>
     '<button class="meal" type="button" data-meal="'+k+'" aria-pressed="'+(d.meals[k]?"true":"false")+'">'
     + '<span class="ic">'+ic+'</span><span class="nm">'+nm+'</span></button>').join("");
+  const notes = MEALS3.filter(([k])=> (d.mealNotes[k]||"").trim()).map(([k,nm])=> nm+" "+d.mealNotes[k]);
+  $("#home-meal-notes").innerHTML = notes.length
+    ? '<button class="mealnote-line" type="button" data-goto="rec:meal">'+esc(notes.join(" · "))+' <span class="mono muted">›</span></button>'
+    : '<button class="mealnote-line empty" type="button" data-goto="rec:meal">뭘 먹었는지도 한 줄 적어두기 ›</button>';
   const mc = mealDefs.filter(([k])=>d.meals[k]).length;
   $("#meals-status").textContent = mc===3 ? "세 끼 다 챙겼어요 👏" : mc+" / 3";
 
@@ -1516,13 +1588,16 @@ function dayDetailHTML(ds){
   const sec = (label, inner) => '<div class="sheet-sec"><p class="sec-label">'+label+'</p>'+inner+'</div>';
   let body = "";
 
-  const mealsTxt = [["b","아침"],["l","점심"],["d","저녁"]]
+  const mealsTxt = MEALS3
     .map(([k,n])=> '<span class="pill '+(o.meals[k]?"done":"rest")+'">'+n+(o.meals[k]?" ✓":"")+'</span>').join(" ");
+  const noteLines = MEALS3.filter(([k])=> (o.mealNotes[k]||"").trim()).map(([k,n])=>
+    '<p class="rvline" style="margin-bottom:6px"><b>'+n+(o.mealKind[k]?" · "+MEAL_KIND[o.mealKind[k]]:"")+'</b>'+esc(o.mealNotes[k])+'</p>');
   const extra = [];
   if(o.lunchbox) extra.push("도시락 "+(o.lunchbox==="yes"?"쌈":"안 쌈"));
-  if(o.eatout) extra.push("외식 "+(o.eatout==="yes"?"함":"안 함"));
+  if(ateOut(o) !== null) extra.push("외식 "+(ateOut(o)?"함":"안 함"));
   if(o.caffeine) extra.push("카페인 "+(CAFF[o.caffeine]||o.caffeine));
   body += sec("삼시세끼", '<div class="chips">'+mealsTxt+'</div>'
+    + (noteLines.length?'<div style="margin-top:12px">'+noteLines.join("")+'</div>':"")
     + (extra.length?'<p class="tiny muted" style="margin:10px 0 0">'+esc(extra.join(" · "))+'</p>':""));
 
   body += sec("체중", o.weights.length
@@ -1755,16 +1830,44 @@ function renderBodyPanel(){
   $("#b-poop-type-wrap").hidden = !o.poop || o.poop === "none";
   $("#b-flow-wrap").hidden = !o.period;
 }
+/* 지금까지 적은 메뉴를 많이 쓴 순서로 */
+function menuBank(limit){
+  const freq = {};
+  Object.keys(state.days).forEach(ds=>{
+    const mn = day(ds).mealNotes;
+    MEALS3.forEach(([k])=>{
+      (mn[k] || "").split(",").map(x=> x.trim()).filter(Boolean).forEach(name=>{
+        const key = name.length > 18 ? name.slice(0,18) : name;
+        freq[key] = (freq[key] || 0) + 1;
+      });
+    });
+  });
+  return Object.keys(freq).sort((a,b)=> freq[b]-freq[a] || a.localeCompare(b)).slice(0, limit || 10);
+}
+function renderMenuBank(){
+  const names = menuBank(10);
+  const box = $("#menubank");
+  box.hidden = !names.length;
+  if(!names.length) return;
+  const t = MEALS3.find(m=> m[0] === state.mealTarget);
+  $("#menubank-target").textContent = t ? t[1]+"에 넣기" : "";
+  $("#menubank-chips").innerHTML = names.map(n=>
+    '<button class="chip xs" type="button" data-menu="'+esc(n)+'">'+esc(n)+'</button>').join("");
+}
 function renderMealPanel(){
-  const ds = $("#m-date").value || todayStr();
-  const d = day(ds);
+  const ds = mealDate(), d = day(ds);
   $("#m-datelabel").textContent = fullLabel(ds);
-  const mealDefs = [["b","아침","🌅"],["l","점심","🍚"],["d","저녁","🌙"]];
-  $("#m-meals").innerHTML = mealDefs.map(([k,nm,ic])=>
-    '<button class="meal" type="button" data-mmeal="'+k+'" aria-pressed="'+(d.meals[k]?"true":"false")+'">'
-    + '<span class="ic">'+ic+'</span><span class="nm">'+nm+'</span></button>').join("");
+  MEALS3.forEach(([k])=>{
+    const done = !!d.meals[k];
+    $("#mrow-"+k).classList.toggle("done", done);
+    $$('[data-mmeal="'+k+'"]')[0].setAttribute("aria-pressed", done ? "true" : "false");
+    setChip($("#mk-"+k), d.mealKind[k]);
+    const el = $("#mn-"+k), val = d.mealNotes[k] || "";
+    if(document.activeElement !== el && el.value !== val) el.value = val;
+  });
+  if(!state.mealTarget) state.mealTarget = (MEALS3.find(([k])=> !(d.mealNotes[k]||"")) || MEALS3[0])[0];
+  renderMenuBank();
   setChip($("#m-lunchbox"), d.lunchbox);
-  setChip($("#m-eatout"), d.eatout);
   setChip($("#m-caffeine"), d.caffeine);
 }
 
@@ -2321,7 +2424,7 @@ function secLife(c){
     if(o.meals.b||o.meals.l||o.meals.d) tracked++;
     if(o.meals.b&&o.meals.l&&o.meals.d) full++;
     if(o.lunchbox==="yes") lunchbox++;
-    if(o.eatout==="yes") eatout++;
+    if(ateOut(o) === true) eatout++;
     if(o.caffeine && caff[o.caffeine]!==undefined) caff[o.caffeine]++;
   });
   out += '<div class="card"><p class="sec-label">식사</p><div class="statgrid">'
@@ -2337,6 +2440,49 @@ function secLife(c){
       out += '<div class="barrow"><span class="lb">'+nm+'</span><span class="tr"><span class="fl" style="width:'+Math.round(caff[k]/caffTotal*100)+'%"></span></span><span class="vl">'+caff[k]+'일</span></div>';
     });
   }
+  /* 뭘 먹었나 — 자주 나온 메뉴와 끼니 종류 */
+  const freq = {}, kindCount = {home:0, out:0, conv:0};
+  let noteMeals = 0;
+  c.dates.forEach(ds=>{
+    const o = day(ds);
+    MEALS3.forEach(([k])=>{
+      if(o.mealKind[k] && kindCount[o.mealKind[k]] !== undefined) kindCount[o.mealKind[k]]++;
+      const txt = (o.mealNotes[k] || "").trim();
+      if(!txt) return;
+      noteMeals++;
+      txt.split(",").map(x=> x.trim()).filter(Boolean).forEach(name=>{
+        const key = name.length > 18 ? name.slice(0,18) : name;
+        freq[key] = (freq[key] || 0) + 1;
+      });
+    });
+  });
+  const top = Object.keys(freq).sort((a,b)=> freq[b]-freq[a] || a.localeCompare(b)).slice(0,8);
+  if(top.length){
+    const maxF = freq[top[0]];
+    out += '<div class="hr"></div><p class="sec-label">자주 먹은 것</p>';
+    top.forEach(n=>{
+      out += '<div class="barrow"><span class="lb" style="width:110px; overflow:hidden; text-overflow:ellipsis">'+esc(n)+'</span>'
+        + '<span class="tr"><span class="fl" style="width:'+Math.round(freq[n]/maxF*100)+'%"></span></span>'
+        + '<span class="vl">'+freq[n]+'회</span></div>';
+    });
+    out += '<p class="tiny muted" style="margin:10px 0 0">'+noteMeals+'끼니에 뭘 먹었는지 적어두셨어요. 평가하려는 게 아니라 패턴을 보려는 거예요.</p>';
+  } else {
+    out += '<div class="hr"></div><p class="sec-label">자주 먹은 것</p>'
+      + needMore("기록 > 식사에서 끼니마다 한 줄씩 적어두면, 자주 먹는 메뉴가 여기 모입니다.");
+  }
+  const kTot = kindCount.home + kindCount.out + kindCount.conv;
+  if(kTot){
+    out += '<p class="sec-label" style="margin:18px 0 4px">끼니 종류</p>';
+    [["home","집밥","var(--mint)"],["out","외식·배달","var(--clay)"],["conv","간편식","var(--ochre)"]].forEach(([k,nm,col])=>{
+      out += '<div class="barrow"><span class="lb">'+nm+'</span><span class="tr"><span class="fl" style="width:'
+        + Math.round(kindCount[k]/kTot*100)+'%; background:'+col+'"></span></span>'
+        + '<span class="vl">'+kindCount[k]+'끼</span></div>';
+    });
+    out += '<p class="tiny muted" style="margin:10px 0 0">집밥 '+Math.round(kindCount.home/kTot*100)+'% · 기록한 '+kTot+'끼니 기준.</p>';
+  }
+  out += compareBlock("집밥만 먹은 날 vs 외식한 날", "집밥만", "외식 있음",
+    splitCompare(c.inRange, o=> { const a = ateOut(o); return a === null ? null : !a; }),
+    "외식이 다음날 숫자에 어떻게 이어지는지 봅니다. 외식은 원래 계획의 일부예요.");
   out += compareBlock("운동한 날 vs 안 한 날", "운동한 날", "안 한 날",
     splitCompare(c.inRange, o=> o.workouts.length > 0),
     "운동이 그날 식사와 간식에 어떻게 이어지는지 봅니다. 좋고 나쁨이 아니라 패턴이에요.");
@@ -2524,7 +2670,7 @@ function csvCell(v){
 function buildCsv(){
   const hs = state.settings.habits || [];
   const rows = [["날짜","요일","체중(kg)","컨디션(1-5)","수면(h)","붓기","생리","아침","점심","저녁",
-    "도시락","외식","카페인","배변","배변 상태","생리 양","운동","간식","약","몸의 반응","옷 핏","기준 옷","허리(cm)","엉덩이(cm)","허벅지(cm)",
+    "도시락","외식","카페인","아침 메뉴","점심 메뉴","저녁 메뉴","끼니 종류","배변","배변 상태","생리 양","운동","간식","약","몸의 반응","옷 핏","기준 옷","허리(cm)","엉덩이(cm)","허벅지(cm)",
     "습관 달성","습관 전체","메모"]];
   Object.keys(state.days).sort().forEach(ds=>{
     const o = day(ds);
@@ -2536,8 +2682,10 @@ function buildCsv(){
       o.period ? (PERIODS[o.period] || "생리 중") : "",
       o.meals.b?"O":"", o.meals.l?"O":"", o.meals.d?"O":"",
       o.lunchbox ? (o.lunchbox==="yes"?"O":"X") : "",
-      o.eatout ? (o.eatout==="yes"?"O":"X") : "",
+      ateOut(o) === null ? "" : (ateOut(o) ? "O" : "X"),
       o.caffeine ? (CAFF[o.caffeine]||o.caffeine) : "",
+      o.mealNotes.b || "", o.mealNotes.l || "", o.mealNotes.d || "",
+      MEALS3.filter(([k])=> o.mealKind[k]).map(([k,n])=> n+" "+MEAL_KIND[o.mealKind[k]]).join(" | "),
       o.poop ? POOP[o.poop] : "",
       o.poopType ? POOP_TYPE[o.poopType] : "",
       o.flow ? FLOW[o.flow] : "",
@@ -2702,8 +2850,31 @@ initChips($("#s-reason"));
 initChips($("#e-type"));
 initChips($("#d-drug"));
 initChips($("#m-lunchbox"), v=>{ const ds=$("#m-date").value||todayStr(); mutate(ds, d=> d.lunchbox=v); });
-initChips($("#m-eatout"),   v=>{ const ds=$("#m-date").value||todayStr(); mutate(ds, d=> d.eatout=v); });
 initChips($("#m-caffeine"), v=>{ const ds=$("#m-date").value||todayStr(); mutate(ds, d=> d.caffeine=v); });
+
+/* 끼니 종류 (집밥·외식·간편식) */
+MEALS3.forEach(([k])=>{
+  initChips($("#mk-"+k), v=>{ mutate(mealDate(), d=>{ d.mealKind[k] = v; if(v && !d.meals[k]) d.meals[k] = true; }); });
+});
+
+/* 뭘 먹었는지 — 치는 동안은 건드리지 않고, 멈추면 저장한다 */
+let mealNoteTimer = null;
+MEALS3.forEach(([k])=>{
+  const el = $("#mn-"+k);
+  el.addEventListener("focus", ()=>{ state.mealTarget = k; renderMenuBank(); });
+  el.addEventListener("input", ()=>{
+    clearTimeout(mealNoteTimer);
+    mealNoteTimer = setTimeout(()=> saveMealNote(k), 700);
+  });
+  el.addEventListener("blur", ()=>{ clearTimeout(mealNoteTimer); saveMealNote(k); });
+  el.addEventListener("keydown", e=>{ if(e.key === "Enter"){ e.preventDefault(); el.blur(); } });
+});
+function mealDate(){ return $("#m-date").value || todayStr(); }
+function saveMealNote(k){
+  const el = $("#mn-"+k), v = el.value.trim(), ds = mealDate();
+  if((day(ds).mealNotes[k] || "") === v) return;
+  mutate(ds, d=>{ d.mealNotes[k] = v; if(v && !d.meals[k]) d.meals[k] = true; });
+}
 
 const RPE_LABELS = {1:"거의 안 힘듦",2:"거의 안 힘듦",3:"가벼움",4:"가벼움",5:"숨은 차지만 대화는 되는 정도",6:"숨은 차지만 대화는 되는 정도",7:"꽤 힘듦",8:"꽤 힘듦",9:"최대치에 가까움",10:"최대치"};
 $("#e-rpe").addEventListener("input", e=>{
@@ -2893,6 +3064,18 @@ function handleClick(e){
 
   const meal = el.closest("[data-meal]");
   if(meal){ const k = meal.dataset.meal; return mutate(todayStr(), d=> d.meals[k] = !d.meals[k]); }
+
+  const menuBtn = el.closest("[data-menu]");
+  if(menuBtn){
+    const k = state.mealTarget || "b", inp = $("#mn-"+k);
+    const cur = inp.value.trim();
+    const parts = cur ? cur.split(",").map(x=>x.trim()).filter(Boolean) : [];
+    const name = menuBtn.dataset.menu;
+    if(parts.indexOf(name) < 0) parts.push(name);
+    inp.value = parts.join(", ");
+    saveMealNote(k);
+    return;
+  }
 
   const mmeal = el.closest("[data-mmeal]");
   if(mmeal){ const k = mmeal.dataset.mmeal, ds = $("#m-date").value || todayStr(); return mutate(ds, d=> d.meals[k] = !d.meals[k]); }
