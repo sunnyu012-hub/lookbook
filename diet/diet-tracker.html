@@ -596,18 +596,50 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
                     <button class="chip" type="button" data-v="yes" aria-pressed="false">부었어요</button>
                   </div>
                 </div>
-                <div><div class="fld" style="margin-bottom:6px"><span>생리 <span class="muted" style="font-weight:400">· 누르면 그날 바로 저장돼요</span></span></div>
-                  <div class="chips" id="w-period">
-                    <button class="chip" type="button" data-v="start" aria-pressed="false">생리 시작</button>
-                    <button class="chip" type="button" data-v="on" aria-pressed="false">생리 중</button>
-                  </div>
-                </div>
                 <label class="fld"><span>메모</span><textarea id="w-memo" placeholder="어제 짜게 먹음, 컨디션 등"></textarea></label>
               </div>
             </div>
             <button class="btn" type="button" data-save="weight">체중 기록하기</button>
           </div>
         </div>
+        <div class="card">
+          <div class="between" style="margin-bottom:12px">
+            <p class="sec-label" style="margin:0">몸 상태</p>
+            <span class="tiny muted mono" id="b-datelabel"></span>
+          </div>
+          <p class="tiny muted" style="margin:-6px 0 14px">누르면 그 날짜에 바로 저장돼요. 위 날짜를 바꾸면 그 날로 들어갑니다.</p>
+
+          <div class="fld" style="margin-bottom:7px"><span>배변</span></div>
+          <div class="chips" id="b-poop" style="margin-bottom:14px">
+            <button class="chip" type="button" data-v="none" aria-pressed="false">못 봄</button>
+            <button class="chip" type="button" data-v="once" aria-pressed="false">1회</button>
+            <button class="chip" type="button" data-v="many" aria-pressed="false">2회 이상</button>
+          </div>
+          <div id="b-poop-type-wrap" hidden>
+            <div class="fld" style="margin-bottom:7px"><span>상태</span></div>
+            <div class="chips" id="b-poop-type" style="margin-bottom:14px">
+              <button class="chip" type="button" data-v="hard" aria-pressed="false">딱딱함</button>
+              <button class="chip" type="button" data-v="normal" aria-pressed="false">보통</button>
+              <button class="chip" type="button" data-v="loose" aria-pressed="false">무름</button>
+            </div>
+          </div>
+
+          <div class="hr"></div>
+          <div class="fld" style="margin-bottom:7px"><span>생리</span></div>
+          <div class="chips" id="w-period" style="margin-bottom:14px">
+            <button class="chip" type="button" data-v="start" aria-pressed="false">생리 시작</button>
+            <button class="chip" type="button" data-v="on" aria-pressed="false">생리 중</button>
+          </div>
+          <div id="b-flow-wrap" hidden>
+            <div class="fld" style="margin-bottom:7px"><span>양</span></div>
+            <div class="chips" id="b-flow">
+              <button class="chip" type="button" data-v="light" aria-pressed="false">적음</button>
+              <button class="chip" type="button" data-v="normal" aria-pressed="false">보통</button>
+              <button class="chip" type="button" data-v="heavy" aria-pressed="false">많음</button>
+            </div>
+          </div>
+        </div>
+
         <div class="card">
           <p class="sec-label">최근 체중</p>
           <div id="list-weight"></div>
@@ -982,6 +1014,9 @@ const SIDE_EFFECTS = [["nausea","메스꺼움"],["heartburn","속쓰림"],["cons
   ["diarrhea","설사"],["fatigue","피로"],["noappetite","식욕 없음"],["headache","두통"]];
 const SE_LABEL = SIDE_EFFECTS.reduce((o,[k,v])=>{o[k]=v; return o;}, {});
 const PERIODS = {start:"생리 시작", on:"생리 중"};
+const POOP = {none:"못 봄", once:"1회", many:"2회 이상"};
+const POOP_TYPE = {hard:"딱딱함", normal:"보통", loose:"무름"};
+const FLOW = {light:"적음", normal:"보통", heavy:"많음"};
 const MOODS = [{v:1,e:"😞",l:"힘들었어요"},{v:2,e:"🙁",l:"버거웠어요"},{v:3,e:"😐",l:"그럭저럭"},
                {v:4,e:"🙂",l:"괜찮았어요"},{v:5,e:"😄",l:"좋았어요"}];
 const DOW = ["일","월","화","수","목","금","토"];
@@ -1032,7 +1067,7 @@ const state = {
 
 function emptyDay(date){
   return { date, meals:{b:false,l:false,d:false}, lunchbox:null, eatout:null, caffeine:null,
-           period:null, review:null, weights:[], workouts:[], snacks:[], meds:[], fits:[], habits:{} };
+           period:null, flow:null, poop:null, poopType:null, review:null, weights:[], workouts:[], snacks:[], meds:[], fits:[], habits:{} };
 }
 /* db가 돌려주는 문서는 얼려져 있어 그대로 고칠 수 없다.
    항상 우리 쪽 사본으로 바꿔 두고, 그 사본만 읽고 쓴다. */
@@ -1048,6 +1083,9 @@ function normalizeDay(src, date){
     n.eatout   = src.eatout   || null;
     n.caffeine = src.caffeine || null;
     n.period   = src.period   || null;
+    n.flow     = src.flow     || null;
+    n.poop     = src.poop     || null;
+    n.poopType = src.poopType || null;
     n.review   = src.review ? Object.assign({}, src.review) : null;
   }
   Object.defineProperty(n, "__own", {value:true, enumerable:false, writable:false});
@@ -1517,7 +1555,12 @@ function dayDetailHTML(ds){
       + (bits.length?'<span class="s">'+esc(bits.join(" · "))+'</span>':"")+'</span></div>';
   }).join(""));
 
-  if(o.period) body += sec("생리", '<div class="chips"><span class="pill climb">'+esc(PERIODS[o.period]||"생리 중")+'</span></div>');
+  if(o.period || o.poop){
+    const bits = [];
+    if(o.poop) bits.push('<span class="pill '+(o.poop==="none"?"rest":"walk")+'">배변 '+esc(POOP[o.poop])+(o.poopType?" · "+esc(POOP_TYPE[o.poopType]):"")+'</span>');
+    if(o.period) bits.push('<span class="pill climb">'+esc(PERIODS[o.period]||"생리 중")+(o.flow?" · "+esc(FLOW[o.flow]):"")+'</span>');
+    body += sec("몸 상태", '<div class="chips">'+bits.join("")+'</div>');
+  }
 
   const hs = state.settings.habits || [];
   const hd = hs.filter(h=>o.habits[h.id]);
@@ -1699,6 +1742,16 @@ function renderRecLists(){
     const title = (f.item ? f.item+" · " : "") + (f.fit ? FITS[f.fit] : "둘레 기록");
     return entryRow(mdLabel(f.date), title, bits.join(" · "), "fits:"+f.date+":"+f.id);
   }).join("") : '<p class="emptyline">아직 기록이 없어요.</p>';
+}
+function renderBodyPanel(){
+  const ds = bodyDate(), o = day(ds);
+  $("#b-datelabel").textContent = fullLabel(ds);
+  setChip($("#b-poop"), o.poop);
+  setChip($("#b-poop-type"), o.poopType);
+  setChip($("#w-period"), o.period);
+  setChip($("#b-flow"), o.flow);
+  $("#b-poop-type-wrap").hidden = !o.poop || o.poop === "none";
+  $("#b-flow-wrap").hidden = !o.period;
 }
 function renderMealPanel(){
   const ds = $("#m-date").value || todayStr();
@@ -2318,6 +2371,65 @@ function secBody(c){
   } else out += needMore("체중 기록의 '더 자세히'에서 컨디션·수면·붓기를 남기면 여기에 정리돼요.");
   out += '</div>';
 
+  /* 배변 */
+  const pDays = c.dates.filter(ds=> day(ds).poop);
+  out += '<div class="card"><p class="sec-label">배변</p>';
+  if(pDays.length >= 4){
+    let none=0, once=0, many=0, types={hard:0,normal:0,loose:0};
+    pDays.forEach(ds=>{
+      const o = day(ds);
+      if(o.poop === "none") none++; else if(o.poop === "once") once++; else if(o.poop === "many") many++;
+      if(o.poopType && types[o.poopType] !== undefined) types[o.poopType]++;
+    });
+    const went = once + many;
+    const perWeek = (once + many*2) / pDays.length * 7;
+    out += '<div class="statgrid">'
+      + '<div class="stat"><div class="v">'+Math.round(went/pDays.length*100)+'%</div><div class="l">본 날</div></div>'
+      + '<div class="stat"><div class="v">'+(Math.round(perWeek*10)/10)+'회</div><div class="l">주당 평균</div></div>'
+      + '<div class="stat"><div class="v" style="color:'+(none/pDays.length>0.3?"var(--clay)":"var(--ink)")+'">'+none+'일</div><div class="l">못 본 날</div></div>'
+      + '<div class="stat"><div class="v">'+pDays.length+'일</div><div class="l">기록한 날</div></div>'
+      + '</div>';
+    const tTot = types.hard+types.normal+types.loose;
+    if(tTot){
+      out += '<p class="sec-label" style="margin:18px 0 4px">상태</p>';
+      [["hard","딱딱함","var(--clay)"],["normal","보통","var(--mint)"],["loose","무름","var(--ochre)"]].forEach(([k,nm,col])=>{
+        out += '<div class="barrow"><span class="lb">'+nm+'</span><span class="tr"><span class="fl" style="width:'
+          + Math.round(types[k]/tTot*100)+'%; background:'+col+'"></span></span><span class="vl">'+types[k]+'일</span></div>';
+      });
+    }
+    /* 주사 이후 며칠에 몰리는지 */
+    const medDates = collect("meds").filter(m=> c.inRange(m.date)).map(m=> m.date);
+    const uniqMed = medDates.filter((d,i)=> medDates.indexOf(d) === i);
+    if(uniqMed.length >= 2){
+      const buckets = [];
+      for(let i=0;i<7;i++) buckets.push({n:0, none:0});
+      uniqMed.forEach(md=>{
+        for(let i=0;i<7;i++){
+          const o = day(addDays(md, i));
+          if(!o.poop) continue;
+          buckets[i].n++;
+          if(o.poop === "none") buckets[i].none++;
+        }
+      });
+      const usable = buckets.filter(b=> b.n >= 2);
+      if(usable.length >= 4){
+        out += '<div class="hr"></div><p class="sec-label">주사 이후 며칠째</p>';
+        buckets.forEach((b,i)=>{
+          if(!b.n) return;
+          const pct = Math.round(b.none/b.n*100);
+          out += '<div class="barrow"><span class="lb">'+(i===0?"주사 당일":i+"일째")+'</span>'
+            + '<span class="tr"><span class="fl" style="width:'+pct+'%; background:var(--clay)"></span></span>'
+            + '<span class="vl">'+pct+'%</span></div>';
+        });
+        const worst = buckets.reduce((a,b,i)=> (b.n>=2 && b.none/b.n > (a.b.n? a.b.none/a.b.n : -1)) ? {b, i} : a, {b:{n:0,none:0}, i:0});
+        out += '<p class="tiny muted" style="margin:10px 0 0">주사 이후 날짜별로 <b>못 본 날 비율</b>이에요.'
+          + (worst.b.n >= 2 && worst.b.none/worst.b.n > 0.4 ? ' <b>'+(worst.i===0?"주사 당일":worst.i+"일째")+'</b>에 가장 몰려요. 그때 물과 식이섬유를 미리 챙겨보세요.' : '')
+          + ' 변비가 이어지면 진료 때 이 기록을 보여주세요.</p>';
+      }
+    }
+  } else out += needMore("체중 기록 화면의 '몸 상태'에서 배변을 눌러두면, 규칙성과 약과의 관계를 정리해 드려요.");
+  out += '</div>';
+
   /* 생리 주기 */
   const ci = cycleInfo();
   out += '<div class="card"><p class="sec-label">생리 주기</p>';
@@ -2329,6 +2441,13 @@ function secBody(c){
       + '<div class="stat"><div class="v">'+(ci.next ? mdLabel(ci.next) : "–")+'</div><div class="l">다음 예상</div></div>'
       + '<div class="stat"><div class="v">'+(dLeft===null ? "–" : (dLeft>0 ? "D-"+dLeft : dLeft===0 ? "오늘" : "D+"+(-dLeft)))+'</div><div class="l">예상까지</div></div>'
       + '</div>';
+    const flows = {light:0, normal:0, heavy:0};
+    Object.keys(state.days).filter(c.inRange).forEach(ds=>{ const f = day(ds).flow; if(f && flows[f] !== undefined) flows[f]++; });
+    const fTot = flows.light+flows.normal+flows.heavy;
+    if(fTot){
+      out += '<p class="tiny muted" style="margin:12px 0 0">양: '
+        + ["light","normal","heavy"].filter(k=>flows[k]).map(k=> FLOW[k]+" "+flows[k]+"일").join(" · ")+'</p>';
+    }
     const rh = cycleRhythm();
     const hasRhythm = !!(rh && rh.pts.length >= 5);
     if(hasRhythm){
@@ -2403,7 +2522,7 @@ function csvCell(v){
 function buildCsv(){
   const hs = state.settings.habits || [];
   const rows = [["날짜","요일","체중(kg)","컨디션(1-5)","수면(h)","붓기","생리","아침","점심","저녁",
-    "도시락","외식","카페인","운동","간식","약","몸의 반응","옷 핏","기준 옷","허리(cm)","엉덩이(cm)","허벅지(cm)",
+    "도시락","외식","카페인","배변","배변 상태","생리 양","운동","간식","약","몸의 반응","옷 핏","기준 옷","허리(cm)","엉덩이(cm)","허벅지(cm)",
     "습관 달성","습관 전체","메모"]];
   Object.keys(state.days).sort().forEach(ds=>{
     const o = day(ds);
@@ -2417,6 +2536,9 @@ function buildCsv(){
       o.lunchbox ? (o.lunchbox==="yes"?"O":"X") : "",
       o.eatout ? (o.eatout==="yes"?"O":"X") : "",
       o.caffeine ? (CAFF[o.caffeine]||o.caffeine) : "",
+      o.poop ? POOP[o.poop] : "",
+      o.poopType ? POOP_TYPE[o.poopType] : "",
+      o.flow ? FLOW[o.flow] : "",
       pick(o.workouts, x=> (WTYPE[x.type]?WTYPE[x.type].label:x.type)+(x.min?" "+x.min+"분":"")+(x.rpe?" 강도"+x.rpe:"")),
       pick(o.snacks, x=> x.name+(x.reason?" ("+(REASONS[x.reason]||x.reason)+")":"")),
       pick(o.meds, x=> (DRUGS[x.drug]||x.drug)+(x.dose?" "+x.dose:"")),
@@ -2567,7 +2689,12 @@ $("#d-se").innerHTML = SIDE_EFFECTS.map(([k,v])=>
   '<button class="chip" type="button" data-v="'+k+'" aria-pressed="false">'+v+'</button>').join("");
 initChipsMulti($("#d-se"));
 initChips($("#t-fit"));
-initChips($("#w-period"), v=>{ const ds = $("#w-date").value || todayStr(); mutate(ds, d=> d.period = v); });
+function bodyDate(){ return $("#w-date").value || todayStr(); }
+initChips($("#w-period"),    v=>{ mutate(bodyDate(), d=>{ d.period = v; if(!v) d.flow = null; }); });
+initChips($("#b-flow"),      v=>{ mutate(bodyDate(), d=> d.flow = v); });
+initChips($("#b-poop"),      v=>{ mutate(bodyDate(), d=>{ d.poop = v; if(!v || v === "none") d.poopType = null; }); });
+initChips($("#b-poop-type"), v=>{ mutate(bodyDate(), d=> d.poopType = v); });
+$("#w-date").addEventListener("change", ()=> renderBodyPanel());
 initChips($("#w-swell"));
 initChips($("#s-reason"));
 initChips($("#e-type"));
@@ -2856,7 +2983,7 @@ function render(){
     else if(state.tab === "rec"){
       $$("#rec-seg button").forEach(b=> b.setAttribute("aria-selected", String(b.dataset.rec === state.rec)));
       ["weight","meal","workout","med","fit"].forEach(k=> $("#rec-"+k).hidden = (k !== state.rec));
-      setChip($("#w-period"), day($("#w-date").value || todayStr()).period);
+      renderBodyPanel();
       if(!$("#t-item").value && state.settings.fitItem) $("#t-item").value = state.settings.fitItem;
       renderMealPanel(); renderRecLists();
     }
