@@ -244,6 +244,14 @@
   .src{font-size:10.5px;margin-left:6px;padding:1px 6px;border-radius:999px;background:var(--sunk);color:var(--muted)}
   .src.hand{background:var(--accent-soft);color:var(--accent);font-weight:700}
   .spark{display:block}
+  .trbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .trbar label{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);font-weight:500}
+  .trbar input[type=date]{width:auto}
+  .trbar .count{font:600 13px "IBM Plex Mono",monospace;color:var(--ink-2)}
+  .trbar .state{margin-left:auto;font-size:12.5px;color:var(--muted)}
+  .tradd{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--line-soft)}
+  .tradd input{flex:1;min-width:200px}
+  .tradd select{flex:0 0 140px;width:auto}
   .trendwrap{overflow-x:auto}
 
   /* ── 백업 ── */
@@ -374,15 +382,23 @@
     <div class="card" id="dayPanel" style="margin-top:16px"></div>
   </section>
 
-  <!-- ══ 추세 (작성한 키워드 순위 추적) ══ -->
+  <!-- ══ 추세 (직접 기록하는 키워드 순위) ══ -->
   <section id="v-trend" class="hide">
-    <div class="addidea">
-      <button class="pri" id="trendAll" type="button">순위 전체 조회</button>
-      <span class="state" id="trendMsg" style="font-size:12.5px;color:var(--muted)"></span>
+    <div class="trbar">
+      <label>기록 날짜 <input type="date" id="trendDate"></label>
+      <span class="count" id="trendCount"></span>
+      <span class="state" id="trendMsg"></span>
     </div>
-    <div class="card"><div class="trendwrap"><table class="trend" id="trendTbl"></table></div></div>
-    <p class="foot"><b>순위 칸에 직접 숫자를 적을 수 있습니다</b>(0을 넣으면 100위 밖). 직접 적은 값은 <b>수동</b>으로 표시되고, 그날은 조회가 덮어쓰지 않습니다. 네이버에서 실제로 확인한 순위를 적어 두는 용도입니다.<br>
-    <b>발행</b> 상태로 저장한 글의 <b>메인키워드</b>만 추적합니다(초안·예정은 나오지 않습니다). 채널 기준 설정에 <b>블로그 주소</b>를 넣은 채널이 대상이며, 네이버 <b>블로그탭</b> 기준 100위까지입니다(통합검색·스마트블록 순위와 다릅니다). 하루 한 번 기록되고 같은 날 다시 조회하면 덮어씁니다.</p>
+    <div class="card">
+      <div class="trendwrap"><table class="trend" id="trendTbl"></table></div>
+      <div class="tradd">
+        <input id="trkw" placeholder="추적할 키워드 추가 — 노리지 않았는데 걸린 키워드도 좋습니다">
+        <select id="trch"></select>
+        <button class="pri" id="tradd" type="button">추적 추가</button>
+      </div>
+    </div>
+    <p class="foot">매일 네이버에서 직접 확인한 순위를 적습니다. 숫자를 넣고 <b>Enter</b>를 누르면 다음 칸으로 넘어갑니다. <b>0</b>은 100위 밖, 칸을 비우면 그 날 기록이 지워집니다. 기록 날짜를 바꾸면 빠뜨린 날도 채울 수 있습니다.<br>
+    <b>발행</b> 상태 글의 메인키워드는 자동으로 올라오고, 그 밖의 키워드는 위 칸에서 채널을 골라 추가합니다. <b>직전 대비</b>는 바로 앞 기록과, <b>시작 대비</b>는 첫 기록과 비교한 변동 폭입니다. 추이 그래프는 위로 갈수록 상위이며 날짜 간격대로 그려집니다.</p>
   </section>
 
   <!-- ══ 키워드 보드 (아이디어) ══ -->
@@ -408,7 +424,7 @@ const $$=s=>[...document.querySelectorAll(s)];
 // 저장소 접두어가 다르므로 데이터도 동기화 슬롯도 완전히 분리된다.
 const WS=/^(personal|yuring)$/i.test(new URLSearchParams(location.search).get('ws')||'')?'personal':'work';
 const P=WS==='personal'?'bcy.':'bc.';
-const SYNCED=['posts','ideas','presets','blogs','ranks'].map(k=>P+k);
+const SYNCED=['posts','ideas','presets','blogs','ranks','tracked'].map(k=>P+k);
 let applyingRemote=false;   // 서버 내용을 받아 넣는 동안에는 되쏘지 않는다
 const DB={
   get(k,d){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}},
@@ -443,7 +459,8 @@ let mine=DB.get(P+'presets',{});
 let blogs=DB.get(P+'blogs',{});
 let posts=DB.get(P+'posts',[]);
 let ideas=DB.get(P+'ideas',[]);
-let ranks=DB.get(P+'ranks',{});   // 키워드별 순위 이력
+let ranks=DB.get(P+'ranks',{});   // 키워드별 순위 이력 (직접 기록)
+let tracked=DB.get(P+'tracked',[]); // 추세에 직접 추가한 키워드 [{ch,kw}]
 let editingId=null, activeCh=null, selDate=null;
 let cur=new Date(); cur.setDate(1);
 
@@ -893,43 +910,51 @@ $('#board').onclick=e=>{
   }
 };
 
-/* ── 추세: 작성한 키워드의 순위 이력 ── */
+/* ── 추세: 직접 기록하는 키워드 순위 ── */
+// 순위는 사람이 매일 네이버에서 확인해 적는다. 이 탭은 그 기록이 어떻게 변하는지만 보여준다.
 const rkey=(ch,kw)=>JSON.stringify([ch,kw]);
-// 보관함에 저장된 글의 메인키워드만 추적 대상이다
-// 추세는 이미 발행한 글만 추적한다 (초안·예정은 아직 순위가 있을 수 없다)
-function writtenList(){
+// 추적 대상 = 발행한 글의 메인키워드 + 직접 추가한 키워드(노리지 않았는데 걸린 것 등)
+function trendList(){
   const m=new Map();
   posts.forEach(p=>{
     if(!p.kw||p.status!=='발행') return;
     const k=rkey(p.ch,p.kw);
-    if(!m.has(k)) m.set(k,{ch:p.ch,kw:p.kw,n:0,last:''});
-    const e=m.get(k); e.n++; if((p.date||'')>e.last) e.last=p.date||'';
+    if(!m.has(k)) m.set(k,{ch:p.ch,kw:p.kw,n:0,manual:false});
+    m.get(k).n++;
   });
-  return [...m.values()].sort((a,b)=>(b.last||'').localeCompare(a.last||''));
+  tracked.forEach(t=>{
+    const k=rkey(t.ch,t.kw);
+    if(!m.has(k)) m.set(k,{ch:t.ch,kw:t.kw,n:0,manual:true});
+  });
+  // 줄 순서가 매일 같아야 입력이 편하다: 채널 순서, 그다음 가나다
+  const order=channels();
+  return [...m.values()].sort((a,b)=>(order.indexOf(a.ch)-order.indexOf(b.ch))||a.kw.localeCompare(b.kw,'ko'));
 }
 const rankVal=r=>r?r:101;               // 0(100위 밖)은 101로 두고 그린다
 const histOf=(ch,kw)=>ranks[rkey(ch,kw)]||[];
+const fmtD=d=>Number(d.slice(5,7))+'/'+Number(d.slice(8,10));
 
-// 스파크라인: 단일 계열, 순위가 낮을수록(1위) 위로 가도록 y를 뒤집는다
+// 스파크라인: 단일 계열, 순위가 낮을수록(1위) 위로. 가로는 날짜 간격대로 놓아 빠진 날이 드러나게 한다.
 function sparkline(hist,color){
   if(hist.length<2) return '<span class="none">기록 1회</span>';
-  const W=78,H=22,P=4;
+  const W=120,H=28,pad=4;
   const vals=hist.map(h=>rankVal(h.r));
   const lo=Math.min(...vals), hi=Math.max(...vals);
-  const x=i=>P+i*(W-2*P)/(hist.length-1);
-  const y=v=>hi===lo?H/2:P+((v-lo)/(hi-lo))*(H-2*P);
+  const ts=hist.map(h=>Date.parse(h.d));
+  const t0=ts[0], t1=ts[ts.length-1];
+  const byDate=ts.every(Number.isFinite)&&t1>t0;
+  const x=i=>pad+(byDate?(ts[i]-t0)/(t1-t0):i/(hist.length-1))*(W-2*pad);
+  const y=v=>hi===lo?H/2:pad+((v-lo)/(hi-lo))*(H-2*pad);
   const d=vals.map((v,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(v).toFixed(1)).join(' ');
   const li=vals.length-1;
   return '<svg class="spark" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="순위 추이 '+
-      hist.map(h=>h.d+' '+(h.r?h.r+'위':'100위 밖')).join(', ')+'">'+
+      esc(hist.map(h=>h.d+' '+(h.r?h.r+'위':'100위 밖')).join(', '))+'">'+
     '<path d="'+d+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'+
     '<circle cx="'+x(li).toFixed(1)+'" cy="'+y(vals[li]).toFixed(1)+'" r="3" fill="'+color+'"/>'+
-    '<title>'+esc(hist.slice(-8).map(h=>h.d.slice(5)+' '+(h.r?h.r+'위':'밖')+(h.m?'(수동)':'')).join(' · '))+'</title></svg>';
+    '<title>'+esc(hist.slice(-12).map(h=>fmtD(h.d)+' '+(h.r?h.r+'위':'밖')).join(' · '))+'</title></svg>';
 }
-function delta(hist){
-  if(hist.length<2) return '<span class="d0">—</span>';
-  const p=hist[hist.length-2].r, c=hist[hist.length-1].r;
-  // 100위 밖은 순위가 없으므로 숫자 차이 대신 진입/이탈로 표시한다
+// 두 기록 비교. 순위는 숫자가 작을수록 좋으므로 이전-현재가 양수면 상승이다.
+function cmp(p,c){
   if(!p&&!c) return '<span class="d0">계속 밖</span>';
   if(!p) return '<span class="up">▲ 진입</span>';
   if(!c) return '<span class="down">▼ 밖으로</span>';
@@ -937,83 +962,103 @@ function delta(hist){
   if(!d) return '<span class="d0">변동 없음</span>';
   return d>0?'<span class="up">▲ '+d+'</span>':'<span class="down">▼ '+(-d)+'</span>';
 }
+const delta=h=>h.length<2?'<span class="d0">—</span>':cmp(h[h.length-2].r,h[h.length-1].r);
+const sinceStart=h=>h.length<2?'<span class="d0">—</span>':cmp(h[0].r,h[h.length-1].r);
+function bestOf(h){ const v=h.filter(x=>x.r).map(x=>x.r); return v.length?Math.min(...v):0 }
+
+// 하루 한 칸. 같은 날을 다시 적으면 바뀌고, 비우면(null) 그 날 기록이 지워진다.
+function setRecord(ch,kw,d,v){
+  const k=rkey(ch,kw);
+  const h=(ranks[k]||[]).filter(x=>x.d!==d);
+  if(v!==null) h.push({d,r:v});
+  h.sort((a,b)=>a.d.localeCompare(b.d));
+  if(h.length) ranks[k]=h.slice(-365); else delete ranks[k];   // 최근 1년치 보관
+  DB.set(P+'ranks',ranks);
+}
+const trendDate=()=>$('#trendDate').value||TODAY;
 
 function renderTrend(){
-  const rows=writtenList();
+  const rows=trendList(), d=trendDate();
+  const filled=rows.filter(r=>histOf(r.ch,r.kw).some(x=>x.d===d)).length;
+  $('#trendCount').textContent=rows.length?(fmtD(d)+' 기록 '+filled+' / '+rows.length):'';
   if(!rows.length){
-    // 글은 있는데 메인키워드가 비어 있는 경우를 구분해서 알려준다
-    const pub=posts.filter(p=>p.status==='발행');
-    $('#trendTbl').innerHTML='<tr><td class="empty">'+(
-      !posts.length ? '보관함에 저장된 글이 없습니다. 검사기에서 메인키워드를 넣고 저장하면 여기에 나타납니다.'
-      : !pub.length ? '발행 상태인 글이 없습니다. 글을 올리고 나면 상태를 <b>발행</b>으로 바꿔 저장하세요.'
-      : '발행된 글 '+pub.length+'건에 메인키워드가 없습니다. 보관함에서 글을 불러와 <b>메인키워드</b>를 넣고 다시 저장하세요.')+'</td></tr>';
+    $('#trendTbl').innerHTML='<tr><td class="empty">추적할 키워드가 없습니다. 발행 상태로 저장한 글의 메인키워드가 자동으로 올라오고, 아래 칸에서 직접 추가할 수도 있습니다.</td></tr>';
     return;
   }
   $('#trendTbl').innerHTML=
-    '<tr><th style="width:40%">키워드</th><th>현재</th><th>변화</th><th>추이</th><th>기록</th><th></th></tr>'+
+    '<tr><th style="width:28%">키워드</th><th>'+fmtD(d)+' 순위</th><th>직전 대비</th><th>시작 대비</th><th>최고</th><th>추이</th><th>기록</th><th></th></tr>'+
     rows.map((r,idx)=>{
-      const h=histOf(r.ch,r.kw), last=h[h.length-1];
-      const noBlog=!blogOf(r.ch);
+      const h=histOf(r.ch,r.kw);
+      const at=h.find(x=>x.d===d);
+      const before=h.filter(x=>x.d<d).pop();
+      const best=bestOf(h), last=h[h.length-1];
       return '<tr>'+
         '<td><div class="kwc">'+esc(r.kw)+'</div><div class="sub">'+chBadge(r.ch)+
-          ' <span>글 '+r.n+'건'+(r.last?' · 최근 '+esc(r.last):'')+'</span>'+
-          (noBlog?' <span class="warn">블로그 주소 없음</span>':'')+'</div></td>'+
-        '<td><input type="number" class="rankin" data-mr="'+idx+'" min="0" max="1000" placeholder="—" '+
-          'value="'+(last?last.r:'')+'" title="직접 입력 · 0을 넣으면 100위 밖">'+
-          (last?'<span class="src'+(last.m?' hand':'')+'">'+(last.m?'수동':'자동')+'</span>':'')+'</td>'+
-        '<td>'+(last?delta(h):'')+'</td>'+
+          (r.manual?' <span class="src hand">직접 추가</span>':' <span>글 '+r.n+'건</span>')+'</div></td>'+
+        '<td><input type="number" class="rankin" data-mr="'+idx+'" min="0" max="1000" '+
+          'value="'+(at?at.r:'')+'" placeholder="'+(before?(before.r||'밖'):'—')+'" '+
+          'title="숫자 입력 후 Enter · 0 = 100위 밖 · 비우면 이 날 기록 삭제"></td>'+
+        '<td>'+delta(h)+'</td>'+
+        '<td>'+sinceStart(h)+'</td>'+
+        '<td>'+(best?'<span class="rank">'+best+'위</span>':'<span class="none">—</span>')+'</td>'+
         '<td>'+(h.length?sparkline(h,chColor(r.ch)):'<span class="none">—</span>')+'</td>'+
-        '<td><span class="sub">'+(last?esc(last.d)+' · '+h.length+'회':'없음')+'</span></td>'+
-        '<td style="text-align:right"><button class="mini" data-tr="'+idx+'" type="button"'+(noBlog?' disabled':'')+'>조회</button></td>'+
+        '<td><span class="sub">'+(h.length?fmtD(h[0].d)+'~'+fmtD(last.d)+' · '+h.length+'회':'없음')+'</span></td>'+
+        '<td style="text-align:right">'+(r.manual?'<button class="mini" data-untrack="'+idx+'" type="button" title="추적 해제">×</button>':'')+'</td>'+
       '</tr>';
     }).join('');
 }
 
-async function lookupTrend(list){
-  const msg=t=>$('#trendMsg').textContent=t;
-  const targets=list.filter(t=>blogOf(t.ch));
-  if(!targets.length){msg('채널 기준 설정에 블로그 주소를 먼저 넣어 주세요.');return}
-  let err=null, done=0, kept=0;
-  for(let n=0;n<targets.length;n++){
-    msg('순위 조회 중… ('+(n+1)+'/'+targets.length+')');
-    const t=targets[n];
-    const k0=rkey(t.ch,t.kw), h0=ranks[k0]||[], last0=h0[h0.length-1];
-    // 오늘 직접 적어둔 값이 있으면 그대로 둔다
-    if(last0&&last0.d===TODAY&&last0.m){ kept++; continue }
-    try{
-      const res=await api('/rank',{query:t.kw,blog:blogOf(t.ch),limit:100});
-      const k=rkey(t.ch,t.kw), h=(ranks[k]||[]).slice();
-      const rec={d:TODAY,r:res.rank||0};
-      if(h.length&&h[h.length-1].d===TODAY) h[h.length-1]=rec; else h.push(rec);
-      ranks[k]=h.slice(-30);   // 최근 30회만 보관
-      done++;
-    }catch(e){ err=e.message; break }
+// 표를 다시 그려도 입력 흐름이 끊기지 않게, 포커스를 같은 줄 번호로 되돌린다
+function rerenderKeepFocus(){
+  const a=document.activeElement;
+  const fi=a&&a.dataset&&a.dataset.mr!==undefined?a.dataset.mr:null;
+  renderTrend(); renderNav();
+  if(fi!==null){
+    const el=$('#trendTbl input[data-mr="'+fi+'"]');
+    if(el){ el.focus(); try{ el.select() }catch(e){} }
   }
-  DB.set(P+'ranks',ranks); renderTrend();
-  // 실패를 '완료'로 덮어쓰지 않는다
-  msg(err?('실패: '+err+(done?' ('+done+'개는 저장됨)':''))
-        :('완료 · '+done+'개'+(kept?' · 직접 적은 '+kept+'개는 유지':'')+' · '+nowHM()));
 }
-// 직접 적은 순위는 그 날짜 기록으로 남고, 조회가 덮어쓰지 않는다
 $('#trendTbl').addEventListener('change',e=>{
   const inp=e.target.closest('input[data-mr]'); if(!inp) return;
-  const row=writtenList()[+inp.dataset.mr]; if(!row) return;
-  const raw=inp.value.trim();
-  if(raw===''){ renderTrend(); return }
-  const v=Math.max(0,Math.min(1000,parseInt(raw,10)||0));
-  const k=rkey(row.ch,row.kw), h=(ranks[k]||[]).slice();
-  const rec={d:TODAY,r:v,m:1};
-  if(h.length&&h[h.length-1].d===TODAY) h[h.length-1]=rec; else h.push(rec);
-  ranks[k]=h.slice(-30);
-  DB.set(P+'ranks',ranks); renderTrend();
-  $('#trendMsg').textContent='"'+row.kw+'" → '+(v?v+'위':'100위 밖')+' 로 적어 두었습니다.';
+  const row=trendList()[+inp.dataset.mr]; if(!row) return;
+  const raw=inp.value.trim(), d=trendDate();
+  const v=raw===''?null:Math.max(0,Math.min(1000,parseInt(raw,10)||0));
+  setRecord(row.ch,row.kw,d,v);
+  $('#trendMsg').textContent='“'+row.kw+'” '+fmtD(d)+' → '+(v===null?'기록 삭제':v?v+'위':'100위 밖');
+  setTimeout(rerenderKeepFocus,0);
 });
-$('#trendAll').onclick=()=>lookupTrend(writtenList());
-$('#trendTbl').onclick=e=>{
-  const b=e.target.closest('button[data-tr]'); if(!b) return;
-  const row=writtenList()[+b.dataset.tr];
-  if(row) lookupTrend([row]);
+// Enter 로 다음 줄로 넘어가며 빠르게 채운다
+$('#trendTbl').addEventListener('keydown',e=>{
+  if(e.key!=='Enter') return;
+  const inp=e.target.closest('input[data-mr]'); if(!inp) return;
+  e.preventDefault();
+  const next=$('#trendTbl input[data-mr="'+(+inp.dataset.mr+1)+'"]');
+  if(next) next.focus(); else inp.blur();
+});
+$('#trendTbl').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-untrack]'); if(!b) return;
+  const row=trendList()[+b.dataset.untrack]; if(!row) return;
+  if(!confirm('“'+row.kw+'” 추적을 해제할까요? 이 키워드의 순위 기록도 함께 지웁니다.')) return;
+  tracked=tracked.filter(t=>rkey(t.ch,t.kw)!==rkey(row.ch,row.kw));
+  delete ranks[rkey(row.ch,row.kw)];
+  DB.set(P+'tracked',tracked); DB.set(P+'ranks',ranks);
+  renderTrend(); renderNav();
+  $('#trendMsg').textContent='“'+row.kw+'” 추적을 해제했습니다.';
+});
+$('#tradd').onclick=()=>{
+  const kw=$('#trkw').value.trim(), ch=$('#trch').value;
+  if(!kw){ $('#trkw').focus(); return }
+  if(trendList().some(r=>r.ch===ch&&r.kw===kw)){ $('#trendMsg').textContent='“'+kw+'”는 이미 추적 중입니다.'; return }
+  tracked.push({ch,kw});
+  DB.set(P+'tracked',tracked);
+  $('#trkw').value=''; renderTrend(); renderNav();
+  $('#trendMsg').textContent='“'+kw+'” 추적을 시작했습니다. 오늘 순위를 적어 두세요.';
+  const i=trendList().findIndex(r=>r.ch===ch&&r.kw===kw);
+  const el=$('#trendTbl input[data-mr="'+i+'"]'); if(el) el.focus();
 };
+$('#trkw').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#tradd').click() });
+$('#trendDate').value=TODAY;
+$('#trendDate').addEventListener('change',renderTrend);
 
 /* ── 채널 select 채우기 ── */
 function fillChannelSelects(){
@@ -1024,17 +1069,21 @@ function fillChannelSelects(){
   const keepF=$('#fch').value;
   $('#fch').innerHTML='<option value="">전체 채널</option>'+opts;
   $('#fch').value=keepF;
+  const keepT=$('#trch').value;
+  $('#trch').innerHTML=opts;
+  $('#trch').value=channels().includes(keepT)?keepT:channels()[0];
 }
 
 /* ── 백업 ── */
 $('#bkBtn').onclick=()=>{
   const b=$('#backup'); b.classList.toggle('hide');
   if(!b.classList.contains('hide')){
-    $('#bkText').value=JSON.stringify({v:1,presets:mine,blogs,posts,ideas,ranks},null,1);
+    $('#bkText').value=JSON.stringify({v:1,presets:mine,blogs,posts,ideas,ranks,tracked},null,1);
     msg('#bkMsg','');
   }
 };
 $('#bkClose').onclick=()=>$('#backup').classList.add('hide');
+
 $('#bkCopy').onclick=()=>{
   navigator.clipboard.writeText($('#bkText').value)
     .then(()=>msg('#bkMsg','복사했습니다. 메모장 등에 붙여넣어 보관하세요.'))
@@ -1047,12 +1096,13 @@ function applyData(d,quiet){
   mine=d.presets&&typeof d.presets==='object'?d.presets:{};
   blogs=d.blogs&&typeof d.blogs==='object'?d.blogs:{};
   ranks=d.ranks&&typeof d.ranks==='object'?d.ranks:{};
+  tracked=Array.isArray(d.tracked)?d.tracked:[];
   applyingRemote=!!quiet;
-  savePosts(); saveIdeas(); DB.set(P+'presets',mine); DB.set(P+'blogs',blogs); DB.set(P+'ranks',ranks);
+  savePosts(); saveIdeas(); DB.set(P+'presets',mine); DB.set(P+'blogs',blogs); DB.set(P+'ranks',ranks); DB.set(P+'tracked',tracked);
   applyingRemote=false;
   setEditing(null); tabs(); fillChannelSelects(); $('#blogUrl').value=blogOf(activeCh); renderAll();
 }
-const snapshot=()=>({presets:mine,blogs,posts,ideas,ranks});
+const snapshot=()=>({presets:mine,blogs,posts,ideas,ranks,tracked});
 
 $('#bkRestore').onclick=()=>{
   let d;
@@ -1153,7 +1203,7 @@ function show(v){
 }
 function renderNav(){
   $('#nav').innerHTML=VIEWS.map(([k,label])=>{
-    const c=k==='archive'?posts.length:k==='board'?ideas.filter(i=>!i.done).length:k==='trend'?writtenList().length:0;
+    const c=k==='archive'?posts.length:k==='board'?ideas.filter(i=>!i.done).length:k==='trend'?trendList().length:0;
     return '<button type="button" data-v="'+k+'">'+label+(c?'<b>'+c+'</b>':'')+'</button>';
   }).join('');
 }
@@ -1214,5 +1264,9 @@ console.assert(delta([{d:'1',r:0},{d:'2',r:7}]).includes('진입'),'100위 안�
 console.assert(delta([{d:'1',r:0},{d:'2',r:0}]).includes('계속 밖'),'둘 다 밖이면 변화 없음');
 console.assert(sparkline([{d:'1',r:1}],'#000').includes('기록 1회'),'점 하나면 선을 안 그린다');
 console.assert(sparkline([{d:'1',r:1},{d:'2',r:50}],'#000').startsWith('<svg'),'두 점부터 스파크라인');
+console.assert(!sparkline([{d:'2026-09-01',r:5},{d:'2026-09-02',r:3},{d:'2026-09-10',r:9}],'#000').includes('NaN'),'날짜 간격 스파크라인에 NaN 없음');
+console.assert(sinceStart([{d:'a',r:20},{d:'b',r:9},{d:'c',r:4}]).includes('▲ 16'),'시작 대비는 첫 기록과 비교');
+console.assert(bestOf([{r:0},{r:12},{r:4},{r:30}])===4&&bestOf([{r:0}])===0,'최고 순위는 밖(0)을 빼고 가장 작은 값');
+console.assert(fmtD('2026-09-01')==='9/1','날짜 표기');
 console.assert(normalizeProxy('p.workers.dev/')==='https://p.workers.dev'&&normalizeProxy('https://a.dev')==='https://a.dev'&&normalizeProxy('')==='','프록시 주소는 https:// 보정 + 끝 슬래시 제거');
 </script>
