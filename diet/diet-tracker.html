@@ -465,6 +465,19 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
 .hourchart .lb small{display:block; font-size:9.5px; color:var(--faint); font-family:"IBM Plex Mono",monospace}
 
 /* ---------- 시트 ---------- */
+/* 사진 — 먹은 것 사진 기록 */
+.photorow{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:8px}
+.photorow:empty{display:none}
+.ph{position:relative; display:block; width:66px; height:66px; border-radius:12px; overflow:hidden; background:var(--surface2); border:1px solid var(--line)}
+.ph img{width:100%; height:100%; object-fit:cover; display:block; cursor:zoom-in}
+.ph-x{position:absolute; top:2px; right:2px; width:20px; height:20px; border:0; border-radius:50%; background:rgba(26,20,60,.62); color:#fff; font-size:13px; line-height:1; padding:0; cursor:pointer}
+.ph-add{width:66px; height:66px; border-radius:12px; border:1px dashed var(--line); background:var(--surface2); color:var(--muted); font-size:17px; line-height:1.1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; cursor:pointer}
+.ph-add small{font-size:10px; letter-spacing:.02em}
+.ph-add:disabled{opacity:.5; cursor:default}
+.lightbox{position:fixed; inset:0; z-index:80; background:rgba(12,8,32,.9); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:20px}
+.lightbox[hidden]{display:none}
+.lightbox img{max-width:100%; max-height:76vh; border-radius:14px; display:block}
+.lb-x{border:0; border-radius:999px; padding:11px 26px; background:#fff; color:#1A1A33; font:inherit; font-weight:600; cursor:pointer}
 .sheet-back{position:fixed; inset:0; z-index:60; background:rgba(26,20,60,.42); backdrop-filter:blur(3px); display:flex; align-items:flex-end; justify-content:center}
 .sheet-back[hidden]{display:none}
 .sheet{
@@ -739,6 +752,7 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
                 </span>
               </div>
               <input type="text" class="mr-note" id="mn-b" data-mn="b" placeholder="뭘 먹었나요 (쉼표로 나눠서)">
+              <div class="photorow" id="ph-b"></div>
             </div>
             <div class="mealrow" id="mrow-l">
               <div class="mr-top">
@@ -752,6 +766,7 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
                 </span>
               </div>
               <input type="text" class="mr-note" id="mn-l" data-mn="l" placeholder="뭘 먹었나요 (쉼표로 나눠서)">
+              <div class="photorow" id="ph-l"></div>
             </div>
             <div class="mealrow" id="mrow-d">
               <div class="mr-top">
@@ -765,6 +780,11 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
                 </span>
               </div>
               <input type="text" class="mr-note" id="mn-d" data-mn="d" placeholder="뭘 먹었나요 (쉼표로 나눠서)">
+              <div class="photorow" id="ph-d"></div>
+            </div>
+            <div class="mealrow" id="mrow-s">
+              <div class="mr-top"><span class="mr-nm">🍪 간식 · 기타</span></div>
+              <div class="photorow" id="ph-s"></div>
             </div>
           </div>
           <div class="menubank" id="menubank" hidden>
@@ -1017,6 +1037,11 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
     <div id="sheet-content"></div>
   </div>
 </div>
+<input type="file" id="photo-file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>
+<div class="lightbox" id="lightbox" hidden>
+  <img id="lightbox-img" alt="먹은 것 사진">
+  <button class="lb-x" type="button" data-lbclose>닫기</button>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1131,6 +1156,9 @@ const INTAKE = {less:"조금", same:"원래대로", more:"많이"};
 const INTAKE_SCORE = {less:0, same:1, more:2};
 const DRINK = {none:"안 마심", some:"조금", lots:"많이"};
 const LATE  = {none:"안 먹음", some:"조금", lots:"많이"};
+/* 사진 슬롯 — 삼시세끼 + 간식·기타 */
+const PHOTO_SLOTS = [["b","🌅 아침"],["l","🍚 점심"],["d","🌙 저녁"],["s","🍪 간식 · 기타"]];
+const PHOTO_MAX_PX = 1400;
 const POOP = {none:"못 봄", once:"1회", many:"2회 이상"};
 const POOP_TYPE = {hard:"딱딱함", normal:"보통", loose:"무름"};
 const FLOW = {light:"적음", normal:"보통", heavy:"많음"};
@@ -1181,12 +1209,13 @@ const state = {
   days:{},
   settings:{ goalWeight:null, principles:DEFAULT_PRINCIPLES.slice(), habits:DEFAULT_HABITS.slice() },
   habitEdit:false, prinEdit:false,
-  db:null, synced:false
+  db:null, synced:false,
+  assets:null, assetUsage:null, photoTarget:null
 };
 
 function emptyDay(date){
   return { date, meals:{b:false,l:false,d:false}, lunchbox:null, eatout:null, caffeine:null,
-           mealNotes:{b:"",l:"",d:""}, mealKind:{b:null,l:null,d:null},
+           mealNotes:{b:"",l:"",d:""}, mealKind:{b:null,l:null,d:null}, photos:{b:[],l:[],d:[],s:[]},
            appetite:null, intake:null, drink:null, latenight:null, period:null, flow:null, poop:null, poopType:null, review:null, weights:[], workouts:[], snacks:[], meds:[], fits:[], habits:{} };
 }
 /* db가 돌려주는 문서는 얼려져 있어 그대로 고칠 수 없다.
@@ -1197,6 +1226,7 @@ function normalizeDay(src, date){
     n.meals = Object.assign(n.meals, src.meals || {});
     n.mealNotes = Object.assign(n.mealNotes, src.mealNotes || {});
     n.mealKind  = Object.assign(n.mealKind,  src.mealKind  || {});
+    if(src.photos) PHOTO_SLOTS.forEach(([k])=>{ if(Array.isArray(src.photos[k])) n.photos[k] = src.photos[k].slice(); });
     ["weights","workouts","snacks","meds","fits"].forEach(k=>{
       if(Array.isArray(src[k])) n[k] = src[k].map(x=> Object.assign({}, x));
     });
@@ -1274,6 +1304,89 @@ function persistSettings(){
       .catch(err=> syncTrouble(err));
   }
 }
+/* ---------- 사진 (assets) ----------
+   업로드한 사진은 아티팩트에 저장되고, 우리는 id만 그날 문서에 적어 둔다.
+   id로 언제든 "/_blob/<id>" 로 다시 불러올 수 있다. */
+async function initAssets(){
+  let a = null;
+  try{ a = await window.claude?.use?.("assets"); }catch(e){ a = null; }
+  state.assets = a;
+  if(a) refreshAssetUsage();
+  render();
+}
+function refreshAssetUsage(){
+  if(!state.assets) return;
+  state.assets.list().then(r=>{ state.assetUsage = r.usage; render(); }).catch(()=>{});
+}
+/* 아이폰 사진은 한 장에 몇 MB나 된다. 긴 변 1400px JPEG으로 줄여서 올린다 */
+async function shrinkImage(file){
+  const url = URL.createObjectURL(file);
+  try{
+    const img = await new Promise((res, rej)=>{ const i = new Image(); i.onload = ()=> res(i); i.onerror = rej; i.src = url; });
+    const long = Math.max(img.naturalWidth, img.naturalHeight);
+    if(!long) return file;
+    const sc = Math.min(1, PHOTO_MAX_PX / long);
+    if(sc >= 1 && file.size < 900*1024) return file;
+    const w = Math.max(1, Math.round(img.naturalWidth*sc)), h = Math.max(1, Math.round(img.naturalHeight*sc));
+    const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+    cv.getContext("2d").drawImage(img, 0, 0, w, h);
+    const blob = await new Promise(res=> cv.toBlob(res, "image/jpeg", 0.82));
+    return (blob && blob.size < file.size) ? blob : file;
+  } finally { URL.revokeObjectURL(url); }
+}
+function photoError(err){
+  const c = err && err.code;
+  toast(c === "too_large"      ? "사진이 너무 커요. 다른 사진으로 해 주세요"
+      : c === "quota_or_state" ? "사진 저장 공간이 가득 찼어요. 오래된 사진을 지워 주세요"
+      : c === "rate_limited"   ? "잠깐 뒤에 다시 눌러 주세요"
+      : c === "unsupported_type" ? "이 형식의 사진은 올릴 수 없어요"
+      : "사진을 저장하지 못했어요");
+}
+async function addPhotos(ds, slot, files){
+  if(!state.assets) return toast("이 화면에서는 사진을 올릴 수 없어요");
+  let n = 0;
+  for(const f of files){
+    if(!/^image\//.test(f.type)){ toast("사진 파일만 올릴 수 있어요"); continue; }
+    let blob = f;
+    try{ blob = await shrinkImage(f); }catch(e){ blob = f; }
+    try{
+      const r = await state.assets.upload(blob, {type: blob.type || "image/jpeg"});
+      mutate(ds, d=>{ if(!Array.isArray(d.photos[slot])) d.photos[slot] = []; d.photos[slot] = d.photos[slot].concat([r.id]); });
+      n++;
+    }catch(err){ photoError(err); break; }
+  }
+  if(n){ toast(n === 1 ? "사진 저장했어요" : n+"장 저장했어요"); refreshAssetUsage(); }
+}
+function askDeletePhoto(ds, slot, id){
+  confirmSheet("이 사진을 지울까요?",
+    '<p class="rvline">지운 사진은 되돌릴 수 없어요. 기록은 그대로 남습니다.</p>',
+    "지우기", ()=> deletePhoto(ds, slot, id));
+}
+async function deletePhoto(ds, slot, id){
+  mutate(ds, d=>{ d.photos[slot] = (d.photos[slot]||[]).filter(x=> x !== id); });
+  if(state.assets){ try{ await state.assets.delete(id); }catch(e){} }
+  refreshAssetUsage();
+  toast("사진을 지웠어요");
+}
+function photoStripHTML(ds, slot, editable){
+  const ids = (day(ds).photos && day(ds).photos[slot]) || [];
+  let h = ids.map(id=> '<span class="ph"><img src="/_blob/'+esc(id)+'" alt="먹은 것 사진" loading="lazy" data-phview="'+esc(id)+'">'
+      + (editable ? '<button class="ph-x" type="button" data-phdel="'+esc(ds)+':'+slot+':'+esc(id)+'" aria-label="사진 지우기">×</button>' : "")
+      + '</span>').join("");
+  if(editable && state.assets) h += '<button class="ph-add" type="button" data-phadd="'+esc(ds)+':'+slot+'" aria-label="사진 추가">＋<small>사진</small></button>';
+  return h;
+}
+function openLightbox(id){
+  $("#lightbox-img").src = "/_blob/" + id;
+  $("#lightbox").hidden = false;
+  document.body.style.overflow = "hidden";
+}
+function closeLightbox(){
+  $("#lightbox").hidden = true;
+  $("#lightbox-img").removeAttribute("src");
+  if($("#sheet-back").hidden) document.body.style.overflow = "";
+}
+
 function syncTrouble(err){
   const code = err && err.code;
   setBadge(false, code==="quota_exceeded" ? "저장 공간 가득" : "이 기기에만 저장");
@@ -1655,13 +1768,16 @@ function dayDetailHTML(ds){
     .map(([k,n])=> '<span class="pill '+(o.meals[k]?"done":"rest")+'">'+n+(o.meals[k]?" ✓":"")+'</span>').join(" ");
   const noteLines = MEALS3.filter(([k])=> (o.mealNotes[k]||"").trim()).map(([k,n])=>
     '<p class="rvline" style="margin-bottom:6px"><b>'+n+(o.mealKind[k]?" · "+MEAL_KIND[o.mealKind[k]]:"")+'</b>'+esc(o.mealNotes[k])+'</p>');
+  const photoLines = PHOTO_SLOTS.filter(([k])=> (o.photos[k]||[]).length).map(([k,nm])=>
+    '<p class="tiny muted" style="margin:10px 0 0">'+esc(nm)+'</p><div class="photorow">'+photoStripHTML(ds, k, false)+'</div>');
   const extra = [];
   if(o.lunchbox) extra.push("도시락 "+(o.lunchbox==="yes"?"쌈":"안 쌈"));
   if(ateOut(o) !== null) extra.push("외식 "+(ateOut(o)?"함":"안 함"));
   if(o.caffeine) extra.push("카페인 "+(CAFF[o.caffeine]||o.caffeine));
   body += sec("삼시세끼", '<div class="chips">'+mealsTxt+'</div>'
     + (noteLines.length?'<div style="margin-top:12px">'+noteLines.join("")+'</div>':"")
-    + (extra.length?'<p class="tiny muted" style="margin:10px 0 0">'+esc(extra.join(" · "))+'</p>':""));
+    + (extra.length?'<p class="tiny muted" style="margin:10px 0 0">'+esc(extra.join(" · "))+'</p>':"")
+    + photoLines.join(""));
 
   body += sec("체중", o.weights.length
     ? o.weights.map(w=>{
@@ -1950,6 +2066,8 @@ function renderMealPanel(){
     const el = $("#mn-"+k), val = d.mealNotes[k] || "";
     if(document.activeElement !== el && el.value !== val) el.value = val;
   });
+  PHOTO_SLOTS.forEach(([k])=>{ const box = $("#ph-"+k); if(box) box.innerHTML = photoStripHTML(ds, k, true); });
+  $("#mrow-s").hidden = !state.assets && !(d.photos.s||[]).length;
   if(!state.mealTarget) state.mealTarget = (MEALS3.find(([k])=> !(d.mealNotes[k]||"")) || MEALS3[0])[0];
   renderMenuBank();
   setChip($("#m-lunchbox"), d.lunchbox);
@@ -2287,6 +2405,18 @@ function secSummary(c){
   out += '<div class="card"><p class="sec-label">진료 준비</p>'
     + '<p class="tiny muted" style="margin:-4px 0 14px">최근 3개월 체중·약·몸의 반응·배변을 한 장으로 모아 보여줍니다. 진료실에서 그대로 열어 보세요.</p>'
     + '<button class="btn ghost" type="button" data-clinic>진료 준비 화면 열기</button></div>';
+
+  if(state.assetUsage){
+    const u = state.assetUsage;
+    const mb = n=> (Math.round(n/1048576*10)/10);
+    const pct = u.maxBytes ? Math.min(100, Math.round(u.bytes/u.maxBytes*100)) : 0;
+    out += '<div class="card"><p class="sec-label">사진 저장 공간</p>'
+      + '<div class="barrow"><span class="lb">사용 중</span><span class="tr"><span class="fl" style="width:'
+      + Math.max(2, pct)+'%; background:'+(pct>=85?"var(--clay)":"var(--accent)")+'"></span></span>'
+      + '<span class="vl">'+pct+'%</span></div>'
+      + '<p class="tiny muted" style="margin:8px 0 0">사진 '+u.files+'장 · '+mb(u.bytes)+'MB / '+mb(u.maxBytes)+'MB. '
+      + '올릴 때 자동으로 줄여서 저장해요. 가득 차면 캘린더에서 오래된 사진을 지우면 됩니다.</p></div>';
+  }
 
   out += '<div class="card"><p class="sec-label">기록 내보내기</p>'
     + '<p class="tiny muted" style="margin:-4px 0 14px">쌓인 기록을 파일로 받아 백업하거나 진료 때 보여줄 수 있어요.</p>'
@@ -3506,6 +3636,28 @@ function handleClick(e){
     return;
   }
 
+  if(el.closest("[data-lbclose]") || el.id === "lightbox") return closeLightbox();
+
+  const phView = el.closest("[data-phview]");
+  if(phView) return openLightbox(phView.dataset.phview);
+
+  const phDel = el.closest("[data-phdel]");
+  if(phDel){
+    const i = phDel.dataset.phdel.indexOf(":");
+    const ds = phDel.dataset.phdel.slice(0, i);
+    const rest = phDel.dataset.phdel.slice(i+1);
+    const j = rest.indexOf(":");
+    return askDeletePhoto(ds, rest.slice(0, j), rest.slice(j+1));
+  }
+
+  const phAdd = el.closest("[data-phadd]");
+  if(phAdd){
+    const [ds, slot] = phAdd.dataset.phadd.split(":");
+    state.photoTarget = {date: ds, slot};
+    const f = $("#photo-file"); f.value = ""; f.click();
+    return;
+  }
+
   const expBtn = el.closest("[data-export]");
   if(expBtn){ exportFile(expBtn.dataset.export); return; }
 
@@ -3666,7 +3818,17 @@ function handleClick(e){
   if(el.closest("#cal-prev")){ calShift(-1); return renderCal(); }
   if(el.closest("#cal-next")){ calShift(1); return renderCal(); }
 }
-document.addEventListener("keydown", e=>{ if(e.key === "Escape" && !$("#sheet-back").hidden) closeSheet(); });
+document.addEventListener("keydown", e=>{
+  if(e.key !== "Escape") return;
+  if(!$("#lightbox").hidden) return closeLightbox();
+  if(!$("#sheet-back").hidden) closeSheet();
+});
+$("#photo-file").addEventListener("change", e=>{
+  const t = state.photoTarget, files = Array.from(e.target.files || []);
+  state.photoTarget = null;
+  e.target.value = "";
+  if(t && files.length) addPhotos(t.date, t.slot, files);
+});
 $("#habit-new") && $("#habit-new").addEventListener("keydown", e=>{ if(e.key === "Enter"){ e.preventDefault(); $("#habit-add-btn").click(); } });
 $("#rec-date").addEventListener("change", ()=>{ state.mealTarget = null; render(); });
 
@@ -3727,6 +3889,7 @@ function start(hot){
   go(state.tab);
   setBadge(false, "불러오는 중");
   initDb();
+  initAssets();
 }
 window.claude?.hot?.snapshot?.(()=> ({tab:state.tab, rec:state.rec, calMode:state.calMode, calCursor:state.calCursor, statSec:state.statSec, cheer:state.cheer}));
 if(window.claude?.hot?.ready) window.claude.hot.ready(start);
