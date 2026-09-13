@@ -172,6 +172,23 @@ input.big{font-family:"IBM Plex Mono",monospace; font-size:31px; font-weight:600
   color:var(--muted); transition:background .14s, color .14s, box-shadow .14s;
 }
 .seg button[aria-selected="true"]{background:var(--surface); color:var(--accent); box-shadow:var(--shadow-sm)}
+.seg.six button{font-size:12px; padding:9px 0; letter-spacing:-.02em}
+
+/* ---------- 인바디 ---------- */
+.ibgrid{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.ibgrid .fld{margin:0}
+.ibsec{margin:18px 0 8px; font-size:12px; font-weight:700; color:var(--muted); letter-spacing:.02em}
+.ibstats{display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:4px}
+.ibrow{display:flex; align-items:baseline; gap:8px; padding:9px 0; border-bottom:1px solid var(--line2)}
+.ibrow:last-child{border-bottom:0}
+.ibrow .k{flex:1 1 auto; font-size:13px; color:var(--ink2)}
+.ibrow .v{font-size:14px; font-weight:700; font-variant-numeric:tabular-nums}
+.ibrow .d{font-size:11.5px; font-weight:600; min-width:56px; text-align:right}
+.ibrow .d.up{color:var(--clay)} .ibrow .d.down{color:var(--mint)} .ibrow .d.flat{color:var(--faint)}
+.ibbody{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:4px}
+.ibpart{font-size:12px; color:var(--ink2); display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid var(--line2)}
+.ibpart b{font-variant-numeric:tabular-nums}
+.ibpart small{color:var(--faint); font-size:10.5px; margin-left:4px}
 
 /* ---------- 홈 ---------- */
 .cheer{
@@ -620,12 +637,13 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
         <button class="rd-nav" type="button" id="rd-next" aria-label="하루 뒤">›</button>
         <button class="rd-today" type="button" id="rd-today" hidden>오늘로</button>
       </div>
-      <div class="seg" id="rec-seg" role="tablist">
+      <div class="seg six" id="rec-seg" role="tablist">
         <button role="tab" type="button" data-rec="weight" aria-selected="true">체중</button>
         <button role="tab" type="button" data-rec="meal" aria-selected="false">식사</button>
         <button role="tab" type="button" data-rec="workout" aria-selected="false">운동</button>
         <button role="tab" type="button" data-rec="med" aria-selected="false">약</button>
         <button role="tab" type="button" data-rec="fit" aria-selected="false">옷 핏</button>
+        <button role="tab" type="button" data-rec="inbody" aria-selected="false">인바디</button>
       </div>
 
       <!-- 체중 -->
@@ -961,6 +979,47 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
           <div id="list-fit"></div>
         </div>
       </div>
+
+      <!-- 인바디 -->
+      <div class="rec-panel" id="rec-inbody" hidden>
+        <div class="card">
+          <p class="sec-label">인바디 (체성분 측정)</p>
+          <p class="tiny muted" style="margin:-4px 0 14px">측정지에 적힌 숫자를 그대로 옮겨 적으면 돼요. 아는 것만 채워도 됩니다. 체중만이 아니라 근육과 지방이 각각 어떻게 움직이는지 보려고 남깁니다.</p>
+          <div class="form" id="form-inbody">
+            <div class="dt">
+              <label class="fld" style="flex:0 0 46%"><span>시간</span><input type="time" id="ib-time"></label>
+              <label class="fld"><span>체형판정</span><input type="text" id="ib-shape" placeholder="예: 경도비만"></label>
+            </div>
+            <div class="ibgrid" id="ib-main"></div>
+            <div class="expander" data-exp>
+              <button type="button"><span>더 자세히 기록하기</span><span class="caret">▾</span></button>
+              <div class="body">
+                <p class="ibsec" style="margin-top:2px">체성분 · 비만 · 복부</p>
+                <div class="ibgrid" id="ib-detail"></div>
+              </div>
+            </div>
+            <div class="expander" data-exp>
+              <button type="button"><span>부위별 근육 · 지방</span><span class="caret">▾</span></button>
+              <div class="body">
+                <p class="ibsec" style="margin-top:2px">부위별 근육량 (kg)</p>
+                <div class="ibgrid" id="ib-segmus"></div>
+                <p class="ibsec">부위별 지방량 (kg)</p>
+                <div class="ibgrid" id="ib-segfat"></div>
+              </div>
+            </div>
+            <label class="fld"><span>메모</span><textarea id="ib-memo" placeholder="어느 기계로 쟀는지, 옷차림, 식후 여부 등"></textarea></label>
+            <label class="ibcheck row" style="gap:8px; align-items:center; margin:2px 0 0">
+              <input type="checkbox" id="ib-asweight" checked style="width:auto; flex:none">
+              <span class="tiny muted">체중도 같이 기록하기 (체중 그래프에 함께 찍혀요)</span>
+            </label>
+            <button class="btn" type="button" data-save="inbody">인바디 기록하기</button>
+          </div>
+        </div>
+        <div class="card">
+          <p class="sec-label">지난 측정</p>
+          <div id="list-inbody"></div>
+        </div>
+      </div>
     </section>
 
     <!-- ============ HABITS ============ -->
@@ -1159,6 +1218,38 @@ const LATE  = {none:"안 먹음", some:"조금", lots:"많이"};
 /* 사진 슬롯 — 삼시세끼 + 간식·기타 */
 const PHOTO_SLOTS = [["b","🌅 아침"],["l","🍚 점심"],["d","🌙 저녁"],["s","🍪 간식 · 기타"]];
 const PHOTO_MAX_PX = 1400;
+
+/* 인바디 — 재는 항목이 많아 표로 정의하고, 입력칸은 시작할 때 한 번 만든다 */
+const IB_MAIN = [
+  ["kg","체중","kg",0.01,20,300],
+  ["smm","골격근량","kg",0.01,5,80],
+  ["fatKg","체지방량","kg",0.01,1,120],
+  ["fatPct","체지방률","%",0.1,3,70]
+];
+const IB_DETAIL = [
+  ["water","체수분","L",0.1,10,80],
+  ["protein","단백질","kg",0.1,2,30],
+  ["mineral","무기질","kg",0.01,0.5,10],
+  ["muscle","근육량","kg",0.1,10,90],
+  ["ffm","제지방량","kg",0.1,10,100],
+  ["bmi","BMI","",0.1,8,70],
+  ["obesity","비만도","%",0.1,-50,200],
+  ["bmr","기초대사량","kcal",1,500,4000],
+  ["bodyAge","신체연령","세",1,10,99],
+  ["cell","세포량","kg",0.1,5,70],
+  ["whr","복부비만율","",0.01,0.4,1.5],
+  ["vfl","내장지방레벨","",1,1,30],
+  ["vfa","내장지방면적","cm²",1,10,400],
+  ["waist","복부둘레","cm",0.1,40,200],
+  ["recKg","권장체중","kg",0.1,20,150],
+  ["adjKg","체중조절","kg",0.1,-80,80],
+  ["adjMus","근육조절","kg",0.1,-40,40],
+  ["adjFat","지방조절","kg",0.1,-80,80]
+];
+const IB_ALL = IB_MAIN.concat(IB_DETAIL);
+const IB_PARTS = [["la","왼팔"],["ra","오른팔"],["tr","몸통"],["ll","왼다리"],["rl","오른다리"]];
+/* 낮아지는 게 반가운 항목 — 변화량에 색을 입힐 때 쓴다 */
+const IB_LOWER_BETTER = {fatKg:1, fatPct:1, bmi:1, obesity:1, whr:1, vfl:1, vfa:1, waist:1, bodyAge:1};
 const POOP = {none:"못 봄", once:"1회", many:"2회 이상"};
 const POOP_TYPE = {hard:"딱딱함", normal:"보통", loose:"무름"};
 const FLOW = {light:"적음", normal:"보통", heavy:"많음"};
@@ -1216,7 +1307,7 @@ const state = {
 function emptyDay(date){
   return { date, meals:{b:false,l:false,d:false}, lunchbox:null, eatout:null, caffeine:null,
            mealNotes:{b:"",l:"",d:""}, mealKind:{b:null,l:null,d:null}, photos:{b:[],l:[],d:[],s:[]},
-           appetite:null, intake:null, drink:null, latenight:null, period:null, flow:null, poop:null, poopType:null, review:null, weights:[], workouts:[], snacks:[], meds:[], fits:[], habits:{} };
+           appetite:null, intake:null, drink:null, latenight:null, period:null, flow:null, poop:null, poopType:null, review:null, weights:[], workouts:[], snacks:[], meds:[], fits:[], inbody:[], habits:{} };
 }
 /* db가 돌려주는 문서는 얼려져 있어 그대로 고칠 수 없다.
    항상 우리 쪽 사본으로 바꿔 두고, 그 사본만 읽고 쓴다. */
@@ -1227,8 +1318,12 @@ function normalizeDay(src, date){
     n.mealNotes = Object.assign(n.mealNotes, src.mealNotes || {});
     n.mealKind  = Object.assign(n.mealKind,  src.mealKind  || {});
     if(src.photos) PHOTO_SLOTS.forEach(([k])=>{ if(Array.isArray(src.photos[k])) n.photos[k] = src.photos[k].slice(); });
-    ["weights","workouts","snacks","meds","fits"].forEach(k=>{
+    ["weights","workouts","snacks","meds","fits","inbody"].forEach(k=>{
       if(Array.isArray(src[k])) n[k] = src[k].map(x=> Object.assign({}, x));
+    });
+    n.inbody.forEach(r=>{
+      if(r.segMuscle) r.segMuscle = Object.assign({}, r.segMuscle);
+      if(r.segFat)    r.segFat    = Object.assign({}, r.segFat);
     });
     n.habits = Object.assign({}, src.habits || {});
     n.lunchbox = src.lunchbox || null;
@@ -1803,6 +1898,18 @@ function dayDetailHTML(ds){
   if(o.meds.length) body += sec("약", o.meds.map(m=>'<div class="entry"><span class="when">'+esc(m.t||"")+'</span><span class="main"><span class="t">'
     + esc(DRUGS[m.drug]||m.drug)+(m.dose?" "+esc(m.dose):"")+'</span>'+(m.memo?'<span class="s">'+esc(m.memo)+'</span>':"")+'</span></div>').join(""));
 
+  if(o.inbody.length) body += sec("인바디", o.inbody.map(r=>{
+    const bits = [];
+    if(typeof r.smm === "number")    bits.push("골격근 "+String(Math.round(r.smm*100)/100)+"kg");
+    if(typeof r.fatPct === "number") bits.push("체지방 "+String(Math.round(r.fatPct*100)/100)+"%");
+    if(typeof r.vfl === "number")    bits.push("내장지방 "+r.vfl);
+    if(r.shape) bits.push(r.shape);
+    return '<div class="entry"><span class="when">'+esc(r.t||"")+'</span>'
+      + '<button class="main" type="button" data-ibview="'+esc(ds)+':'+esc(r.id)+'">'
+      + '<span class="t">'+(typeof r.kg === "number" ? fmtKg(r.kg)+"kg" : "측정 기록")+'</span>'
+      + (bits.length?'<span class="s">'+esc(bits.join(" · "))+'</span>':"")+'</button></div>';
+  }).join(""));
+
   if(o.fits.length) body += sec("옷 핏", o.fits.map(f=>{
     const bits=[]; if(f.waist) bits.push("허리 "+f.waist+"cm"); if(f.hip) bits.push("엉덩이 "+f.hip+"cm");
     if(f.thigh) bits.push("허벅지 "+f.thigh+"cm"); if(f.memo) bits.push(f.memo);
@@ -1992,6 +2099,20 @@ function renderRecLists(){
     if(m.memo) bits.push(m.memo);
     return entryRow(mdLabel(m.date)+" "+(m.t||""), (DRUGS[m.drug]||m.drug)+(m.dose?" "+m.dose:""), bits.join(" · "), "meds:"+m.date+":"+m.id);
   }).join("") : '<p class="emptyline">아직 기록이 없어요.</p>';
+
+  const il = allInbody().slice().reverse().slice(0, 12);
+  $("#list-inbody").innerHTML = il.length ? il.map(r=>{
+    const bits = [];
+    if(typeof r.smm === "number")    bits.push("골격근 "+String(Math.round(r.smm*100)/100)+"kg");
+    if(typeof r.fatPct === "number") bits.push("체지방 "+String(Math.round(r.fatPct*100)/100)+"%");
+    if(typeof r.vfl === "number")    bits.push("내장지방 "+r.vfl);
+    if(r.shape) bits.push(r.shape);
+    const title = typeof r.kg === "number" ? fmtKg(r.kg)+"kg" : "측정 기록";
+    return '<div class="entry"><span class="when">'+esc(mdLabel(r.date)+" "+(r.t||""))+'</span>'
+      + '<button class="main" type="button" data-ibview="'+esc(r.date)+':'+esc(r.id)+'">'
+      + '<span class="t">'+esc(title)+'</span>'
+      + (bits.length?'<span class="s">'+esc(bits.join(" · "))+'</span>':"")+'</button></div>';
+  }).join("") : '<p class="emptyline">아직 인바디 기록이 없어요.</p>';
 
   const fl = collect("fits", 10);
   $("#list-fit").innerHTML = fl.length ? fl.map(f=>{
@@ -2830,6 +2951,39 @@ function secBody(c){
   } else out += needMore("기록 > 체중 화면의 '몸 상태'에서 식사량을 눌러두면, 먹고 싶은 마음과 실제로 먹은 양이 얼마나 붙어 다니는지 정리해 드려요.");
   out += '</div>';
 
+  /* 인바디 — 체중 한 숫자가 아니라 근육과 지방이 각각 어디로 갔는지 */
+  const ibAll = allInbody().filter(r=> c.inRange(r.date));
+  out += '<div class="card"><p class="sec-label">인바디</p>';
+  if(ibAll.length){
+    const last = ibAll[ibAll.length-1], first = ibAll[0];
+    const cmp = ibAll.length > 1 ? first : null;
+    out += '<p class="tiny muted" style="margin:-4px 0 12px">가장 최근 측정 '+esc(mdLabel(last.date))+esc(last.t?" "+last.t:"")
+      + (cmp ? ' · 이 기간 첫 측정('+esc(mdLabel(first.date))+') 대비' : ' · 이 기간의 유일한 측정')+'</p>';
+    out += IB_MAIN.filter(([k])=> typeof last[k] === "number").map(([k, label, unit])=>
+      '<div class="ibrow"><span class="k">'+esc(label)+'</span>'
+      + '<span class="v">'+String(Math.round(last[k]*100)/100)+(unit?'<span class="tiny muted"> '+esc(unit)+'</span>':"")+'</span>'
+      + ibDiffHTML(last, cmp, k)+'</div>').join("");
+    if(typeof last.vfl === "number" || typeof last.waist === "number" || typeof last.bmr === "number"){
+      out += '<div class="hr"></div>'
+        + [["vfl","내장지방레벨",""],["vfa","내장지방면적","cm²"],["waist","복부둘레","cm"],["bmr","기초대사량","kcal"]]
+            .filter(([k])=> typeof last[k] === "number").map(([k, label, unit])=>
+              '<div class="ibrow"><span class="k">'+esc(label)+'</span>'
+              + '<span class="v">'+String(Math.round(last[k]*100)/100)+(unit?'<span class="tiny muted"> '+esc(unit)+'</span>':"")+'</span>'
+              + ibDiffHTML(last, cmp, k)+'</div>').join("");
+    }
+    if(cmp && typeof last.smm === "number" && typeof cmp.smm === "number"
+            && typeof last.fatKg === "number" && typeof cmp.fatKg === "number"){
+      const dm = last.smm - cmp.smm, df = last.fatKg - cmp.fatKg;
+      out += '<p class="tiny muted" style="margin:12px 0 0">근육은 <b>'+(dm>0?"+":"")+String(Math.round(dm*100)/100)
+        + 'kg</b>, 지방은 <b>'+(df>0?"+":"")+String(Math.round(df*100)/100)+'kg</b> 움직였어요. '
+        + (df < -0.3 && dm > -0.3 ? '지방만 빠지고 근육은 지킨 흐름이에요. 이게 가장 좋은 모양입니다.'
+         : dm < -0.5 ? '근육도 같이 줄었어요. 덜 먹는 쪽보다 단백질과 클라이밍을 먼저 챙겨 보세요.'
+         : '체중 숫자보다 이 두 줄을 보세요. 같은 체중이어도 안이 달라지고 있습니다.')+'</p>';
+    }
+    out += '<p class="tiny muted" style="margin:10px 0 0">인바디는 수분 상태에 민감해요. 측정 조건(시간·식후·생리 주기)이 다르면 숫자도 흔들립니다. 한 번의 차이보다 서너 번의 방향을 보세요.</p>';
+  } else out += needMore("기록 > 인바디에서 측정지를 옮겨 적으면, 체중이 아니라 근육과 지방이 각각 어디로 갔는지 정리해 드려요.");
+  out += '</div>';
+
   /* 음주 · 야식 — 원칙 3·4. 금지하려고 보는 게 아니라 흐름만 본다 */
   const dDays = c.dates.filter(ds=> day(ds).drink);
   const lDays = c.dates.filter(ds=> day(ds).latenight);
@@ -3008,6 +3162,7 @@ function buildCsv(){
   const hs = state.settings.habits || [];
   const rows = [["날짜","요일","체중(kg)","컨디션(1-5)","수면(h)","붓기","생리","아침","점심","저녁",
     "도시락","외식","카페인","아침 메뉴","점심 메뉴","저녁 메뉴","끼니 종류","식욕","식사량","음주","야식","배변","배변 상태","생리 양","운동","간식","약","몸의 반응","옷 핏","기준 옷","허리(cm)","엉덩이(cm)","허벅지(cm)",
+    "인바디 체중(kg)","골격근량(kg)","체지방률(%)","내장지방레벨",
     "습관 달성","습관 전체","메모"]];
   Object.keys(state.days).sort().forEach(ds=>{
     const o = day(ds);
@@ -3037,6 +3192,10 @@ function buildCsv(){
       pick(o.fits, x=> x.fit ? FITS[x.fit] : ""),
       pick(o.fits, x=> x.item || ""),
       pick(o.fits, x=> x.waist || ""), pick(o.fits, x=> x.hip || ""), pick(o.fits, x=> x.thigh || ""),
+      pick(o.inbody, x=> typeof x.kg === "number" ? x.kg : ""),
+      pick(o.inbody, x=> typeof x.smm === "number" ? x.smm : ""),
+      pick(o.inbody, x=> typeof x.fatPct === "number" ? x.fatPct : ""),
+      pick(o.inbody, x=> typeof x.vfl === "number" ? x.vfl : ""),
       hs.filter(h=> o.habits[h.id]).length, hs.length,
       pick([].concat(w&&w.memo?[{m:w.memo}]:[], o.workouts, o.meds, o.fits), x=> x.m || x.memo || "")
     ]);
@@ -3341,6 +3500,20 @@ function clinicSheet(){
       + '</div>';
   }
 
+  const ibIn = allInbody().filter(r=> inR(r.date));
+  if(ibIn.length){
+    const last = ibIn[ibIn.length-1], cmp = ibIn.length > 1 ? ibIn[0] : null;
+    out += '<div class="sheet-sec"><p class="sec-label">인바디</p>'
+      + '<p class="tiny muted" style="margin:-4px 0 10px">'+esc(mdLabel(last.date))+' 측정'
+      + (cmp ? ' · '+esc(mdLabel(cmp.date))+' 대비' : "")+'</p>'
+      + IB_MAIN.concat([["vfl","내장지방레벨",""],["waist","복부둘레","cm"]])
+          .filter(([k])=> typeof last[k] === "number").map(([k, label, unit])=>
+            '<div class="ibrow"><span class="k">'+esc(label)+'</span>'
+            + '<span class="v">'+String(Math.round(last[k]*100)/100)+(unit?'<span class="tiny muted"> '+esc(unit)+'</span>':"")+'</span>'
+            + ibDiffHTML(last, cmp, k)+'</div>').join("")
+      + '</div>';
+  }
+
   const dwDays = Object.keys(state.days).filter(ds=> inR(ds) && day(ds).drink);
   const lnDays = Object.keys(state.days).filter(ds=> inR(ds) && day(ds).latenight);
   if(dwDays.length + lnDays.length >= 4){
@@ -3496,7 +3669,7 @@ function resetTime(tSel){
 function fillNow(){
   const t = todayStr(), n = hm(new Date());
 
-  ["#w-time","#s-time","#e-time","#d-time"].forEach(s=>{ if(!$(s).value || $(s).dataset.touched!=="1") $(s).value = n; });
+  ["#w-time","#s-time","#e-time","#d-time","#ib-time"].forEach(s=>{ if(!$(s).value || $(s).dataset.touched!=="1") $(s).value = n; });
   if(!$("#rec-date").value) $("#rec-date").value = t;
 }
 $$('input[type=date], input[type=time]').forEach(i=> i.addEventListener("change", ()=> i.dataset.touched = "1"));
@@ -3529,6 +3702,107 @@ function saveWeight(){
     resetTime("#w-time");
     toast(fmtKg(rec.kg)+"kg 기록했어요");
   });
+}
+
+/* ---------- 인바디 ---------- */
+/* 항목이 20개가 넘어서 입력칸은 표를 보고 한 번만 만든다 */
+function buildInbodyFields(){
+  const fld = ([k, label, unit, step, min, max]) =>
+    '<label class="fld"><span>'+esc(label)+(unit?" ("+esc(unit)+")":"")+'</span>'
+    + '<input type="number" id="ib-'+k+'" step="'+step+'" min="'+min+'" max="'+max+'" inputmode="decimal"></label>';
+  $("#ib-main").innerHTML   = IB_MAIN.map(fld).join("");
+  $("#ib-detail").innerHTML = IB_DETAIL.map(fld).join("");
+  $("#ib-segmus").innerHTML = IB_PARTS.map(([k,nm])=>
+    '<label class="fld"><span>'+esc(nm)+'</span><input type="number" id="ibm-'+k+'" step="0.01" min="0" max="60" inputmode="decimal"></label>').join("");
+  $("#ib-segfat").innerHTML = IB_PARTS.map(([k,nm])=>
+    '<label class="fld"><span>'+esc(nm)+'</span><input type="number" id="ibf-'+k+'" step="0.01" min="0" max="60" inputmode="decimal"></label>').join("");
+}
+function numOrNull(sel){
+  const el = $(sel); if(!el) return null;
+  const v = el.value.trim(); if(v === "") return null;
+  const n = Number(v);
+  return isFinite(n) ? n : null;
+}
+function saveInbody(){
+  const ds = recDate();
+  const rec = { id: uid(), t: $("#ib-time").value || hm(new Date()) };
+  let filled = 0;
+  IB_ALL.forEach(([k])=>{ const v = numOrNull("#ib-"+k); if(v !== null){ rec[k] = v; filled++; } });
+  const shape = $("#ib-shape").value.trim(); if(shape) rec.shape = shape;
+  const sm = {}, sf = {};
+  IB_PARTS.forEach(([k])=>{
+    const a = numOrNull("#ibm-"+k); if(a !== null) sm[k] = a;
+    const b = numOrNull("#ibf-"+k); if(b !== null) sf[k] = b;
+  });
+  if(Object.keys(sm).length) rec.segMuscle = sm;
+  if(Object.keys(sf).length) rec.segFat = sf;
+  const memo = $("#ib-memo").value.trim(); if(memo) rec.memo = memo;
+  if(!filled && !Object.keys(sm).length && !Object.keys(sf).length) return toast("숫자를 하나라도 적어 주세요");
+
+  const alsoWeight = $("#ib-asweight").checked && typeof rec.kg === "number";
+  mutate(ds, d=>{
+    d.inbody.push(rec);
+    d.inbody.sort((a,b)=> (a.t||"") < (b.t||"") ? -1 : 1);
+    if(alsoWeight){
+      d.weights.push({ id: uid(), t: rec.t, kg: rec.kg, memo: "인바디 측정" });
+      d.weights.sort((a,b)=> (a.t||"") < (b.t||"") ? -1 : 1);
+    }
+  });
+  clearInbodyForm();
+  toast(alsoWeight ? "인바디와 체중을 기록했어요" : "인바디를 기록했어요");
+}
+function clearInbodyForm(){
+  IB_ALL.forEach(([k])=>{ const el = $("#ib-"+k); if(el) el.value = ""; });
+  IB_PARTS.forEach(([k])=>{
+    const a = $("#ibm-"+k), b = $("#ibf-"+k);
+    if(a) a.value = ""; if(b) b.value = "";
+  });
+  $("#ib-shape").value = ""; $("#ib-memo").value = "";
+  resetTime("#ib-time");
+}
+/* 모든 인바디 기록을 시간순으로 */
+function allInbody(){
+  const out = [];
+  Object.keys(state.days).forEach(ds=> day(ds).inbody.forEach(r=> out.push(Object.assign({date: ds}, r))));
+  return out.sort((a,b)=> (a.date+(a.t||"")) < (b.date+(b.t||"")) ? -1 : 1);
+}
+function ibDiffHTML(cur, prev, key){
+  if(!prev || typeof prev[key] !== "number" || typeof cur[key] !== "number") return '<span class="d flat">–</span>';
+  const d = cur[key] - prev[key];
+  if(Math.abs(d) < 0.005) return '<span class="d flat">그대로</span>';
+  const good = IB_LOWER_BETTER[key] ? d < 0 : d > 0;
+  return '<span class="d '+(good ? "down" : "up")+'">'+(d>0?"+":"")+String(Math.round(d*100)/100)+'</span>';
+}
+function inbodySheet(dateStr, id){
+  const list = allInbody();
+  const i = list.findIndex(r=> r.date === dateStr && r.id === id);
+  if(i < 0) return;
+  const r = list[i], prev = i > 0 ? list[i-1] : null;
+  const rowsOf = defs => defs.filter(([k])=> typeof r[k] === "number").map(([k, label, unit])=>
+    '<div class="ibrow"><span class="k">'+esc(label)+'</span>'
+    + '<span class="v">'+String(Math.round(r[k]*100)/100)+(unit?'<span class="tiny muted"> '+esc(unit)+'</span>':"")+'</span>'
+    + ibDiffHTML(r, prev, k)+'</div>').join("");
+  const partBlock = (obj, title) => {
+    if(!obj || !Object.keys(obj).length) return "";
+    return '<p class="ibsec">'+esc(title)+'</p>'
+      + IB_PARTS.filter(([k])=> typeof obj[k] === "number").map(([k,nm])=>
+          '<div class="ibpart"><span>'+esc(nm)+'</span><b>'+String(Math.round(obj[k]*100)/100)+'kg</b></div>').join("");
+  };
+  openSheet('<h2 id="sheet-title">인바디 · '+esc(fullLabel(dateStr))+'</h2>'
+    + '<p class="sh-sub">'+esc(r.t||"")+(r.shape?' · '+esc(r.shape):"")
+      + (prev ? ' · 직전 측정 '+esc(mdLabel(prev.date))+' 대비' : ' · 첫 측정')+'</p>'
+    + '<div class="card">'+rowsOf(IB_MAIN)+'</div>'
+    + (rowsOf(IB_DETAIL) ? '<div class="card">'+rowsOf(IB_DETAIL)+'</div>' : "")
+    + ((r.segMuscle||r.segFat) ? '<div class="card">'+partBlock(r.segMuscle,"부위별 근육량")+partBlock(r.segFat,"부위별 지방량")+'</div>' : "")
+    + (r.memo ? '<div class="card"><p class="rvline">'+esc(r.memo)+'</p></div>' : "")
+    + '<p class="tiny muted" style="margin:12px 0 0">숫자 옆 색은 직전 측정과의 차이예요. 초록은 반가운 방향, 분홍은 반대 방향입니다. 하루 컨디션에 따라 흔들리니 한두 번의 차이로 판단하지 마세요.</p>'
+    + '<button class="btn ghost" type="button" data-ibdel="'+esc(dateStr)+':'+esc(id)+'" style="margin-top:14px">이 기록 지우기</button>'
+    + '<button class="btn ghost" type="button" data-sheet-close style="margin-top:8px">닫기</button>');
+}
+function deleteInbody(dateStr, id){
+  mutate(dateStr, d=>{ d.inbody = d.inbody.filter(x=> x.id !== id); });
+  closeSheet();
+  toast("인바디 기록을 지웠어요");
 }
 
 function saveSnack(){
@@ -3658,6 +3932,16 @@ function handleClick(e){
     return;
   }
 
+  const ibView = el.closest("[data-ibview]");
+  if(ibView){ const [ds, id] = ibView.dataset.ibview.split(":"); return inbodySheet(ds, id); }
+
+  const ibDel = el.closest("[data-ibdel]");
+  if(ibDel){
+    const [ds, id] = ibDel.dataset.ibdel.split(":");
+    return confirmSheet("이 인바디 기록을 지울까요?",
+      '<p class="rvline">지운 기록은 되돌릴 수 없어요.</p>', "지우기", ()=> deleteInbody(ds, id));
+  }
+
   const expBtn = el.closest("[data-export]");
   if(expBtn){ exportFile(expBtn.dataset.export); return; }
 
@@ -3669,6 +3953,7 @@ function handleClick(e){
     if(k === "workout") return saveWorkout();
     if(k === "med")     return saveMed();
     if(k === "fit")     return saveFit();
+    if(k === "inbody")  return saveInbody();
   }
 
   const tabBtn = el.closest("#tabbar button[data-tab]");
@@ -3856,7 +4141,7 @@ function render(){
     else if(state.tab === "cal") renderCal();
     else if(state.tab === "rec"){
       $$("#rec-seg button").forEach(b=> b.setAttribute("aria-selected", String(b.dataset.rec === state.rec)));
-      ["weight","meal","workout","med","fit"].forEach(k=> $("#rec-"+k).hidden = (k !== state.rec));
+      ["weight","meal","workout","med","fit","inbody"].forEach(k=> $("#rec-"+k).hidden = (k !== state.rec));
       renderRecDate();
       renderBodyPanel();
       if(!$("#t-item").value && state.settings.fitItem) $("#t-item").value = state.settings.fitItem;
@@ -3885,6 +4170,7 @@ function start(hot){
   if(hot && hot.tab){ state.tab = hot.tab; state.rec = hot.rec || state.rec; state.calMode = hot.calMode || state.calMode; state.calCursor = hot.calCursor || state.calCursor; state.statSec = hot.statSec || state.statSec; }
   if(typeof (hot && hot.cheer) === "number") state.cheer = hot.cheer;
   setCheer(state.cheer);
+  buildInbodyFields();
   fillNow();
   go(state.tab);
   setBadge(false, "불러오는 중");
