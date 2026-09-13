@@ -2309,6 +2309,89 @@ function checkpointBar(cur){
     + '<div class="remind"><b>다음 체크포인트 '+target.kg+'kg</b>'+esc(target.note)+'</div>';
 }
 
+/* 체지방량 체크포인트 — 체중이 아니라 "지방만" 얼마나 갔는지.
+   목표 지점은 인바디가 적어 준 권장체중에서 제지방량을 뺀 값으로 잡는다.
+   (제지방을 그대로 지킨 채 권장체중에 닿았을 때 남는 지방) */
+function fatPlan(){
+  const list = allInbody().filter(r=> typeof r.fatKg === "number");
+  if(!list.length) return null;
+  const first = list[0], last = list[list.length-1];
+  const ffm = typeof last.ffm === "number" ? last.ffm
+            : (typeof last.kg === "number" ? last.kg - last.fatKg : null);
+  let goal = null;
+  if(ffm !== null){
+    if(typeof last.recKg === "number") goal = last.recKg - ffm;
+    else if(typeof state.settings.goalWeight === "number") goal = state.settings.goalWeight - ffm;
+  }
+  if(goal === null) return null;
+  goal = Math.round(goal*10)/10;
+  const start = Math.round(Math.max(first.fatKg, last.fatKg)*10)/10;
+  if(!(goal < start)) return null;
+  const nodes = [start];
+  const span = start - goal;
+  for(let i=1;i<=4;i++){
+    const v = Math.round(start - span*i/5);
+    if(v > goal && v < nodes[nodes.length-1]) nodes.push(v);
+  }
+  nodes.push(goal);
+  return {list, first, last, ffm, goal, start, nodes,
+          prev: list.length > 1 ? list[list.length-2] : null};
+}
+function fatCheckpointBar(){
+  const pl = fatPlan();
+  if(!pl) return needMore("기록 > 인바디에 체지방량과 제지방량(또는 체중)을 남기면, 지방만 얼마나 갔는지 여기에 그려 드려요.");
+  const cur = pl.last.fatKg, hi = pl.nodes[0], lo = pl.nodes[pl.nodes.length-1];
+  const pos = v => Math.max(0, Math.min(100, (hi - v) / (hi - lo) * 100));
+  let idx = pl.nodes.length - 1;
+  for(let i=0;i<pl.nodes.length;i++){ if(cur > pl.nodes[i]){ idx = i; break; } }
+  const p = pos(cur);
+  let out = "";
+  pl.nodes.forEach((v,i)=>{
+    const x = pos(v), passed = cur <= v;
+    out += '<span class="node'+(passed?" passed":"")+'" style="left:'+x+'%"></span>'
+      + '<span class="lbl'+(i===idx?" cur":"")+'" style="left:'+x+'%">'+String(Math.round(v*10)/10)+'</span>';
+  });
+  const marker = '<span class="fill" style="width:'+p+'%"></span>'
+    + '<span class="marker" style="left:'+p+'%"></span>'
+    + '<span class="you" style="left:'+p+'%"><b>'+String(Math.round(cur*10)/10)+'</b><span>지금</span></span>';
+
+  const target = pl.nodes[idx];
+  const left = Math.round((cur - target)*10)/10;
+  let note = "";
+  if(left <= 0){
+    note = '<div class="remind"><b>목표 지점 '+String(lo)+'kg 도착</b>'
+      + '여기서부터는 줄이는 것보다 유지하는 방식이 먼저예요. 원칙 10.</div>';
+  } else {
+    const pctNow = pl.ffm !== null ? cur/(pl.ffm+cur)*100 : null;
+    const pctThen = pl.ffm !== null ? target/(pl.ffm+target)*100 : null;
+    const kgThen = pl.ffm !== null ? pl.ffm + target : null;
+    note = '<div class="remind"><b>다음 지점 '+String(Math.round(target*10)/10)+'kg</b>'
+      + '지금 체지방 '+String(Math.round(cur*10)/10)+'kg에서 <b style="display:inline">−'+left+'kg</b>. '
+      + (pl.ffm !== null
+          ? '제지방 '+String(Math.round(pl.ffm*10)/10)+'kg을 그대로 지킨다면 체지방률 '
+            + fmt1(pctNow)+'% → '+fmt1(pctThen)+'%, 체중은 '+fmt1(kgThen)+'kg 근처가 됩니다.'
+          : '')
+      + '</div>';
+  }
+
+  /* 지켜야 하는 쪽 — 제지방 */
+  let lean = "";
+  if(pl.ffm !== null){
+    const prevFfm = pl.prev && (typeof pl.prev.ffm === "number" ? pl.prev.ffm
+                  : (typeof pl.prev.kg === "number" && typeof pl.prev.fatKg === "number" ? pl.prev.kg - pl.prev.fatKg : null));
+    const d = prevFfm === null || prevFfm === undefined ? null : Math.round((pl.ffm - prevFfm)*100)/100;
+    lean = '<div class="hr"></div>'
+      + '<div class="ibrow"><span class="k">제지방량 (지켜야 하는 쪽)</span>'
+      + '<span class="v">'+String(Math.round(pl.ffm*10)/10)+'<span class="tiny muted"> kg</span></span>'
+      + (d === null ? '<span class="d flat">첫 측정</span>'
+         : Math.abs(d) < 0.05 ? '<span class="d flat">그대로</span>'
+         : '<span class="d '+(d>0?"down":"up")+'">'+(d>0?"+":"")+d+'</span>')+'</div>'
+      + '<p class="tiny muted" style="margin:8px 0 0">체중이 줄어도 이 숫자가 같이 내려가면 좋은 신호가 아니에요. '
+      + '기초대사량을 만드는 게 지방이 아니라 이쪽입니다.</p>';
+  }
+  return '<div class="ckpt"><div class="track">'+marker+out+'</div></div>' + note + lean;
+}
+
 /* ---------- 패턴 계산 ---------- */
 function lastKg(ds){ const w = day(ds).weights; return w.length ? w[w.length-1].kg : null; }
 function avg(a){ return a.length ? a.reduce((x,y)=>x+y,0)/a.length : null; }
@@ -2463,9 +2546,15 @@ function statCtx(){
 function secSummary(c){
   let out = "";
   const latest = latestWeight();
-  out += '<div class="card"><p class="sec-label">체크포인트</p>'
+  out += '<div class="card"><p class="sec-label">체중 체크포인트</p>'
     + (latest ? checkpointBar(latest.kg) : needMore("체중을 한 번 기록하면 지금 어느 구간인지 표시돼요."))
     + '</div>';
+
+  if(allInbody().some(r=> typeof r.fatKg === "number")){
+    out += '<div class="card"><p class="sec-label">체지방 체크포인트</p>'
+      + '<p class="tiny muted" style="margin:-4px 0 4px">인바디를 잰 날에만 움직여요. 체중처럼 매일 흔들리지 않습니다.</p>'
+      + fatCheckpointBar() + '</div>';
+  }
 
   const wkStart = weekStart(c.t), wr = weekReport(wkStart);
   out += '<div class="card"><div class="between" style="margin-bottom:12px">'
