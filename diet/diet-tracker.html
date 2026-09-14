@@ -2328,7 +2328,7 @@ function fatPlan(){
   }
   if(goal === null) return null;
   goal = Math.round(goal*10)/10;
-  const start = Math.round(Math.max(first.fatKg, last.fatKg)*10)/10;
+  const start = Math.round(list.reduce((m,r)=> Math.max(m, r.fatKg), 0)*10)/10;
   if(!(goal < start)) return null;
   const nodes = [start];
   const span = start - goal;
