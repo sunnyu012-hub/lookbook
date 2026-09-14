@@ -902,6 +902,17 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
           </div>
         </div>
         <div class="card">
+          <div class="between" style="margin-bottom:12px">
+            <p class="sec-label" style="margin:0">걸음 수</p>
+            <span class="tiny muted mono" id="st-datelabel"></span>
+          </div>
+          <p class="tiny muted" style="margin:-6px 0 12px">운동으로 안 세는 "그냥 움직인 양"이에요. 아이폰 건강 앱에 찍힌 숫자를 그대로 옮기면 됩니다.</p>
+          <div class="form" id="form-steps">
+            <label class="fld"><span>걸음</span><input type="number" id="st-steps" min="0" max="200000" step="100" inputmode="numeric" placeholder="예: 6500"></label>
+            <button class="btn ghost" type="button" data-save="steps">걸음 수 기록하기</button>
+          </div>
+        </div>
+        <div class="card">
           <p class="sec-label">최근 운동</p>
           <div id="list-workout"></div>
         </div>
@@ -1209,7 +1220,7 @@ const GOAL_CLIMB = 2, GOAL_CARDIO = 2, GOAL_WEIGHT_DEFAULT = 48;
 const MED_INTERVAL = 7;               /* 주 1회 주사 */
 const FITS = {loose:"헐렁해요", just:"딱 맞아요", tight:"꽉 껴요"};
 const FIT_COLOR = {loose:"var(--mint)", just:"var(--ochre)", tight:"var(--clay)"};
-const SIDE_EFFECTS = [["nausea","메스꺼움"],["heartburn","속쓰림"],["constipation","변비"],
+const SIDE_EFFECTS = [["none","없었음"],["nausea","메스꺼움"],["heartburn","속쓰림"],["constipation","변비"],
   ["diarrhea","설사"],["fatigue","피로"],["noappetite","식욕 없음"],["headache","두통"]];
 const SE_LABEL = SIDE_EFFECTS.reduce((o,[k,v])=>{o[k]=v; return o;}, {});
 const PERIODS = {start:"생리 시작", on:"생리 중"};
@@ -1224,6 +1235,8 @@ const LATE  = {none:"안 먹음", some:"조금", lots:"많이"};
 /* 사진 슬롯 — 삼시세끼 + 간식·기타 */
 const PHOTO_SLOTS = [["b","🌅 아침"],["l","🍚 점심"],["d","🌙 저녁"],["s","🍪 간식 · 기타"]];
 const PHOTO_MAX_PX = 1400;
+/* 걸음 수 — 운동으로 안 세는 "그냥 움직인 양". 바쁜 날에 제일 먼저 줄어든다 */
+const STEP_GOAL = 6000;
 
 /* 인바디 — 재는 항목이 많아 표로 정의하고, 입력칸은 시작할 때 한 번 만든다 */
 const IB_MAIN = [
@@ -1324,7 +1337,7 @@ const state = {
 
 function emptyDay(date){
   return { date, meals:{b:false,l:false,d:false}, lunchbox:null, eatout:null, caffeine:null,
-           mealNotes:{b:"",l:"",d:""}, mealKind:{b:null,l:null,d:null}, photos:{b:[],l:[],d:[],s:[]},
+           mealNotes:{b:"",l:"",d:""}, mealKind:{b:null,l:null,d:null}, photos:{b:[],l:[],d:[],s:[]}, steps:null,
            appetite:null, intake:null, drink:null, latenight:null, period:null, flow:null, poop:null, poopType:null, review:null, weights:[], workouts:[], snacks:[], meds:[], fits:[], inbody:[], habits:{} };
 }
 /* db가 돌려주는 문서는 얼려져 있어 그대로 고칠 수 없다.
@@ -1347,6 +1360,7 @@ function normalizeDay(src, date){
     n.lunchbox = src.lunchbox || null;
     n.eatout   = src.eatout   || null;
     n.caffeine = src.caffeine || null;
+    n.steps    = (typeof src.steps === "number" && isFinite(src.steps)) ? src.steps : null;
     n.appetite = src.appetite || null;
     n.intake   = src.intake   || null;
     n.drink     = src.drink     || null;
@@ -2136,6 +2150,12 @@ function entryRow(when, title, sub, delKey){
     + (sub ? '<span class="s">'+esc(sub)+'</span>' : "")+'</button>'
     + '<button class="del" type="button" data-del="'+delKey+'" aria-label="삭제">×</button></div>';
 }
+function renderStepsPanel(){
+  const ds = recDate(), el = $("#st-steps");
+  $("#st-datelabel").textContent = fullLabel(ds);
+  const v = day(ds).steps;
+  if(document.activeElement !== el) el.value = (typeof v === "number") ? String(v) : "";
+}
 function renderRecLists(){
   const wl = collect("weights", 10);
   $("#list-weight").innerHTML = wl.length ? wl.map(w=>{
@@ -2887,6 +2907,38 @@ function secLife(c){
   }
   out += '<p class="sec-label" style="margin:18px 0 4px">최근 6주 (클라이밍 · 유산소)</p>'+wkRows+'</div>';
 
+  /* 걸음 수 — 운동으로 안 세는 움직임. 생활이 바뀌면 여기가 먼저 움직인다 */
+  const stDays = c.dates.filter(ds=> typeof day(ds).steps === "number");
+  out += '<div class="card"><p class="sec-label">걸음 수</p>';
+  if(stDays.length >= 7){
+    const vals = stDays.map(ds=> day(ds).steps);
+    const mean = avg(vals), over = vals.filter(v=> v >= STEP_GOAL).length;
+    out += '<div class="statgrid" style="margin-bottom:6px">'
+      + '<div class="stat"><div class="v">'+Math.round(mean).toLocaleString()+'</div><div class="l">하루 평균 걸음</div></div>'
+      + '<div class="stat"><div class="v">'+Math.round(over/vals.length*100)+'%</div><div class="l">'+STEP_GOAL.toLocaleString()+'걸음 넘은 날</div></div>'
+      + '</div>';
+    /* 최근 8주 주 평균 */
+    const wk8 = [];
+    for(let i=7;i>=0;i--){
+      const ws = weekStart(addDays(c.t, -i*7));
+      const vs = [];
+      for(let k=0;k<7;k++){ const v = day(addDays(ws,k)).steps; if(typeof v === "number") vs.push(v); }
+      if(vs.length) wk8.push({ws, m: avg(vs), n: vs.length});
+    }
+    if(wk8.length >= 3){
+      const mx = Math.max.apply(null, wk8.map(x=>x.m));
+      out += '<p class="sec-label" style="margin:18px 0 4px">최근 8주 주 평균</p>'
+        + wk8.map(x=> '<div class="barrow"><span class="lb">'+mdLabel(x.ws)+'~</span>'
+            + '<span class="tr"><span class="fl" style="width:'+Math.max(3, Math.round(x.m/mx*100))+'%; background:'
+            + (x.m >= STEP_GOAL ? "var(--mint)" : "var(--accent)")+'"></span></span>'
+            + '<span class="vl">'+Math.round(x.m).toLocaleString()+'</span></div>').join("");
+    }
+    out += compareBlock("많이 걸은 날 vs 적게 걸은 날", STEP_GOAL.toLocaleString()+"걸음 이상", "그 미만",
+      splitCompare(c.inRange, o=> typeof o.steps === "number" ? (o.steps >= STEP_GOAL) : null),
+      "운동을 따로 안 한 날도 걸음은 쌓여요. 바빠지면 제일 먼저 줄어드는 숫자이기도 합니다.");
+  } else out += needMore("기록 > 운동 화면에서 걸음 수를 남기면, 생활이 바빠졌을 때 움직임이 얼마나 줄었는지 여기에 보여 드려요.");
+  out += '</div>';
+
   /* 요일 패턴 */
   const rows = dowPatterns(c.inRange);
   const order = [1,2,3,4,5,6,0];
@@ -3329,7 +3381,7 @@ function buildCsv(){
   const hs = state.settings.habits || [];
   const rows = [["날짜","요일","체중(kg)","컨디션(1-5)","수면(h)","붓기","생리","아침","점심","저녁",
     "도시락","외식","카페인","아침 메뉴","점심 메뉴","저녁 메뉴","끼니 종류","식욕","식사량","음주","야식","배변","배변 상태","생리 양","운동","간식","약","몸의 반응","옷 핏","기준 옷","허리(cm)","엉덩이(cm)","허벅지(cm)",
-    "인바디 체중(kg)","골격근량(kg)","체지방률(%)","내장지방레벨",
+    "걸음 수","인바디 체중(kg)","골격근량(kg)","체지방률(%)","내장지방레벨",
     "습관 달성","습관 전체","메모"]];
   Object.keys(state.days).sort().forEach(ds=>{
     const o = day(ds);
@@ -3359,6 +3411,7 @@ function buildCsv(){
       pick(o.fits, x=> x.fit ? FITS[x.fit] : ""),
       pick(o.fits, x=> x.item || ""),
       pick(o.fits, x=> x.waist || ""), pick(o.fits, x=> x.hip || ""), pick(o.fits, x=> x.thigh || ""),
+      typeof o.steps === "number" ? o.steps : "",
       pick(o.inbody, x=> typeof x.kg === "number" ? x.kg : ""),
       pick(o.inbody, x=> typeof x.smm === "number" ? x.smm : ""),
       pick(o.inbody, x=> typeof x.fatPct === "number" ? x.fatPct : ""),
@@ -3987,6 +4040,15 @@ function saveSnack(){
   toast("간식 기록 완료. 이제 넘어가자");
 }
 
+function saveSteps(){
+  const ds = recDate();
+  const v = $("#st-steps").value.trim();
+  if(v === ""){ mutate(ds, d=> d.steps = null); return toast("걸음 수를 비웠어요"); }
+  const n = Math.round(Number(v));
+  if(!isFinite(n) || n < 0 || n > 200000) return toast("걸음 수를 다시 확인해 주세요");
+  mutate(ds, d=> d.steps = n);
+  toast(n.toLocaleString()+"걸음 기록했어요");
+}
 function saveWorkout(){
   const type = chipVal($("#e-type"));
   if(!type) return toast("운동 종류를 골라 주세요");
@@ -4121,6 +4183,7 @@ function handleClick(e){
     if(k === "med")     return saveMed();
     if(k === "fit")     return saveFit();
     if(k === "inbody")  return saveInbody();
+    if(k === "steps")   return saveSteps();
   }
 
   const tabBtn = el.closest("#tabbar button[data-tab]");
@@ -4312,7 +4375,7 @@ function render(){
       renderRecDate();
       renderBodyPanel();
       if(!$("#t-item").value && state.settings.fitItem) $("#t-item").value = state.settings.fitItem;
-      renderMealPanel(); renderRecLists();
+      renderMealPanel(); renderStepsPanel(); renderRecLists();
     }
     else if(state.tab === "habit") renderHabits();
     else if(state.tab === "stats") renderStats();
