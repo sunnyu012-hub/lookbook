@@ -185,6 +185,9 @@ input.big{font-family:"IBM Plex Mono",monospace; font-size:31px; font-weight:600
 .ibrow .v{font-size:14px; font-weight:700; font-variant-numeric:tabular-nums}
 .ibrow .d{font-size:11.5px; font-weight:600; min-width:56px; text-align:right}
 .ibrow .d.up{color:var(--clay)} .ibrow .d.down{color:var(--mint)} .ibrow .d.flat{color:var(--faint)}
+.iblegend{display:flex; gap:14px; flex-wrap:wrap; margin-top:6px}
+.iblegend span{display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--muted)}
+.iblegend i{width:14px; height:3px; border-radius:99px; display:block}
 .ibbody{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:4px}
 .ibpart{font-size:12px; color:var(--ink2); display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid var(--line2)}
 .ibpart b{font-variant-numeric:tabular-nums}
@@ -1016,7 +1019,10 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
           </div>
         </div>
         <div class="card">
-          <p class="sec-label">지난 측정</p>
+          <div class="between" style="margin-bottom:12px">
+            <p class="sec-label" style="margin:0">지난 측정</p>
+            <span class="tiny muted mono" id="inbody-count"></span>
+          </div>
           <div id="list-inbody"></div>
         </div>
       </div>
@@ -1288,6 +1294,15 @@ const fmtKg = n => String(Math.round(n*100)/100);
 const uid = () => Math.random().toString(36).slice(2,9);
 function mdLabel(s){ const d=parseYmd(s); return (d.getMonth()+1)+"/"+d.getDate(); }
 function fullLabel(s){ const d=parseYmd(s); return (d.getMonth()+1)+"월 "+d.getDate()+"일 ("+DOW[d.getDay()]+")"; }
+function yLabel(s){
+  const d = parseYmd(s);
+  return d.getFullYear() === new Date().getFullYear() ? mdLabel(s)
+       : String(d.getFullYear()).slice(2)+"."+mdLabel(s);
+}
+function yFullLabel(s){
+  const d = parseYmd(s);
+  return (d.getFullYear() === new Date().getFullYear() ? "" : d.getFullYear()+"년 ") + fullLabel(s);
+}
 function weekStart(s){ const d=parseYmd(s); const off=(d.getDay()+6)%7; d.setDate(d.getDate()-off); return ymd(d); }
 
 /* ============================================================
@@ -1649,6 +1664,60 @@ function sparkline(vals){
     + '<circle cx="'+last[0].toFixed(1)+'" cy="'+last[1].toFixed(1)+'" r="2.8" fill="var(--accent)"/></svg>';
 }
 
+/* 인바디 추이 — 체지방량과 제지방량을 한 판에. 가로축은 실제 날짜 간격대로 둔다
+   (측정이 몰린 주와 몇 달 빈 구간이 섞여 있어서 순번으로 그리면 거짓말이 된다) */
+function inbodyChart(list){
+  if(list.length < 2) return '<p class="emptyline">인바디가 2회 이상 쌓이면 추이 그래프가 그려져요.</p>';
+  const W=320, H=176, L=32, R=12, T=14, B=34;
+  const ffmOf = r => typeof r.ffm === "number" ? r.ffm
+                   : (typeof r.kg === "number" && typeof r.fatKg === "number" ? r.kg - r.fatKg : null);
+  const tOf = ds => parseYmd(ds).getTime();
+  const t0 = tOf(list[0].date), t1 = tOf(list[list.length-1].date), span = (t1 - t0) || 1;
+  const px = ds => L + (tOf(ds) - t0)/span*(W-L-R);
+  const pts = list.map(r=> ({ d:r.date, x:px(r.date), fat: typeof r.fatKg==="number" ? r.fatKg : null, ffm: ffmOf(r) }));
+  const vals = [];
+  pts.forEach(q=>{ if(q.fat !== null) vals.push(q.fat); if(q.ffm !== null) vals.push(q.ffm); });
+  if(vals.length < 2) return '<p class="emptyline">체지방량이 있는 기록이 2회 이상 쌓이면 그려져요.</p>';
+  let min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
+  const padv = (max-min)*0.12 || 1; min -= padv; max += padv;
+  const y = v => T + (max-v)/(max-min)*(H-T-B);
+
+  let g = "";
+  [max, (max+min)/2, min].forEach(v=>{
+    g += '<line x1="'+L+'" y1="'+y(v).toFixed(1)+'" x2="'+(W-R)+'" y2="'+y(v).toFixed(1)+'" stroke="var(--line2)" stroke-width="1"/>'
+      +  '<text x="'+(L-6)+'" y="'+(y(v)+3.5).toFixed(1)+'" text-anchor="end" font-size="9" font-family="IBM Plex Mono, monospace" fill="var(--faint)">'+fmt1(v)+'</text>';
+  });
+
+  /* 약을 시작한 날에 선을 하나 긋는다 — 이 그래프에서 제일 궁금한 경계 */
+  const firstMed = collect("meds").map(m=> m.date).sort()[0];
+  if(firstMed && firstMed >= list[0].date && firstMed <= list[list.length-1].date){
+    const mx = px(firstMed);
+    g += '<line x1="'+mx.toFixed(1)+'" y1="'+T+'" x2="'+mx.toFixed(1)+'" y2="'+(H-B)+'" stroke="var(--accent)" stroke-width="1.2" stroke-dasharray="3 3" opacity=".65"/>'
+      +  '<text x="'+Math.min(W-R, mx+4).toFixed(1)+'" y="'+(T+9)+'" font-size="8.5" font-family="IBM Plex Mono, monospace" fill="var(--accent)">약 시작</text>';
+  }
+
+  const seriesSvg = (key, color) => {
+    const qs = pts.filter(q=> q[key] !== null);
+    if(qs.length < 2) return "";
+    const line = qs.map(q=> q.x.toFixed(1)+","+y(q[key]).toFixed(1)).join(" ");
+    const last = qs[qs.length-1];
+    return '<polyline points="'+line+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
+      + qs.map(q=> '<circle cx="'+q.x.toFixed(1)+'" cy="'+y(q[key]).toFixed(1)+'" r="2" fill="'+color+'"/>').join("")
+      + '<circle cx="'+last.x.toFixed(1)+'" cy="'+y(last[key]).toFixed(1)+'" r="3.6" fill="'+color+'"/>';
+  };
+
+  return '<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="인바디 체지방량·제지방량 추이">'
+    + g
+    + seriesSvg("ffm", "var(--mint)")
+    + seriesSvg("fat", "var(--clay)")
+    + '<text x="'+L+'" y="'+(H-8)+'" font-size="9" font-family="IBM Plex Mono, monospace" fill="var(--faint)">'+esc(ymLabel(list[0].date))+'</text>'
+    + '<text x="'+(W-R)+'" y="'+(H-8)+'" text-anchor="end" font-size="9" font-family="IBM Plex Mono, monospace" fill="var(--faint)">'+esc(ymLabel(list[list.length-1].date))+'</text>'
+    + '</svg>'
+    + '<div class="iblegend"><span><i style="background:var(--clay)"></i>체지방량</span>'
+    + '<span><i style="background:var(--mint)"></i>제지방량 (지켜야 하는 쪽)</span></div>';
+}
+function ymLabel(ds){ const d = parseYmd(ds); return (d.getFullYear()+"").slice(2)+"."+(d.getMonth()+1); }
+
 function weightChart(series, goal, opts){
   opts = opts || {};
   if(series.length < 2) return '<p class="emptyline">체중 기록이 2개 이상 쌓이면 그래프가 그려져요.</p>';
@@ -1691,8 +1760,8 @@ function weightChart(series, goal, opts){
     + '<path d="'+area+'" fill="var(--accent-soft)" opacity=".75" stroke="none"/>'
     + '<polyline points="'+line+'" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
     + '<circle cx="'+last[0].toFixed(1)+'" cy="'+last[1].toFixed(1)+'" r="3.6" fill="var(--accent)"/>'
-    + '<text x="'+L+'" y="'+(H-8)+'" font-size="9" font-family="IBM Plex Mono, monospace" fill="var(--faint)">'+mdLabel(series[0].d)+'</text>'
-    + '<text x="'+(W-R)+'" y="'+(H-8)+'" text-anchor="end" font-size="9" font-family="IBM Plex Mono, monospace" fill="var(--faint)">'+mdLabel(series[series.length-1].d)+'</text>'
+    + '<text x="'+L+'" y="'+(H-8)+'" font-size="9" font-family="IBM Plex Mono, monospace" fill="var(--faint)">'+yLabel(series[0].d)+'</text>'
+    + '<text x="'+(W-R)+'" y="'+(H-8)+'" text-anchor="end" font-size="9" font-family="IBM Plex Mono, monospace" fill="var(--faint)">'+yLabel(series[series.length-1].d)+'</text>'
     + fitMarks
     + '</svg>';
 }
@@ -2103,7 +2172,7 @@ function renderRecLists(){
     return entryRow(mdLabel(m.date)+" "+(m.t||""), (DRUGS[m.drug]||m.drug)+(m.dose?" "+m.dose:""), bits.join(" · "), "meds:"+m.date+":"+m.id);
   }).join("") : '<p class="emptyline">아직 기록이 없어요.</p>';
 
-  const il = allInbody().slice().reverse().slice(0, 12);
+  const il = allInbody().slice().reverse();
   $("#list-inbody").innerHTML = il.length ? il.map(r=>{
     const bits = [];
     if(typeof r.smm === "number")    bits.push("골격근 "+String(Math.round(r.smm*100)/100)+"kg");
@@ -2111,11 +2180,12 @@ function renderRecLists(){
     if(typeof r.vfl === "number")    bits.push("내장지방 "+r.vfl);
     if(r.shape) bits.push(r.shape);
     const title = typeof r.kg === "number" ? fmtKg(r.kg)+"kg" : "측정 기록";
-    return '<div class="entry"><span class="when">'+esc(mdLabel(r.date)+" "+(r.t||""))+'</span>'
+    return '<div class="entry"><span class="when">'+esc(yLabel(r.date)+" "+(r.t||""))+'</span>'
       + '<button class="main" type="button" data-ibview="'+esc(r.date)+':'+esc(r.id)+'">'
       + '<span class="t">'+esc(title)+'</span>'
       + (bits.length?'<span class="s">'+esc(bits.join(" · "))+'</span>':"")+'</button></div>';
   }).join("") : '<p class="emptyline">아직 인바디 기록이 없어요.</p>';
+  $("#inbody-count").textContent = il.length ? "전체 "+il.length+"회" : "";
 
   const fl = collect("fits", 10);
   $("#list-fit").innerHTML = fl.length ? fl.map(f=>{
@@ -3049,8 +3119,8 @@ function secBody(c){
   if(ibAll.length){
     const last = ibAll[ibAll.length-1], first = ibAll[0];
     const cmp = ibAll.length > 1 ? first : null;
-    out += '<p class="tiny muted" style="margin:-4px 0 12px">가장 최근 측정 '+esc(mdLabel(last.date))+esc(last.t?" "+last.t:"")
-      + (cmp ? ' · 이 기간 첫 측정('+esc(mdLabel(first.date))+') 대비' : ' · 이 기간의 유일한 측정')+'</p>';
+    out += '<p class="tiny muted" style="margin:-4px 0 12px">가장 최근 측정 '+esc(yLabel(last.date))+esc(last.t?" "+last.t:"")
+      + (cmp ? ' · 이 기간 첫 측정('+esc(yLabel(first.date))+') 대비' : ' · 이 기간의 유일한 측정')+'</p>';
     out += IB_MAIN.filter(([k])=> typeof last[k] === "number").map(([k, label, unit])=>
       '<div class="ibrow"><span class="k">'+esc(label)+'</span>'
       + '<span class="v">'+String(Math.round(last[k]*100)/100)+(unit?'<span class="tiny muted"> '+esc(unit)+'</span>':"")+'</span>'
@@ -3072,7 +3142,12 @@ function secBody(c){
          : dm < -0.5 ? '근육도 같이 줄었어요. 덜 먹는 쪽보다 단백질과 클라이밍을 먼저 챙겨 보세요.'
          : '체중 숫자보다 이 두 줄을 보세요. 같은 체중이어도 안이 달라지고 있습니다.')+'</p>';
     }
-    out += '<p class="tiny muted" style="margin:10px 0 0">인바디는 수분 상태에 민감해요. 측정 조건(시간·식후·생리 주기)이 다르면 숫자도 흔들립니다. 한 번의 차이보다 서너 번의 방향을 보세요.</p>';
+    if(ibAll.length >= 2){
+      out += '<div class="hr"></div><p class="sec-label">추이 <span class="tiny muted" style="font-weight:400">· '+ibAll.length+'회</span></p>'
+        + inbodyChart(ibAll);
+    }
+    out += '<p class="tiny muted" style="margin:10px 0 0">인바디는 수분 상태에 민감해요. 측정 조건(시간·식후·생리 주기)이 다르면 숫자도 흔들립니다. 한 번의 차이보다 서너 번의 방향을 보세요.</p>'
+      + '<p class="tiny muted" style="margin:6px 0 0">측정 하나하나는 <b>기록 &gt; 인바디</b>의 「지난 측정」에서 눌러 볼 수 있어요. 기간을 <b>전체</b>로 두면 여기 그래프에 다 나옵니다.</p>';
   } else out += needMore("기록 > 인바디에서 측정지를 옮겨 적으면, 체중이 아니라 근육과 지방이 각각 어디로 갔는지 정리해 드려요.");
   out += '</div>';
 
@@ -3596,8 +3671,8 @@ function clinicSheet(){
   if(ibIn.length){
     const last = ibIn[ibIn.length-1], cmp = ibIn.length > 1 ? ibIn[0] : null;
     out += '<div class="sheet-sec"><p class="sec-label">인바디</p>'
-      + '<p class="tiny muted" style="margin:-4px 0 10px">'+esc(mdLabel(last.date))+' 측정'
-      + (cmp ? ' · '+esc(mdLabel(cmp.date))+' 대비' : "")+'</p>'
+      + '<p class="tiny muted" style="margin:-4px 0 10px">'+esc(yLabel(last.date))+' 측정'
+      + (cmp ? ' · '+esc(yLabel(cmp.date))+' 대비' : "")+'</p>'
       + IB_MAIN.concat([["vfl","내장지방레벨",""],["waist","복부둘레","cm"]])
           .filter(([k])=> typeof last[k] === "number").map(([k, label, unit])=>
             '<div class="ibrow"><span class="k">'+esc(label)+'</span>'
@@ -3880,9 +3955,9 @@ function inbodySheet(dateStr, id){
       + IB_PARTS.filter(([k])=> typeof obj[k] === "number").map(([k,nm])=>
           '<div class="ibpart"><span>'+esc(nm)+'</span><b>'+String(Math.round(obj[k]*100)/100)+'kg</b></div>').join("");
   };
-  openSheet('<h2 id="sheet-title">인바디 · '+esc(fullLabel(dateStr))+'</h2>'
+  openSheet('<h2 id="sheet-title">인바디 · '+esc(yFullLabel(dateStr))+'</h2>'
     + '<p class="sh-sub">'+esc(r.t||"")+(r.shape?' · '+esc(r.shape):"")
-      + (prev ? ' · 직전 측정 '+esc(mdLabel(prev.date))+' 대비' : ' · 첫 측정')+'</p>'
+      + (prev ? ' · 직전 측정 '+esc(yLabel(prev.date))+' 대비' : ' · 첫 측정')+'</p>'
     + '<div class="card">'+rowsOf(IB_MAIN)+'</div>'
     + (rowsOf(IB_DETAIL) ? '<div class="card">'+rowsOf(IB_DETAIL)+'</div>' : "")
     + ((r.segMuscle||r.segFat) ? '<div class="card">'+partBlock(r.segMuscle,"부위별 근육량")+partBlock(r.segFat,"부위별 지방량")+'</div>' : "")
