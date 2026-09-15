@@ -1237,6 +1237,16 @@ const PHOTO_SLOTS = [["b","🌅 아침"],["l","🍚 점심"],["d","🌙 저녁"]
 const PHOTO_MAX_PX = 1400;
 /* 걸음 수 — 운동으로 안 세는 "그냥 움직인 양". 바쁜 날에 제일 먼저 줄어든다 */
 const STEP_GOAL = 6000;
+/* 한 번에 구독할 수 있는 문서 수 상한은 1000이다. 하루 한 건씩 쌓이니
+   여유가 무한하지 않다 — 1000일에 가까워지면 오래된 걸음 수는 따로 모아야 한다. */
+const DAYS_LIMIT = 1000;
+const SYNC_MSG = {
+  quota_exceeded:    "저장 공간 가득",
+  resource_exhausted:"저장 밀림",
+  revoked:           "동기화 중단",
+  not_granted:       "이 기기에만 저장",
+  unavailable:       "연결 불안정"
+};
 
 /* 인바디 — 재는 항목이 많아 표로 정의하고, 입력칸은 시작할 때 한 번 만든다 */
 const IB_MAIN = [
@@ -1416,20 +1426,24 @@ function readCache(){
     if(o && o.settings) state.settings = Object.assign(state.settings, o.settings);
   }catch(e){}
 }
+/* 저장이 일시적으로 밀리는 건 흔한 일이라, 한 번은 조용히 다시 시도한다.
+   그래도 안 되면 배지에 사유를 띄워서 기록이 소리 없이 사라지지 않게 한다. */
+const RETRYABLE = {unavailable:1, resource_exhausted:1, unknown:1};
+function writeDoc(path, body){
+  const send = ()=> state.db.doc(path).set(JSON.parse(JSON.stringify(body)));
+  send().then(()=> setBadge(true), err=>{
+    if(!RETRYABLE[(err && err.code) || "unknown"]) return syncTrouble(err);
+    setTimeout(()=> send().then(()=> setBadge(true), e2=> syncTrouble(e2)), 1200);
+  });
+}
 function persistDay(date){
   if(!state.days[date]) return;
   writeCache();
-  if(state.db){
-    state.db.doc("days/"+date).set(JSON.parse(JSON.stringify(state.days[date])))
-      .catch(err=> syncTrouble(err));
-  }
+  if(state.db) writeDoc("days/"+date, state.days[date]);
 }
 function persistSettings(){
   writeCache();
-  if(state.db){
-    state.db.doc("settings/profile").set(JSON.parse(JSON.stringify(state.settings)))
-      .catch(err=> syncTrouble(err));
-  }
+  if(state.db) writeDoc("settings/profile", state.settings);
 }
 /* ---------- 사진 (assets) ----------
    업로드한 사진은 아티팩트에 저장되고, 우리는 id만 그날 문서에 적어 둔다.
@@ -1515,14 +1529,16 @@ function closeLightbox(){
 }
 
 function syncTrouble(err){
-  const code = err && err.code;
-  setBadge(false, code==="quota_exceeded" ? "저장 공간 가득" : "이 기기에만 저장");
+  const code = (err && err.code) || "unknown";
+  setBadge(false, SYNC_MSG[code] || "이 기기에만 저장", code);
   if(code==="quota_exceeded") toast("저장 공간이 가득 찼어요. 오래된 기록을 정리해 주세요");
+  else if(code==="resource_exhausted") toast("저장이 잠시 밀렸어요. 다시 시도하는 중이에요");
 }
-function setBadge(ok, text){
+function setBadge(ok, text, code){
   const b = $("#savebadge");
   b.classList.toggle("local", !ok);
   $("span", b).textContent = text || (ok ? "저장됨" : "이 기기에만 저장");
+  if(code) b.title = "사유: " + code; else b.removeAttribute("title");
 }
 
 async function initDb(){
@@ -1544,7 +1560,7 @@ async function initDb(){
       migrateSettings(); persistSettings();
     } else { migrateSettings(); persistSettings(); }
   }catch(e){}
-  db.collection("days").orderBy("date","desc").limit(600).onSnapshot(snap=>{
+  db.collection("days").orderBy("date","desc").limit(DAYS_LIMIT).onSnapshot(snap=>{
     snap.docs.forEach(doc=>{ const v = doc.data(); if(v && v.date) state.days[doc.id] = v; });
     state.synced = true; writeCache(); render();
   }, err=>{ setBadge(false, err.code==="revoked" ? "동기화 중단" : "이 기기에만 저장"); });
