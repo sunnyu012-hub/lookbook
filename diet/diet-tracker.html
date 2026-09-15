@@ -521,6 +521,10 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
 .savebadge{font-size:10.5px; font-family:"IBM Plex Mono",monospace; color:var(--faint); display:flex; align-items:center; gap:5px}
 .savebadge i{width:7px; height:7px; border-radius:50%; background:var(--mint); display:block}
 .savebadge.local i{background:var(--ochre)}
+.switch-card{
+  background:linear-gradient(150deg, var(--accent-soft) 0%, var(--surface) 62%);
+  border-color:color-mix(in srgb, var(--accent) 30%, transparent);
+}
 </style>
 
 <div id="app">
@@ -535,6 +539,33 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
   <main>
     <!-- ============ HOME ============ -->
     <section class="view" id="view-home">
+      <div class="card switch-card" id="switch-card" hidden>
+        <div class="between" style="margin-bottom:4px">
+          <p class="sec-label" style="margin:0; color:var(--accent)">위고비 전환</p>
+          <span class="tiny mono" id="switch-when" style="color:var(--accent); font-weight:600"></span>
+        </div>
+        <p class="tiny muted" style="margin:0 0 14px">3주만 이 세 가지를 남겨두면, 용량을 올릴지 판단할 근거가 생겨요. 빠진 날이 있어도 괜찮아요.</p>
+        <div class="fld" style="margin-bottom:7px"><span>속 불편함 <span class="muted" style="font-weight:400">· 메스꺼움 · 속쓰림</span></span></div>
+        <div class="chips" id="sw-gut" style="margin-bottom:14px">
+            <button class="chip" type="button" data-v="none" aria-pressed="false">없음</button>
+            <button class="chip" type="button" data-v="some" aria-pressed="false">조금</button>
+            <button class="chip" type="button" data-v="lots" aria-pressed="false">많이</button>
+          </div>
+        <div class="fld" style="margin-bottom:7px"><span>식욕</span></div>
+        <div class="chips" id="sw-app" style="margin-bottom:14px">
+            <button class="chip" type="button" data-v="none" aria-pressed="false">없음</button>
+            <button class="chip" type="button" data-v="low" aria-pressed="false">적음</button>
+            <button class="chip" type="button" data-v="ok" aria-pressed="false">적당</button>
+            <button class="chip" type="button" data-v="high" aria-pressed="false">많음</button>
+          </div>
+        <div class="fld" style="margin-bottom:7px"><span>식사량</span></div>
+        <div class="chips" id="sw-intake">
+            <button class="chip" type="button" data-v="less" aria-pressed="false">조금</button>
+            <button class="chip" type="button" data-v="same" aria-pressed="false">원래대로</button>
+            <button class="chip" type="button" data-v="more" aria-pressed="false">많이</button>
+          </div>
+      </div>
+
       <figure class="cheer" id="cheer">
         <span class="q">“</span>
         <blockquote class="cheer-t" id="cheer-text">음식을 먹어라. 너무 많이는 말고. 대부분 식물로.</blockquote>
@@ -712,6 +743,12 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
           <div class="fld" style="margin-bottom:7px"><span>야식</span></div>
           <div class="chips" id="b-late" style="margin-bottom:16px">
             <button class="chip" type="button" data-v="none" aria-pressed="false">안 먹음</button>
+            <button class="chip" type="button" data-v="some" aria-pressed="false">조금</button>
+            <button class="chip" type="button" data-v="lots" aria-pressed="false">많이</button>
+          </div>
+          <div class="fld" style="margin-bottom:7px"><span>속 불편함 <span class="muted" style="font-weight:400">· 메스꺼움 · 속쓰림</span></span></div>
+          <div class="chips" id="b-gut" style="margin-bottom:16px">
+            <button class="chip" type="button" data-v="none" aria-pressed="false">없음</button>
             <button class="chip" type="button" data-v="some" aria-pressed="false">조금</button>
             <button class="chip" type="button" data-v="lots" aria-pressed="false">많이</button>
           </div>
@@ -1250,6 +1287,12 @@ const SYNC_MSG = {
   unavailable:       "연결 불안정"
 };
 
+/* 위고비 전환 — 바꾼 직후 3주가 "올려도 되나"를 판단하는 구간이라,
+   그동안만 홈 맨 위에 세 가지를 물어본다. 지나면 알아서 사라진다. */
+const SWITCH_PLAN = "2026-09-23";
+const SWITCH_DAYS = 21;
+const GUT = {none:"없음", some:"조금", lots:"많이"};
+
 /* 인바디 — 재는 항목이 많아 표로 정의하고, 입력칸은 시작할 때 한 번 만든다 */
 const IB_MAIN = [
   ["kg","체중","kg",0.01,20,300],
@@ -1350,7 +1393,7 @@ const state = {
 function emptyDay(date){
   return { date, meals:{b:false,l:false,d:false}, lunchbox:null, eatout:null, caffeine:null,
            mealNotes:{b:"",l:"",d:""}, mealKind:{b:null,l:null,d:null}, photos:{b:[],l:[],d:[],s:[]}, steps:null,
-           appetite:null, intake:null, drink:null, latenight:null, period:null, flow:null, poop:null, poopType:null, review:null, weights:[], workouts:[], snacks:[], meds:[], fits:[], inbody:[], habits:{} };
+           appetite:null, intake:null, drink:null, latenight:null, gut:null, period:null, flow:null, poop:null, poopType:null, review:null, weights:[], workouts:[], snacks:[], meds:[], fits:[], inbody:[], habits:{} };
 }
 /* db가 돌려주는 문서는 얼려져 있어 그대로 고칠 수 없다.
    항상 우리 쪽 사본으로 바꿔 두고, 그 사본만 읽고 쓴다. */
@@ -1377,6 +1420,7 @@ function normalizeDay(src, date){
     n.intake   = src.intake   || null;
     n.drink     = src.drink     || null;
     n.latenight = src.latenight || null;
+    n.gut       = src.gut       || null;
     n.period   = src.period   || null;
     n.flow     = src.flow     || null;
     n.poop     = src.poop     || null;
@@ -1596,6 +1640,17 @@ function weekCounts(anyDate){
   }
   return {start, end:addDays(start,6), climb, cardio, list};
 }
+/* 위고비를 실제로 처음 맞은 날부터 센다. 아직 안 맞았으면 예정일 기준 */
+function switchStart(){
+  return collect("meds").filter(m=> m.drug === "wegovy").map(m=> m.date).sort()[0] || SWITCH_PLAN;
+}
+function switchPhase(){
+  const st = switchStart(), t = todayStr();
+  if(t < st) return null;
+  const n = Math.round((parseYmd(t) - parseYmd(st))/86400000);
+  if(n >= SWITCH_DAYS) return null;
+  return {start:st, day:n+1, week:Math.floor(n/7)+1};
+}
 /* 다음 주사 예정일 */
 function nextMed(){
   const last = collect("meds", 1)[0];
@@ -1720,13 +1775,14 @@ function inbodyChart(list){
       +  '<text x="'+(L-6)+'" y="'+(y(v)+3.5).toFixed(1)+'" text-anchor="end" font-size="9" font-family="IBM Plex Mono, monospace" fill="var(--faint)">'+fmt1(v)+'</text>';
   });
 
-  /* 약을 시작한 날에 선을 하나 긋는다 — 이 그래프에서 제일 궁금한 경계 */
-  const firstMed = collect("meds").map(m=> m.date).sort()[0];
-  if(firstMed && firstMed >= list[0].date && firstMed <= list[list.length-1].date){
-    const mx = px(firstMed);
+  /* 약을 시작한 날과 약을 바꾼 날에 선을 긋는다 — 이 그래프에서 제일 궁금한 경계 */
+  medMarks().forEach(mk=>{
+    if(mk.d < list[0].date) return;
+    const mx = Math.min(W-R, px(mk.d));
+    const near = mx > W-R-42;
     g += '<line x1="'+mx.toFixed(1)+'" y1="'+T+'" x2="'+mx.toFixed(1)+'" y2="'+(H-B)+'" stroke="var(--accent)" stroke-width="1.2" stroke-dasharray="3 3" opacity=".65"/>'
-      +  '<text x="'+Math.min(W-R, mx+4).toFixed(1)+'" y="'+(T+9)+'" font-size="8.5" font-family="IBM Plex Mono, monospace" fill="var(--accent)">약 시작</text>';
-  }
+      +  '<text x="'+(near ? mx-4 : mx+4).toFixed(1)+'" y="'+(T+9)+'" text-anchor="'+(near?"end":"start")+'" font-size="8.5" font-family="IBM Plex Mono, monospace" fill="var(--accent)">'+esc(mk.label)+'</text>';
+  });
 
   const seriesSvg = (key, color) => {
     const qs = pts.filter(q=> q[key] !== null);
@@ -1747,6 +1803,15 @@ function inbodyChart(list){
     + '</svg>'
     + '<div class="iblegend"><span><i style="background:var(--clay)"></i>체지방량</span>'
     + '<span><i style="background:var(--mint)"></i>제지방량 (지켜야 하는 쪽)</span></div>';
+}
+/* 그래프에 세로선으로 표시할 날들. 계획이 아니라 실제로 기록된 날만 찍는다 */
+function medMarks(){
+  const out = [], all = collect("meds");
+  const first = all.map(m=> m.date).sort()[0];
+  if(first) out.push({d:first, label:"약 시작"});
+  const we = all.filter(m=> m.drug === "wegovy").map(m=> m.date).sort()[0];
+  if(we && we !== first) out.push({d:we, label:"위고비"});
+  return out;
 }
 function ymLabel(ds){ const d = parseYmd(ds); return (d.getFullYear()+"").slice(2)+"."+(d.getMonth()+1); }
 
@@ -1772,6 +1837,19 @@ function weightChart(series, goal, opts){
       bands += '<rect x="'+x0.toFixed(1)+'" y="'+T+'" width="'+Math.max(1,x1-x0).toFixed(1)+'" height="'+(H-T-B)+'" fill="var(--clay-soft)" stroke="none"/>';
     }
   });
+  /* 약을 바꾼 날 같은 경계선. 날짜가 시리즈 사이에 끼면 두 점의 가운데에 긋는다 */
+  let markLines = "";
+  (opts.marks || []).forEach(mk=>{
+    if(mk.d < series[0].d) return;
+    let i = -1;
+    for(let k=0;k<series.length;k++){ if(series[k].d >= mk.d){ i = k; break; } }
+    const mx = i < 0 ? (W-R)                                  /* 그래프 전체가 그 날 이전 */
+             : (i > 0 && series[i].d > mk.d) ? (x(i-1)+x(i))/2
+             : x(i);
+    const near = mx > W-R-42;
+    markLines += '<line x1="'+mx.toFixed(1)+'" y1="'+T+'" x2="'+mx.toFixed(1)+'" y2="'+(H-B)+'" stroke="var(--accent)" stroke-width="1.2" stroke-dasharray="3 3" opacity=".7"/>'
+      + '<text x="'+(near ? mx-4 : mx+4).toFixed(1)+'" y="'+(T+9)+'" text-anchor="'+(near?"end":"start")+'" font-size="8.5" font-family="IBM Plex Mono, monospace" fill="var(--accent)">'+esc(mk.label)+'</text>';
+  });
   let fitMarks = "";
   series.forEach((s,i)=>{
     const f = opts.fits && opts.fits[s.d];
@@ -1788,7 +1866,7 @@ function weightChart(series, goal, opts){
   }
   const last = pts[pts.length-1];
   return '<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="체중 추이 그래프">'
-    + bands + g
+    + bands + g + markLines
     + '<path d="'+area+'" fill="var(--accent-soft)" opacity=".75" stroke="none"/>'
     + '<polyline points="'+line+'" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
     + '<circle cx="'+last[0].toFixed(1)+'" cy="'+last[1].toFixed(1)+'" r="3.6" fill="var(--accent)"/>'
@@ -1810,6 +1888,16 @@ function planLine(plan, ds){
 }
 function renderHome(){
   const t = todayStr(), d = day(t), dow = parseYmd(t).getDay(), plan = PLAN[dow];
+
+  /* 위고비 전환 3주 — 홈 맨 위에서 세 번만 누르면 되게 */
+  const sp = switchPhase();
+  $("#switch-card").hidden = !sp;
+  if(sp){
+    $("#switch-when").textContent = sp.week+"주차 · "+sp.day+"일째";
+    setChip($("#sw-gut"), d.gut);
+    setChip($("#sw-app"), d.appetite);
+    setChip($("#sw-intake"), d.intake);
+  }
 
   /* 오늘의 계획 */
   const doneKinds = d.workouts.map(w=>w.type);
@@ -2022,12 +2110,13 @@ function dayDetailHTML(ds){
       + (bits.length?'<span class="s">'+esc(bits.join(" · "))+'</span>':"")+'</span></div>';
   }).join(""));
 
-  if(o.period || o.poop || o.appetite || o.intake || o.drink || o.latenight){
+  if(o.period || o.poop || o.appetite || o.intake || o.drink || o.latenight || o.gut){
     const bits = [];
     if(o.appetite) bits.push('<span class="pill '+(APP_SCORE[o.appetite]>=2?"run":"walk")+'">식욕 '+esc(APPETITE[o.appetite])+'</span>');
     if(o.intake) bits.push('<span class="pill '+(o.intake==="more"?"run":o.intake==="same"?"walk":"rest")+'">식사량 '+esc(INTAKE[o.intake])+'</span>');
     if(o.drink) bits.push('<span class="pill '+(o.drink==="none"?"rest":"climb")+'">음주 '+esc(DRINK[o.drink])+'</span>');
     if(o.latenight) bits.push('<span class="pill '+(o.latenight==="none"?"rest":"run")+'">야식 '+esc(LATE[o.latenight])+'</span>');
+    if(o.gut) bits.push('<span class="pill '+(o.gut==="none"?"rest":"run")+'">속 불편함 '+esc(GUT[o.gut])+'</span>');
     if(o.poop) bits.push('<span class="pill '+(o.poop==="none"?"rest":"walk")+'">배변 '+esc(POOP[o.poop])+(o.poopType?" · "+esc(POOP_TYPE[o.poopType]):"")+'</span>');
     if(o.period) bits.push('<span class="pill climb">'+esc(PERIODS[o.period]||"생리 중")+(o.flow?" · "+esc(FLOW[o.flow]):"")+'</span>');
     body += sec("몸 상태", '<div class="chips">'+bits.join("")+'</div>');
@@ -2256,6 +2345,7 @@ function renderBodyPanel(){
   setChip($("#b-intake"), o.intake);
   setChip($("#b-drink"), o.drink);
   setChip($("#b-late"), o.latenight);
+  setChip($("#b-gut"), o.gut);
   setChip($("#b-poop"), o.poop);
   setChip($("#b-poop-type"), o.poopType);
   setChip($("#w-period"), o.period);
@@ -2759,7 +2849,7 @@ function secWeight(c){
   });
   const hasFitMark = c.series.some(s=> fitMap[s.d]);
   const hasPeriod  = c.series.some(s=> periodMap[s.d]);
-  out += '<div class="card"><p class="sec-label">체중 추세</p>' + weightChart(c.series, c.goal, {fits:fitMap, periods:periodMap});
+  out += '<div class="card"><p class="sec-label">체중 추세</p>' + weightChart(c.series, c.goal, {fits:fitMap, periods:periodMap, marks:medMarks()});
   if(hasFitMark || hasPeriod){
     out += '<div class="legend" style="margin-top:10px">'
       + (hasFitMark ? '<span><i style="background:var(--clay)"></i>꽉 낌</span><span><i style="background:var(--ochre)"></i>딱 맞음</span><span><i style="background:var(--mint)"></i>헐렁</span>' : "")
@@ -3247,6 +3337,25 @@ function secBody(c){
   } else out += needMore("기록 > 체중 화면의 '몸 상태'에서 음주·야식을 눌러두면, 다음날 숫자와 어떻게 이어지는지 정리해 드려요.");
   out += '</div>';
 
+  /* 속 불편함 — 약을 바꾼 뒤 제일 먼저 보고 싶은 것 */
+  const gutDays = c.dates.filter(ds=> day(ds).gut);
+  out += '<div class="card"><p class="sec-label">속 불편함</p>';
+  if(gutDays.length >= 4){
+    const gc = {none:0, some:0, lots:0};
+    gutDays.forEach(ds=> gc[day(ds).gut]++);
+    out += '<div class="statgrid" style="margin-bottom:6px">'
+      + '<div class="stat"><div class="v">'+Math.round((gc.some+gc.lots)/gutDays.length*100)+'%</div><div class="l">불편했던 날</div></div>'
+      + '<div class="stat"><div class="v">'+gutDays.length+'일</div><div class="l">기록한 날</div></div>'
+      + '</div>'
+      + '<p class="sec-label" style="margin:18px 0 4px">분포</p>'
+      + [["lots","많이","var(--clay)"],["some","조금","var(--ochre)"],["none","없음","var(--mint)"]].map(function(x){
+          return '<div class="barrow"><span class="lb">'+x[1]+'</span><span class="tr"><span class="fl" style="width:'
+            + Math.round(gc[x[0]]/gutDays.length*100)+'%; background:'+x[2]+'"></span></span><span class="vl">'+gc[x[0]]+'일</span></div>';
+        }).join("")
+      + '<p class="tiny muted" style="margin:12px 0 0">약을 바꾸거나 용량을 올린 뒤 2~3주는 여기가 제일 먼저 움직여요. 불편함이 없다면 올릴 여유가 있다는 뜻이기도 합니다 — 판단은 진료 때 함께 하세요.</p>';
+  } else out += needMore("홈 화면(전환 기간)이나 기록 > 체중의 '몸 상태'에서 속 불편함을 눌러두면, 약을 바꾼 뒤 어떻게 달라졌는지 정리해 드려요.");
+  out += '</div>';
+
   /* 배변 */
   const pDays = c.dates.filter(ds=> day(ds).poop);
   out += '<div class="card"><p class="sec-label">배변</p>';
@@ -3398,7 +3507,7 @@ function csvCell(v){
 function buildCsv(){
   const hs = state.settings.habits || [];
   const rows = [["날짜","요일","체중(kg)","컨디션(1-5)","수면(h)","붓기","생리","아침","점심","저녁",
-    "도시락","외식","카페인","아침 메뉴","점심 메뉴","저녁 메뉴","끼니 종류","식욕","식사량","음주","야식","배변","배변 상태","생리 양","운동","간식","약","몸의 반응","옷 핏","기준 옷","허리(cm)","엉덩이(cm)","허벅지(cm)",
+    "도시락","외식","카페인","아침 메뉴","점심 메뉴","저녁 메뉴","끼니 종류","식욕","식사량","음주","야식","속 불편함","배변","배변 상태","생리 양","운동","간식","약","몸의 반응","옷 핏","기준 옷","허리(cm)","엉덩이(cm)","허벅지(cm)",
     "걸음 수","인바디 체중(kg)","골격근량(kg)","체지방률(%)","내장지방레벨",
     "습관 달성","습관 전체","메모"]];
   Object.keys(state.days).sort().forEach(ds=>{
@@ -3419,6 +3528,7 @@ function buildCsv(){
       o.intake ? INTAKE[o.intake] : "",
       o.drink ? DRINK[o.drink] : "",
       o.latenight ? LATE[o.latenight] : "",
+      o.gut ? GUT[o.gut] : "",
       o.poop ? POOP[o.poop] : "",
       o.poopType ? POOP_TYPE[o.poopType] : "",
       o.flow ? FLOW[o.flow] : "",
@@ -3675,7 +3785,7 @@ function clinicSheet(){
       + '<div class="stat"><div class="v" style="color:'+(ch<0?"var(--mint)":"var(--clay)")+'">'+(ch>0?"+":"")+fmtKg(ch)+'kg</div><div class="l">변화</div></div>'
       + '<div class="stat"><div class="v">'+fmt1(ch/days*7)+'kg</div><div class="l">주당 평균</div></div>'
       + '</div>'
-      + weightChart(series, state.settings.goalWeight) + '</div>';
+      + weightChart(series, state.settings.goalWeight, {marks:medMarks()}) + '</div>';
   } else {
     out += '<div class="sheet-sec"><p class="sec-label">체중</p>'+needMore("기록이 더 쌓이면 정리해 드려요.")+'</div>';
   }
@@ -3734,6 +3844,23 @@ function clinicSheet(){
       + [["more","많이"],["same","원래대로"],["less","조금"]].map(function(x){
           return '<div class="barrow"><span class="lb">'+x[1]+'</span><span class="tr"><span class="fl" style="width:'
             + Math.round(icnt[x[0]]/iDays.length*100)+'%; background:var(--mint)"></span></span><span class="vl">'+icnt[x[0]]+'일</span></div>';
+        }).join("")
+      + '</div>';
+  }
+
+  const gDays = Object.keys(state.days).filter(ds=> inR(ds) && day(ds).gut);
+  if(gDays.length >= 3){
+    const gc = {none:0, some:0, lots:0};
+    gDays.forEach(ds=> gc[day(ds).gut]++);
+    out += '<div class="sheet-sec"><p class="sec-label">속 불편함</p>'
+      + '<p class="tiny muted" style="margin:-4px 0 10px">메스꺼움·속쓰림을 하루 단위로 남긴 기록이에요. 주사할 때 적은 「몸의 반응」과는 따로 셉니다.</p>'
+      + '<div class="statgrid" style="margin-bottom:6px">'
+      + '<div class="stat"><div class="v">'+(gc.some+gc.lots)+'일</div><div class="l">불편했던 날 / 기록 '+gDays.length+'일</div></div>'
+      + '<div class="stat"><div class="v" style="color:'+(gc.lots?"var(--clay)":"var(--ink)")+'">'+gc.lots+'일</div><div class="l">「많이」였던 날</div></div>'
+      + '</div>'
+      + [["lots","많이","var(--clay)"],["some","조금","var(--ochre)"],["none","없음","var(--mint)"]].map(function(x){
+          return '<div class="barrow"><span class="lb">'+x[1]+'</span><span class="tr"><span class="fl" style="width:'
+            + Math.round(gc[x[0]]/gDays.length*100)+'%; background:'+x[2]+'"></span></span><span class="vl">'+gc[x[0]]+'일</span></div>';
         }).join("")
       + '</div>';
   }
@@ -3856,6 +3983,11 @@ initChips($("#b-app"),       v=>{ mutate(bodyDate(), d=> d.appetite = v); });
 initChips($("#b-intake"),    v=>{ mutate(bodyDate(), d=> d.intake = v); });
 initChips($("#b-drink"),     v=>{ mutate(bodyDate(), d=> d.drink = v); });
 initChips($("#b-late"),      v=>{ mutate(bodyDate(), d=> d.latenight = v); });
+initChips($("#b-gut"),       v=>{ mutate(bodyDate(), d=> d.gut = v); });
+/* 홈의 전환 카드는 언제나 오늘 날짜로 들어간다 */
+initChips($("#sw-gut"),      v=>{ mutate(todayStr(), d=> d.gut = v); });
+initChips($("#sw-app"),      v=>{ mutate(todayStr(), d=> d.appetite = v); });
+initChips($("#sw-intake"),   v=>{ mutate(todayStr(), d=> d.intake = v); });
 initChips($("#b-poop"),      v=>{ mutate(bodyDate(), d=>{ d.poop = v; if(!v || v === "none") d.poopType = null; }); });
 initChips($("#b-poop-type"), v=>{ mutate(bodyDate(), d=> d.poopType = v); });
 
