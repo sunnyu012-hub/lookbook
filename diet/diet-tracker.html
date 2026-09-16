@@ -477,13 +477,6 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
 .rvline:last-child{margin-bottom:0}
 .rvline b{display:block; font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.06em; color:var(--faint); font-weight:600; margin-bottom:2px}
 
-.hourchart{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; align-items:end; height:132px; margin-top:6px}
-.hourchart .col{display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:7px; height:100%}
-.hourchart .n{font-size:11.5px; font-family:"IBM Plex Mono",monospace; color:var(--muted)}
-.hourchart .bar{width:100%; max-width:46px; background:linear-gradient(180deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 45%, var(--surface)) 100%); border-radius:8px 8px 4px 4px; min-height:3px}
-.hourchart .lb{font-size:11px; color:var(--muted); text-align:center; line-height:1.3}
-.hourchart .lb small{display:block; font-size:9.5px; color:var(--faint); font-family:"IBM Plex Mono",monospace}
-
 /* ---------- 시트 ---------- */
 /* 사진 — 먹은 것 사진 기록 */
 .photorow{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:8px}
@@ -1344,11 +1337,19 @@ const CONDS = [{v:1,e:"😞"},{v:2,e:"🙁"},{v:3,e:"😐"},{v:4,e:"🙂"},{v:5,
 const REASONS = {hungry:"진짜 배고픔", bored:"입이 심심", stress:"스트레스"};
 const CAFF = {decaf:"디카페인", regular:"일반", none:"안 마심"};
 const DRUGS = {mounjaro:"마운자로", wegovy:"위고비"};
+/* 간식 시간대 — 6시간 단위로는 "오후에 몰린다"까지만 보인다.
+   실제로 손이 가는 건 두어 시간 폭이라 2시간씩 쪼갠다 (새벽은 한 덩어리) */
 const HOURBANDS = [
-  {k:"dawn",  label:"새벽", range:"00-06", from:0,  to:6},
-  {k:"morn",  label:"오전", range:"06-12", from:6,  to:12},
-  {k:"after", label:"오후", range:"12-18", from:12, to:18},
-  {k:"eve",   label:"저녁", range:"18-24", from:18, to:24}
+  {label:"새벽 0–6시", from:0,  to:6},
+  {label:"6–8시",      from:6,  to:8},
+  {label:"8–10시",     from:8,  to:10},
+  {label:"10–12시",    from:10, to:12},
+  {label:"12–14시",    from:12, to:14},
+  {label:"14–16시",    from:14, to:16},
+  {label:"16–18시",    from:16, to:18},
+  {label:"18–20시",    from:18, to:20},
+  {label:"20–22시",    from:20, to:22},
+  {label:"22–24시",    from:22, to:24}
 ];
 
 /* ============================================================
@@ -1871,16 +1872,35 @@ function weightChart(series, goal, opts){
     g += '<line x1="'+L+'" y1="'+y(goal).toFixed(1)+'" x2="'+(W-R)+'" y2="'+y(goal).toFixed(1)+'" stroke="var(--accent)" stroke-width="1.2" stroke-dasharray="4 3" opacity=".8"/>'
       +  '<text x="'+(W-R)+'" y="'+(y(goal)-5).toFixed(1)+'" text-anchor="end" font-size="9" font-family="IBM Plex Mono, monospace" fill="var(--accent)">목표 '+fmt1(goal)+'</text>';
   }
+  /* 원칙 7 — 하루 숫자가 아니라 흐름. 그 날까지의 7일치 평균을 겹쳐 그린다 */
+  let trend = "", hasTrend = false;
+  if(series.length >= 5){
+    const tp = [];
+    series.forEach((s2,i)=>{
+      const from = addDays(s2.d, -6);
+      const vs = series.filter(z=> z.d >= from && z.d <= s2.d).map(z=> z.v);
+      if(vs.length >= 3) tp.push([x(i), y(vs.reduce((a,b)=>a+b,0)/vs.length)]);
+    });
+    if(tp.length >= 3){
+      hasTrend = true;
+      trend = '<polyline points="'+tp.map(q=>q[0].toFixed(1)+","+q[1].toFixed(1)).join(" ")
+        + '" fill="none" stroke="var(--ink2)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/>';
+    }
+  }
   const last = pts[pts.length-1];
   return '<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="체중 추이 그래프">'
     + bands + g + markLines
     + '<path d="'+area+'" fill="var(--accent-soft)" opacity=".75" stroke="none"/>'
     + '<polyline points="'+line+'" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
+    + trend
     + '<circle cx="'+last[0].toFixed(1)+'" cy="'+last[1].toFixed(1)+'" r="3.6" fill="var(--accent)"/>'
     + '<text x="'+L+'" y="'+(H-8)+'" font-size="9" font-family="IBM Plex Mono, monospace" fill="var(--faint)">'+yLabel(series[0].d)+'</text>'
     + '<text x="'+(W-R)+'" y="'+(H-8)+'" text-anchor="end" font-size="9" font-family="IBM Plex Mono, monospace" fill="var(--faint)">'+yLabel(series[series.length-1].d)+'</text>'
     + fitMarks
-    + '</svg>';
+    + '</svg>'
+    + (hasTrend ? '<div class="legend" style="margin-top:8px">'
+        + '<span><i style="background:var(--accent)"></i>그날 잰 값</span>'
+        + '<span><i style="background:var(--ink2)"></i>7일 평균 (흐름)</span></div>' : "");
 }
 
 /* ============================================================
@@ -2693,6 +2713,33 @@ function cycleRhythm(){
     .map(k=>({idx:k, dev:avg(buckets[k]), n:buckets[k].length}));
   return {cycles, pts};
 }
+/* 주사일을 0일로 놓고 일차별 체중 편차 — 생리 주기 리듬과 같은 방식.
+   약을 바꾼 뒤 같은 그림을 그려 겹쳐 보려고 만든다 */
+function medRhythm(inRange){
+  const all = collect("meds").map(m=> m.date).filter(d=> !inRange || inRange(d));
+  const dates = all.filter((d,i)=> all.indexOf(d) === i).sort();
+  if(dates.length < 2) return null;
+  const buckets = {};
+  let cycles = 0;
+  dates.forEach((md, i)=>{
+    const end = dates[i+1] || addDays(md, MED_INTERVAL);
+    const pts = [];
+    let cur = md, idx = 0;
+    while(cur < end && idx < 12){
+      const k = lastKg(cur);
+      if(k !== null) pts.push({idx, kg:k});
+      cur = addDays(cur, 1); idx++;
+    }
+    if(pts.length < 4) return;
+    cycles++;
+    const m = avg(pts.map(p=>p.kg));
+    pts.forEach(p=>{ (buckets[p.idx] = buckets[p.idx] || []).push(p.kg - m); });
+  });
+  if(!cycles) return null;
+  const pts = Object.keys(buckets).map(Number).sort((a,b)=>a-b)
+    .map(k=>({idx:k, dev:avg(buckets[k]), n:buckets[k].length}));
+  return {cycles, pts};
+}
 /* 주사 이후 날짜별 식욕 (0 없음 ~ 3 많음) */
 function appetiteAfterMed(inRange){
   const buckets = [];
@@ -2723,7 +2770,8 @@ function logStreak(){
   return n;
 }
 /* 0을 기준선으로 두는 편차 그래프 */
-function devChart(pts, unit){
+function devChart(pts, opts){
+  opts = opts || {};
   if(pts.length < 3) return "";
   const W=320,H=130,L=32,R=10,T=14,B=24;
   const maxAbs = Math.max(0.3, Math.max.apply(null, pts.map(p=>Math.abs(p.dev))));
@@ -2741,7 +2789,7 @@ function devChart(pts, unit){
     + g
     + '<polyline points="'+line+'" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
     + dots
-    + '<text x="'+L+'" y="'+(H-7)+'" font-size="9" font-family="IBM Plex Mono, monospace" fill="var(--faint)">시작일</text>'
+    + '<text x="'+L+'" y="'+(H-7)+'" font-size="9" font-family="IBM Plex Mono, monospace" fill="var(--faint)">'+esc(opts.from || "시작일")+'</text>'
     + '<text x="'+(W-R)+'" y="'+(H-7)+'" text-anchor="end" font-size="9" font-family="IBM Plex Mono, monospace" fill="var(--faint)">'+maxIdx+'일차</text>'
     + '</svg>';
 }
@@ -3056,6 +3104,19 @@ function secLife(c){
             + (x.m >= STEP_GOAL ? "var(--mint)" : "var(--accent)")+'"></span></span>'
             + '<span class="vl">'+Math.round(x.m).toLocaleString()+'</span></div>').join("");
     }
+    /* 클라이밍은 걸음으로 거의 안 잡힌다. 나눠 보지 않으면 "덜 움직인 날"로 잘못 읽힌다 */
+    const exD = stDays.filter(ds=> day(ds).workouts.length);
+    const noD = stDays.filter(ds=> !day(ds).workouts.length);
+    if(exD.length >= 2 && noD.length >= 2){
+      const em = avg(exD.map(ds=> day(ds).steps)), nm2 = avg(noD.map(ds=> day(ds).steps));
+      out += '<div class="hr"></div><p class="sec-label">운동한 날 · 안 한 날</p>'
+        + '<div class="statgrid" style="margin-bottom:6px">'
+        + '<div class="stat"><div class="v">'+Math.round(em).toLocaleString()+'</div><div class="l">운동한 날 ('+exD.length+'일)</div></div>'
+        + '<div class="stat"><div class="v">'+Math.round(nm2).toLocaleString()+'</div><div class="l">안 한 날 ('+noD.length+'일)</div></div>'
+        + '</div>'
+        + '<p class="tiny muted" style="margin:10px 0 0">클라이밍은 걸음 수로 거의 잡히지 않아요. '
+        + '클라이밍 간 날에 걸음이 적게 찍혀도 <b>덜 움직인 게 아닙니다</b> — 두 숫자는 서로 다른 걸 재요.</p>';
+    }
     out += compareBlock("많이 걸은 날 vs 적게 걸은 날", STEP_GOAL.toLocaleString()+"걸음 이상", "그 미만",
       splitCompare(c.inRange, o=> typeof o.steps === "number" ? (o.steps >= STEP_GOAL) : null),
       "운동을 따로 안 한 날도 걸음은 쌓여요. 바빠지면 제일 먼저 줄어드는 숫자이기도 합니다.");
@@ -3098,15 +3159,15 @@ function secLife(c){
   const maxN = Math.max(1, Math.max.apply(null, bands.map(b=>b.n)));
   out += '<div class="card"><p class="sec-label">간식</p>';
   if(snacks.length){
-    out += '<div class="hourchart">'+bands.map(b=>
-        '<div class="col"><span class="n">'+b.n+'</span>'
-      + '<span class="bar" style="height:'+Math.max(3, Math.round(b.n/maxN*100))+'%"></span>'
-      + '<span class="lb">'+b.label+'<small>'+b.range+'</small></span></div>').join("")+'</div>';
+    out += bands.map(b=>
+        '<div class="barrow"><span class="lb">'+esc(b.label)+'</span>'
+      + '<span class="tr"><span class="fl" style="width:'+(b.n?Math.max(4, Math.round(b.n/maxN*100)):0)+'%"></span></span>'
+      + '<span class="vl">'+(b.n||"")+'</span></div>').join("");
     const top = bands.slice().sort((a,b)=>b.n-a.n)[0];
     const rc = {hungry:0,bored:0,stress:0}; let satSum=0, satN=0;
     snacks.forEach(s=>{ if(rc[s.reason]!==undefined) rc[s.reason]++; if(s.sat){satSum+=Number(s.sat); satN++;} });
     const rcTotal = rc.hungry+rc.bored+rc.stress;
-    if(top.n) out += '<p class="tiny muted" style="margin:12px 0 0">'+top.label+'('+top.range+')에 가장 많았어요. 판단하지 말고 패턴만 봅니다.</p>';
+    if(top.n) out += '<p class="tiny muted" style="margin:12px 0 0"><b>'+esc(top.label)+'</b>에 가장 많았어요. 판단하려는 게 아니라, 어느 시간대에 손이 가는지만 봅니다.</p>';
     if(rcTotal){
       out += '<p class="sec-label" style="margin:18px 0 4px">왜 먹었나</p>';
       [["hungry","진짜 배고픔"],["bored","입이 심심"],["stress","스트레스"]].forEach(([k,nm])=>{
@@ -3497,6 +3558,18 @@ function secBody(c){
           + Math.round(seCount[k]/seMax*100)+'%; background:var(--clay)"></span></span><span class="vl">'+seCount[k]+'회</span></div>';
       });
       out += '<p class="tiny muted" style="margin:10px 0 0">진료 때 이 기록을 그대로 보여주세요.</p>';
+    }
+    const mr = medRhythm(c.inRange);
+    if(mr && mr.pts.length >= 4){
+      const peak = mr.pts.reduce((a,b)=> b.dev > a.dev ? b : a);
+      const low  = mr.pts.reduce((a,b)=> b.dev < a.dev ? b : a);
+      out += '<div class="hr"></div><p class="sec-label">주사 이후 체중 리듬</p>'
+        + devChart(mr.pts, {from:"주사일"})
+        + '<p class="tiny muted" style="margin:10px 0 0">기록한 주기 '+mr.cycles+'번의 평균이에요. '
+        + '한 주기 안의 평균을 0으로 놓고, 며칠째에 높고 낮은지를 봅니다. '
+        + '<b style="color:var(--clay)">'+(peak.idx===0?"주사 당일":peak.idx+"일째")+'에 +'+fmt1(peak.dev)+'kg</b>으로 가장 높고, '
+        + '<b style="color:var(--mint)">'+(low.idx===0?"주사 당일":low.idx+"일째")+'에 '+fmt1(low.dev)+'kg</b>으로 가장 낮아요.</p>'
+        + '<p class="tiny muted" style="margin:6px 0 0">약을 바꾼 뒤 이 그림이 어떻게 달라지는지가 전환 판단의 핵심이에요. 지금 모양을 기억해 두세요.</p>';
     }
   } else out += needMore("이 기간엔 투여 기록이 없어요.");
   out += '<p class="tiny muted" style="margin:12px 0 0">약은 감량을 대신하지 않아요. 용량 변경·전환은 처방 의료진과 상의하세요.</p></div>';
