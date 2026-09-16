@@ -525,6 +525,13 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
   background:linear-gradient(150deg, var(--accent-soft) 0%, var(--surface) 62%);
   border-color:color-mix(in srgb, var(--accent) 30%, transparent);
 }
+/* 홈은 세로 flex라, 급한 카드만 order로 맨 위에 올린다 (DOM은 그대로 둔다) */
+#switch-card{order:-2}
+#med-card.urgent{
+  order:-1;
+  background:linear-gradient(150deg, var(--clay-soft) 0%, var(--surface) 62%);
+  border-color:color-mix(in srgb, var(--clay) 32%, transparent);
+}
 </style>
 
 <div id="app">
@@ -612,7 +619,7 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
 
       <div class="card" id="med-card" hidden>
         <div class="between" style="margin-bottom:10px">
-          <p class="sec-label" style="margin:0">다음 주사</p>
+          <p class="sec-label" style="margin:0" id="med-label">다음 주사</p>
           <button class="link tiny" type="button" data-goto="rec:med">약 기록</button>
         </div>
         <div id="med-body"></div>
@@ -2007,8 +2014,15 @@ function renderHome(){
   const nm = nextMed();
   $("#med-card").hidden = !nm;
   if(nm){
+    /* 하루 전부터는 놓치기 쉬워서 카드를 홈 맨 위로 올린다 */
+    const urgent = nm.diff <= 1;
+    $("#med-card").classList.toggle("urgent", urgent);
+    $("#med-label").textContent = nm.diff < 0 ? "주사 예정일이 지났어요"
+                                : nm.diff === 0 ? "오늘 주사 맞는 날"
+                                : nm.diff === 1 ? "내일 주사"
+                                : "다음 주사";
     const dLabel = nm.diff > 0 ? "D-"+nm.diff : nm.diff === 0 ? "오늘" : "D+"+(-nm.diff);
-    const tone = nm.diff < 0 ? "var(--clay)" : nm.diff <= 1 ? "var(--accent)" : "var(--ink)";
+    const tone = nm.diff <= 1 ? "var(--clay)" : "var(--ink)";
     const note = nm.diff > 0 ? "예정일까지 "+nm.diff+"일 남았어요"
                : nm.diff === 0 ? "오늘이 예정일이에요"
                : nm.diff === -1 ? "예정일이 어제였어요"
@@ -2016,7 +2030,8 @@ function renderHome(){
     $("#med-body").innerHTML =
         '<div class="between"><span class="mono" style="font-size:26px; font-weight:600; letter-spacing:-.02em; color:'+tone+'">'+dLabel+'</span>'
       + '<span class="tiny muted mono" style="text-align:right">'+fullLabel(nm.next)+'<br>'+esc(DRUGS[nm.last.drug]||nm.last.drug)+(nm.last.dose?" "+esc(nm.last.dose):"")+'</span></div>'
-      + '<p class="tiny muted" style="margin:10px 0 0">'+note+' · 마지막 투여 '+mdLabel(nm.last.date)+'. 주기와 용량은 처방 의료진 안내를 따르세요.</p>';
+      + '<p class="tiny muted" style="margin:10px 0 0">'+note+' · 마지막 투여 '+mdLabel(nm.last.date)+'. 주기와 용량은 처방 의료진 안내를 따르세요.</p>'
+      + (urgent ? '<button class="btn ghost" type="button" data-goto="rec:med" style="margin-top:12px">맞고 나서 기록하기</button>' : "");
   }
 
   /* 이번주 운동 */
