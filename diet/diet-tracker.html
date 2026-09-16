@@ -514,6 +514,21 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
 .savebadge{font-size:10.5px; font-family:"IBM Plex Mono",monospace; color:var(--faint); display:flex; align-items:center; gap:5px}
 .savebadge i{width:7px; height:7px; border-radius:50%; background:var(--mint); display:block}
 .savebadge.local i{background:var(--ochre)}
+.dinnerline{
+  display:flex; align-items:center; gap:8px; width:100%; text-align:left;
+  margin-top:10px; padding:11px 13px; border-radius:13px;
+  background:var(--surface2); border:1px solid var(--line2);
+}
+.dinnerline .dn-ic{font-size:15px; line-height:1; flex:none}
+.dinnerline .dn-t{flex:1; min-width:0; font-size:13.5px; font-weight:600; color:var(--ink2)}
+.card.warm .dinnerline{background:color-mix(in srgb, var(--surface) 70%, transparent)}
+.dietrow{display:flex; gap:12px; padding:13px 0; align-items:flex-start}
+.dietrow + .dietrow{border-top:1px solid var(--line2)}
+.dietrow.today{background:var(--accent-soft); margin:0 -12px; padding-left:12px; padding-right:12px; border-radius:13px}
+.dietrow .dw{width:26px; flex:none; font-weight:700; font-size:13px; color:var(--accent); padding-top:1px}
+.dietrow .db{flex:1; min-width:0}
+.dietrow .db b{display:block; font-size:14px; font-weight:600; margin-bottom:3px}
+.dietrow .db span{display:block; font-size:12px; color:var(--muted); line-height:1.55}
 .switch-card{
   background:linear-gradient(150deg, var(--accent-soft) 0%, var(--surface) 62%);
   border-color:color-mix(in srgb, var(--accent) 30%, transparent);
@@ -633,6 +648,14 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
         </div>
         <div class="snacklist" id="snack-preview"></div>
       </div>
+
+      <button class="card linkcard" type="button" id="open-diet">
+        <span>
+          <span class="t">이번 주 식단</span><br>
+          <span class="d">요일별 저녁 · 간식 · 장보기</span>
+        </span>
+        <span class="mono muted">→</span>
+      </button>
 
       <button class="card linkcard" type="button" id="open-principles">
         <span>
@@ -1256,6 +1279,18 @@ const PLAN = {
   0:{title:"클라이밍 (토·일 중 하루)", kinds:["climb"], weekend:true, hint:"주말 둘 중 하루만 가면 돼."}
 };
 const GOAL_CLIMB = 2, GOAL_CARDIO = 2, GOAL_WEIGHT_DEFAULT = 48;
+
+/* 저녁 계획 — 요리는 도시락 만들 때 한 번으로 끝낸다.
+   피곤한 저녁에 "뭘 먹지"를 결정하지 않게 하는 게 목적이다 (0=일 … 6=토) */
+const DINNER = {
+  1:{t:"도시락 몫",                 d:"도시락 만들 때 2인분. 갓 만든 쪽을 저녁으로 먹고, 식은 쪽을 도시락에."},
+  2:{t:"샤브샤브 또는 도시락 몫",   d:"화·목 중 하루는 샤브샤브. 소스는 폰즈·간장 쪽으로, 마무리 사리는 반만, 국물보다 건더기."},
+  3:{t:"클라이밍장 1층 닭가슴살",   d:"올라가기 30~45분 전에. 위 배출이 느려져 있어 바로 먹고 오르면 더부룩해요."},
+  4:{t:"샤브샤브 또는 도시락 몫",   d:"화·목 중 하루는 샤브샤브. 소스는 폰즈·간장 쪽으로, 마무리 사리는 반만, 국물보다 건더기."},
+  5:{t:"본가 · 가족 식사",          d:"평가하지 않기. 기록만 남기고 넘어가요."},
+  6:{t:"자유",                      d:"먹고 싶은 건 주말에. 그게 계획의 일부예요."},
+  0:{t:"자유",                      d:"먹고 싶은 건 주말에. 그게 계획의 일부예요."}
+};
 const MED_INTERVAL = 7;               /* 주 1회 주사 */
 const FITS = {loose:"헐렁해요", just:"딱 맞아요", tight:"꽉 껴요"};
 const FIT_COLOR = {loose:"var(--mint)", just:"var(--ochre)", tight:"var(--clay)"};
@@ -1949,7 +1984,9 @@ function renderHome(){
     + (plan.kinds.length ? '<div class="chips">'+plan.kinds.map(k=>'<span class="pill '+WTYPE[k].cls+'">'+WTYPE[k].label+'</span>').join("")+'</div>' : "")
     + '<p class="note'+(plan.warm?" warm":"")+'">'+esc(planLine(plan, t))
     + (plan.kinds.length ? '<br>전부 의무는 아니에요. 힘들면 <b>걷기로 바꿔도 성공</b>이에요.' : "")+'</p>'
-    + (d.workouts.length ? '<div class="chips" style="margin-top:2px">'+d.workouts.map(w=>'<span class="tag">'+esc(WTYPE[w.type]?WTYPE[w.type].label:w.type)+(w.min?" "+w.min+"분":"")+'</span>').join("")+'</div>' : "");
+    + (d.workouts.length ? '<div class="chips" style="margin-top:2px">'+d.workouts.map(w=>'<span class="tag">'+esc(WTYPE[w.type]?WTYPE[w.type].label:w.type)+(w.min?" "+w.min+"분":"")+'</span>').join("")+'</div>' : "")
+    + (DINNER[dow] ? '<button class="dinnerline" type="button" data-diet><span class="dn-ic">🍽</span>'
+        + '<span class="dn-t">저녁 · '+esc(DINNER[dow].t)+'</span><span class="mono muted">›</span></button>' : "");
 
   /* 삼시세끼 */
   const mealDefs = [["b","아침","🌅"],["l","점심","🍚"],["d","저녁","🌙"]];
@@ -3675,6 +3712,55 @@ function principlesSheet(){
     + '<button class="btn ghost" type="button" data-sheet-close style="margin-top:14px">닫기</button>'
     + '<p class="tiny muted" style="text-align:center;margin:10px 0 0">습관 탭에서 원칙을 고칠 수 있어요</p>');
 }
+/* 식단 — 요리를 저녁에 하지 않는 게 핵심. 피곤한 날에 결정을 내리지 않게 한다 */
+function dietSheet(){
+  const today = parseYmd(todayStr()).getDay();
+  const rows = [1,2,3,4,5,6,0].map(dw=>{
+    const v = DINNER[dw];
+    return '<div class="dietrow'+(dw===today?" today":"")+'">'
+      + '<span class="dw">'+DOW[dw]+'</span>'
+      + '<span class="db"><b>'+esc(v.t)+'</b><span>'+esc(v.d)+'</span></span></div>';
+  }).join("");
+  const sec = (label, inner) => '<div class="sheet-sec"><p class="sec-label">'+label+'</p>'+inner+'</div>';
+  const li = arr => '<div class="rvcard">'+arr.map(x=> '<p class="rvline">'+x+'</p>').join("")+'</div>';
+
+  openSheet('<h2 id="sheet-title">이번 주 식단</h2>'
+    + '<p class="sh-sub">요리는 도시락 만들 때 한 번</p>'
+    + sec("요일별 저녁", rows)
+    + sec("하루 기본형", li([
+        '<b>아침</b>그릭요거트 · 과일 · 단백질빵 · 소시지처럼 간단한 것. 지금 방식 그대로.',
+        '<b>점심</b>도시락. 쌀밥이 들어간 메뉴로. 채소 한 칸 추가.',
+        '<b>저녁</b>단백질 위주로 가볍게. 너무 배부르게 먹지 않기.'
+      ]))
+    + sec("도시락 2인분 규칙", li([
+        '<b>한 번에 두 배</b>저녁에 도시락 만들 때 2인분. 갓 만든 쪽을 그 자리에서 먹고, 식힌 쪽을 도시락에.',
+        '<b>왜</b>저녁에 새로 요리를 시작하지 않으려고. 피곤한 날에 지는 건 메뉴가 아니라 조리예요.'
+      ]))
+    + sec("서랍에 두는 것", li([
+        '<b>진짜 배고플 때</b>육포. 탕비실 냉동실에 두고 <b style="display:inline">아침에 하루치만 서랍으로</b> 옮기기 — 오후에 탕비실에 갈 이유를 없애려고.',
+        '<b>입이 심심할 때</b>자일리톨 사탕. 지금처럼.',
+        '<b>보류</b>닭가슴살칩 — 바삭해서 손이 계속 가요. 개별포장으로 다시 시도해도 좋아요.'
+      ]))
+    + sec("채소는 익혀서", li([
+        '<b>생채소는 안 해도 돼</b>위 배출이 느려져 있어서 더부룩한 게 당연해요. 억지로 먹을 이유 없어요.',
+        '<b>이미 먹고 있는 것</b>추어탕 · 돼지김치볶음 · 곤드레 · 마라두부덮밥 · 병아리콩. 새로 시작할 게 아니라 조금 늘리면 돼요.',
+        '<b>샤브샤브</b>주 1~2회. 채소 무한리필이면 부피와 식이섬유가 한 번에 해결돼요.'
+      ]))
+    + sec("라벨 30초 보는 법", li([
+        '<b>1. 식품유형</b>「어육소시지」인지 「닭가슴살」인지. 여기서 실체가 갈려요.',
+        '<b>2. 원재료 첫 줄</b>제일 많이 들어간 게 맨 앞. 연육이 첫 줄이면 생선이 몸통이에요.',
+        '<b>3. 단백질 g</b>100g당 20g 이상이면 진짜 단백질 식품.'
+      ]))
+    + sec("상비 목록", li([
+        '<b>냉동</b>닭안심(도시락용) · 육포(탕비실)',
+        '<b>냉장</b>시판 조리 닭가슴살 2~3개 — 피곤한 날 비상용. 뜯기만 하면 되는 게 핵심이에요.',
+        '<b>서랍</b>육포 · 자일리톨 사탕'
+      ]))
+    + '<div class="remind" style="margin-top:22px"><b>기억할 것</b>'
+    + '전부 「더 참기」가 아니라 「구조 바꾸기」예요. 그래서 피곤한 날에도 버텨요. '
+    + '한 끼 어긋나도 그 주 평균이 내려가면 되는 거예요.</div>'
+    + '<button class="btn ghost" type="button" data-sheet-close style="margin-top:14px">닫기</button>');
+}
 function goalSheet(){
   const cur = state.settings.goalWeight;
   openSheet('<h2 id="sheet-title">목표 체중</h2>'
@@ -4532,6 +4618,7 @@ function handleClick(e){
   const cell = el.closest("[data-day]");
   if(cell) return daySheet(cell.dataset.day);
 
+  if(el.closest("#open-diet") || el.closest("[data-diet]")) return dietSheet();
   if(el.closest("#open-principles")) return principlesSheet();
   if(el.closest("#set-goal")) return goalSheet();
   if(el.closest("[data-sheet-close]")) return closeSheet();
