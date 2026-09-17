@@ -422,7 +422,8 @@ const LS_CFG = "jungo.cfg.v2";
 let db = null, assets = null, sampleFn = null, sampleLimits = null, downloads = null;
 let backend = "local";
 let items = [];
-let ready = false;
+let ready = false;      // 목록을 한 번이라도 받았는가
+let settled = false;    // 서버가 확정한 목록을 받았는가 (캐시 스냅샷 아님)
 let cfg = { fees:{}, tone:"default", styleSamples:[], closing:"", snippets: DEFAULT_SNIPPETS.slice(), bumpDays:7 };
 
 const blobCache = new Map();
@@ -431,8 +432,19 @@ const urlCache = new Map();
 const lsRead = (k, fb) => { try{ return JSON.parse(localStorage.getItem(k)) ?? fb; }catch(_){ return fb; } };
 const lsWrite = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch(_){} };
 
+/* 한 번이라도 내 물건을 저장했으면 예시 화면으로 돌아가지 않는다 */
+const LS_USED = "jungo.used";
+let everUsed = false;
+try{ everUsed = localStorage.getItem(LS_USED) === "1"; }catch(_){}
+function markUsed(){
+  if(everUsed) return;
+  everUsed = true;
+  try{ localStorage.setItem(LS_USED, "1"); }catch(_){}
+}
+
 const writeQueue = new Map();
 function persist(item){
+  markUsed();
   item.updatedAt = now();
   const idx = items.findIndex(i => i.id === item.id);
   if(idx === -1) items.push(item); else items[idx] = item;
@@ -513,7 +525,9 @@ const DEMO = [
     price:"300000", soldList:"310000", soldPlatform:"bunjang", soldAt:now()-16*DAY,
     photos:[], desc:"", listedAt:now()-30*DAY, createdAt:now()-40*DAY },
 ];
-const showingDemo = () => items.length === 0;
+/* 예시는 "서버가 비었다고 확정했고, 한 번도 쓴 적이 없을 때"만 보여준다.
+   로딩 중이거나 연결이 잠깐 끊긴 순간에는 절대 예시로 돌아가지 않는다. */
+const showingDemo = () => settled && !everUsed && items.length === 0;
 const view = () => showingDemo() ? DEMO.map(d => normalize(d, d.id)) : items;
 
 /* ===================== 초기화 ===================== */
@@ -530,18 +544,37 @@ async function boot(){
       if(snap.exists) cfg = Object.assign(cfg, snap.data());
     }catch(e){ console.warn("cfg load", e); }
     db.collection("items").onSnapshot(
-      snap => { items = snap.docs.map(doc => normalize(doc.data() || {}, doc.id)); ready = true; renderAll(); },
+      snap => {
+        const fresh = snap.docs.map(doc => normalize(doc.data() || {}, doc.id));
+        const cached = !!(snap.metadata && snap.metadata.fromCache);
+
+        // 아직 서버가 확정하지 않은 빈 목록으로 내 목록을 덮지 않는다.
+        if(cached && !fresh.length && items.length){ ready = true; renderAll(); return; }
+
+        // 지금 열어 둔 물건은 화면에서 고치는 중이니 서버 사본으로 덮지 않는다.
+        items = openItem ? fresh.map(f => f.id === openItem.id ? openItem : f) : fresh;
+        if(openItem && !fresh.some(f => f.id === openItem.id)) items.push(openItem);
+
+        ready = true;
+        if(!cached) settled = true;
+        if(items.length) markUsed();
+        renderAll();
+      },
       err => {
         console.error("db", err);
-        if(!ready){ backend = "local"; items = lsRead(LS_ITEMS, []); cfg = Object.assign(cfg, lsRead(LS_CFG, {})); ready = true; }
-        else toast("동기화가 끊겼어요. 새로고침해 주세요.");
+        if(!ready){
+          backend = "local";
+          items = lsRead(LS_ITEMS, []);
+          cfg = Object.assign(cfg, lsRead(LS_CFG, {}));
+          ready = true; settled = true;
+        }else toast("동기화가 끊겼어요. 새로고침해 주세요.");
         renderAll();
       });
   }else{
     backend = "local";
     items = lsRead(LS_ITEMS, []);
     cfg = Object.assign(cfg, lsRead(LS_CFG, {}));
-    ready = true;
+    ready = true; settled = true;
   }
   renderAll();
 }
@@ -641,7 +674,9 @@ function renderToday(){
   const banner = showingDemo() ? `<div class="sec"><div class="aicard" style="background:var(--accent-soft)">
     <h4 style="color:var(--accent)">예시 화면이에요</h4>
     지금 보이는 세 개는 사용법을 보여주는 예시라 저장되지 않아요.
-    오른쪽 아래 <b>+</b> 를 눌러 첫 물건을 넣으면 예시는 사라집니다.</div></div>` : "";
+    오른쪽 아래 <b>+</b> 를 눌러 첫 물건을 넣으면 예시는 사라집니다.
+    <div style="margin-top:10px"><button class="btn sm" id="hideDemo">예시 지우고 빈 화면으로</button></div>
+    </div></div>` : "";
 
   const todoHTML = todos.length ? `<div class="sec">
     <div class="sec-h"><span>지금 하면 되는 일</span><span class="tnum">${todos.length}</span></div>
@@ -652,7 +687,9 @@ function renderToday(){
       <button class="btn sm ${t.kind==="bump"?"primary":"tint"}" data-todo="${esc(t.kind)}" data-id="${esc(t.it.id)}">${esc(t.cta)}</button>
     </div>`).join("")}</div></div>` : `<div class="sec">
     <div class="sec-h"><span>지금 하면 되는 일</span></div>
-    <div class="group"><div class="empty"><b>다 해두셨어요</b>새로 정리할 물건이 생기면 + 를 눌러 던져두세요.</div></div></div>`;
+    <div class="group"><div class="empty">${!settled && !items.length
+      ? `<b>불러오는 중…</b>저장해 둔 물건을 가져오고 있어요.`
+      : `<b>다 해두셨어요</b>새로 정리할 물건이 생기면 + 를 눌러 던져두세요.`}</div></div></div>`;
 
   const listed = byStatus("listed");
   const quick = `<div class="sec"><div class="sec-h"><span>빠르게</span></div><div class="group">
@@ -889,6 +926,7 @@ document.addEventListener("click", ev => {
   const seg = t.closest("[data-seg]");          if(seg){ segment = seg.dataset.seg; renderItems(); return; }
   const go = t.closest("[data-goseg]");         if(go){ segment = go.dataset.goseg; setTab("items"); return; }
   if(t.closest("#quickAdd")){ openQuickAdd(); return; }
+  if(t.closest("#hideDemo")){ markUsed(); renderAll(); toast("예시를 지웠어요"); return; }
   const todo = t.closest("[data-todo]");        if(todo){ handleTodo(todo.dataset.todo, todo.dataset.id); return; }
 
   if(t.closest("#bumpAll")){
@@ -1081,7 +1119,7 @@ function styleBlock(){
 }
 
 /* ===================== 상세 ===================== */
-let openId = null, sheetRef = null;
+let openId = null, sheetRef = null, openItem = null;
 
 function priceBlock(it){
   const net = num(it.price);
@@ -1216,12 +1254,13 @@ function openDetail(id, focus){
   const it = items.find(i => i.id === id) || view().find(i => i.id === id);
   if(!it) return;
   if(it.demo){ toast("예시예요. + 를 눌러 내 물건을 넣어보세요."); return; }
-  openId = id;
+  openId = id; openItem = it;
   sheetRef = openSheet({ title: it.title || "새 물건", left:"완료", body: detailHTML(it),
     onClose: () => {
       clearTimeout(saveTimers.get(id));
-      const cur = items.find(i => i.id === id); if(cur) persist(cur);
-      openId = null; sheetRef = null;
+      // 화면에서 고치던 그 객체를 저장한다. 목록에서 다시 찾으면 편집분이 날아간다.
+      if(openItem) persist(openItem);
+      openId = null; sheetRef = null; openItem = null;
     }});
   wireDetail(sheetRef, it);
   if(focus === "photo") sheetRef.body.querySelector("#addPhoto")?.click();
@@ -1229,7 +1268,7 @@ function openDetail(id, focus){
 }
 function refreshDetail(){
   if(!openId || !sheetRef) return;
-  const it = items.find(i => i.id === openId); if(!it) return;
+  const it = openItem; if(!it) return;
   const y = sheetRef.body.scrollTop;
   sheetRef.body.innerHTML = detailHTML(it);
   sheetRef.sheet.querySelector(".t").textContent = it.title || "새 물건";
@@ -1310,6 +1349,8 @@ function wireDetail(s, it){
       [{ label:"지우기", value:"del", destructive:true, strong:true }]);
     if(go !== "del") return;
     const ids = it.photos.slice();
+    clearTimeout(saveTimers.get(it.id));
+    openItem = null;              // 닫을 때 저장이 지운 물건을 되살리지 않도록
     await removeItem(it.id);
     s.close();
     ids.forEach(p => assets && assets.delete(p).catch(() => {}));
