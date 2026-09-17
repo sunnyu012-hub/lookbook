@@ -1,7 +1,8 @@
 <title>중고 정리함</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<!-- 아이폰은 -apple-system(Apple SD Gothic Neo)으로 충분하므로 웹폰트는 첫 화면을 막지 않게 뒤늦게 붙인다 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" media="print" onload="this.media='all'">
 <style>
 /* ---------- tokens ---------- */
 :root{
@@ -531,18 +532,36 @@ const showingDemo = () => settled && !everUsed && items.length === 0;
 const view = () => showingDemo() ? DEMO.map(d => normalize(d, d.id)) : items;
 
 /* ===================== 초기화 ===================== */
-async function boot(){
+function boot(){
   const cap = n => (window.claude && window.claude.use) ? window.claude.use(n).catch(() => null) : Promise.resolve(null);
-  const [d,a,s,dl] = await Promise.all([cap("db"), cap("assets"), cap("sample"), cap("downloads")]);
-  db = d; assets = a; sampleFn = s; downloads = dl;
-  if(sampleFn) sampleLimits = await sampleFn.limits().catch(() => null);
+
+  // 목록이 제일 먼저 뜨게 한다. 나머지 기능은 준비되는 대로 뒤따라 붙는다.
+  // (하나라도 같이 기다리면 응답 없는 기능 하나가 10초까지 화면을 잡아둔다)
+  cap("db").then(d => { db = d; startStore(); });
+  cap("assets").then(a => { assets = a; });
+  cap("downloads").then(x => { downloads = x; });
+  cap("sample").then(async s => {
+    sampleFn = s;
+    if(s) sampleLimits = await s.limits().catch(() => null);
+    renderAll();
+  });
+
+  // 서버가 끝내 확정해 주지 않아도 화면이 로딩에 머물지 않게 한다.
+  setTimeout(() => { if(!settled){ settled = true; renderAll(); } }, 5000);
+}
+
+let storeStarted = false;
+let emptyGrace = null;
+function startStore(){
+  if(storeStarted) return;
+  storeStarted = true;
 
   if(db){
     backend = "db";
-    try{
-      const snap = await db.doc("config/app").get();
-      if(snap.exists) cfg = Object.assign(cfg, snap.data());
-    }catch(e){ console.warn("cfg load", e); }
+    // 설정은 목록을 막지 않고 따로 읽는다.
+    db.doc("config/app").get()
+      .then(snap => { if(snap.exists){ cfg = Object.assign(cfg, snap.data()); renderAll(); } })
+      .catch(e => console.warn("cfg load", e));
     db.collection("items").onSnapshot(
       snap => {
         const fresh = snap.docs.map(doc => normalize(doc.data() || {}, doc.id));
@@ -556,7 +575,14 @@ async function boot(){
         if(openItem && !fresh.some(f => f.id === openItem.id)) items.push(openItem);
 
         ready = true;
-        if(!cached) settled = true;
+        // 확정 스냅샷이거나, 받아온 게 있으면 바로 화면을 연다.
+        // 캐시로 온 빈 목록만 잠깐 기다렸다가 "정말 비었다"로 인정한다.
+        if(!cached || fresh.length){
+          settled = true;
+          clearTimeout(emptyGrace);
+        }else if(!settled && !emptyGrace){
+          emptyGrace = setTimeout(() => { settled = true; renderAll(); }, 1500);
+        }
         if(items.length) markUsed();
         renderAll();
       },
