@@ -1,0 +1,1808 @@
+<title>중고 정리함</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* ---------- tokens ---------- */
+:root{
+  --bg:#F2F2F7; --bg-2:#FFFFFF; --card:#FFFFFF;
+  --fill:rgba(118,118,128,.12); --fill-2:rgba(118,118,128,.06);
+  --sep:rgba(60,60,67,.16); --sep-strong:rgba(60,60,67,.29);
+  --label:#000000; --label-2:rgba(60,60,67,.62); --label-3:rgba(60,60,67,.34);
+  --accent:#FF6B2C; --accent-ink:#FFFFFF; --accent-soft:rgba(255,107,44,.12);
+  --s-planned:#5856D6; --s-listed:#007AFF; --s-sold:#34C759; --s-held:#8E8E93;
+  --red:#FF3B30; --amber:#FF9500; --teal:#30B0C7;
+  --bar:rgba(249,249,249,.82);
+  --radius:12px;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#000000; --bg-2:#1C1C1E; --card:#1C1C1E;
+    --fill:rgba(118,118,128,.24); --fill-2:rgba(118,118,128,.16);
+    --sep:rgba(84,84,88,.5); --sep-strong:rgba(84,84,88,.75);
+    --label:#FFFFFF; --label-2:rgba(235,235,245,.6); --label-3:rgba(235,235,245,.3);
+    --accent:#FF7A3D; --accent-ink:#1A0B03; --accent-soft:rgba(255,122,61,.18);
+    --s-planned:#5E5CE6; --s-listed:#0A84FF; --s-sold:#30D158; --s-held:#98989F;
+    --red:#FF453A; --amber:#FF9F0A; --teal:#40C8E0;
+    --bar:rgba(28,28,30,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#000000; --bg-2:#1C1C1E; --card:#1C1C1E;
+  --fill:rgba(118,118,128,.24); --fill-2:rgba(118,118,128,.16);
+  --sep:rgba(84,84,88,.5); --sep-strong:rgba(84,84,88,.75);
+  --label:#FFFFFF; --label-2:rgba(235,235,245,.6); --label-3:rgba(235,235,245,.3);
+  --accent:#FF7A3D; --accent-ink:#1A0B03; --accent-soft:rgba(255,122,61,.18);
+  --s-planned:#5E5CE6; --s-listed:#0A84FF; --s-sold:#30D158; --s-held:#98989F;
+  --red:#FF453A; --amber:#FF9F0A; --teal:#40C8E0; --bar:rgba(28,28,30,.8);
+}
+
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--label);font-family:var(--font);
+  font-size:17px;line-height:1.45;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;
+  overscroll-behavior-y:none}
+*{box-sizing:border-box}
+button,input,textarea,select{font:inherit;color:inherit}
+button{background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+::placeholder{color:var(--label-3)}
+.tnum{font-variant-numeric:tabular-nums}
+
+#root{height:100%;display:flex;flex-direction:column;overflow:hidden}
+#screens{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.screen{padding:0 0 30px}
+.wrap{padding:0 16px}
+.screens-holder{flex:1;position:relative;display:flex;min-height:0}
+
+.navbar{position:sticky;top:0;z-index:20;background:var(--bar);
+  backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:.5px solid var(--sep)}
+.navbar .row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 16px}
+.navbar h1{margin:0;font-size:32px;line-height:1.2;font-weight:700;letter-spacing:-.6px}
+.nav-sub{font-size:13px;color:var(--label-2);margin:2px 0 0}
+
+.tabbar{display:flex;background:var(--bar);backdrop-filter:saturate(180%) blur(20px);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);border-top:.5px solid var(--sep);flex:0 0 auto}
+.tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:7px 0 9px;color:var(--label-3);font-size:10px;font-weight:500}
+.tabbar button[aria-selected="true"]{color:var(--accent)}
+.tabbar svg{width:24px;height:24px;display:block}
+
+.sec{margin-top:22px}
+.sec-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:0 16px 7px;
+  font-size:13px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--label-2)}
+.sec-h .act{text-transform:none;letter-spacing:0;font-weight:400;color:var(--accent);font-size:15px}
+.sec-h .plain{text-transform:none;letter-spacing:0;font-weight:400}
+.group{background:var(--card);border-radius:var(--radius);margin:0 16px;overflow:hidden}
+.row-i{display:flex;align-items:center;gap:12px;padding:11px 14px;position:relative;width:100%;text-align:left}
+.row-i + .row-i::before{content:"";position:absolute;left:14px;right:0;top:0;height:.5px;background:var(--sep)}
+button.row-i:active{background:var(--fill-2)}
+.chev{margin-left:auto;flex:0 0 auto;color:var(--label-3)}
+.chev svg{display:block;width:8px;height:13px}
+.empty{padding:34px 22px;text-align:center;color:var(--label-2);font-size:15px}
+.empty b{display:block;color:var(--label);font-size:17px;font-weight:600;margin-bottom:4px}
+
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 16px}
+.tiles.two{grid-template-columns:repeat(2,1fr)}
+.tile{background:var(--card);border-radius:var(--radius);padding:12px;min-width:0}
+.tile .k{font-size:11px;font-weight:600;letter-spacing:.2px;color:var(--label-2);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .v{font-size:22px;font-weight:700;letter-spacing:-.5px;margin-top:3px;line-height:1.15}
+.tile .u{font-size:12px;font-weight:500;color:var(--label-2);margin-left:1px}
+.tile.hero{grid-column:1/-1;background:linear-gradient(135deg,var(--accent-soft),var(--fill-2))}
+.tile.hero .v{font-size:30px;color:var(--accent)}
+
+.thumb{width:54px;height:54px;border-radius:9px;flex:0 0 auto;background:var(--fill-2);
+  object-fit:cover;display:grid;place-items:center;color:var(--label-3);font-size:11px;
+  border:.5px solid var(--sep);overflow:hidden;line-height:1.25;text-align:center}
+img.thumb{display:block}
+.it-body{min-width:0;flex:1}
+.it-t{font-size:16px;font-weight:600;letter-spacing:-.2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.it-s{font-size:13px;color:var(--label-2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.it-m{display:flex;align-items:center;gap:5px;margin-top:5px;flex-wrap:wrap}
+
+.dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto;display:inline-block}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;
+  padding:3px 8px;border-radius:99px;background:var(--fill);color:var(--label-2);white-space:nowrap}
+.pill.warn{background:rgba(255,149,0,.16);color:var(--amber)}
+.pill.go{background:rgba(52,199,89,.16);color:var(--s-sold)}
+.pill.demo{background:var(--accent-soft);color:var(--accent)}
+.pill.cut{background:rgba(255,59,48,.14);color:var(--red)}
+
+.seg{display:flex;gap:2px;background:var(--fill);border-radius:9px;padding:2px;margin:0 16px}
+.seg button{flex:1;padding:6px 2px 7px;border-radius:7px;font-size:13px;font-weight:600;
+  color:var(--label);transition:background .18s;min-width:0}
+.seg button[aria-selected="true"]{background:var(--bg-2);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.seg .n{font-size:11px;font-weight:500;color:var(--label-2);margin-left:3px}
+.seg button[aria-selected="true"] .n{color:var(--accent)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:12px 18px;
+  border-radius:11px;font-size:16px;font-weight:600;letter-spacing:-.2px;background:var(--fill);
+  color:var(--label);transition:transform .1s,opacity .15s;width:100%}
+.btn:active{transform:scale(.975)}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.tint{background:var(--accent-soft);color:var(--accent)}
+.btn.danger{color:var(--red)}
+.btn.sm{padding:7px 13px;font-size:14px;border-radius:9px;width:auto}
+.btn.ghost{background:transparent;border:1px solid var(--sep-strong)}
+.btn-row{display:flex;gap:8px;padding:0 16px;margin-top:10px}
+.spin{width:15px;height:15px;border:2px solid currentColor;border-right-color:transparent;
+  border-radius:50%;animation:sp .7s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+@keyframes fade{from{opacity:0}}
+@keyframes up{from{transform:translateY(100%)}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+.field{display:flex;align-items:center;gap:10px;padding:10px 14px;position:relative}
+.field + .field::before{content:"";position:absolute;left:14px;right:0;top:0;height:.5px;background:var(--sep)}
+.field label{flex:0 0 96px;font-size:15px;color:var(--label-2)}
+.field input,.field select{flex:1;min-width:0;background:none;border:0;font-size:16px;text-align:right;padding:2px 0}
+.field input:focus,.field select:focus{outline:none}
+.field select{text-align-last:right;-webkit-appearance:none;appearance:none}
+.field .suffix{font-size:14px;color:var(--label-2);flex:0 0 auto}
+.field .mini{flex:0 0 auto;font-size:13px;color:var(--accent);font-weight:600;padding:3px 8px;
+  border-radius:7px;background:var(--accent-soft)}
+textarea.ta{width:100%;background:var(--card);border:0;border-radius:var(--radius);padding:13px 14px;
+  font-size:16px;line-height:1.6;resize:vertical;min-height:100px}
+textarea.ta:focus{outline:2px solid var(--accent);outline-offset:-2px}
+.hint{padding:7px 18px 0;font-size:12px;line-height:1.5;color:var(--label-2)}
+.hint.warn{color:var(--amber)}
+.hint b{color:var(--label)}
+
+.photos{display:flex;gap:9px;overflow-x:auto;padding:0 16px 4px;-webkit-overflow-scrolling:touch}
+.photos::-webkit-scrollbar{display:none}
+.ph{position:relative;flex:0 0 auto;width:96px;height:96px;border-radius:11px;overflow:hidden;
+  background:var(--fill-2);border:.5px solid var(--sep)}
+.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ph .idx{position:absolute;top:3px;left:3px;min-width:18px;height:18px;border-radius:9px;
+  background:rgba(0,0,0,.55);color:#fff;font-size:10px;font-weight:700;line-height:18px;text-align:center;padding:0 5px}
+.ph .lead{position:absolute;left:0;bottom:0;right:0;background:rgba(0,0,0,.55);color:#fff;
+  font-size:10px;font-weight:600;text-align:center;padding:2px 0}
+.ph-add{flex:0 0 auto;width:96px;height:96px;border-radius:11px;border:1.5px dashed var(--sep-strong);
+  display:grid;place-items:center;color:var(--label-2);font-size:12px;gap:2px;line-height:1.3}
+.ph-add span{font-size:22px;font-weight:300;display:block}
+
+.chips{display:flex;gap:7px;overflow-x:auto;padding:0 16px 2px;-webkit-overflow-scrolling:touch}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;background:var(--card);border:.5px solid var(--sep);border-radius:99px;
+  padding:7px 13px;font-size:13px;font-weight:500;white-space:nowrap;max-width:72vw;
+  overflow:hidden;text-overflow:ellipsis}
+.chip:active{background:var(--fill-2)}
+.chip.add{border-style:dashed;color:var(--accent);font-weight:600}
+
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:40;animation:fade .2s ease}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;background:var(--bg);
+  border-radius:12px 12px 0 0;display:flex;flex-direction:column;
+  animation:up .32s cubic-bezier(.32,.72,0,1);box-shadow:0 -1px 0 var(--sep)}
+.sheet.full{top:12px}
+.sheet.auto{max-height:88%}
+.sheet-nav{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:12px 16px;border-bottom:.5px solid var(--sep);background:var(--bar);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:12px 12px 0 0}
+.sheet-nav .t{font-size:17px;font-weight:600;letter-spacing:-.3px;flex:1;text-align:center;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sheet-nav .lnk{font-size:17px;color:var(--accent);flex:0 0 auto;min-width:46px}
+.sheet-nav .lnk.r{text-align:right;font-weight:600}
+.sheet-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding-bottom:calc(30px + env(safe-area-inset-bottom,0px));overscroll-behavior:contain}
+
+.as{position:fixed;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:42;
+  animation:up .3s cubic-bezier(.32,.72,0,1)}
+.as-g{background:var(--bar);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+  border-radius:14px;overflow:hidden;margin-bottom:8px}
+.as-t{padding:14px 16px;text-align:center;font-size:13px;color:var(--label-2);
+  border-bottom:.5px solid var(--sep-strong);line-height:1.5}
+.as-b{display:block;width:100%;padding:16px;text-align:center;font-size:19px;color:var(--s-listed)}
+.as-b + .as-b{border-top:.5px solid var(--sep-strong)}
+.as-b:active{background:var(--fill)}
+.as-b.destructive{color:var(--red)}
+.as-b.strong{font-weight:600}
+.as-b small{display:block;font-size:12px;color:var(--label-2);font-weight:400;margin-top:2px}
+.as-cancel{background:var(--bg-2);border-radius:14px;width:100%;padding:16px;font-size:19px;
+  font-weight:600;color:var(--s-listed)}
+
+#fab{position:absolute;right:16px;bottom:16px;z-index:15;width:54px;height:54px;border-radius:50%;
+  background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;
+  box-shadow:0 4px 16px rgba(255,107,44,.42);font-size:28px;font-weight:300;line-height:0}
+#fab:active{transform:scale(.93)}
+
+#toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));
+  transform:translateX(-50%);z-index:60;background:rgba(28,28,30,.94);color:#fff;padding:11px 18px;
+  border-radius:99px;font-size:14px;font-weight:500;max-width:calc(100% - 40px);text-align:center;
+  animation:fade .18s ease;backdrop-filter:blur(10px);pointer-events:none}
+
+.aicard{background:var(--card);border-radius:var(--radius);margin:0 16px;padding:14px;font-size:15px;line-height:1.6}
+.aicard h4{margin:0 0 8px;font-size:13px;font-weight:700;letter-spacing:.3px;color:var(--label-2);text-transform:uppercase}
+.aicard ul{margin:0;padding-left:18px}
+.aicard li{margin:4px 0}
+.aicard .meta{font-size:12px;color:var(--label-2);margin-top:10px;padding-top:9px;border-top:.5px solid var(--sep)}
+
+.plat{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:2px 0 0}
+.plat .p{background:var(--fill-2);border-radius:10px;padding:10px 11px;border:.5px solid var(--sep)}
+.plat .p .n{font-size:12px;font-weight:700;letter-spacing:.2px;display:flex;align-items:center;gap:5px}
+.plat .p .big{font-size:20px;font-weight:700;letter-spacing:-.4px;margin-top:3px}
+.plat .p .sub{font-size:11px;color:var(--label-2);margin-top:1px;line-height:1.4}
+.plat .p.dg{border-color:rgba(255,107,44,.35)}
+.plat .p.dg .n{color:var(--accent)}
+.plat .p.bj{border-color:rgba(48,176,199,.4)}
+.plat .p.bj .n{color:var(--teal)}
+
+.links{display:flex;gap:8px;overflow-x:auto;padding:0 16px 2px}
+.links::-webkit-scrollbar{display:none}
+.links a{flex:0 0 auto;text-decoration:none;background:var(--card);border-radius:10px;padding:9px 13px;
+  font-size:14px;font-weight:600;color:var(--label);border:.5px solid var(--sep);white-space:nowrap}
+.links a:active{background:var(--fill-2)}
+
+.ai-tools{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:0 16px}
+.ai-tool{background:var(--card);border-radius:var(--radius);padding:13px 12px;text-align:left;
+  display:flex;flex-direction:column;gap:3px;min-height:74px;justify-content:center}
+.ai-tool:active{background:var(--fill-2)}
+.ai-tool .n{font-size:15px;font-weight:600;letter-spacing:-.2px}
+.ai-tool .d{font-size:12px;color:var(--label-2);line-height:1.35}
+.ai-tool[disabled]{opacity:.42;pointer-events:none}
+
+.chart{display:flex;align-items:flex-end;gap:7px;height:116px;padding:0 16px;margin-top:6px}
+.chart .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0;justify-content:flex-end}
+.chart .b{width:100%;max-width:34px;background:var(--accent);border-radius:5px 5px 2px 2px;min-height:3px}
+.chart .b.zero{background:var(--fill)}
+.chart .cap{font-size:10px;color:var(--label-2);white-space:nowrap}
+.chart .amt{font-size:9px;color:var(--label-3);white-space:nowrap}
+
+.stack{display:flex;height:26px;border-radius:7px;overflow:hidden;margin:0 16px;background:var(--fill)}
+.stack div{min-width:2px}
+.legend{display:flex;flex-wrap:wrap;gap:12px;padding:9px 16px 0;font-size:12px;color:var(--label-2)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+
+.viewer{position:fixed;inset:0;z-index:50;background:#000;display:flex;flex-direction:column;animation:fade .2s}
+.viewer .vtop{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;
+  padding-top:calc(12px + env(safe-area-inset-top,0px));color:#fff;font-size:15px}
+.viewer .vtop button{color:#fff;font-size:16px}
+.viewer .vmain{flex:1;display:grid;place-items:center;min-height:0;padding:0 8px}
+.viewer .vmain img{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px}
+.viewer .vbot{padding:12px 16px;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px));
+  display:flex;gap:8px;align-items:center}
+.viewer .vbot .btn{background:rgba(255,255,255,.16);color:#fff}
+.viewer .vhint{color:rgba(255,255,255,.6);font-size:12px;text-align:center;padding:0 16px 8px;line-height:1.5}
+
+@media (min-width:680px){
+  .wrap,.group,.seg,.tiles,.btn-row,.aicard,.links,.ai-tools,.photos,.chart,.chips,.stack,.legend{
+    max-width:640px;margin-left:auto;margin-right:auto}
+  .navbar .row,.sheet-nav{max-width:640px;margin:0 auto}
+}
+</style>
+
+<div id="root">
+  <header class="navbar">
+    <div class="row">
+      <div><h1 id="navTitle">오늘</h1><p class="nav-sub" id="navSub">불러오는 중…</p></div>
+    </div>
+  </header>
+  <div class="screens-holder">
+    <div id="screens">
+      <section class="screen" id="tab-today"></section>
+      <section class="screen" id="tab-items" hidden></section>
+      <section class="screen" id="tab-stats" hidden></section>
+      <section class="screen" id="tab-settings" hidden></section>
+    </div>
+    <button id="fab" aria-label="물건 추가">+</button>
+  </div>
+  <nav class="tabbar" role="tablist">
+    <button role="tab" data-tab="today" aria-selected="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M9.5 20v-6h5v6"/></svg>오늘</button>
+    <button role="tab" data-tab="items" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18"/><path d="M9 13h6"/></svg>물건</button>
+    <button role="tab" data-tab="stats" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-7"/><path d="M21 19H3"/></svg>분석</button>
+    <button role="tab" data-tab="settings" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 14a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1 2 2 0 1 1-4 0 1.6 1.6 0 0 0-2.7-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 4 14a2 2 0 1 1 0-4 1.6 1.6 0 0 0 1.1-2.7l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 4.6a2 2 0 1 1 4 0 1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.6 1.6 0 0 0 20 10a2 2 0 1 1 0 4z"/></svg>설정</button>
+  </nav>
+</div>
+
+<script>
+(() => {
+"use strict";
+
+/* ===================== 상수 ===================== */
+const STAGES = [
+  {id:"planned", name:"예정", color:"var(--s-planned)"},
+  {id:"listed",  name:"등록", color:"var(--s-listed)"},
+  {id:"sold",    name:"판매", color:"var(--s-sold)"},
+  {id:"held",    name:"보류", color:"var(--s-held)"},
+];
+const STAGE = Object.fromEntries(STAGES.map(s => [s.id, s]));
+const MAX_PHOTOS = 10;
+const CONDITIONS = ["새 상품 (미개봉)","거의 새것","사용감 적음","사용감 있음","하자 있음"];
+
+/* 플랫폼별 판매 수수료 (2026.09 기준 기본값, 설정에서 변경 가능)
+   · 당근마켓 직거래 0%
+   · 번개장터 일반상점(개인) 6%  — 2025.09.17 인상 (기존 3.5%)
+   · 중고나라 직거래 0%                                            */
+const PLATFORMS = [
+  { id:"danggn",  name:"당근",     defFee:0, cls:"dg" },
+  { id:"bunjang", name:"번개장터", defFee:6, cls:"bj" },
+  { id:"joongna", name:"중고나라", defFee:0, cls:"" },
+  { id:"etc",     name:"그 외",    defFee:0, cls:"" },
+];
+const PLAT = Object.fromEntries(PLATFORMS.map(p => [p.id, p]));
+
+const DEFAULT_SNIPPETS = [
+  "직접 가지러 오셔야 합니다.",
+  "택배 거래는 선입금 후 발송해 드려요.",
+  "에누리는 정중히 사양할게요.",
+  "예약은 받지 않아요. 먼저 오시는 분께 드립니다.",
+  "단순 변심 환불은 어려워요. 상태 확인하고 가져가 주세요.",
+  "구성품과 박스 모두 있어요.",
+  "연락은 채팅으로 부탁드려요.",
+];
+const TONES = [
+  { id:"default", name:"기본",   desc:'편한 존댓말("~해요" 체), 담백하게' },
+  { id:"short",   name:"짧게",   desc:"군더더기 없이 3~5줄로 짧게" },
+  { id:"warm",    name:"친근",   desc:"조금 더 다정하고 말 붙이기 쉬운 톤" },
+  { id:"polite",  name:"정중",   desc:'"~합니다" 체로 격식 있게' },
+];
+
+const AI_ERR = {
+  not_granted:"AI 사용을 허용하지 않으셨어요. 새로고침하면 다시 물어봐요.",
+  sampling_disabled:"이 계정에서는 AI를 쓸 수 없어요.",
+  not_declared:"AI 기능이 꺼져 있어요.",
+  capability_disabled:"이 화면에서는 AI를 쓸 수 없어요.",
+  capability_removed:"이 화면에서는 AI를 쓸 수 없어요.",
+  images_unavailable:"이 화면에서는 사진을 AI에 보낼 수 없어요.",
+  rate_limited:"요청이 몰렸어요. 잠시 뒤에 다시 눌러주세요.",
+  session_expired:"다시 로그인한 뒤 시도해 주세요.",
+  image_rejected:"사진을 읽지 못했어요. 다른 사진으로 해보세요.",
+  refused:"AI가 이 내용으로는 답하기 어렵대요. 내용을 조금 바꿔보세요.",
+  empty_completion:"AI가 답을 주지 않았어요. 정보를 조금 더 채워주세요.",
+  invalid_json:"AI 답을 읽지 못했어요. 한 번 더 시도해 주세요.",
+  prompt_too_large:"내용이 너무 길어요. 줄여서 다시 시도해 주세요.",
+  upstream_error:"연결이 잠깐 끊겼어요. 다시 시도해 주세요.",
+};
+
+/* ===================== 유틸 ===================== */
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const won = n => (Math.round(Number(n)) || 0).toLocaleString("ko-KR");
+const num = v => Number(String(v ?? "").replace(/[^\d]/g,"")) || 0;
+const now = () => Date.now();
+const DAY = 86400000;
+const daysSince = t => t ? Math.floor((now() - t) / DAY) : null;
+const uid = () => Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4);
+const clamp = (n,a,b) => Math.max(a, Math.min(b, n));
+const roundTo = (n, unit=100) => Math.ceil(n / unit) * unit;
+
+function fmtDate(t){
+  if(!t) return "";
+  const d = new Date(t);
+  return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")}`;
+}
+const monthKey = t => { const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`; };
+
+let toastTimer;
+function toast(msg){
+  let el = $("#toast");
+  if(!el){ el = document.createElement("div"); el.id = "toast"; document.body.appendChild(el); }
+  el.textContent = msg; el.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.hidden = true; }, 2400);
+}
+
+async function copyText(text){
+  try{ await navigator.clipboard.writeText(text); toast("복사했어요"); return true; }catch(_){}
+  try{
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.setAttribute("readonly","");
+    ta.style.cssText = "position:fixed;top:0;left:0;opacity:0";
+    document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, ta.value.length);
+    const ok = document.execCommand("copy"); ta.remove();
+    toast(ok ? "복사했어요" : "복사가 막혀 있어요. 길게 눌러 직접 복사해 주세요.");
+    return ok;
+  }catch(_){ toast("복사가 막혀 있어요. 길게 눌러 직접 복사해 주세요."); return false; }
+}
+
+/* ===================== 가격 계산 ===================== */
+/* it.price = 내가 손에 쥐고 싶은 금액(실수령). 플랫폼 게시가는 수수료를 얹어 역산. */
+const feeOf = id => {
+  const v = cfg.fees && cfg.fees[id];
+  return typeof v === "number" ? v : (PLAT[id]?.defFee ?? 0);
+};
+const listPriceFor = (net, platId) => {
+  const f = feeOf(platId) / 100;
+  if(f <= 0 || f >= 1) return Math.round(net);
+  return roundTo(net / (1 - f), 100);
+};
+const netFromList = (list, platId) => Math.round(list * (1 - feeOf(platId)/100));
+const feeAmount = (list, platId) => Math.round(list * feeOf(platId)/100);
+
+/* ===================== 저장소 ===================== */
+const LS_ITEMS = "jungo.items.v2";
+const LS_CFG = "jungo.cfg.v2";
+let db = null, assets = null, sampleFn = null, sampleLimits = null, downloads = null;
+let backend = "local";
+let items = [];
+let ready = false;
+let cfg = { fees:{}, tone:"default", styleSamples:[], closing:"", snippets: DEFAULT_SNIPPETS.slice(), bumpDays:7 };
+
+const blobCache = new Map();
+const urlCache = new Map();
+
+const lsRead = (k, fb) => { try{ return JSON.parse(localStorage.getItem(k)) ?? fb; }catch(_){ return fb; } };
+const lsWrite = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch(_){} };
+
+const writeQueue = new Map();
+function persist(item){
+  item.updatedAt = now();
+  const idx = items.findIndex(i => i.id === item.id);
+  if(idx === -1) items.push(item); else items[idx] = item;
+  if(backend === "local"){ lsWrite(LS_ITEMS, items); renderAll(); return Promise.resolve(); }
+  const prev = writeQueue.get(item.id) || Promise.resolve();
+  const body = JSON.parse(JSON.stringify(item)); delete body.id;
+  const next = prev.catch(() => {}).then(() => db.doc("items/" + item.id).set(body))
+    .catch(e => {
+      toast(e && e.code === "quota_exceeded" ? "저장 공간이 찼어요. 오래된 물건을 지워주세요." : "저장하지 못했어요.");
+      console.error("persist", e);
+    });
+  writeQueue.set(item.id, next);
+  renderAll();
+  return next;
+}
+const saveTimers = new Map();
+function persistSoon(item, ms=700){
+  clearTimeout(saveTimers.get(item.id));
+  saveTimers.set(item.id, setTimeout(() => persist(item), ms));
+}
+async function removeItem(id){
+  items = items.filter(i => i.id !== id);
+  if(backend === "local"){ lsWrite(LS_ITEMS, items); renderAll(); return; }
+  renderAll();
+  try{ await db.doc("items/" + id).delete(); }catch(e){ toast("삭제하지 못했어요."); console.error(e); }
+}
+
+let cfgTimer;
+function saveCfg(immediate){
+  const go = () => {
+    if(backend === "local"){ lsWrite(LS_CFG, cfg); return; }
+    db.doc("config/app").set(JSON.parse(JSON.stringify(cfg))).catch(e => console.error("cfg", e));
+  };
+  clearTimeout(cfgTimer);
+  if(immediate) go(); else cfgTimer = setTimeout(go, 600);
+}
+
+const photoURL = pid => backend === "db" ? "/_blob/" + pid : (urlCache.get(pid) || "");
+
+function blankItem(title){
+  return {
+    id: uid(), title: title || "", status:"planned", photos: [],
+    brief: { brand:"", product:"", category:"", msrp:"", buyPrice:"", usedBuyPrice:"",
+             buyDate:"", useCount:"", condition:"", includes:"", notes:"" },
+    desc:"", price:"", priceHistory: [],
+    priceGuide:null, productInfo:null,
+    listedAt:null, bumpedAt:null, bumps:0,
+    soldAt:null, soldList:"", soldPlatform:"danggn",
+    createdAt: now(), updatedAt: now(),
+  };
+}
+function normalize(raw, id){
+  const b = blankItem();
+  const it = Object.assign(b, raw, { id });
+  it.brief = Object.assign(b.brief, raw.brief || {});
+  it.photos = Array.isArray(raw.photos) ? raw.photos : [];
+  it.priceHistory = Array.isArray(raw.priceHistory) ? raw.priceHistory : [];
+  return it;
+}
+const soldNet = it => it.soldList ? netFromList(num(it.soldList), it.soldPlatform || "danggn") : 0;
+
+/* ===================== 예시(저장 안 함) ===================== */
+const DEMO = [
+  { id:"demo1", demo:true, status:"listed", title:"발뮤다 더 토스터 K05A 화이트",
+    brief:{brand:"발뮤다", product:"The Toaster K05A", category:"주방가전", msrp:"329000", buyPrice:"329000",
+           usedBuyPrice:"", buyDate:"2024-03", useCount:"주 2회", condition:"사용감 적음",
+           includes:"본체, 급수컵, 설명서, 박스", notes:"상판에 잔기스 1cm"},
+    price:"180000", photos:[], desc:"", listedAt:now()-9*DAY, bumpedAt:now()-9*DAY, bumps:0, createdAt:now()-12*DAY,
+    priceHistory:[{at:now()-9*DAY, price:200000, note:"처음 등록"},{at:now()-3*DAY, price:180000, note:"10% 내림"}] },
+  { id:"demo2", demo:true, status:"planned", title:"아이패드 에어 4세대 64GB",
+    brief:{brand:"Apple", product:"iPad Air 4 (2020)", category:"태블릿", msrp:"779000", buyPrice:"",
+           usedBuyPrice:"430000", buyDate:"2023-05", useCount:"", condition:"사용감 있음",
+           includes:"본체, 충전기", notes:""},
+    price:"", photos:[], desc:"", createdAt:now()-3*DAY },
+  { id:"demo3", demo:true, status:"sold", title:"닌텐도 스위치 OLED",
+    brief:{brand:"닌텐도", product:"Switch OLED", category:"게임기", msrp:"415000", buyPrice:"415000",
+           usedBuyPrice:"", buyDate:"2022-08", useCount:"", condition:"거의 새것", includes:"풀박", notes:""},
+    price:"300000", soldList:"310000", soldPlatform:"bunjang", soldAt:now()-16*DAY,
+    photos:[], desc:"", listedAt:now()-30*DAY, createdAt:now()-40*DAY },
+];
+const showingDemo = () => items.length === 0;
+const view = () => showingDemo() ? DEMO.map(d => normalize(d, d.id)) : items;
+
+/* ===================== 초기화 ===================== */
+async function boot(){
+  const cap = n => (window.claude && window.claude.use) ? window.claude.use(n).catch(() => null) : Promise.resolve(null);
+  const [d,a,s,dl] = await Promise.all([cap("db"), cap("assets"), cap("sample"), cap("downloads")]);
+  db = d; assets = a; sampleFn = s; downloads = dl;
+  if(sampleFn) sampleLimits = await sampleFn.limits().catch(() => null);
+
+  if(db){
+    backend = "db";
+    try{
+      const snap = await db.doc("config/app").get();
+      if(snap.exists) cfg = Object.assign(cfg, snap.data());
+    }catch(e){ console.warn("cfg load", e); }
+    db.collection("items").onSnapshot(
+      snap => { items = snap.docs.map(doc => normalize(doc.data() || {}, doc.id)); ready = true; renderAll(); },
+      err => {
+        console.error("db", err);
+        if(!ready){ backend = "local"; items = lsRead(LS_ITEMS, []); cfg = Object.assign(cfg, lsRead(LS_CFG, {})); ready = true; }
+        else toast("동기화가 끊겼어요. 새로고침해 주세요.");
+        renderAll();
+      });
+  }else{
+    backend = "local";
+    items = lsRead(LS_ITEMS, []);
+    cfg = Object.assign(cfg, lsRead(LS_CFG, {}));
+    ready = true;
+  }
+  renderAll();
+}
+
+/* ===================== 파생값 ===================== */
+const byStatus = (st, list=view()) => list.filter(i => i.status === st);
+const bumpDays = () => Number(cfg.bumpDays) || 7;
+function bumpDue(it){
+  if(it.status !== "listed") return false;
+  const last = it.bumpedAt || it.listedAt;
+  return last ? (now() - last) >= bumpDays() * DAY : false;
+}
+function todoList(){
+  const list = view(); const out = [];
+  for(const it of list) if(bumpDue(it))
+    out.push({ it, kind:"bump", label:`${daysSince(it.bumpedAt || it.listedAt)}일째 그대로예요`, cta:"끌올" });
+  for(const it of byStatus("listed", list))
+    if(!bumpDue(it) && daysSince(it.bumpedAt || it.listedAt) >= Math.floor(bumpDays()*2) )
+      out.push({ it, kind:"cut", label:"오래 안 팔려요. 가격을 내려볼까요?", cta:"가격" });
+  for(const it of byStatus("planned", list)){
+    if(!it.desc) out.push({ it, kind:"write", label:"판매글이 비어 있어요", cta:"AI로 쓰기" });
+    else if(it.photos.length === 0) out.push({ it, kind:"photo", label:"사진이 아직 없어요", cta:"사진 넣기" });
+    else out.push({ it, kind:"list", label:"글과 사진 다 됐어요", cta:"등록함" });
+  }
+  return out;
+}
+function stats(){
+  const list = view();
+  const sold = byStatus("sold", list);
+  const total = sold.reduce((s,i) => s + soldNet(i), 0);
+  const fees = sold.reduce((s,i) => s + (i.soldList ? feeAmount(num(i.soldList), i.soldPlatform||"danggn") : 0), 0);
+  const mk = monthKey(now());
+  const thisMonth = sold.filter(i => i.soldAt && monthKey(i.soldAt) === mk).reduce((s,i) => s + soldNet(i), 0);
+  const pending = [...byStatus("planned", list), ...byStatus("listed", list)];
+  const potential = pending.reduce((s,i) => s + num(i.price), 0);
+  const priced = pending.filter(i => num(i.price) > 0).length;
+  return { total, fees, thisMonth, potential, pending: pending.length, priced,
+           soldCount: sold.length, held: byStatus("held", list).length };
+}
+
+/* ===================== 렌더 ===================== */
+let tab = "today", segment = "planned", query = "";
+
+function renderAll(){
+  ({ today:renderToday, items:renderItems, stats:renderStats, settings:renderSettings }[tab] || (()=>{}))();
+  renderNav();
+}
+function renderNav(){
+  const s = stats();
+  $("#navTitle").textContent = { today:"오늘", items:"물건", stats:"분석", settings:"설정" }[tab];
+  let sub;
+  if(!ready) sub = "불러오는 중…";
+  else if(showingDemo()) sub = "예시를 보고 있어요 · + 로 내 물건을 넣어보세요";
+  else if(tab === "stats") sub = `누적 ${won(s.total)}원 · ${s.soldCount}건 판매`;
+  else if(tab === "settings") sub = backend === "db" ? "기기 사이에 자동으로 동기화돼요" : "이 브라우저에만 저장돼요";
+  else sub = `판매 대기 ${s.pending}개 · 이번 달 ${won(s.thisMonth)}원`;
+  $("#navSub").textContent = sub;
+  $("#fab").hidden = (tab === "stats" || tab === "settings");
+}
+const chev = `<span class="chev"><svg viewBox="0 0 8 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 1.5 6.5 6.5 1.5 11.5"/></svg></span>`;
+const thumbOf = it => it.photos[0]
+  ? `<img class="thumb" src="${esc(photoURL(it.photos[0]))}" alt="">`
+  : `<div class="thumb">사진<br>없음</div>`;
+
+function itemRow(it, opts={}){
+  const b = it.brief || {};
+  const sub = [b.brand, b.product].filter(Boolean).join(" ") || b.category || "정보 없음";
+  const money = it.status === "sold"
+    ? (it.soldList ? `${won(soldNet(it))}원 받음` : "판매 완료")
+    : (num(it.price) ? `${won(listPriceFor(num(it.price), "danggn"))}원` : "가격 미정");
+  const chips = [];
+  if(it.demo) chips.push(`<span class="pill demo">예시</span>`);
+  if(opts.showStage) chips.push(`<span class="pill"><span class="dot" style="background:${STAGE[it.status].color}"></span>${STAGE[it.status].name}</span>`);
+  if(bumpDue(it)) chips.push(`<span class="pill warn">끌올 필요</span>`);
+  else if(it.status === "listed" && it.listedAt) chips.push(`<span class="pill">등록 ${daysSince(it.bumpedAt || it.listedAt)}일째</span>`);
+  if(it.status === "listed" && it.priceHistory.length > 1) chips.push(`<span class="pill cut">${it.priceHistory.length - 1}번 내림</span>`);
+  if(it.status === "planned" && !it.desc) chips.push(`<span class="pill">글 없음</span>`);
+  else if(it.status === "planned" && !it.photos.length) chips.push(`<span class="pill">사진 없음</span>`);
+  else if(it.status === "planned") chips.push(`<span class="pill go">등록 준비 완료</span>`);
+  if(it.status === "sold" && it.soldPlatform === "bunjang") chips.push(`<span class="pill">번개 · 수수료 ${won(feeAmount(num(it.soldList), "bunjang"))}원</span>`);
+
+  return `<button class="row-i" data-open="${esc(it.id)}">${thumbOf(it)}
+    <span class="it-body"><span class="it-t">${esc(it.title || "제목 없음")}</span>
+      <span class="it-s">${esc(sub)} · ${esc(money)}</span>
+      <span class="it-m">${chips.join("")}</span></span>${chev}</button>`;
+}
+
+/* ---------- 오늘 ---------- */
+function renderToday(){
+  const s = stats(), todos = todoList();
+  const tiles = `<div class="tiles" style="margin-top:14px">
+    <div class="tile"><div class="k">판매 대기</div><div class="v tnum">${s.pending}<span class="u">개</span></div></div>
+    <div class="tile"><div class="k">이번 달</div><div class="v tnum">${won(s.thisMonth)}<span class="u">원</span></div></div>
+    <div class="tile"><div class="k">다 팔면</div><div class="v tnum">${won(s.potential)}<span class="u">원</span></div></div>
+  </div>`;
+
+  const banner = showingDemo() ? `<div class="sec"><div class="aicard" style="background:var(--accent-soft)">
+    <h4 style="color:var(--accent)">예시 화면이에요</h4>
+    지금 보이는 세 개는 사용법을 보여주는 예시라 저장되지 않아요.
+    오른쪽 아래 <b>+</b> 를 눌러 첫 물건을 넣으면 예시는 사라집니다.</div></div>` : "";
+
+  const todoHTML = todos.length ? `<div class="sec">
+    <div class="sec-h"><span>지금 하면 되는 일</span><span class="tnum">${todos.length}</span></div>
+    <div class="group">${todos.map(t => `<div class="row-i">${thumbOf(t.it)}
+      <button class="it-body" data-open="${esc(t.it.id)}" style="text-align:left">
+        <span class="it-t">${esc(t.it.title || "제목 없음")}</span>
+        <span class="it-s">${esc(t.label)}</span></button>
+      <button class="btn sm ${t.kind==="bump"?"primary":"tint"}" data-todo="${esc(t.kind)}" data-id="${esc(t.it.id)}">${esc(t.cta)}</button>
+    </div>`).join("")}</div></div>` : `<div class="sec">
+    <div class="sec-h"><span>지금 하면 되는 일</span></div>
+    <div class="group"><div class="empty"><b>다 해두셨어요</b>새로 정리할 물건이 생기면 + 를 눌러 던져두세요.</div></div></div>`;
+
+  const listed = byStatus("listed");
+  const quick = `<div class="sec"><div class="sec-h"><span>빠르게</span></div><div class="group">
+    <button class="row-i" id="quickAdd"><span class="it-body">
+      <span class="it-t">제목만 적고 예정에 던져두기</span>
+      <span class="it-s">사진·설명은 나중에 채워도 돼요</span></span>${chev}</button>
+    <button class="row-i" data-goseg="listed"><span class="it-body">
+      <span class="it-t">등록해 둔 물건 ${listed.length}개 보기</span>
+      <span class="it-s">${listed.filter(bumpDue).length}개는 끌올할 때가 됐어요</span></span>${chev}</button>
+  </div></div>`;
+
+  $("#tab-today").innerHTML = tiles + banner + todoHTML + quick +
+    (backend === "local" ? `<div class="hint warn" style="margin-top:18px">이 브라우저에만 저장되고 있어요. 다른 기기에서는 보이지 않습니다.</div>` : "");
+}
+
+/* ---------- 물건 ---------- */
+function renderItems(){
+  const list = view();
+  const counts = Object.fromEntries(STAGES.map(s => [s.id, byStatus(s.id, list).length]));
+  let rows = byStatus(segment, list);
+  if(query){
+    const q = query.toLowerCase();
+    rows = rows.filter(i => (i.title + " " + JSON.stringify(i.brief)).toLowerCase().includes(q));
+  }
+  rows = rows.slice().sort((a,b) =>
+    segment === "listed" ? (a.bumpedAt || a.listedAt || 0) - (b.bumpedAt || b.listedAt || 0)
+    : segment === "sold" ? (b.soldAt || 0) - (a.soldAt || 0)
+    : (b.createdAt || 0) - (a.createdAt || 0));
+
+  const seg = `<div class="seg" style="margin-top:12px" role="tablist">${STAGES.map(s =>
+    `<button role="tab" data-seg="${s.id}" aria-selected="${s.id===segment}">${s.name}<span class="n tnum">${counts[s.id]}</span></button>`).join("")}</div>`;
+  const search = `<div class="wrap" style="margin-top:10px"><input id="q" value="${esc(query)}" placeholder="제목·브랜드로 찾기"
+    style="width:100%;background:var(--fill);border:0;border-radius:10px;padding:9px 13px;font-size:16px"></div>`;
+
+  const EM = { planned:["여기에 먼저 던져두세요","팔 생각만 있어도 괜찮아요. 사진은 나중에."],
+               listed:["등록한 물건이 없어요","예정에서 글을 쓴 뒤 등록으로 옮기면 여기 쌓여요."],
+               sold:["아직 판 물건이 없어요","거래가 끝나면 판매로 옮겨두세요. 분석 탭에 쌓입니다."],
+               held:["보류된 물건이 없어요","팔까 말까 고민되는 건 여기로 밀어두세요."] }[segment];
+
+  const body = rows.length
+    ? `<div class="group" style="margin-top:14px">${rows.map(i => itemRow(i)).join("")}</div>`
+    : `<div class="group" style="margin-top:14px"><div class="empty"><b>${esc(EM[0])}</b>${esc(EM[1])}</div></div>`;
+
+  const dueRows = rows.filter(bumpDue);
+  const bumpAll = (segment === "listed" && dueRows.length > 1)
+    ? `<div class="btn-row"><button class="btn tint" id="bumpAll">${dueRows.length}개 한번에 끌올 표시</button></div>` : "";
+
+  const sum = rows.reduce((a,i) => a + (segment === "sold" ? soldNet(i) : num(i.price)), 0);
+  const foot = rows.length ? `<div class="hint">${segment === "sold"
+    ? `여기 ${rows.length}개로 <b>${won(sum)}원</b> 받았어요 (수수료 뺀 실수령).`
+    : `다 팔면 <b>${won(sum)}원</b>이에요 (가격 적어둔 것만).`}</div>` : "";
+
+  $("#tab-items").innerHTML = seg + search + body + foot + bumpAll + `<div style="height:70px"></div>`;
+}
+
+/* ---------- 분석 ---------- */
+function renderStats(){
+  const list = view();
+  const s = stats();
+  const sold = byStatus("sold", list).slice().sort((a,b) => (b.soldAt||0) - (a.soldAt||0));
+  const planned = byStatus("planned", list), listed = byStatus("listed", list);
+
+  const hero = `<div class="tiles" style="margin-top:14px">
+    <div class="tile hero"><div class="k">지금까지 손에 쥔 돈</div>
+      <div class="v tnum">${won(s.total)}<span class="u">원</span></div>
+      <div class="k" style="margin-top:5px;font-weight:400;text-transform:none;letter-spacing:0">${s.soldCount}건 판매${s.fees ? ` · 수수료로 ${won(s.fees)}원 나감` : ""}</div></div>
+    <div class="tile"><div class="k">이번 달</div><div class="v tnum">${won(s.thisMonth)}<span class="u">원</span></div></div>
+    <div class="tile"><div class="k">보류 중</div><div class="v tnum">${s.held}<span class="u">개</span></div></div>
+    <div class="tile"><div class="k">판매 대기</div><div class="v tnum">${s.pending}<span class="u">개</span></div></div>
+  </div>`;
+
+  const plannedSum = planned.reduce((a,i) => a + num(i.price), 0);
+  const listedSum = listed.reduce((a,i) => a + num(i.price), 0);
+  const noPrice = [...planned, ...listed].filter(i => !num(i.price)).length;
+  const potential = `<div class="sec">
+    <div class="sec-h"><span>다 팔면 얼마?</span></div>
+    <div class="aicard">
+      <div class="tnum" style="font-size:32px;font-weight:700;letter-spacing:-.8px;color:var(--accent);line-height:1.1">${won(s.potential)}원</div>
+      <div style="color:var(--label-2);font-size:13px;margin-top:3px">지금 예정·등록에 있는 걸 적어둔 가격에 모두 팔았을 때</div>
+      ${s.potential ? `<div class="stack" style="margin:13px 0 0">
+        ${plannedSum ? `<div style="background:var(--s-planned);width:${(plannedSum/s.potential*100).toFixed(1)}%"></div>` : ""}
+        ${listedSum ? `<div style="background:var(--s-listed);width:${(listedSum/s.potential*100).toFixed(1)}%"></div>` : ""}
+      </div>` : ""}
+      <div class="legend" style="padding-left:0;padding-right:0">
+        <span><span class="dot" style="background:var(--s-planned)"></span>예정 ${planned.length}개 · ${won(plannedSum)}원</span>
+        <span><span class="dot" style="background:var(--s-listed)"></span>등록 ${listed.length}개 · ${won(listedSum)}원</span>
+      </div>
+      ${noPrice ? `<div class="meta">${noPrice}개는 아직 가격을 안 적었어요. 넣으면 이 숫자가 더 정확해져요.</div>` : ""}
+    </div>
+    <div class="hint">여기 금액은 모두 <b>수수료를 뺀 실수령 기준</b>이에요.</div>
+  </div>`;
+
+  const months = [];
+  for(let i = 5; i >= 0; i--){
+    const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i);
+    const key = monthKey(d.getTime());
+    months.push({ label:`${d.getMonth()+1}월`,
+      sum: sold.filter(x => x.soldAt && monthKey(x.soldAt) === key).reduce((a,x) => a + soldNet(x), 0) });
+  }
+  const max = Math.max(1, ...months.map(m => m.sum));
+  const chart = `<div class="sec">
+    <div class="sec-h"><span>월별 실수령</span><span class="plain tnum">최고 ${won(max)}원</span></div>
+    <div class="chart">${months.map(m => `<div class="col">
+      <div class="amt">${m.sum ? won(Math.round(m.sum/10000)) + "만" : ""}</div>
+      <div class="b ${m.sum?"":"zero"}" style="height:${m.sum ? clamp(Math.round(m.sum/max*80),5,80) : 3}px"></div>
+      <div class="cap">${m.label}</div></div>`).join("")}</div></div>`;
+
+  const withDays = sold.filter(i => i.soldAt && i.listedAt);
+  const avgDays = withDays.length ? Math.round(withDays.reduce((a,i) => a + (i.soldAt - i.listedAt)/DAY, 0) / withDays.length) : null;
+  const rateItems = sold.filter(i => num(i.brief?.buyPrice));
+  const rate = rateItems.length
+    ? Math.round(rateItems.reduce((a,i) => a + soldNet(i)/num(i.brief.buyPrice), 0) / rateItems.length * 100) : null;
+  const avgPrice = sold.length ? Math.round(s.total / sold.length) : null;
+
+  const kpi = `<div class="sec"><div class="sec-h"><span>거래 습관</span></div>
+    <div class="tiles">
+      <div class="tile"><div class="k">평균 소요</div><div class="v tnum">${avgDays ?? "–"}<span class="u">${avgDays!=null?"일":""}</span></div></div>
+      <div class="tile"><div class="k">평균 판매가</div><div class="v tnum">${avgPrice!=null?won(avgPrice):"–"}<span class="u">${avgPrice!=null?"원":""}</span></div></div>
+      <div class="tile"><div class="k">회수율</div><div class="v tnum">${rate ?? "–"}<span class="u">${rate!=null?"%":""}</span></div></div>
+    </div>
+    <div class="hint">회수율은 <b>실수령 ÷ 처음 산 가격</b>의 평균이에요. 구매가를 적어둔 ${rateItems.length}개만 셉니다.</div></div>`;
+
+  const byPlat = PLATFORMS.map(p => {
+    const rows = sold.filter(i => (i.soldPlatform || "danggn") === p.id);
+    return { p, n: rows.length,
+      net: rows.reduce((a,i) => a + soldNet(i), 0),
+      fee: rows.reduce((a,i) => a + feeAmount(num(i.soldList), p.id), 0) };
+  }).filter(x => x.n);
+  const platSec = byPlat.length ? `<div class="sec">
+    <div class="sec-h"><span>어디서 팔았나</span></div>
+    <div class="group">${byPlat.map(x => `<div class="row-i">
+      <span class="it-body"><span class="it-t">${esc(x.p.name)} · ${x.n}건</span>
+      <span class="it-s">${won(x.net)}원 받음${x.fee ? ` · 수수료 ${won(x.fee)}원` : " · 수수료 없음"}</span></span>
+    </div>`).join("")}</div>
+    ${s.fees ? `<div class="hint warn">수수료로 지금까지 <b>${won(s.fees)}원</b>이 빠져나갔어요. 같은 값이면 당근 직거래가 남는 게 많아요.</div>` : ""}
+  </div>` : "";
+
+  const soldList = sold.length ? `<div class="sec">
+    <div class="sec-h"><span>판매한 물건</span><span class="plain tnum">${sold.length}건</span></div>
+    <div class="group">${sold.map(i => `<button class="row-i" data-open="${esc(i.id)}">${thumbOf(i)}
+      <span class="it-body"><span class="it-t">${esc(i.title || "제목 없음")}</span>
+        <span class="it-s">${esc(fmtDate(i.soldAt))} · ${esc(PLAT[i.soldPlatform||"danggn"]?.name || "")} ${won(num(i.soldList))}원${
+          feeAmount(num(i.soldList), i.soldPlatform||"danggn") ? ` → ${won(soldNet(i))}원 실수령` : ""}</span></span>${chev}</button>`).join("")}</div>
+  </div>` : `<div class="sec"><div class="sec-h"><span>판매한 물건</span></div>
+    <div class="group"><div class="empty"><b>판매 기록이 없어요</b>거래가 끝난 물건을 판매로 옮기면 여기에 쌓입니다.</div></div></div>`;
+
+  $("#tab-stats").innerHTML = hero + potential + chart + kpi + platSec + soldList;
+}
+
+/* ---------- 설정 ---------- */
+function renderSettings(){
+  const feeRows = PLATFORMS.map(p => `<div class="field">
+    <label for="fee-${p.id}">${esc(p.name)}</label>
+    <input id="fee-${p.id}" data-fee="${p.id}" value="${esc(String(feeOf(p.id)))}" inputmode="decimal" style="max-width:80px">
+    <span class="suffix">%</span></div>`).join("");
+
+  const toneSeg = `<div class="seg">${TONES.map(t =>
+    `<button data-tone="${t.id}" aria-selected="${(cfg.tone||"default")===t.id}">${t.name}</button>`).join("")}</div>
+    <div class="hint">${esc(TONES.find(t => t.id === (cfg.tone||"default"))?.desc || "")}</div>`;
+
+  const samples = (cfg.styleSamples || []);
+  const sampleRows = samples.map((sm,i) => `<div class="aicard" style="margin-top:9px">
+      <h4>내 글 ${i+1}</h4>
+      <div style="white-space:pre-wrap;font-size:14px;color:var(--label-2);max-height:96px;overflow:hidden">${esc(sm)}</div>
+      <div style="margin-top:9px"><button class="btn sm" data-rmsample="${i}" style="color:var(--red)">지우기</button></div>
+    </div>`).join("");
+
+  const snippetRows = (cfg.snippets || []).map((sn,i) => `<div class="row-i">
+      <span class="it-body"><span class="it-t" style="font-weight:400;font-size:15px;white-space:normal">${esc(sn)}</span></span>
+      <button class="btn sm" data-rmsnip="${i}" style="color:var(--red);flex:0 0 auto">지우기</button></div>`).join("");
+
+  $("#tab-settings").innerHTML = `
+  <div class="sec">
+    <div class="sec-h"><span>플랫폼 수수료</span></div>
+    <div class="group">${feeRows}</div>
+    <div class="hint"><b>번개장터는 개인 판매자 6%</b>예요 (2025년 9월 17일 인상, 그전엔 3.5%).
+      당근·중고나라 직거래는 수수료가 없어요. 정책이 바뀌면 여기서 고치면 됩니다.<br>
+      물건에 적는 가격은 <b>내가 받고 싶은 실수령액</b>이고, 앱이 플랫폼별 게시가를 알아서 역산해요.</div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h"><span>끌올 주기</span></div>
+    <div class="group"><div class="field"><label for="bumpDays">며칠마다</label>
+      <input id="bumpDays" value="${esc(String(bumpDays()))}" inputmode="numeric" style="max-width:70px">
+      <span class="suffix">일</span></div></div>
+    <div class="hint">등록한 지 이만큼 지나면 오늘 탭에서 끌올하라고 알려드려요.</div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h"><span>내 글 말투</span></div>
+    ${toneSeg}
+    <div class="sec-h" style="margin-top:16px"><span class="plain" style="text-transform:none;letter-spacing:0;font-size:15px;font-weight:600;color:var(--label)">내가 쓴 글 가르치기</span>
+      <button class="act" id="addSample">추가</button></div>
+    ${samples.length ? `<div>${sampleRows}</div>` : `<div class="group"><div class="empty">
+      <b>아직 없어요</b>예전에 직접 쓴 판매글을 넣어두면, AI가 그 말투와 구성을 따라 써요. 1~3개면 충분해요.</div></div>`}
+    <div class="sec-h" style="margin-top:16px"><span class="plain" style="text-transform:none;letter-spacing:0;font-size:15px;font-weight:600;color:var(--label)">항상 붙일 마무리 문장</span></div>
+    <div class="wrap"><textarea class="ta" id="closing" rows="2" placeholder="예) 직접 가지러 오셔야 합니다. 편한 시간 알려주세요.">${esc(cfg.closing || "")}</textarea></div>
+    <div class="hint">AI가 쓴 글 맨 아래에 그대로 붙어요.</div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h"><span>자주 쓰는 멘트</span><button class="act" id="addSnip">추가</button></div>
+    ${(cfg.snippets||[]).length ? `<div class="group">${snippetRows}</div>`
+      : `<div class="group"><div class="empty"><b>비어 있어요</b>추가를 눌러 자주 쓰는 문장을 넣어두세요.</div></div>`}
+    <div class="hint">판매글 화면에서 버튼 하나로 본문에 붙일 수 있어요.</div>
+    <div class="btn-row"><button class="btn ghost" id="resetSnip">기본 멘트 되돌리기</button></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h"><span>저장</span></div>
+    <div class="group"><div class="row-i"><span class="it-body">
+      <span class="it-t">${backend === "db" ? "계정에 저장 중" : "이 브라우저에만 저장 중"}</span>
+      <span class="it-s">${backend === "db" ? "다른 기기에서 열어도 그대로 보여요" : "브라우저 데이터를 지우면 사라져요"}</span>
+    </span></div></div>
+    <div class="hint">물건 ${items.length}개 · 사진 ${items.reduce((a,i)=>a+i.photos.length,0)}장</div>
+  </div>
+  <div style="height:20px"></div>`;
+}
+
+/* ===================== 탭/전역 이벤트 ===================== */
+function setTab(t){
+  tab = t;
+  $$(".tabbar button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === t)));
+  ["today","items","stats","settings"].forEach(k => { $("#tab-" + k).hidden = (k !== t); });
+  $("#screens").scrollTop = 0;
+  renderAll();
+}
+$$(".tabbar button").forEach(b => b.addEventListener("click", () => setTab(b.dataset.tab)));
+$("#fab").addEventListener("click", () => openQuickAdd());
+
+document.addEventListener("click", ev => {
+  const t = ev.target;
+  const open = t.closest("[data-open]");        if(open){ openDetail(open.dataset.open); return; }
+  const seg = t.closest("[data-seg]");          if(seg){ segment = seg.dataset.seg; renderItems(); return; }
+  const go = t.closest("[data-goseg]");         if(go){ segment = go.dataset.goseg; setTab("items"); return; }
+  if(t.closest("#quickAdd")){ openQuickAdd(); return; }
+  const todo = t.closest("[data-todo]");        if(todo){ handleTodo(todo.dataset.todo, todo.dataset.id); return; }
+
+  if(t.closest("#bumpAll")){
+    const rows = byStatus("listed").filter(bumpDue).filter(i => !i.demo);
+    if(!rows.length){ toast("예시에서는 끌올할 수 없어요."); return; }
+    rows.forEach(i => { i.bumpedAt = now(); i.bumps = (i.bumps||0)+1; persist(i); });
+    toast(`${rows.length}개 끌올로 표시했어요`); return;
+  }
+
+  // 설정
+  const tone = t.closest("[data-tone]");
+  if(tone){ cfg.tone = tone.dataset.tone; saveCfg(); renderSettings(); return; }
+  if(t.closest("#addSample")){ addStyleSample(); return; }
+  const rms = t.closest("[data-rmsample]");
+  if(rms){ cfg.styleSamples.splice(+rms.dataset.rmsample,1); saveCfg(true); renderSettings(); toast("지웠어요"); return; }
+  if(t.closest("#addSnip")){ addSnippet(); return; }
+  const rmn = t.closest("[data-rmsnip]");
+  if(rmn){ cfg.snippets.splice(+rmn.dataset.rmsnip,1); saveCfg(true); renderSettings(); toast("지웠어요"); return; }
+  if(t.closest("#resetSnip")){ cfg.snippets = DEFAULT_SNIPPETS.slice(); saveCfg(true); renderSettings(); toast("기본 멘트로 되돌렸어요"); return; }
+});
+
+document.addEventListener("input", ev => {
+  const t = ev.target;
+  if(t.id === "q"){ query = t.value; renderItems(); $("#q").focus(); return; }
+  if(t.dataset && t.dataset.fee){
+    cfg.fees = cfg.fees || {};
+    cfg.fees[t.dataset.fee] = clamp(parseFloat(t.value) || 0, 0, 90);
+    saveCfg(); return;
+  }
+  if(t.id === "bumpDays"){ cfg.bumpDays = clamp(parseInt(t.value,10) || 7, 1, 90); saveCfg(); return; }
+  if(t.id === "closing"){ cfg.closing = t.value; saveCfg(); return; }
+});
+
+function handleTodo(kind, id){
+  const it = items.find(i => i.id === id);
+  if(!it){ toast("예시예요. + 를 눌러 내 물건을 넣어보세요."); return; }
+  if(kind === "bump"){ it.bumpedAt = now(); it.bumps = (it.bumps||0)+1; persist(it); toast("끌올했다고 표시했어요"); }
+  else if(kind === "list"){ moveTo(it, "listed"); }
+  else if(kind === "cut"){ cutPrice(it); }
+  else openDetail(id, kind === "photo" ? "photo" : "write");
+}
+
+/* ===================== 시트 인프라 ===================== */
+function openSheet({ title, left="닫기", right="", full=true, body="", onRight, onClose }){
+  const scrim = document.createElement("div"); scrim.className = "scrim";
+  const sheet = document.createElement("div"); sheet.className = "sheet " + (full ? "full" : "auto");
+  sheet.innerHTML = `<div class="sheet-nav"><button class="lnk l">${esc(left)}</button>
+    <div class="t">${esc(title)}</div><button class="lnk r">${esc(right)}</button></div>
+    <div class="sheet-body">${body}</div>`;
+  document.body.append(scrim, sheet);
+  const close = () => { scrim.remove(); sheet.remove(); onClose && onClose(); };
+  scrim.addEventListener("click", close);
+  sheet.querySelector(".lnk.l").addEventListener("click", close);
+  const r = sheet.querySelector(".lnk.r");
+  if(right && onRight) r.addEventListener("click", () => onRight(close)); else r.style.visibility = "hidden";
+  return { sheet, close, body: sheet.querySelector(".sheet-body") };
+}
+
+function actionSheet(title, options){
+  return new Promise(resolve => {
+    const scrim = document.createElement("div"); scrim.className = "scrim";
+    const as = document.createElement("div"); as.className = "as";
+    as.innerHTML = `<div class="as-g">${title ? `<div class="as-t">${esc(title)}</div>` : ""}
+      ${options.map((o,i) => `<button class="as-b ${o.destructive?"destructive":""} ${o.strong?"strong":""}" data-i="${i}">${esc(o.label)}${o.note?`<small>${esc(o.note)}</small>`:""}</button>`).join("")}
+      </div><button class="as-cancel">취소</button>`;
+    document.body.append(scrim, as);
+    const done = v => { scrim.remove(); as.remove(); resolve(v); };
+    scrim.addEventListener("click", () => done(null));
+    as.querySelector(".as-cancel").addEventListener("click", () => done(null));
+    as.querySelectorAll(".as-b").forEach(b => b.addEventListener("click", () => done(options[+b.dataset.i].value)));
+  });
+}
+
+function promptSheet(title, fields, submitLabel="저장"){
+  return new Promise(resolve => {
+    let settled = false;
+    const body = `<div class="group" style="margin-top:14px">${fields.map(f => f.multiline
+      ? `<div style="padding:10px 14px"><label for="ps-${f.key}" style="font-size:13px;color:var(--label-2);display:block;margin-bottom:6px">${esc(f.label)}</label>
+         <textarea id="ps-${f.key}" rows="${f.rows||5}" placeholder="${esc(f.placeholder||"")}"
+         style="width:100%;background:var(--fill-2);border:0;border-radius:9px;padding:10px;font-size:16px;line-height:1.55;resize:vertical">${esc(f.value||"")}</textarea></div>`
+      : `<div class="field"><label for="ps-${f.key}">${esc(f.label)}</label>
+         <input id="ps-${f.key}" inputmode="${f.inputmode||"text"}" value="${esc(f.value||"")}" placeholder="${esc(f.placeholder||"")}">
+         ${f.suffix?`<span class="suffix">${esc(f.suffix)}</span>`:""}</div>`).join("")}</div>
+      ${fields.some(f=>f.hint) ? `<div class="hint">${fields.filter(f=>f.hint).map(f=>esc(f.hint)).join("<br>")}</div>` : ""}
+      <div class="btn-row" style="margin-top:16px"><button class="btn primary" id="ps-go">${esc(submitLabel)}</button></div>`;
+    const s = openSheet({ title, full:false, left:"취소", body,
+      onClose: () => { if(!settled){ settled = true; resolve(null); } } });
+    const go = () => {
+      const out = {};
+      fields.forEach(f => { out[f.key] = s.body.querySelector("#ps-" + f.key).value.trim(); });
+      settled = true; s.close(); resolve(out);
+    };
+    s.body.querySelector("#ps-go").addEventListener("click", go);
+    s.body.querySelector("input,textarea")?.focus();
+    s.body.addEventListener("keydown", e => { if(e.key === "Enter" && e.target.tagName !== "TEXTAREA") go(); });
+  });
+}
+
+/* ===================== 빠른 추가 / 설정 입력 ===================== */
+async function openQuickAdd(){
+  const r = await promptSheet("무엇을 팔까요?", [
+    { key:"title", label:"물건", placeholder:"예: 발뮤다 토스터",
+      hint:"지금은 이름만 적어도 충분해요. 사진과 글은 나중에." }], "예정에 넣기");
+  if(!r || !r.title) return;
+  const it = blankItem(r.title);
+  await persist(it);
+  segment = "planned"; setTab("items");
+  toast("예정에 넣었어요");
+  openDetail(it.id);
+}
+async function addStyleSample(){
+  const r = await promptSheet("내가 쓴 판매글 넣기", [
+    { key:"text", label:"글 전체", multiline:true, rows:8,
+      placeholder:"예전에 당근에 올렸던 글을 그대로 붙여넣으세요.",
+      hint:"내용은 안 베껴요. 말투·문장 길이·구성만 따라 씁니다." }], "가르치기");
+  if(!r || !r.text) return;
+  cfg.styleSamples = (cfg.styleSamples || []).slice(0,2);
+  cfg.styleSamples.push(r.text.slice(0, 1500));
+  saveCfg(true); renderSettings();
+  toast("이제 이 말투로 써드릴게요");
+}
+async function addSnippet(text){
+  const r = await promptSheet("자주 쓰는 멘트", [
+    { key:"text", label:"문장", value:text || "", placeholder:"직접 가지러 오셔야 합니다.",
+      hint:"판매글 화면에서 버튼 하나로 붙일 수 있어요." }], "추가");
+  if(!r || !r.text) return null;
+  cfg.snippets = cfg.snippets || [];
+  cfg.snippets.push(r.text);
+  saveCfg(true);
+  if(tab === "settings") renderSettings();
+  toast("멘트를 저장했어요");
+  return r.text;
+}
+
+/* ===================== AI 공통 ===================== */
+const aiOn = () => !!sampleFn;
+const aiImages = () => !!(sampleLimits && sampleLimits.images);
+const NO_INVENT = "정보에 없는 사실은 절대 지어내지 마세요. 모르는 것은 아예 쓰지 말고, 추측이면 추측이라고 밝히세요.";
+
+async function ai(btn, runner){
+  if(!sampleFn){ toast("이 화면에서는 AI를 쓸 수 없어요."); return null; }
+  const original = btn ? btn.innerHTML : null;
+  if(btn){ btn.innerHTML = `<span class="spin"></span> 생각하는 중…`; btn.disabled = true; }
+  try{ return await runner(); }
+  catch(e){
+    if(e && e.code !== "cancelled") toast(AI_ERR[e && e.code] || AI_ERR.upstream_error);
+    console.warn("ai", e);
+    return null;
+  }finally{ if(btn){ btn.innerHTML = original; btn.disabled = false; } }
+}
+
+function briefText(it){
+  const b = it.brief || {}, L = [];
+  if(it.title) L.push(`물건: ${it.title}`);
+  if(b.brand) L.push(`브랜드: ${b.brand}`);
+  if(b.product) L.push(`제품명/모델: ${b.product}`);
+  if(b.category) L.push(`분류: ${b.category}`);
+  if(b.msrp) L.push(`새 제품 정가: ${won(b.msrp)}원`);
+  if(b.buyPrice) L.push(`내가 새로 산 가격: ${won(b.buyPrice)}원`);
+  if(b.usedBuyPrice) L.push(`내가 중고로 산 가격: ${won(b.usedBuyPrice)}원 (참고용, 글에는 쓰지 말 것)`);
+  if(b.buyDate) L.push(`구매 시기: ${b.buyDate}`);
+  if(b.useCount) L.push(`사용 정도: ${b.useCount}`);
+  if(b.condition) L.push(`상태: ${b.condition}`);
+  if(b.includes) L.push(`구성품: ${b.includes}`);
+  if(b.notes) L.push(`특이사항/하자: ${b.notes}`);
+  if(num(it.price)) L.push(`내가 받고 싶은 금액: ${won(it.price)}원`);
+  return L.join("\n") || "(정보가 거의 없음)";
+}
+const searchQuery = it => [it.brief?.brand, it.brief?.product || it.title].filter(Boolean).join(" ").trim() || it.title || "";
+function searchLinks(it){
+  const q = encodeURIComponent(searchQuery(it));
+  if(!q) return "";
+  return `<div class="links" style="margin-top:10px">
+    <a href="https://www.daangn.com/search/${q}/" target="_blank" rel="noopener">당근 시세</a>
+    <a href="https://m.bunjang.co.kr/search/products?q=${q}" target="_blank" rel="noopener">번개장터</a>
+    <a href="https://web.joongna.com/search/${q}" target="_blank" rel="noopener">중고나라</a>
+    <a href="https://search.shopping.naver.com/search/all?query=${q}" target="_blank" rel="noopener">네이버 새 제품가</a>
+    <a href="https://www.google.com/search?q=${q}" target="_blank" rel="noopener">구글에서 찾기</a></div>`;
+}
+function styleBlock(){
+  const tone = TONES.find(t => t.id === (cfg.tone || "default")) || TONES[0];
+  let s = `\n[말투]\n- ${tone.desc}`;
+  const samples = (cfg.styleSamples || []).filter(Boolean);
+  if(samples.length){
+    s += `\n\n[내가 예전에 쓴 글 — 말투·문장 길이·구성만 따라 하세요. 내용이나 사실은 절대 가져오지 마세요]\n`
+       + samples.map((x,i) => `--- 예시 ${i+1} ---\n${x}`).join("\n\n");
+  }
+  if((cfg.closing || "").trim()) s += `\n\n[맨 마지막 줄에 이 문장을 그대로 넣으세요]\n${cfg.closing.trim()}`;
+  return s;
+}
+
+/* ===================== 상세 ===================== */
+let openId = null, sheetRef = null;
+
+function priceBlock(it){
+  const net = num(it.price);
+  if(!net) return `<div class="hint">받고 싶은 금액을 적으면 당근·번개장터에 각각 얼마로 올려야 하는지 계산해 드려요.</div>`;
+  const cards = ["danggn","bunjang"].map(pid => {
+    const p = PLAT[pid], list = listPriceFor(net, pid), fee = feeAmount(list, pid);
+    return `<div class="p ${p.cls}"><div class="n">${esc(p.name)}에 올릴 가격</div>
+      <div class="big tnum">${won(list)}원</div>
+      <div class="sub">${fee ? `수수료 ${feeOf(pid)}% (${won(fee)}원) 떼고 ${won(netFromList(list,pid))}원 받아요`
+                            : `수수료 없이 ${won(list)}원 그대로 받아요`}</div></div>`;
+  }).join("");
+  const gap = listPriceFor(net,"bunjang") - listPriceFor(net,"danggn");
+  return `<div class="aicard" style="margin-top:10px;padding:12px">
+    <div class="plat">${cards}</div>
+    ${gap > 0 ? `<div class="meta">같은 ${won(net)}원을 받으려면 번개장터에는 <b>${won(gap)}원 더 비싸게</b> 올려야 해요.</div>` : ""}
+  </div>`;
+}
+
+function detailHTML(it){
+  const b = it.brief, st = it.status;
+
+  const photos = `<div class="sec">
+    <div class="sec-h"><span>사진</span><span class="plain tnum">${it.photos.length} / ${MAX_PHOTOS}</span></div>
+    <div class="photos">${it.photos.map((p,i) => `<div class="ph" data-ph="${esc(p)}" data-i="${i}">
+        <img src="${esc(photoURL(p))}" alt="사진 ${i+1}" loading="lazy">
+        <span class="idx">${i+1}</span>${i===0?`<span class="lead">대표</span>`:""}</div>`).join("")}
+      ${it.photos.length < MAX_PHOTOS ? `<button class="ph-add" id="addPhoto"><span>＋</span>사진 넣기</button>` : ""}</div>
+    ${it.photos.length ? `<div class="btn-row">
+        <button class="btn tint" id="saveAllPhotos">사진 ${it.photos.length}장 전부 내려받기</button>
+        <button class="btn ghost" id="viewPhotos" style="flex:0 0 auto;width:auto;padding-left:16px;padding-right:16px">크게 보기</button>
+      </div>
+      <div class="hint">등록하러 갈 때 한 번에 받아두세요. 아이폰이라면 <b>크게 보기 → 사진 꾹 누르기 → "사진에 추가"</b>가 가장 빨라요.</div>` : ""}
+    ${!it.photos.length ? `<div class="hint">사진이 없어도 예정에 둘 수 있어요. 시간 날 때 한 번에 찍으세요.</div>` : ""}
+    ${(backend === "db" && !assets) ? `<div class="hint warn">이 화면에서는 사진을 올릴 수 없어요 (보기 전용 접근).</div>` : ""}
+  </div>`;
+
+  const stage = `<div class="sec">
+    <div class="sec-h"><span>단계</span></div>
+    <div class="seg">${STAGES.map(s => `<button data-move="${s.id}" aria-selected="${s.id===st}">${s.name}</button>`).join("")}</div>
+    ${st === "listed" ? `<div class="btn-row">
+        <button class="btn ${bumpDue(it)?"primary":"tint"}" id="bumpBtn">${bumpDue(it) ? `끌올할 때예요 · ${daysSince(it.bumpedAt||it.listedAt)}일째` : "끌올했어요"}</button>
+        <button class="btn ghost" id="cutBtn" style="flex:0 0 auto;width:auto;padding-left:16px;padding-right:16px">가격 내리기</button>
+      </div>
+      <div class="hint">등록 ${fmtDate(it.listedAt)}${it.bumps ? ` · 끌올 ${it.bumps}회 (마지막 ${fmtDate(it.bumpedAt)})` : ""} · ${bumpDays()}일마다 알려드려요</div>` : ""}
+    ${st === "sold" ? `<div class="hint">${fmtDate(it.soldAt)} · ${esc(PLAT[it.soldPlatform||"danggn"]?.name||"")}에서 ${won(num(it.soldList))}원에 판매${
+      feeAmount(num(it.soldList), it.soldPlatform||"danggn") ? ` → 수수료 빼고 <b>${won(soldNet(it))}원</b> 받음` : ""}
+      <br><button class="act" id="editSold" style="color:var(--accent);font-size:13px;margin-top:4px">판매 금액 고치기</button></div>` : ""}
+  </div>`;
+
+  const titleSec = `<div class="sec">
+    <div class="sec-h"><span>제목</span>${aiOn() ? `<button class="act" id="titleAI">AI 추천</button>` : ""}</div>
+    <div class="group"><div class="field" style="padding:12px 14px">
+      <input id="f-title" value="${esc(it.title)}" placeholder="당근에 올릴 제목" style="text-align:left;font-size:17px;font-weight:600"></div></div>
+    <div id="titleIdeas"></div></div>`;
+
+  const priceSec = `<div class="sec">
+    <div class="sec-h"><span>가격</span>${aiOn() ? `<button class="act" id="tPrice">적정가 물어보기</button>` : ""}</div>
+    <div class="group"><div class="field">
+      <label for="f-price">받고 싶은 돈</label>
+      <input id="f-price" value="${esc(it.price)}" placeholder="180000" inputmode="numeric">
+      <span class="suffix">원</span></div></div>
+    ${priceBlock(it)}
+    ${it.priceHistory.length > 1 ? `<div class="hint">가격 변화: ${it.priceHistory.map(h => won(h.price)).join(" → ")}원</div>` : ""}
+    <div id="priceOut"></div></div>`;
+
+  const info = `<div class="sec">
+    <div class="sec-h"><span>간단 정보</span>${aiOn() ? `<button class="act" id="tSpec">제품 정보 찾기</button>` : ""}</div>
+    <div class="group">
+      ${fld("brand","브랜드",b.brand,"발뮤다")}
+      ${fld("product","제품명",b.product,"The Toaster K05A")}
+      ${fld("category","분류",b.category,"주방가전")}
+      ${fld("msrp","새 제품 정가",b.msrp,"329000","numeric","원")}
+      ${fld("buyPrice","새로 산 가격",b.buyPrice,"329000","numeric","원")}
+      ${fld("usedBuyPrice","중고로 산 가격",b.usedBuyPrice,"안 샀으면 비워두기","numeric","원")}
+      ${fld("buyDate","구매 시기",b.buyDate,"2024-03")}
+      ${fld("useCount","사용 횟수",b.useCount,"주 2회")}
+      <div class="field"><label for="f-condition">사용감</label>
+        <select id="f-condition"><option value="">고르기</option>
+          ${CONDITIONS.map(c => `<option ${c===b.condition?"selected":""}>${esc(c)}</option>`).join("")}</select></div>
+      ${fld("includes","구성품",b.includes,"본체, 박스, 설명서")}
+      ${fld("notes","특이사항",b.notes,"상판 잔기스 1cm")}
+    </div>
+    <div class="hint">중고로 산 가격은 <b>내 참고용</b>이에요. AI가 판매글에 쓰지 않아요.
+      ${num(b.usedBuyPrice) && num(it.price) ? ` 지금 가격이면 ${num(it.price) >= num(b.usedBuyPrice) ? `<b>${won(num(it.price)-num(b.usedBuyPrice))}원 남아요</b>` : `${won(num(b.usedBuyPrice)-num(it.price))}원 손해예요`}.` : ""}</div>
+    <div id="specOut"></div></div>`;
+
+  const snips = (cfg.snippets || []);
+  const descSec = `<div class="sec">
+    <div class="sec-h"><span>판매글</span>${it.desc ? `<button class="act" id="copyDesc">복사</button>` : ""}</div>
+    <div class="wrap"><textarea class="ta" id="f-desc" rows="10"
+      placeholder="위 정보를 채우고 아래 버튼을 누르면 AI가 여기에 써드려요. 직접 고쳐도 됩니다.">${esc(it.desc)}</textarea></div>
+    <div class="chips" style="margin-top:9px">
+      ${snips.map((sn,i) => `<button class="chip" data-snip="${i}">${esc(sn)}</button>`).join("")}
+      <button class="chip add" id="newSnip">＋ 멘트 추가</button></div>
+    <div class="hint">멘트를 누르면 판매글 맨 아래에 붙어요.</div>
+    ${aiOn() ? `<div class="btn-row">
+      <button class="btn primary" id="writeAI">${it.desc ? "다시 쓰기" : "당근 스타일로 글 쓰기"}</button>
+      ${it.desc ? `<button class="btn tint" id="copyDesc2" style="flex:0 0 auto;width:auto;padding-left:18px;padding-right:18px">복사</button>` : ""}</div>
+      ${(cfg.styleSamples||[]).length ? `<div class="hint">내 글 ${cfg.styleSamples.length}개를 배운 말투로 씁니다.</div>`
+        : `<div class="hint">설정 → <b>내 글 말투</b>에 예전 판매글을 넣어두면 내 말투로 써요.</div>`}`
+      : `<div class="hint warn">AI를 쓸 수 없는 화면이라 직접 작성해야 해요.</div>`}
+  </div>`;
+
+  const tools = aiOn() ? `<div class="sec">
+    <div class="sec-h"><span>AI 도우미</span></div>
+    <div class="ai-tools">
+      <button class="ai-tool" id="tPhoto" ${(!aiImages() || !it.photos.length) ? "disabled" : ""}>
+        <span class="n">📸 사진 진단</span><span class="d">${it.photos.length ? "빠진 컷을 짚어줘요" : "사진을 먼저 넣어주세요"}</span></button>
+      <button class="ai-tool" id="tReply"><span class="n">💬 답장 도우미</span><span class="d">에누리 문의에 답해 줘요</span></button>
+    </div>
+    <div id="aiOut"></div></div>` : "";
+
+  const links = `<div class="sec">
+    <div class="sec-h"><span>직접 시세 보기</span></div>
+    ${searchLinks(it) || `<div class="hint">브랜드나 제품명을 채우면 검색 링크가 생겨요.</div>`}
+    <div class="hint">AI 추정보다 실제 거래글이 정확해요. 같은 모델이 얼마에 올라와 있는지 눈으로 확인해 보세요.</div></div>`;
+
+  const danger = `<div class="sec">
+    <div class="btn-row"><button class="btn danger" id="delBtn">이 물건 지우기</button></div>
+    <div class="hint">만든 날 ${fmtDate(it.createdAt)}${it.updatedAt ? ` · 마지막 수정 ${fmtDate(it.updatedAt)}` : ""}</div>
+  </div><div style="height:20px"></div>`;
+
+  return photos + stage + titleSec + priceSec + info + descSec + tools + links + danger;
+}
+function fld(key,label,value,ph,mode="text",suffix){
+  return `<div class="field"><label for="f-${key}">${esc(label)}</label>
+    <input id="f-${key}" value="${esc(value||"")}" placeholder="${esc(ph)}" inputmode="${mode}">
+    ${suffix?`<span class="suffix">${esc(suffix)}</span>`:""}</div>`;
+}
+
+function openDetail(id, focus){
+  const it = items.find(i => i.id === id) || view().find(i => i.id === id);
+  if(!it) return;
+  if(it.demo){ toast("예시예요. + 를 눌러 내 물건을 넣어보세요."); return; }
+  openId = id;
+  sheetRef = openSheet({ title: it.title || "새 물건", left:"완료", body: detailHTML(it),
+    onClose: () => {
+      clearTimeout(saveTimers.get(id));
+      const cur = items.find(i => i.id === id); if(cur) persist(cur);
+      openId = null; sheetRef = null;
+    }});
+  wireDetail(sheetRef, it);
+  if(focus === "photo") sheetRef.body.querySelector("#addPhoto")?.click();
+  if(focus === "write") sheetRef.body.querySelector("#f-desc")?.focus();
+}
+function refreshDetail(){
+  if(!openId || !sheetRef) return;
+  const it = items.find(i => i.id === openId); if(!it) return;
+  const y = sheetRef.body.scrollTop;
+  sheetRef.body.innerHTML = detailHTML(it);
+  sheetRef.sheet.querySelector(".t").textContent = it.title || "새 물건";
+  wireDetail(sheetRef, it);
+  sheetRef.body.scrollTop = y;
+}
+
+function wireDetail(s, it){
+  const B = s.body, touch = () => persistSoon(it);
+  const setters = {
+    "f-title":   v => { it.title = v; s.sheet.querySelector(".t").textContent = v || "새 물건"; },
+    "f-brand":   v => it.brief.brand = v,
+    "f-product": v => it.brief.product = v,
+    "f-category":v => it.brief.category = v,
+    "f-msrp":    v => it.brief.msrp = String(num(v) || ""),
+    "f-buyPrice":v => it.brief.buyPrice = String(num(v) || ""),
+    "f-usedBuyPrice": v => it.brief.usedBuyPrice = String(num(v) || ""),
+    "f-buyDate": v => it.brief.buyDate = v,
+    "f-useCount":v => it.brief.useCount = v,
+    "f-includes":v => it.brief.includes = v,
+    "f-notes":   v => it.brief.notes = v,
+    "f-desc":    v => it.desc = v,
+  };
+  Object.entries(setters).forEach(([id,set]) => {
+    const el = B.querySelector("#"+id);
+    if(el) el.addEventListener("input", e => { set(e.target.value); touch(); });
+  });
+  B.querySelector("#f-condition")?.addEventListener("change", e => { it.brief.condition = e.target.value; touch(); });
+
+  // 가격: 입력 중엔 플랫폼 카드만 갱신
+  const priceEl = B.querySelector("#f-price");
+  priceEl?.addEventListener("input", e => {
+    it.price = String(num(e.target.value) || "");
+    const holder = priceEl.closest(".sec").querySelector(".aicard, .hint");
+    const fresh = document.createElement("div");
+    fresh.innerHTML = priceBlock(it);
+    if(holder) holder.replaceWith(fresh.firstElementChild);
+    touch();
+  });
+  priceEl?.addEventListener("change", () => {
+    const last = it.priceHistory[it.priceHistory.length - 1];
+    const v = num(it.price);
+    if(v && (!last || last.price !== v)){
+      it.priceHistory.push({ at: now(), price: v, note: last ? "직접 수정" : "처음 정함" });
+      persist(it);
+    }
+  });
+
+  B.querySelectorAll("[data-move]").forEach(btn => btn.addEventListener("click", () => moveTo(it, btn.dataset.move)));
+  B.querySelector("#bumpBtn")?.addEventListener("click", () => {
+    it.bumpedAt = now(); it.bumps = (it.bumps||0)+1; persist(it); refreshDetail(); toast("끌올했다고 표시했어요");
+  });
+  B.querySelector("#cutBtn")?.addEventListener("click", () => cutPrice(it));
+  B.querySelector("#editSold")?.addEventListener("click", () => askSold(it, true));
+
+  // 사진
+  B.querySelector("#addPhoto")?.addEventListener("click", pickPhotos);
+  B.querySelector("#viewPhotos")?.addEventListener("click", () => openViewer(it, 0));
+  B.querySelector("#saveAllPhotos")?.addEventListener("click", e => saveAllPhotos(e.currentTarget, it));
+  B.querySelectorAll("[data-ph]").forEach(el =>
+    el.addEventListener("click", () => openViewer(it, +el.dataset.i)));
+
+  // 멘트
+  B.querySelectorAll("[data-snip]").forEach(btn => btn.addEventListener("click", () => {
+    appendToDesc(B, it, (cfg.snippets||[])[+btn.dataset.snip]);
+  }));
+  B.querySelector("#newSnip")?.addEventListener("click", async () => {
+    const text = await addSnippet();
+    if(text){ appendToDesc(B, it, text); refreshDetail(); }
+  });
+
+  const copy = () => copyText(B.querySelector("#f-desc").value);
+  B.querySelector("#copyDesc")?.addEventListener("click", copy);
+  B.querySelector("#copyDesc2")?.addEventListener("click", copy);
+
+  B.querySelector("#delBtn")?.addEventListener("click", async () => {
+    const go = await actionSheet(`"${it.title || "제목 없음"}"을(를) 지울까요? 되돌릴 수 없어요.`,
+      [{ label:"지우기", value:"del", destructive:true, strong:true }]);
+    if(go !== "del") return;
+    const ids = it.photos.slice();
+    await removeItem(it.id);
+    s.close();
+    ids.forEach(p => assets && assets.delete(p).catch(() => {}));
+    toast("지웠어요");
+  });
+
+  B.querySelector("#writeAI")?.addEventListener("click", e => writeDesc(e.currentTarget, it, B));
+  B.querySelector("#titleAI")?.addEventListener("click", e => suggestTitles(e.currentTarget, it, B));
+  B.querySelector("#tPrice")?.addEventListener("click", e => guessPrice(e.currentTarget, it, B));
+  B.querySelector("#tSpec")?.addEventListener("click", e => findSpecs(e.currentTarget, it, B));
+  B.querySelector("#tPhoto")?.addEventListener("click", e => checkPhotos(e.currentTarget, it, B));
+  B.querySelector("#tReply")?.addEventListener("click", () => replyHelper(it));
+
+  async function pickPhotos(){
+    if(backend === "db" && !assets){ toast("이 화면에서는 사진을 올릴 수 없어요."); return; }
+    const input = document.createElement("input");
+    input.type = "file"; input.accept = "image/*"; input.multiple = true;
+    input.style.cssText = "position:fixed;opacity:0;pointer-events:none";
+    document.body.appendChild(input);
+    input.addEventListener("change", async () => {
+      const files = [...input.files].slice(0, MAX_PHOTOS - it.photos.length);
+      input.remove();
+      if(!files.length) return;
+      toast(`사진 ${files.length}장 넣는 중…`);
+      for(const f of files){
+        try{
+          const blob = await compress(f);
+          let pid;
+          if(assets){ pid = (await assets.upload(blob, { type:"image/jpeg" })).id; }
+          else { pid = uid(); urlCache.set(pid, URL.createObjectURL(blob)); }
+          blobCache.set(pid, blob);
+          it.photos.push(pid);
+          await persist(it);
+          refreshDetail();
+        }catch(err){
+          toast({ too_large:"사진이 너무 커요.", quota_or_state:"저장 공간이 찼어요. 오래된 사진을 지워주세요.",
+                  rate_limited:"조금 천천히 올려주세요.", unsupported_type:"이 형식의 사진은 올릴 수 없어요." }[err && err.code]
+                || "사진을 올리지 못했어요.");
+          console.error("upload", err); break;
+        }
+      }
+    });
+    input.click();
+  }
+}
+
+function appendToDesc(B, it, text){
+  if(!text) return;
+  const ta = B.querySelector("#f-desc");
+  const base = (ta.value || "").trimEnd();
+  if(base.includes(text)){ toast("이미 들어 있어요"); return; }
+  ta.value = base ? base + "\n\n" + text : text;
+  it.desc = ta.value;
+  persist(it);
+  ta.scrollTop = ta.scrollHeight;
+  toast("판매글에 붙였어요");
+}
+
+async function compress(file, max=1600, q=0.82){
+  try{
+    const bmp = await createImageBitmap(file, { imageOrientation:"from-image" });
+    const scale = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    const w = Math.round(bmp.width*scale), h = Math.round(bmp.height*scale);
+    const c = document.createElement("canvas"); c.width = w; c.height = h;
+    c.getContext("2d").drawImage(bmp, 0, 0, w, h);
+    bmp.close && bmp.close();
+    return (await new Promise(res => c.toBlob(res, "image/jpeg", q))) || file;
+  }catch(_){ return file; }
+}
+
+/* ===================== 사진 뷰어 / 내려받기 ===================== */
+async function getBlob(pid){
+  if(blobCache.has(pid)) return blobCache.get(pid);
+  try{
+    const r = await fetch(photoURL(pid));
+    if(!r.ok) throw new Error(String(r.status));
+    const b = await r.blob();
+    blobCache.set(pid, b);
+    return b;
+  }catch(_){ return null; }
+}
+const safeName = (it, i) => (String(it.title || "물건").replace(/[\\/:*?"<>|]/g,"").trim().slice(0,40) || "물건") + `_${String(i+1).padStart(2,"0")}.jpg`;
+
+async function savePhoto(pid, name){
+  if(!downloads){ toast("이 화면에서는 내려받을 수 없어요. 사진을 꾹 눌러 저장해 주세요."); return "unavailable"; }
+  const blob = await getBlob(pid);
+  if(!blob){ toast("사진을 읽지 못했어요."); return "noblob"; }
+  try{ await downloads.save({ filename: name, data: blob }); return "saved"; }
+  catch(e){
+    if(e && e.code === "declined") return "declined";
+    if(e && e.code === "rate_limited") return "rate_limited";
+    toast({ too_large:"사진이 너무 커요.", unavailable:"이 화면에서는 내려받을 수 없어요." }[e && e.code] || "내려받지 못했어요.");
+    console.warn("download", e);
+    return "error";
+  }
+}
+async function saveAllPhotos(btn, it){
+  if(!downloads){ toast("이 화면에서는 내려받을 수 없어요. 크게 보기에서 사진을 꾹 눌러 저장해 주세요."); return; }
+  const orig = btn.innerHTML;
+  let done = 0;
+  for(let i = 0; i < it.photos.length; i++){
+    btn.innerHTML = `<span class="spin"></span> ${i+1} / ${it.photos.length}장`;
+    btn.disabled = true;
+    let r = await savePhoto(it.photos[i], safeName(it, i));
+    if(r === "rate_limited"){
+      await new Promise(res => setTimeout(res, 1200));
+      r = await savePhoto(it.photos[i], safeName(it, i));
+    }
+    if(r === "saved") done++;
+    if(r === "declined" || r === "unavailable" || r === "error") break;
+    await new Promise(res => setTimeout(res, 350));
+  }
+  btn.innerHTML = orig; btn.disabled = false;
+  toast(done ? `${done}장 저장했어요` : "저장하지 않았어요");
+}
+
+function openViewer(it, start){
+  let i = clamp(start, 0, it.photos.length - 1);
+  const v = document.createElement("div");
+  v.className = "viewer";
+  const draw = () => {
+    v.innerHTML = `
+      <div class="vtop"><button id="vclose">닫기</button>
+        <span class="tnum">${i+1} / ${it.photos.length}</span>
+        <button id="vprev" ${i===0?"disabled style=opacity:.3":""}>◀</button></div>
+      <div class="vmain"><img src="${esc(photoURL(it.photos[i]))}" alt="사진 ${i+1}"></div>
+      <div class="vhint">아이폰이라면 사진을 <b>꾹 눌러</b> "사진에 추가"를 고르면 카메라 롤로 바로 들어가요.</div>
+      <div class="vbot">
+        <button class="btn" id="vlead">${i===0?"대표 사진":"대표로"}</button>
+        ${downloads ? `<button class="btn" id="vsave">저장</button>` : ""}
+        <button class="btn" id="vdel" style="color:#FF6B6B">삭제</button>
+        <button class="btn" id="vnext" ${i>=it.photos.length-1?"disabled":""}>다음</button>
+      </div>`;
+    v.querySelector("#vclose").onclick = () => { v.remove(); refreshDetail(); };
+    v.querySelector("#vprev").onclick = () => { if(i>0){ i--; draw(); } };
+    v.querySelector("#vnext").onclick = () => { if(i<it.photos.length-1){ i++; draw(); } };
+    v.querySelector("#vlead").onclick = () => {
+      if(i === 0) return;
+      const pid = it.photos[i];
+      it.photos = [pid, ...it.photos.filter(p => p !== pid)];
+      i = 0; persist(it); draw(); toast("대표 사진으로 바꿨어요");
+    };
+    const sv = v.querySelector("#vsave");
+    if(sv) sv.onclick = async () => {
+      sv.innerHTML = `<span class="spin"></span>`;
+      const r = await savePhoto(it.photos[i], safeName(it, i));
+      sv.innerHTML = "저장";
+      if(r === "saved") toast("저장했어요");
+    };
+    v.querySelector("#vdel").onclick = async () => {
+      const go = await actionSheet("이 사진을 지울까요?", [{ label:"사진 지우기", value:"del", destructive:true }]);
+      if(go !== "del") return;
+      const pid = it.photos[i];
+      it.photos = it.photos.filter(p => p !== pid);
+      blobCache.delete(pid);
+      await persist(it);
+      if(assets) assets.delete(pid).catch(() => {});
+      if(!it.photos.length){ v.remove(); refreshDetail(); return; }
+      i = clamp(i, 0, it.photos.length - 1); draw();
+    };
+  };
+  draw();
+  document.body.appendChild(v);
+}
+
+/* ===================== 단계 이동 / 가격 ===================== */
+async function askSold(it, editing){
+  const cur = num(it.soldList) || num(it.price) || 0;
+  const plat = await actionSheet(editing ? "어디서 파셨어요?" : "어디서 파셨어요?",
+    PLATFORMS.map(p => ({ label: p.name, value: p.id,
+      note: feeOf(p.id) ? `수수료 ${feeOf(p.id)}%` : "수수료 없음" })));
+  if(!plat) return false;
+  const r = await promptSheet("얼마에 파셨어요?", [
+    { key:"price", label:"거래 금액", value: cur ? String(cur) : "", placeholder:"180000", inputmode:"numeric", suffix:"원",
+      hint: feeOf(plat) ? `${PLAT[plat].name} 수수료 ${feeOf(plat)}%를 뺀 금액이 분석 탭에 쌓여요.`
+                        : "수수료가 없어서 그대로 실수령이에요." }], editing ? "고치기" : "판매 완료");
+  if(!r) return false;
+  it.soldList = String(num(r.price) || "");
+  it.soldPlatform = plat;
+  if(!editing || !it.soldAt) it.soldAt = now();
+  return true;
+}
+
+async function moveTo(it, to){
+  if(it.status === to) return;
+  if(to === "listed" && !it.desc){
+    const go = await actionSheet("판매글이 아직 비어 있어요. 그래도 등록으로 옮길까요?", [
+      { label:"그래도 옮기기", value:"go" }, { label:"먼저 글 쓰러 가기", value:"write", strong:true }]);
+    if(!go) return;
+    if(go === "write"){ sheetRef ? sheetRef.body.querySelector("#f-desc")?.focus() : openDetail(it.id, "write"); return; }
+  }
+  if(to === "sold"){ if(!(await askSold(it, false))) return; }
+  if(to === "listed" && !it.listedAt){
+    it.listedAt = now(); it.bumpedAt = now();
+    if(num(it.price) && !it.priceHistory.length) it.priceHistory.push({ at: now(), price: num(it.price), note:"처음 등록" });
+  }
+  if(to === "planned"){ it.listedAt = null; it.bumpedAt = null; it.bumps = 0; }
+  if(to !== "sold"){ it.soldAt = null; it.soldList = ""; }
+  it.status = to;
+  await persist(it);
+  refreshDetail();
+  segment = to;
+  toast(`${STAGE[to].name}(으)로 옮겼어요`);
+}
+
+async function cutPrice(it){
+  const cur = num(it.price);
+  if(!cur){ toast("먼저 받고 싶은 금액을 적어주세요."); openDetail(it.id); return; }
+  const opts = [5,10,15].map(p => {
+    const v = roundTo(cur * (1 - p/100), 1000);
+    return { label:`${p}% 내리기 → ${won(v)}원`, value:String(v),
+             note:`당근 ${won(listPriceFor(v,"danggn"))}원 · 번개 ${won(listPriceFor(v,"bunjang"))}원` };
+  });
+  opts.push({ label:"직접 입력", value:"custom" });
+  const pick = await actionSheet(`지금 ${won(cur)}원이에요. 얼마로 내릴까요?`, opts);
+  if(!pick) return;
+
+  let v;
+  if(pick === "custom"){
+    const r = await promptSheet("새 가격", [
+      { key:"price", label:"받고 싶은 돈", value:String(cur), inputmode:"numeric", suffix:"원",
+        hint:"플랫폼 게시가는 이 금액에서 수수료를 얹어 다시 계산돼요." }], "내리기");
+    if(!r) return;
+    v = num(r.price);
+  }else v = num(pick);
+  if(!v) return;
+
+  it.price = String(v);
+  it.priceHistory.push({ at: now(), price: v, note: v < cur ? "가격 내림" : "가격 바꿈" });
+  it.bumpedAt = now(); it.bumps = (it.bumps||0)+1;   // 가격 수정은 보통 끌올 효과가 있음
+  await persist(it);
+  refreshDetail();
+  toast(`${won(cur)} → ${won(v)}원으로 내렸어요`);
+}
+
+/* ===================== AI 기능 ===================== */
+async function writeDesc(btn, it, B){
+  const prompt = `당신은 한국 중고거래 앱(당근마켓, 번개장터)에 올릴 판매글을 대신 써주는 도우미입니다.
+아래 정보로, 그대로 복사해 붙여넣을 수 있는 판매글 본문을 써주세요.
+
+[규칙]
+- 분량: 5~9줄. 문단 사이에 빈 줄을 넣어 읽기 편하게.
+- 순서: 무엇인지 한 줄 → 언제 얼마에 샀는지 → 얼마나 썼는지와 상태 → 구성품 → 하자·특이사항 → 거래 방식 한 줄.
+- 하자가 있으면 반드시 솔직하게, 담백하게 씁니다. 감추지 마세요.
+- "내가 중고로 산 가격"은 내 참고용이니 글에 절대 쓰지 마세요.
+- 이모지는 최대 2개. 해시태그와 "급처", "최저가" 같은 문구는 쓰지 마세요.
+- ${NO_INVENT}
+- 제목은 쓰지 말고 본문만 출력하세요. 설명이나 머리말 없이 본문 텍스트만.
+${styleBlock()}
+
+[정보]
+${briefText(it)}`;
+
+  const ta = B.querySelector("#f-desc");
+  const out = await ai(btn, () => sampleFn(prompt, { cache:false, onText: ({text}) => { ta.value = text; } }));
+  if(!out) return;
+  it.desc = out.text.trim();
+  ta.value = it.desc;
+  await persist(it);
+  refreshDetail();
+  toast(out.truncated ? "글이 길어 잘렸어요. 다시 써보세요." : "글을 썼어요. 확인하고 복사하세요.");
+}
+
+async function suggestTitles(btn, it, B){
+  const list = await ai(btn, () => sampleFn.json(
+    `중고거래 앱에 올릴 판매 제목 4개를 제안하세요.
+- 각 25자 이내. 검색에 걸리도록 브랜드와 모델명을 앞에 둡니다.
+- 과장·이모지·해시태그 금지.
+- ${NO_INVENT}
+- 문자열만 담은 JSON 배열로만 답하세요. 예: ["발뮤다 토스터 K05A 화이트","..."]
+
+[정보]
+${briefText(it)}`, { modelTier:"quick", cache:false }));
+  if(!Array.isArray(list)) return;
+  const box = B.querySelector("#titleIdeas");
+  box.innerHTML = `<div class="group" style="margin-top:8px">${list.slice(0,4).map(t =>
+    `<button class="row-i" data-title="${esc(String(t))}"><span class="it-body">
+      <span class="it-t" style="font-weight:500">${esc(String(t))}</span></span></button>`).join("")}
+    </div><div class="hint">누르면 제목에 넣어요.</div>`;
+  box.querySelectorAll("[data-title]").forEach(b => b.addEventListener("click", () => {
+    it.title = b.dataset.title;
+    B.querySelector("#f-title").value = it.title;
+    sheetRef.sheet.querySelector(".t").textContent = it.title;
+    persist(it); box.innerHTML = ""; toast("제목을 넣었어요");
+  }));
+}
+
+async function guessPrice(btn, it, B){
+  const bjFee = feeOf("bunjang");
+  const d = await ai(btn, () => sampleFn.json(
+    `한국 중고거래 시장(당근마켓·번개장터) 기준으로 이 물건의 적정 가격을 추정하세요.
+당신은 웹을 검색할 수 없습니다. 알고 있는 지식만으로 '추정'하고, 확신 정도를 솔직히 밝히세요.
+구매 시점, 사용 정도, 하자, 구성품 유무, 해당 카테고리의 통상 중고 감가 흐름을 함께 고려하세요.
+
+중요: 아래 low/mid/high는 모두 <판매자가 손에 쥐는 실수령액>으로 답하세요. 플랫폼 수수료는 앱이 따로 계산합니다.
+
+아래 JSON 하나로만 답하세요:
+{"low": 숫자, "mid": 숫자, "high": 숫자, "confidence": "high"|"medium"|"low",
+ "reason": "2~3문장, 왜 이 가격대인지",
+ "platform": "이 물건은 당근 직거래와 번개장터 중 어디가 유리한지 한 문장",
+ "tips": ["빨리 팔려면 한 줄","제값 받으려면 한 줄"]}
+숫자는 원 단위 정수, 콤마 없이.
+
+[정보]
+${briefText(it)}`, { modelTier:"complex", cache:false }));
+  if(!d || typeof d.mid !== "number") return;
+
+  it.priceGuide = d;
+  await persist(it);
+
+  const conf = { high:"비교적 확신", medium:"보통", low:"확신 낮음" }[d.confidence] || "보통";
+  const row = (lbl, v, big) => `<div style="flex:1;text-align:center">
+    <div style="font-size:11px;color:var(--label-2);font-weight:600">${lbl}</div>
+    <div class="tnum" style="font-weight:700;letter-spacing:-.4px;${big?"font-size:25px;color:var(--accent)":"font-size:16px;color:var(--label-2)"}">${won(v)}</div></div>`;
+
+  B.querySelector("#priceOut").innerHTML = `
+  <div class="aicard" style="margin-top:12px">
+    <h4>AI 추정 · 실수령 기준</h4>
+    <div style="display:flex;margin:4px 0 12px">${row("빨리 팔려면", d.low)}${row("적정", d.mid, true)}${row("여유 있다면", d.high)}</div>
+    <div>${esc(d.reason || "")}</div>
+    ${d.platform ? `<div style="margin-top:8px;color:var(--label-2);font-size:14px">🏷️ ${esc(d.platform)}</div>` : ""}
+    ${Array.isArray(d.tips) && d.tips.length ? `<ul style="margin-top:9px">${d.tips.map(t => `<li>${esc(t)}</li>`).join("")}</ul>` : ""}
+    <div class="plat" style="margin-top:12px">
+      <div class="p dg"><div class="n">당근에 올릴 가격</div><div class="big tnum">${won(listPriceFor(d.mid,"danggn"))}원</div>
+        <div class="sub">수수료 없이 그대로 받아요</div></div>
+      <div class="p bj"><div class="n">번개장터에 올릴 가격</div><div class="big tnum">${won(listPriceFor(d.mid,"bunjang"))}원</div>
+        <div class="sub">수수료 ${bjFee}% 떼고 ${won(netFromList(listPriceFor(d.mid,"bunjang"),"bunjang"))}원</div></div>
+    </div>
+    <div class="meta">이건 <b>웹 검색이 아니라 AI가 기억으로 추정한 값</b>이에요 (확신: ${esc(conf)}).
+      아래 링크로 실제 거래글을 꼭 확인해 보세요.</div>
+  </div>
+  ${searchLinks(it)}
+  <div class="btn-row"><button class="btn tint" id="usePrice">받고 싶은 돈을 ${won(d.mid)}원으로</button></div>`;
+
+  B.querySelector("#usePrice").addEventListener("click", () => {
+    const prev = num(it.price);
+    it.price = String(d.mid);
+    if(prev !== d.mid) it.priceHistory.push({ at: now(), price: d.mid, note:"AI 추천" });
+    persist(it); refreshDetail();
+    toast(`${won(d.mid)}원으로 맞췄어요`);
+  });
+}
+
+async function findSpecs(btn, it, B){
+  const d = await ai(btn, () => sampleFn.json(
+    `다음 중고 물건의 원래 제품 정보를 아는 만큼 정리하세요.
+당신은 웹을 검색할 수 없고 URL을 알 수 없습니다. 링크나 주소는 절대 만들어내지 마세요.
+
+아래 JSON 하나로만 답하세요:
+{"official":"정식 제품명(모르면 빈 문자열)","brand":"브랜드","year":"출시 시기(모르면 빈 문자열)",
+ "msrp": 출시가/정가를 원 단위 정수로 (모르면 null),
+ "specs":[{"label":"항목","value":"값"}],
+ "selling":["중고글에 적으면 좋은 셀링포인트 2~3개"],
+ "confidence":"high"|"medium"|"low",
+ "caution":"확실하지 않은 부분 한 줄. 없으면 빈 문자열",
+ "keywords":["정확한 정보를 찾을 때 쓸 검색어 2~3개"]}
+- specs는 최대 6개. 그 카테고리에서 구매자가 실제로 궁금해하는 항목만.
+- msrp는 한국 정식 출시가 기준. 확실하지 않으면 null을 넣고 caution에 적으세요.
+- ${NO_INVENT}
+- 한국어로 답하세요.
+
+[내가 아는 정보]
+${briefText(it)}`, { modelTier:"complex", cache:{ gcTime: 3600000 } }));
+  if(!d) return;
+
+  it.productInfo = d;
+  await persist(it);
+
+  const kw = Array.isArray(d.keywords) ? d.keywords : [];
+  const conf = { high:"비교적 정확", medium:"보통", low:"확신 낮음" }[d.confidence] || "보통";
+  const canFill = Number.isFinite(d.msrp) && d.msrp > 0;
+
+  B.querySelector("#specOut").innerHTML = `
+  <div class="aicard" style="margin-top:12px">
+    <h4>제품 정보</h4>
+    ${d.official ? `<div style="font-size:17px;font-weight:600;letter-spacing:-.3px">${esc(d.official)}</div>` : ""}
+    <div style="color:var(--label-2);font-size:13px;margin-bottom:8px">${
+      [d.brand, d.year, canFill ? `정가 ${won(d.msrp)}원` : ""].filter(Boolean).map(esc).join(" · ")}</div>
+    ${Array.isArray(d.specs) && d.specs.length ? `<div class="group" style="margin:8px 0 0;border:.5px solid var(--sep)">
+      ${d.specs.slice(0,6).map(sp => `<div class="field"><label style="flex:0 0 100px">${esc(sp.label)}</label>
+        <div style="flex:1;text-align:right;font-size:15px">${esc(sp.value)}</div></div>`).join("")}</div>` : ""}
+    ${Array.isArray(d.selling) && d.selling.length ? `<h4 style="margin-top:12px">글에 넣으면 좋아요</h4>
+      <ul>${d.selling.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+    <div class="meta">AI가 <b>기억으로</b> 정리한 정보예요 (확신: ${esc(conf)}).${d.caution ? " " + esc(d.caution) : ""}
+      정가는 링크로 꼭 확인하세요.</div>
+  </div>
+  ${kw.length ? `<div class="links" style="margin-top:10px">
+    ${kw.slice(0,3).map(k => `<a href="https://www.google.com/search?q=${encodeURIComponent(k)}" target="_blank" rel="noopener">🔎 ${esc(k)}</a>`).join("")}
+    <a href="https://search.shopping.naver.com/search/all?query=${encodeURIComponent(d.official || searchQuery(it))}" target="_blank" rel="noopener">네이버 쇼핑에서 정가 확인</a></div>` : ""}
+  <div class="btn-row">
+    ${canFill ? `<button class="btn tint" id="useMsrp">정가 ${won(d.msrp)}원 넣기</button>` : ""}
+    ${Array.isArray(d.specs) && d.specs.length ? `<button class="btn ghost" id="specToDesc">판매글에 스펙 붙이기</button>` : ""}
+  </div>`;
+
+  B.querySelector("#useMsrp")?.addEventListener("click", () => {
+    it.brief.msrp = String(d.msrp);
+    if(!it.brief.brand && d.brand) it.brief.brand = d.brand;
+    if(!it.brief.product && d.official) it.brief.product = d.official;
+    persist(it); refreshDetail();
+    toast(`정가 ${won(d.msrp)}원을 넣었어요. 링크로 한 번 확인해 주세요.`);
+  });
+  B.querySelector("#specToDesc")?.addEventListener("click", () => {
+    appendToDesc(B, it, "[제품 정보]\n" + d.specs.slice(0,6).map(sp => `· ${sp.label}: ${sp.value}`).join("\n"));
+  });
+}
+
+async function checkPhotos(btn, it, B){
+  const out = B.querySelector("#aiOut");
+  out.innerHTML = `<div class="aicard" style="margin-top:12px"><span class="spin"></span> 사진을 불러오는 중…</div>`;
+  const maxN = Math.min(6, (sampleLimits && sampleLimits.images && sampleLimits.images.maxCount) || 4);
+  const blobs = [];
+  for(const pid of it.photos.slice(0, maxN)){ const b = await getBlob(pid); if(b) blobs.push(b); }
+
+  if(!blobs.length){
+    out.innerHTML = `<div class="aicard" style="margin-top:12px"><h4>사진을 읽지 못했어요</h4>
+      이 화면에서는 저장된 사진을 AI에게 보낼 수 없어요. 사진을 다시 넣으면 그 자리에서 바로 진단할 수 있습니다.</div>`;
+    return;
+  }
+
+  const d = await ai(btn, () => sampleFn.json(
+    `첨부한 사진들은 중고로 팔려는 물건을 찍은 것입니다. (${blobs.length}장)
+중고거래에서 잘 팔리는 사진 구성인지 봐주세요. 물건은 "${searchQuery(it) || it.title}"입니다.
+
+아래 JSON 하나로만 답하세요:
+{"score": 0~100 정수, "good":["잘 찍은 점 1~3개"],
+ "missing":[{"shot":"더 찍어야 할 컷","why":"왜 필요한지 한 줄"}],
+ "retake":[{"shot":"다시 찍으면 좋을 컷","why":"이유 한 줄"}],
+ "note":"한 줄 총평"}
+- 사진에 실제로 보이는 것만 근거로 삼으세요. 보이지 않는 것을 추측하지 마세요.
+- missing은 최대 4개. 구매자가 꼭 보고 싶어 하는 각도(정면·후면·단자와 버튼·바닥면·사용감 있는 부위·구성품 전체샷·크기 비교)를 기준으로.
+- 한국어로 답하세요.`, { images: blobs, modelTier:"default", cache:false }));
+  if(!d){ out.innerHTML = ""; return; }
+
+  const sec = (title, arr) => (Array.isArray(arr) && arr.length)
+    ? `<h4 style="margin-top:12px">${title}</h4><ul>${arr.map(x => typeof x === "string"
+        ? `<li>${esc(x)}</li>` : `<li><b>${esc(x.shot || "")}</b> — ${esc(x.why || "")}</li>`).join("")}</ul>` : "";
+  const sc = Number(d.score);
+
+  out.innerHTML = `<div class="aicard" style="margin-top:12px">
+    <h4>사진 진단 · ${blobs.length}장 확인</h4>
+    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:4px">
+      <span class="tnum" style="font-size:30px;font-weight:700;letter-spacing:-.6px;color:${
+        sc>=70?"var(--s-sold)":sc>=45?"var(--amber)":"var(--red)"}">${Number.isFinite(sc)?sc:"–"}</span>
+      <span style="color:var(--label-2);font-size:13px">/ 100</span></div>
+    ${d.note ? `<div>${esc(d.note)}</div>` : ""}
+    ${sec("잘 찍었어요", d.good)}${sec("이런 사진이 더 필요해요", d.missing)}${sec("다시 찍으면 좋아요", d.retake)}
+    <div class="meta">${it.photos.length > blobs.length ? `사진 ${it.photos.length}장 중 ${blobs.length}장만 확인했어요. ` : ""}AI가 사진만 보고 판단한 결과예요.</div>
+  </div>`;
+  out.scrollIntoView({ behavior:"smooth", block:"nearest" });
+}
+
+async function replyHelper(it){
+  const r = await promptSheet("구매자가 뭐라고 했나요?", [
+    { key:"msg", label:"받은 말", multiline:true, rows:3, placeholder:"15만원에 안 될까요?",
+      hint:"채팅을 그대로 붙여넣어도 돼요." }], "답장 만들기");
+  if(!r || !r.msg) return;
+
+  const s = openSheet({ title:"답장 후보", full:false, left:"닫기",
+    body:`<div class="aicard" style="margin-top:14px"><span class="spin"></span> 답장을 쓰는 중…</div>` });
+
+  const floor = num(it.price) ? `\n내가 받아야 하는 최소 금액은 ${won(it.price)}원 수준입니다.` : "";
+  const d = await ai(null, () => sampleFn.json(
+    `당신은 중고거래 판매자를 대신해 구매자에게 보낼 답장을 써주는 도우미입니다.
+
+[내가 파는 물건]
+${briefText(it)}${floor}
+
+[구매자가 보낸 말]
+${r.msg}
+
+톤이 다른 답장 3개를 제안하세요. 아래 JSON 배열 하나로만 답하세요:
+[{"label":"짧은 이름표(예: 정중히 거절)","text":"실제로 보낼 문장"}]
+- 각 답장은 2~4문장. 편한 존댓말("~해요" 체). 비굴하지도, 퉁명스럽지도 않게.
+- 가격 얘기라면 하나는 거절, 하나는 소폭 조정, 하나는 조건부 수락처럼 서로 다른 선택지를 주세요.
+- ${NO_INVENT} 없는 사양이나 없는 구성품을 약속하지 마세요.`, { modelTier:"default", cache:false }));
+
+  if(!Array.isArray(d) || !d.length){
+    s.body.innerHTML = `<div class="aicard" style="margin-top:14px">답장을 만들지 못했어요. 다시 시도해 주세요.</div>`;
+    return;
+  }
+  s.body.innerHTML = d.slice(0,3).map((x,i) => `<div class="aicard" style="margin-top:${i?10:14}px">
+    <h4>${esc(x.label || "답장 " + (i+1))}</h4>
+    <div style="white-space:pre-wrap">${esc(x.text || "")}</div>
+    <div style="margin-top:10px"><button class="btn sm tint" data-cp="${i}">복사</button></div></div>`).join("")
+    + `<div class="hint">그대로 보내도 되고, 고쳐 보내도 돼요.</div>`;
+  s.body.querySelectorAll("[data-cp]").forEach(b =>
+    b.addEventListener("click", () => copyText(d[+b.dataset.cp].text || "")));
+}
+
+/* ===================== 시작 ===================== */
+setTab("today");
+renderAll();
+boot();
+
+})();
+</script>
