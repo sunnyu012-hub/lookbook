@@ -540,6 +540,16 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
   background:linear-gradient(150deg, var(--clay-soft) 0%, var(--surface) 62%);
   border-color:color-mix(in srgb, var(--clay) 32%, transparent);
 }
+/* 약 전환 전후 비교 — 항목 / 이전 약 / 새 약 세 칸 */
+.phz{display:flex; flex-direction:column}
+.phz-h, .phz-r{display:grid; grid-template-columns:1.25fr 1fr 1fr; gap:8px; align-items:baseline}
+.phz-h{font-size:10px; color:var(--faint); font-weight:600; letter-spacing:.04em; padding-bottom:7px; word-break:keep-all; line-height:1.4}
+.phz-h span:not(:first-child), .phz-r span:not(:first-child){text-align:right}
+.phz-r{padding:11px 0; border-top:1px solid var(--line2); font-size:13px}
+.phz-lb{color:var(--ink2); font-size:12.5px}
+.phz-v{font-family:"IBM Plex Mono",monospace; font-weight:600; color:var(--ink); font-size:13.5px}
+.phz-v.off{color:var(--faint); font-weight:500}
+.phz-v small{display:block; font-size:10px; color:var(--faint); font-weight:500; margin-top:2px}
 </style>
 
 <div id="app">
@@ -639,6 +649,14 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
           <span class="tiny muted mono" id="week-range"></span>
         </div>
         <div id="week-body"></div>
+      </div>
+
+      <div class="card" id="steps-card">
+        <div class="between" style="margin-bottom:10px">
+          <p class="sec-label" style="margin:0">오늘 걸음</p>
+          <button class="link tiny" type="button" data-goto="rec:workout">걸음 기록</button>
+        </div>
+        <div id="steps-body"></div>
       </div>
 
       <div class="card">
@@ -1311,6 +1329,9 @@ const PHOTO_SLOTS = [["b","🌅 아침"],["l","🍚 점심"],["d","🌙 저녁"]
 const PHOTO_MAX_PX = 1400;
 /* 걸음 수 — 운동으로 안 세는 "그냥 움직인 양". 바쁜 날에 제일 먼저 줄어든다 */
 const STEP_GOAL = 6000;
+/* 5,000보는 목표가 아니라 관측값이다. 내 기록에서 이 선을 넘긴 날과
+   못 넘긴 날의 "다음 날 아침 체중"이 갈렸다. 데이터가 쌓이면 다시 봐야 한다. */
+const STEP_TURN = 5000;
 /* 한 번에 구독할 수 있는 문서 수 상한은 1000이다. 하루 한 건씩 쌓이니
    여유가 무한하지 않다 — 1000일에 가까워지면 오래된 걸음 수는 따로 모아야 한다. */
 const DAYS_LIMIT = 1000;
@@ -2104,6 +2125,35 @@ function renderHome(){
     + '<div class="wk-row"><span class="nm">유산소</span><span class="dots">'+dotRow(wk.cardio,GOAL_CARDIO,"cardio")+'</span><span class="ct">'+wk.cardio+' / '+GOAL_CARDIO+'</span></div>'
     + '<p class="note tiny muted" style="margin:10px 0 0">유산소는 러닝과 걷기를 함께 셉니다.</p>';
 
+  /* 오늘 걸음 — 목표선이 아니라 내 기록에서 갈라진 선을 보여준다 */
+  const stToday = d.steps, turn = stepTurn();
+  let sh;
+  if(typeof stToday === "number"){
+    const over = stToday >= STEP_TURN;
+    const pct = Math.max(2, Math.min(100, Math.round(stToday / STEP_TURN * 100)));
+    sh = '<div class="between" style="align-items:flex-end; margin-bottom:10px">'
+      + '<span class="mono" style="font-size:26px; font-weight:600; letter-spacing:-.02em; color:'
+      + (over ? "var(--mint)" : "var(--ink)")+'">'+stToday.toLocaleString()+'</span>'
+      + '<span class="tiny mono" style="'+(over ? "color:var(--mint); font-weight:600" : "color:var(--muted)")+'">'
+      + (over ? "분기점 넘음 ✓" : (STEP_TURN - stToday).toLocaleString()+"보 남음")+'</span></div>'
+      + '<div class="goalbar" style="margin-top:0"><div class="track"><div class="fill" style="width:'+pct+'%'
+      + (over ? "; background:var(--mint)" : "")+'"></div></div></div>';
+  } else {
+    sh = '<p class="emptyline" style="padding-top:0">오늘 걸음 수는 아직 안 적었어요.</p>';
+  }
+  if(turn){
+    const f = v => (v > 0 ? "+" : "") + fmtKg(Math.round(v*100)/100);
+    sh += '<p class="tiny muted" style="margin:12px 0 0">내 기록 '+turn.n+'일 기준 — '
+      + STEP_TURN.toLocaleString()+'보를 넘긴 날은 다음 날 아침 체중이 <b style="color:'
+      + (turn.hi.m < 0 ? "var(--mint)" : "var(--ink)")+'">'+f(turn.hi.m)+'kg</b>, '
+      + '못 넘긴 날은 <b>'+f(turn.lo.m)+'kg</b>였어요. '
+      + '누가 정한 목표가 아니라 내 몸에서 갈라진 선이에요.</p>';
+  } else {
+    sh += '<p class="tiny muted" style="margin:12px 0 0">걸음 수와 다음 날 체중이 같이 쌓이면, '
+      + '여기에 내 몸의 분기점이 몇 보인지 계산해서 보여 드려요.</p>';
+  }
+  $("#steps-body").innerHTML = sh;
+
   /* 최근 간식 */
   const snacks = collect("snacks", 4);
   $("#snack-preview").innerHTML = snacks.length ? snacks.map(s=>
@@ -2725,6 +2775,79 @@ function splitCompare(inRange, predicate){
   });
   return {A, B};
 }
+
+/* 걸음 수와 "다음 날 아침" 체중.
+   같은 날이 아니라 다음 날을 보는 이유 — 체중은 아침 공복에만 재고,
+   그날 걸은 결과는 그 다음 아침 저울에 나타난다. */
+function stepTurn(){
+  const hi = [], lo = [];
+  Object.keys(state.days).sort().forEach(ds=>{
+    const st = day(ds).steps;
+    if(typeof st !== "number") return;
+    const a = lastKg(ds), b = lastKg(addDays(ds, 1));
+    if(a === null || b === null) return;
+    (st >= STEP_TURN ? hi : lo).push(b - a);
+  });
+  if(hi.length < 5 || lo.length < 5) return null;
+  return {hi:{n:hi.length, m:avg(hi)}, lo:{n:lo.length, m:avg(lo)}, n:hi.length + lo.length};
+}
+
+/* ---------- 약을 바꾸기 전후 ----------
+   약이 바뀌면 그 전 기록은 다시 만들 수 없다. 마운자로 마지막 4주와
+   위고비 첫 4주를 같은 잣대로 나란히 둔다. 아직 안 바꿨으면 왼쪽 칸만 채워진다. */
+const PHASE_DAYS = 28;
+function drugPhases(){
+  const t = todayStr();
+  const we = collect("meds").filter(m=> m.drug === "wegovy").map(m=> m.date).sort()[0];
+  if(!we){
+    return {pre:{from: addDays(t, -(PHASE_DAYS-1)), to: t, label:"마운자로 최근 4주"}, post:null, start:null};
+  }
+  const preTo = addDays(we, -1);
+  const postEnd = addDays(we, PHASE_DAYS-1);
+  return {
+    pre:  {from: addDays(preTo, -(PHASE_DAYS-1)), to: preTo, label:"마운자로 마지막 4주"},
+    post: {from: we, to: (t < postEnd ? t : postEnd), label:"위고비 첫 4주"},
+    start: we
+  };
+}
+function phaseStats(p){
+  const kgs = [], app = [], intake = [], steps = [], se = {};
+  let snacks = 0, snackDays = 0, poopN = 0, poopNone = 0, gutN = 0, gutBad = 0, medN = 0;
+  let cur = p.from;
+  while(cur <= p.to){
+    if(state.days[cur]){
+      const o = day(cur), k = lastKg(cur);
+      if(k !== null) kgs.push({d:cur, k});
+      if(o.appetite) app.push(APP_SCORE[o.appetite]);
+      if(o.intake)   intake.push(INTAKE_SCORE[o.intake]);
+      /* 간식은 "0개인 날"도 세야 평균이 맞다. 그날 뭔가 적은 날만 분모에 넣는다 */
+      if(o.appetite || o.intake || o.snacks.length){ snackDays++; snacks += o.snacks.length; }
+      if(typeof o.steps === "number") steps.push(o.steps);
+      if(o.poop){ poopN++; if(o.poop === "none") poopNone++; }
+      if(o.gut){ gutN++; if(o.gut !== "none") gutBad++; }
+      o.meds.forEach(m=>{ medN++; (m.se||[]).forEach(x=>{ se[x] = (se[x]||0) + 1; }); });
+    }
+    cur = addDays(cur, 1);
+  }
+  /* 주당 변화는 앞뒤 며칠씩의 평균으로 낸다. 첫날과 마지막날만 보면
+     그날의 수분에 따라 결론이 뒤집힌다. */
+  let perWeek = null;
+  if(kgs.length >= 6){
+    const h = Math.min(7, Math.floor(kgs.length / 2));
+    const a = avg(kgs.slice(0, h).map(x=>x.k)), b = avg(kgs.slice(-h).map(x=>x.k));
+    const midA = kgs[Math.floor((h-1)/2)].d, midB = kgs[kgs.length-1-Math.floor((h-1)/2)].d;
+    const span = Math.round((parseYmd(midB) - parseYmd(midA)) / 86400000);
+    if(span >= 7) perWeek = (b - a) / span * 7;
+  }
+  return {p, kgN:kgs.length, kgAvg: kgs.length ? avg(kgs.map(x=>x.k)) : null, perWeek,
+          app: app.length ? avg(app) : null, appN: app.length,
+          intake: intake.length ? avg(intake) : null, intakeN: intake.length,
+          snackPer: snackDays ? snacks / snackDays : null, snackDays,
+          stepAvg: steps.length ? avg(steps) : null, stepN: steps.length,
+          poopNonePct: poopN ? poopNone / poopN * 100 : null, poopN,
+          gutBadPct: gutN ? gutBad / gutN * 100 : null, gutN, se, medN};
+}
+
 /* 생리 주기 일차별 체중 편차 */
 function cycleRhythm(){
   const starts = periodStarts();
@@ -2844,6 +2967,77 @@ function statCtx(){
   return {t, range, from, inRange, dates, ws, series, goal:state.settings.goalWeight};
 }
 
+/* 약 전환 전후 비교 카드.
+   "위고비가 나한테 맞나"는 바꾸고 나서 물어봐야 소용없다 — 비교할 앞쪽이 없어진다.
+   그래서 바꾸기 전부터 왼쪽 칸을 채워 보여준다. */
+function phzRow(label, fa, fb, hasB){
+  return '<div class="phz-r"><span class="phz-lb">'+esc(label)+'</span>'
+    + '<span class="phz-v'+(fa?"":" off")+'">'+(fa || "–")+'</span>'
+    + '<span class="phz-v'+(hasB && fb ? "" : " off")+'">'+((hasB && fb) ? fb : "–")+'</span></div>';
+}
+function switchCompareCard(){
+  const ph = drugPhases();
+  const A = phaseStats(ph.pre), B = ph.post ? phaseStats(ph.post) : null;
+  const hasB = !!(B && B.kgN);
+  /* 아직 바꾸지도 않았고 앞쪽 기록도 얇으면 굳이 띄우지 않는다 */
+  if(!hasB && A.kgN < 7) return "";
+
+  const num = (v, n, min, fmtFn, unit)=> (v === null || n < min) ? null
+    : fmtFn(v) + (unit||"") + '<small>'+n+'일</small>';
+  const sign = v => (v > 0 ? "+" : "") + fmtKg(Math.round(v*100)/100);
+
+  let rows = "";
+  rows += phzRow("주당 체중 변화",
+    A.perWeek === null ? null : '<span style="color:'+(A.perWeek<0?"var(--mint)":"var(--clay)")+'">'+sign(A.perWeek)+'kg</span><small>'+A.kgN+'일</small>',
+    B && B.perWeek !== null ? '<span style="color:'+(B.perWeek<0?"var(--mint)":"var(--clay)")+'">'+sign(B.perWeek)+'kg</span><small>'+B.kgN+'일</small>' : null, hasB);
+  rows += phzRow("평균 체중",
+    num(A.kgAvg, A.kgN, 3, fmtKg, "kg"), B ? num(B.kgAvg, B.kgN, 3, fmtKg, "kg") : null, hasB);
+  rows += phzRow("식욕",
+    num(A.app, A.appN, 3, appLabel, ""), B ? num(B.app, B.appN, 3, appLabel, "") : null, hasB);
+  rows += phzRow("식사량",
+    num(A.intake, A.intakeN, 3, intakeLabel, ""), B ? num(B.intake, B.intakeN, 3, intakeLabel, "") : null, hasB);
+  rows += phzRow("하루 간식",
+    num(A.snackPer, A.snackDays, 3, v=>String(Math.round(v*10)/10), "개"),
+    B ? num(B.snackPer, B.snackDays, 3, v=>String(Math.round(v*10)/10), "개") : null, hasB);
+  rows += phzRow("하루 걸음",
+    num(A.stepAvg, A.stepN, 3, v=>Math.round(v).toLocaleString(), ""),
+    B ? num(B.stepAvg, B.stepN, 3, v=>Math.round(v).toLocaleString(), "") : null, hasB);
+  rows += phzRow("배변 못 본 날",
+    num(A.poopNonePct, A.poopN, 3, v=>String(Math.round(v)), "%"),
+    B ? num(B.poopNonePct, B.poopN, 3, v=>String(Math.round(v)), "%") : null, hasB);
+  rows += phzRow("속 불편한 날",
+    num(A.gutBadPct, A.gutN, 3, v=>String(Math.round(v)), "%"),
+    B ? num(B.gutBadPct, B.gutN, 3, v=>String(Math.round(v)), "%") : null, hasB);
+  const seTxt = o => {
+    const ks = Object.keys(o.se).filter(k=> k !== "none").sort((a,b)=> o.se[b]-o.se[a]);
+    if(!o.medN) return null;
+    return ks.length ? esc(ks.slice(0,2).map(k=> SE_LABEL[k]||k).join(" · ")) + '<small>주사 '+o.medN+'회</small>'
+                     : '없었음<small>주사 '+o.medN+'회</small>';
+  };
+  rows += phzRow("부작용", seTxt(A), B ? seTxt(B) : null, hasB);
+
+  const head = '<div class="phz-h"><span></span><span>'+esc(ph.pre.label)+'</span><span>'
+    + esc(ph.post ? ph.post.label : "위고비 첫 4주")+'</span></div>';
+  let note;
+  if(hasB){
+    const dn = Math.round((parseYmd(ph.post.to) - parseYmd(ph.post.from))/86400000) + 1;
+    note = "위고비 "+dn+"일째예요. 4주가 다 차기 전 숫자는 흔들려요 — 특히 처음 2주는 용량이 낮아서 그렇습니다. "
+         + "판단은 3주차부터 하세요.";
+  } else {
+    note = "아직 위고비 기록이 없어요. 오른쪽 칸은 첫 주사를 기록하면 그날부터 자동으로 채워져요. "
+         + "지금 보이는 왼쪽 숫자가 비교의 기준선이 됩니다.";
+  }
+  return '<div class="card"><p class="sec-label">약 바꾸기 전후</p>'
+    + '<p class="tiny muted" style="margin:-4px 0 14px">'+esc(ph.pre.from.slice(5).replace("-","/"))+' – '
+    + esc(ph.pre.to.slice(5).replace("-","/"))
+    + (ph.post ? ' vs '+esc(ph.post.from.slice(5).replace("-","/"))+' – '+esc(ph.post.to.slice(5).replace("-","/")) : "")
+    + '</p>'
+    + '<div class="phz">'+head+rows+'</div>'
+    + '<p class="tiny muted" style="margin:14px 0 0">'+esc(note)+'</p>'
+    + '<p class="tiny muted" style="margin:8px 0 0">칸 아래 작은 숫자는 그 항목이 기록된 날 수예요. '
+    + '3일보다 적으면 비교하지 않고 – 로 둡니다.</p></div>';
+}
+
 function secSummary(c){
   let out = "";
   const latest = latestWeight();
@@ -2864,6 +3058,8 @@ function secSummary(c){
     + weekStatGrid(wr)
     + '<p class="tiny muted" style="margin:12px 0 0">간식 '+wr.snacks+'회 · 기록한 날 '+wr.days+'일'
     + (wr.avg !== null ? ' · 주 평균 '+fmt1(wr.avg)+'kg' : '')+'</p></div>';
+
+  out += switchCompareCard();
 
   const pl = plateau();
   if(pl){
@@ -3153,6 +3349,20 @@ function secLife(c){
         + '</div>'
         + '<p class="tiny muted" style="margin:10px 0 0">클라이밍은 걸음 수로 거의 잡히지 않아요. '
         + '클라이밍 간 날에 걸음이 적게 찍혀도 <b>덜 움직인 게 아닙니다</b> — 두 숫자는 서로 다른 걸 재요.</p>';
+    }
+    /* 다음 날 아침 체중이 실제로 갈라지는 지점. 목표(6,000)와는 다른 숫자다 */
+    const turn = stepTurn();
+    if(turn){
+      const f = v => (v > 0 ? "+" : "") + fmtKg(Math.round(v*100)/100);
+      out += '<div class="hr"></div><p class="sec-label">'+STEP_TURN.toLocaleString()+'보 — 다음 날 아침 체중이 갈라지는 선</p>'
+        + '<div class="statgrid" style="margin-bottom:6px">'
+        + '<div class="stat"><div class="v" style="color:'+(turn.hi.m<0?"var(--mint)":"var(--ink)")+'">'+f(turn.hi.m)+'kg</div>'
+        + '<div class="l">넘긴 날 다음 아침 ('+turn.hi.n+'일)</div></div>'
+        + '<div class="stat"><div class="v">'+f(turn.lo.m)+'kg</div>'
+        + '<div class="l">못 넘긴 날 다음 아침 ('+turn.lo.n+'일)</div></div>'
+        + '</div>'
+        + '<p class="tiny muted" style="margin:10px 0 0">체중은 아침 공복에만 재니까, 오늘 걸은 결과는 <b>내일 아침</b> 저울에 나타나요. '
+        + '다만 이건 같이 움직인 숫자지 원인은 아니에요 — 많이 걸은 날은 외출한 날이라 먹는 것도 달랐을 수 있어요.</p>';
     }
     out += compareBlock("많이 걸은 날 vs 적게 걸은 날", STEP_GOAL.toLocaleString()+"걸음 이상", "그 미만",
       splitCompare(c.inRange, o=> typeof o.steps === "number" ? (o.steps >= STEP_GOAL) : null),
