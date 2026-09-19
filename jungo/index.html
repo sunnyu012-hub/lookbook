@@ -551,63 +551,127 @@ function boot(){
     renderAll();
   });
 
-  // 끝내 목록을 못 받으면 빈 화면을 보여주는 대신 그렇다고 말한다.
+  // 저장소 기능 자체가 끝내 응답하지 않을 때만 실패로 본다.
   setTimeout(() => {
-    if(storeState === "connecting"){ storeState = "error"; renderAll(); }
-  }, 12000);
+    if(!storeStarted){
+      diag.note = "저장소 기능이 응답하지 않음";
+      storeState = "error"; renderAll();
+    }
+  }, 15000);
 }
 
-let storeStarted = false;
-let emptyGrace = null;
+/* ---- 저장소: 단순 조회가 주 경로, 실시간 구독은 보조 ----
+   예전에는 실시간 구독 하나로만 목록을 받아서, 그 통로가 막히면
+   저장소에 물건이 멀쩡히 있어도 화면에 아무것도 못 띄웠다. */
+let storeStarted = false, unsub = null, live = false, fetching = false, retryTimer = null;
+const diag = { fetch:null, sub:null, note:"" };
+
+function applyDocs(docs, definitive){
+  const fresh = docs.map(d => normalize(d.data() || {}, d.id));
+  // 아직 확정되지 않은 빈 목록으로 내 목록을 덮지 않는다.
+  if(!definitive && !fresh.length && items.length) return;
+  // 지금 열어 둔 물건은 화면에서 고치는 중이니 서버 사본으로 덮지 않는다.
+  items = openItem ? fresh.map(f => f.id === openItem.id ? openItem : f) : fresh;
+  if(openItem && !fresh.some(f => f.id === openItem.id)) items.push(openItem);
+  if(items.length) markUsed();
+}
+
+async function fetchOnce(why){
+  if(!db || fetching) return false;
+  fetching = true;
+  try{
+    const snap = await db.collection("items").get();
+    applyDocs(snap.docs, true);
+    ready = true; settled = true; storeState = "ready";
+    diag.fetch = { ok:true, n:snap.docs.length, why, at:Date.now() };
+    renderAll();
+    return true;
+  }catch(e){
+    diag.fetch = { ok:false, code:(e && e.code) || "?", msg:(e && e.message) || String(e), why, at:Date.now() };
+    console.error("items.get", e);
+    return false;
+  }finally{ fetching = false; }
+}
+
+function subscribe(){
+  if(!db) return;
+  try{ unsub && unsub(); }catch(_){}
+  try{
+    unsub = db.collection("items").onSnapshot(
+      snap => {
+        live = true;
+        diag.sub = { ok:true, n:snap.docs.length, at:Date.now() };
+        applyDocs(snap.docs, !(snap.metadata && snap.metadata.fromCache));
+        ready = true; settled = true; storeState = "ready";
+        renderAll();
+      },
+      err => {
+        live = false;
+        diag.sub = { ok:false, code:(err && err.code) || "?", msg:(err && err.message) || "", at:Date.now() };
+        console.error("items.onSnapshot", err);
+        fetchOnce("구독 끊김").then(ok => { if(!ok) markError(); });
+        setTimeout(subscribe, 8000);   // 새로 구독하는 것이 유일한 복구 수단
+      });
+  }catch(e){
+    live = false;
+    diag.sub = { ok:false, code:"throw", msg:String((e && e.message) || e), at:Date.now() };
+  }
+}
+
+function markError(){
+  if(items.length) return;   // 보여줄 게 있으면 실패라고 하지 않는다
+  storeState = "error"; renderAll();
+}
+
+async function reload(){
+  if(!db){ renderAll(); return; }
+  clearTimeout(retryTimer);
+  storeState = items.length ? "ready" : "connecting";
+  renderAll();
+  const ok = await fetchOnce("다시 불러오기");
+  if(ok) subscribe(); else markError();
+}
+
 function startStore(){
   if(storeStarted) return;
   storeStarted = true;
 
-  if(db){
-    backend = "db";
-    // 설정은 목록을 막지 않고 따로 읽는다.
-    db.doc("config/app").get()
-      .then(snap => { if(snap.exists){ cfg = Object.assign(cfg, snap.data()); renderAll(); } })
-      .catch(e => console.warn("cfg load", e));
-    db.collection("items").onSnapshot(
-      snap => {
-        const fresh = snap.docs.map(doc => normalize(doc.data() || {}, doc.id));
-        const cached = !!(snap.metadata && snap.metadata.fromCache);
-
-        // 아직 서버가 확정하지 않은 빈 목록으로 내 목록을 덮지 않는다.
-        if(cached && !fresh.length && items.length){ ready = true; renderAll(); return; }
-
-        // 지금 열어 둔 물건은 화면에서 고치는 중이니 서버 사본으로 덮지 않는다.
-        items = openItem ? fresh.map(f => f.id === openItem.id ? openItem : f) : fresh;
-        if(openItem && !fresh.some(f => f.id === openItem.id)) items.push(openItem);
-
-        ready = true;
-        // 확정 스냅샷이거나 받아온 게 있으면 바로 "다 받았다"로 본다.
-        // 캐시로 온 빈 목록만 잠깐 더 기다린다.
-        if(!cached || fresh.length){
-          settled = true; storeState = "ready";
-          clearTimeout(emptyGrace); emptyGrace = null;
-        }else if(!settled && !emptyGrace){
-          emptyGrace = setTimeout(() => {
-            settled = true; storeState = "ready"; renderAll();
-          }, 2000);
-        }
-        if(items.length) markUsed();
-        renderAll();
-      },
-      err => {
-        console.error("db", err);
-        // 못 불러왔는데 빈 목록을 보여주면 기록이 사라진 것처럼 보인다. 사실대로 말한다.
-        if(!ready){ storeState = "error"; }
-        else toast("동기화가 끊겼어요. 새로고침해 주세요.");
-        renderAll();
-      });
-  }else{
+  if(!db){
     backend = "local";
     items = lsRead(LS_ITEMS, []);
     cfg = Object.assign(cfg, lsRead(LS_CFG, {}));
     ready = true; settled = true; storeState = "ready";
+    renderAll();
+    return;
   }
+
+  backend = "db";
+  db.doc("config/app").get()
+    .then(snap => { if(snap.exists){ cfg = Object.assign(cfg, snap.data()); renderAll(); } })
+    .catch(e => console.warn("cfg load", e));
+
+  // 1) 먼저 그냥 한 번 읽어온다 (가장 단순하고 잘 되는 경로)
+  fetchOnce("첫 로딩").then(ok => {
+    if(ok) return;
+    // 2) 실패하면 조용히 재시도한다. 세 번 해보고 그때 알린다.
+    let n = 0;
+    const again = async () => {
+      n++;
+      if(await fetchOnce("자동 재시도 " + n)) return;
+      if(n < 3) retryTimer = setTimeout(again, n * 3000); else markError();
+    };
+    retryTimer = setTimeout(again, 2000);
+  });
+
+  // 3) 실시간 갱신은 보조로 붙인다. 안 붙어도 앱은 돌아간다.
+  subscribe();
+
+  // 4) 실시간이 죽어 있으면 주기적으로, 그리고 앱으로 돌아올 때마다 다시 읽는다.
+  setInterval(() => { if(!live && !document.hidden) fetchOnce("주기 확인"); }, 30000);
+  document.addEventListener("visibilitychange", () => {
+    if(!document.hidden && !live) fetchOnce("화면 복귀");
+  });
+
   renderAll();
 }
 
@@ -954,6 +1018,24 @@ function renderSettings(){
     <div class="btn-row"><button class="btn ghost" id="backupBtn">전체 백업 내려받기</button></div>
     <div class="hint">물건·판매 기록·설정을 파일 하나로 저장해요. 사진은 빼고 글과 숫자만 담깁니다.</div>
   </div>
+
+  <div class="sec">
+    <div class="sec-h"><span>연결 상태</span><button class="act" id="diagRefresh">다시 확인</button></div>
+    <div class="group">
+      <div class="field"><label>저장 위치</label><div style="flex:1;text-align:right;font-size:15px">${
+        backend === "db" ? "계정 (기기 동기화)" : "이 브라우저"}</div></div>
+      <div class="field"><label>목록 읽기</label><div style="flex:1;text-align:right;font-size:15px;color:${
+        diag.fetch ? (diag.fetch.ok ? "var(--s-sold)" : "var(--red)") : "var(--label-2)"}">${
+        diag.fetch ? (diag.fetch.ok ? `정상 · ${diag.fetch.n}개` : `실패 (${esc(diag.fetch.code)})`) : "아직"}</div></div>
+      <div class="field"><label>실시간 갱신</label><div style="flex:1;text-align:right;font-size:15px;color:${
+        live ? "var(--s-sold)" : "var(--label-2)"}">${
+        live ? "연결됨" : (diag.sub && !diag.sub.ok ? `끊김 (${esc(diag.sub.code)})` : "대기")}</div></div>
+    </div>
+    ${(diag.fetch && !diag.fetch.ok) || diag.note ? `<div class="hint warn">${
+      esc(diag.note || diag.fetch.msg || "")}</div>` : ""}
+    <div class="hint">실시간 갱신이 끊겨도 목록 읽기가 정상이면 앱은 문제없이 쓸 수 있어요.
+      다른 기기에서 바꾼 내용은 앱을 다시 열 때 반영됩니다.</div>
+  </div>
   <div style="height:20px"></div>`;
 }
 
@@ -976,7 +1058,7 @@ document.addEventListener("click", ev => {
   if(t.closest("#quickAdd")){ openQuickAdd(); return; }
   if(t.closest("#hideDemo")){ demoOn = false; markUsed(); renderAll(); return; }
   if(t.closest("#showDemo")){ demoOn = true; setTab("today"); return; }
-  if(t.closest("#retryLoad")){ location.reload(); return; }
+  if(t.closest("#retryLoad")){ reload(); return; }
   const todo = t.closest("[data-todo]");        if(todo){ handleTodo(todo.dataset.todo, todo.dataset.id); return; }
 
   if(t.closest("#bumpAll")){
@@ -997,6 +1079,7 @@ document.addEventListener("click", ev => {
   if(rmn){ cfg.snippets.splice(+rmn.dataset.rmsnip,1); saveCfg(true); renderSettings(); toast("지웠어요"); return; }
   if(t.closest("#resetSnip")){ cfg.snippets = DEFAULT_SNIPPETS.slice(); saveCfg(true); renderSettings(); toast("기본 멘트로 되돌렸어요"); return; }
   if(t.closest("#backupBtn")){ backup(t.closest("#backupBtn")); return; }
+  if(t.closest("#diagRefresh")){ reload().then(() => renderSettings()); return; }
 });
 
 document.addEventListener("input", ev => {
