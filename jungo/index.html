@@ -425,6 +425,9 @@ let backend = "local";
 let items = [];
 let ready = false;      // 목록을 한 번이라도 받았는가
 let settled = false;    // 서버가 확정한 목록을 받았는가 (캐시 스냅샷 아님)
+/* 저장소 상태: 목록이 비어 보일 때 "진짜 빈 것"과 "아직 못 받은 것"을 절대 섞지 않는다 */
+let storeState = "connecting";   // connecting | ready | error
+let demoOn = false;              // 예시는 사용자가 직접 켤 때만 나온다
 let cfg = { fees:{}, tone:"default", styleSamples:[], closing:"", snippets: DEFAULT_SNIPPETS.slice(), bumpDays:7 };
 
 const blobCache = new Map();
@@ -528,7 +531,9 @@ const DEMO = [
 ];
 /* 예시는 "서버가 비었다고 확정했고, 한 번도 쓴 적이 없을 때"만 보여준다.
    로딩 중이거나 연결이 잠깐 끊긴 순간에는 절대 예시로 돌아가지 않는다. */
-const showingDemo = () => settled && !everUsed && items.length === 0;
+/* 예시는 오직 사용자가 "예시 보기"를 눌렀을 때만.
+   저장소가 느리거나 끊겼다고 해서 내 목록이 예시로 바뀌는 일은 이제 없다. */
+const showingDemo = () => demoOn && items.length === 0;
 const view = () => showingDemo() ? DEMO.map(d => normalize(d, d.id)) : items;
 
 /* ===================== 초기화 ===================== */
@@ -546,8 +551,10 @@ function boot(){
     renderAll();
   });
 
-  // 서버가 끝내 확정해 주지 않아도 화면이 로딩에 머물지 않게 한다.
-  setTimeout(() => { if(!settled){ settled = true; renderAll(); } }, 5000);
+  // 끝내 목록을 못 받으면 빈 화면을 보여주는 대신 그렇다고 말한다.
+  setTimeout(() => {
+    if(storeState === "connecting"){ storeState = "error"; renderAll(); }
+  }, 12000);
 }
 
 let storeStarted = false;
@@ -575,32 +582,31 @@ function startStore(){
         if(openItem && !fresh.some(f => f.id === openItem.id)) items.push(openItem);
 
         ready = true;
-        // 확정 스냅샷이거나, 받아온 게 있으면 바로 화면을 연다.
-        // 캐시로 온 빈 목록만 잠깐 기다렸다가 "정말 비었다"로 인정한다.
+        // 확정 스냅샷이거나 받아온 게 있으면 바로 "다 받았다"로 본다.
+        // 캐시로 온 빈 목록만 잠깐 더 기다린다.
         if(!cached || fresh.length){
-          settled = true;
-          clearTimeout(emptyGrace);
+          settled = true; storeState = "ready";
+          clearTimeout(emptyGrace); emptyGrace = null;
         }else if(!settled && !emptyGrace){
-          emptyGrace = setTimeout(() => { settled = true; renderAll(); }, 1500);
+          emptyGrace = setTimeout(() => {
+            settled = true; storeState = "ready"; renderAll();
+          }, 2000);
         }
         if(items.length) markUsed();
         renderAll();
       },
       err => {
         console.error("db", err);
-        if(!ready){
-          backend = "local";
-          items = lsRead(LS_ITEMS, []);
-          cfg = Object.assign(cfg, lsRead(LS_CFG, {}));
-          ready = true; settled = true;
-        }else toast("동기화가 끊겼어요. 새로고침해 주세요.");
+        // 못 불러왔는데 빈 목록을 보여주면 기록이 사라진 것처럼 보인다. 사실대로 말한다.
+        if(!ready){ storeState = "error"; }
+        else toast("동기화가 끊겼어요. 새로고침해 주세요.");
         renderAll();
       });
   }else{
     backend = "local";
     items = lsRead(LS_ITEMS, []);
     cfg = Object.assign(cfg, lsRead(LS_CFG, {}));
-    ready = true; settled = true;
+    ready = true; settled = true; storeState = "ready";
   }
   renderAll();
 }
@@ -652,7 +658,8 @@ function renderNav(){
   const s = stats();
   $("#navTitle").textContent = { today:"오늘", items:"물건", stats:"분석", settings:"설정" }[tab];
   let sub;
-  if(!ready) sub = "불러오는 중…";
+  if(storeState === "connecting") sub = "불러오는 중…";
+  else if(storeState === "error") sub = "목록을 불러오지 못했어요 · 기록은 그대로 있어요";
   else if(showingDemo()) sub = "예시를 보고 있어요 · + 로 내 물건을 넣어보세요";
   else if(tab === "stats") sub = `누적 ${won(s.total)}원 · ${s.soldCount}건 판매`;
   else if(tab === "settings") sub = backend === "db" ? "기기 사이에 자동으로 동기화돼요" : "이 브라우저에만 저장돼요";
@@ -698,10 +705,15 @@ function renderToday(){
   </div>`;
 
   const banner = showingDemo() ? `<div class="sec"><div class="aicard" style="background:var(--accent-soft)">
-    <h4 style="color:var(--accent)">예시 화면이에요</h4>
+    <h4 style="color:var(--accent)">예시를 보고 있어요</h4>
     지금 보이는 세 개는 사용법을 보여주는 예시라 저장되지 않아요.
-    오른쪽 아래 <b>+</b> 를 눌러 첫 물건을 넣으면 예시는 사라집니다.
-    <div style="margin-top:10px"><button class="btn sm" id="hideDemo">예시 지우고 빈 화면으로</button></div>
+    <div style="margin-top:10px"><button class="btn sm" id="hideDemo">예시 끄기</button></div>
+    </div></div>`
+  : storeState === "error" ? `<div class="sec"><div class="aicard" style="border:1px solid var(--red)">
+    <h4 style="color:var(--red)">목록을 불러오지 못했어요</h4>
+    저장해 둔 물건은 그대로 있습니다. 화면에 못 가져온 것뿐이에요.
+    잠시 뒤 다시 시도해 주세요.
+    <div style="margin-top:10px"><button class="btn sm tint" id="retryLoad">다시 불러오기</button></div>
     </div></div>` : "";
 
   const todoHTML = todos.length ? `<div class="sec">
@@ -713,8 +725,9 @@ function renderToday(){
       <button class="btn sm ${t.kind==="bump"?"primary":"tint"}" data-todo="${esc(t.kind)}" data-id="${esc(t.it.id)}">${esc(t.cta)}</button>
     </div>`).join("")}</div></div>` : `<div class="sec">
     <div class="sec-h"><span>지금 하면 되는 일</span></div>
-    <div class="group"><div class="empty">${!settled && !items.length
-      ? `<b>불러오는 중…</b>저장해 둔 물건을 가져오고 있어요.`
+    <div class="group"><div class="empty">${
+        storeState === "connecting" ? `<b>불러오는 중…</b>저장해 둔 물건을 가져오고 있어요.`
+      : storeState === "error"      ? `<b>불러오지 못했어요</b>기록은 지워지지 않았어요. 다시 시도해 주세요.`
       : `<b>다 해두셨어요</b>새로 정리할 물건이 생기면 + 를 눌러 던져두세요.`}</div></div></div>`;
 
   const listed = byStatus("listed");
@@ -755,9 +768,16 @@ function renderItems(){
                sold:["아직 판 물건이 없어요","거래가 끝나면 판매로 옮겨두세요. 분석 탭에 쌓입니다."],
                held:["보류된 물건이 없어요","팔까 말까 고민되는 건 여기로 밀어두세요."] }[segment];
 
+  const emptyBody =
+      storeState === "connecting" ? `<b>불러오는 중…</b>저장해 둔 물건을 가져오고 있어요.`
+    : storeState === "error"      ? `<b>불러오지 못했어요</b>기록은 지워지지 않았어요.
+        <div style="margin-top:12px"><button class="btn sm tint" id="retryLoad">다시 불러오기</button></div>`
+    : `<b>${esc(EM[0])}</b>${esc(EM[1])}${(!items.length && !demoOn)
+        ? `<div style="margin-top:12px"><button class="btn sm" id="showDemo">예시로 사용법 보기</button></div>` : ""}`;
+
   const body = rows.length
     ? `<div class="group" style="margin-top:14px">${rows.map(i => itemRow(i)).join("")}</div>`
-    : `<div class="group" style="margin-top:14px"><div class="empty"><b>${esc(EM[0])}</b>${esc(EM[1])}</div></div>`;
+    : `<div class="group" style="margin-top:14px"><div class="empty">${emptyBody}</div></div>`;
 
   const dueRows = rows.filter(bumpDue);
   const bumpAll = (segment === "listed" && dueRows.length > 1)
@@ -931,6 +951,8 @@ function renderSettings(){
       <span class="it-s">${backend === "db" ? "다른 기기에서 열어도 그대로 보여요" : "브라우저 데이터를 지우면 사라져요"}</span>
     </span></div></div>
     <div class="hint">물건 ${items.length}개 · 사진 ${items.reduce((a,i)=>a+i.photos.length,0)}장</div>
+    <div class="btn-row"><button class="btn ghost" id="backupBtn">전체 백업 내려받기</button></div>
+    <div class="hint">물건·판매 기록·설정을 파일 하나로 저장해요. 사진은 빼고 글과 숫자만 담깁니다.</div>
   </div>
   <div style="height:20px"></div>`;
 }
@@ -952,7 +974,9 @@ document.addEventListener("click", ev => {
   const seg = t.closest("[data-seg]");          if(seg){ segment = seg.dataset.seg; renderItems(); return; }
   const go = t.closest("[data-goseg]");         if(go){ segment = go.dataset.goseg; setTab("items"); return; }
   if(t.closest("#quickAdd")){ openQuickAdd(); return; }
-  if(t.closest("#hideDemo")){ markUsed(); renderAll(); toast("예시를 지웠어요"); return; }
+  if(t.closest("#hideDemo")){ demoOn = false; markUsed(); renderAll(); return; }
+  if(t.closest("#showDemo")){ demoOn = true; setTab("today"); return; }
+  if(t.closest("#retryLoad")){ location.reload(); return; }
   const todo = t.closest("[data-todo]");        if(todo){ handleTodo(todo.dataset.todo, todo.dataset.id); return; }
 
   if(t.closest("#bumpAll")){
@@ -972,6 +996,7 @@ document.addEventListener("click", ev => {
   const rmn = t.closest("[data-rmsnip]");
   if(rmn){ cfg.snippets.splice(+rmn.dataset.rmsnip,1); saveCfg(true); renderSettings(); toast("지웠어요"); return; }
   if(t.closest("#resetSnip")){ cfg.snippets = DEFAULT_SNIPPETS.slice(); saveCfg(true); renderSettings(); toast("기본 멘트로 되돌렸어요"); return; }
+  if(t.closest("#backupBtn")){ backup(t.closest("#backupBtn")); return; }
 });
 
 document.addEventListener("input", ev => {
@@ -1864,6 +1889,33 @@ ${r.msg}
     + `<div class="hint">그대로 보내도 되고, 고쳐 보내도 돼요.</div>`;
   s.body.querySelectorAll("[data-cp]").forEach(b =>
     b.addEventListener("click", () => copyText(d[+b.dataset.cp].text || "")));
+}
+
+/* ===================== 백업 ===================== */
+async function backup(btn){
+  if(storeState !== "ready"){ toast("목록을 다 불러온 뒤에 받아주세요."); return; }
+  if(!items.length){ toast("백업할 물건이 없어요."); return; }
+  const d = new Date();
+  const stamp = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`;
+  const payload = JSON.stringify({
+    savedAt: new Date().toISOString(), app: "중고 정리함", version: 1,
+    settings: cfg, items,
+  }, null, 2);
+
+  if(downloads){
+    const orig = btn.innerHTML;
+    btn.innerHTML = `<span class="spin"></span> 준비 중…`; btn.disabled = true;
+    try{
+      await downloads.save({ filename: `중고정리함_백업_${stamp}.json`, data: payload });
+      toast(`물건 ${items.length}개를 백업했어요`);
+    }catch(e){
+      if(e && e.code !== "declined") toast("백업 파일을 저장하지 못했어요.");
+    }finally{ btn.innerHTML = orig; btn.disabled = false; }
+    return;
+  }
+  // 내려받기가 막힌 화면에서는 복사해서 어디든 붙여넣을 수 있게
+  const ok = await copyText(payload);
+  if(ok) toast("백업 내용을 복사했어요. 메모장에 붙여넣어 두세요.");
 }
 
 /* ===================== 시작 ===================== */
