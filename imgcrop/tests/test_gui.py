@@ -206,6 +206,45 @@ class GuiTests(unittest.TestCase):
         self.assertTrue(self.pump(lambda: len(self.app.detection.elements) != before))
         self.assertEqual(len(self.app.detection.elements), 1)
 
+    def test_trim_mode_yields_one_element_covering_everything(self):
+        self.assertTrue(self.pump(lambda: self.app.detection is not None))
+        self.app._set_split("none")
+        self.assertTrue(self.pump(
+            lambda: self.app.detection is not None
+            and len(self.app.detection.elements) == 1))
+        # 세 덩어리 전부를 감싸는 하나의 박스
+        self.assertEqual(self.app.detection.elements[0].box, (20, 20, 210, 220))
+        self.assertEqual(self.app.settings().split_mode, "none")
+
+    def test_trim_mode_hides_element_only_controls(self):
+        """여백만 자를 때는 요소 분리용 조절기가 화면에서 사라진다."""
+        self.app._set_split("none")
+        self.root.update()
+        self.assertFalse(self.app.element_frame.winfo_ismapped())
+        self.assertTrue(self.app.trim_hint.winfo_ismapped())
+
+        self.app._set_split("auto")
+        self.root.update()
+        self.assertTrue(self.app.element_frame.winfo_ismapped())
+        self.assertFalse(self.app.trim_hint.winfo_ismapped())
+        # 되돌렸을 때 제자리로 와야 한다. before= 없이 다시 pack 하면
+        # 패널 맨 아래, 출력 설정 뒤로 밀려난다.
+        self.assertLess(self.app.element_frame.winfo_y(),
+                        self.app.section_gap.winfo_y())
+
+    def test_trim_mode_saves_a_single_file(self):
+        self.assertTrue(self.pump(lambda: self.app.detection is not None))
+        self.app._set_split("none")
+        self.assertTrue(self.pump(
+            lambda: self.app.detection is not None
+            and len(self.app.detection.elements) == 1))
+        self.app.save(all_files=True)
+        self.assertTrue(self.pump(lambda: not getattr(self.app, "saving", False), timeout=60))
+        made = sorted((self.tmp / "sheet_cut").glob("*.png"))
+        self.assertEqual(len(made), 1)
+        with Image.open(made[0]) as done:
+            self.assertEqual(done.size, (190, 200))
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

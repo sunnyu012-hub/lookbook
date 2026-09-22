@@ -27,7 +27,7 @@ def build_parser() -> argparse.ArgumentParser:
   imgcrop sheet.png -o out --preset cutout     # 배경 지우고 투명 PNG로
   imgcrop sheet.png -o out --grid 4x3           # 격자대로 자르기
   imgcrop sheet.png -o out --grid auto          # 격자 모양은 알아서
-  imgcrop photo.jpg -o out --preset trim       # 여백만 제거
+  imgcrop photo.jpg -o out --preset trim       # 나누지 않고 바깥 여백만 제거
   imgcrop assets/ -o out -r --size 512x512     # 폴더 전체를 512x512로
 """,
     )

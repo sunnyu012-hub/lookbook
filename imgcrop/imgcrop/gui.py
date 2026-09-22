@@ -36,7 +36,7 @@ SPLIT_MODES = [
     ("연결된 덩어리", "components"),
     ("투영 분할 (XY-cut)", "xycut"),
     ("격자 분할", "grid"),
-    ("나누지 않고 여백만 제거", "none"),
+    ("여백만 자르기 (나누지 않음)", "none"),
 ]
 OUTPUT_MODES = [("원본 크기 그대로", "tight"), ("정사각형", "square"), ("크기 고정", "fixed")]
 FIT_MODES = [("전체가 보이게", "contain"), ("꽉 차게 잘라냄", "cover")]
@@ -326,7 +326,10 @@ class App:
             widget.bind("<Button-5>", on_wheel)
 
         self._build_detect_section(body)
-        ttk.Separator(body).pack(fill="x", pady=14)
+        # 검출/출력 구분선. 접었다 펴는 위젯들이 이 앞으로 돌아오도록
+        # 기준점으로 들고 있는다. before= 없이 다시 pack 하면 패널 맨 아래로 밀린다.
+        self.section_gap = ttk.Separator(body)
+        self.section_gap.pack(fill="x", pady=14)
         self._build_output_section(body)
 
     def _build_detect_section(self, body: ttk.Frame) -> None:
@@ -351,15 +354,23 @@ class App:
             anchor="w", pady=(0, 10))
         self.tol_scale = self._slider(body, "임계값 (클수록 배경으로 판정)", self.v_tol, 6, 140, 1)
         self._slider(body, "경계 장벽", self.v_edge, 0, 2.0, 0.1, "{:.1f}")
-        self._slider(body, "장식 붙이는 거리", self.v_attach, 0, 20, 0.5, "{:.1f}%")
-        self._slider(body, "남은 작은 조각 버리기", self.v_min_rel, 0, 60, 1, "{:.0f}%")
-        self._slider(body, "최소 요소 크기", self.v_min_area, 0, 3.0, 0.01, "{:.2f}%")
-        self._slider(body, "붙은 요소 떼어내기", self.v_separation, 0, 20, 1, "{:.0f}px")
-        self._slider(body, "가까운 요소 합치기", self.v_merge, 0, 120, 1, "{:.0f}px")
         self._slider(body, "잡티 제거", self.v_denoise, 0, 8, 1, "{:.0f}px")
-        theme.Check(body, "쪼개진 요소 합치기", self.v_merge_overlap,
+
+        # 아래 조절기들은 요소를 나눌 때만 쓰인다. 여백만 자를 때는 손댈 게
+        # 없으므로 통째로 감춘다. 보이는데 아무 효과가 없는 게 제일 헷갈린다.
+        self.element_frame = ttk.Frame(body, style="Card.TFrame")
+        self.element_frame.pack(fill="x")
+        self._slider(self.element_frame, "장식 붙이는 거리", self.v_attach, 0, 20, 0.5, "{:.1f}%")
+        self._slider(self.element_frame, "남은 작은 조각 버리기", self.v_min_rel, 0, 60, 1, "{:.0f}%")
+        self._slider(self.element_frame, "최소 요소 크기", self.v_min_area, 0, 3.0, 0.01, "{:.2f}%")
+        self._slider(self.element_frame, "붙은 요소 떼어내기", self.v_separation, 0, 20, 1, "{:.0f}px")
+        self._slider(self.element_frame, "가까운 요소 합치기", self.v_merge, 0, 120, 1, "{:.0f}px")
+        theme.Check(self.element_frame, "쪼개진 요소 합치기", self.v_merge_overlap,
                     command=self.schedule_detect, font=self.fonts.small).pack(
             anchor="w", pady=(0, 4))
+
+        self.trim_hint = ttk.Label(
+            body, text="배경을 뺀 나머지 전체를 한 장으로 잘라냅니다.", style="Muted.TLabel")
 
     def _build_output_section(self, body: ttk.Frame) -> None:
         ttk.Label(body, text="잘라내기 / 출력", style="Heading.TLabel").pack(anchor="w", pady=(0, 10))
@@ -419,6 +430,12 @@ class App:
             self.grid_frame.pack(fill="x", pady=(0, 12), before=self.tol_scale.row)
         else:
             self.grid_frame.pack_forget()
+        if value == "none":
+            self.element_frame.pack_forget()
+            self.trim_hint.pack(anchor="w", pady=(0, 6), before=self.section_gap)
+        else:
+            self.trim_hint.pack_forget()
+            self.element_frame.pack(fill="x", before=self.section_gap)
         self.schedule_detect()
 
     def guess_grid(self) -> None:

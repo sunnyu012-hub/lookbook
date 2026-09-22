@@ -362,6 +362,30 @@ def detect(
     )
     empty = Detection(Path(path) if path else None, (w, h), [], info,
                       rgba if keep_arrays else None, None)
+
+    # 여백만 잘라내는 모드는 요소를 셀 이유가 없다. 라벨링과 최소 크기 필터를
+    # 거치면 점 하나나 얇은 선이 "요소가 아니다"라고 걸러지고, 그만큼 크롭이
+    # 그림 안쪽을 파고든다. 전경 마스크의 경계를 그대로 쓴다.
+    if settings.split_mode == "none":
+        if mask.any():
+            ys, xs = np.nonzero(mask)
+            box = (int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1)
+            keep = mask
+        else:
+            # 전부 한 가지 색이면 잘라낼 여백이 없다는 뜻이다.
+            # 빈 결과를 돌려주면 파일이 하나도 안 나오므로 원본을 그대로 쓴다.
+            box = (0, 0, w, h)
+            keep = np.ones_like(mask)
+        info["elements"] = 1
+        return Detection(
+            Path(path) if path else None,
+            (w, h),
+            [Element(index=1, box=box, area=int(keep.sum()), labels=(1,))],
+            info,
+            rgba if keep_arrays else None,
+            keep.astype(np.int32) if keep_arrays else None,
+        )
+
     if not mask.any():
         info["elements"] = 0
         return empty
@@ -387,19 +411,7 @@ def detect(
         return empty
 
     mode = settings.split_mode
-    if mode == "none":
-        boxes = list(parts.values())
-        groups = [
-            (
-                min(b[0] for b in boxes),
-                min(b[1] for b in boxes),
-                max(b[2] for b in boxes),
-                max(b[3] for b in boxes),
-                sum(b[4] for b in boxes),
-                [m for ms in members.values() for m in ms],
-            )
-        ]
-    elif mode == "grid":
+    if mode == "grid":
         cols, rows = settings.grid_cols, settings.grid_rows
         if cols <= 0 or rows <= 0:
             # 연결된 덩어리를 먼저 훑어 배치를 보고 격자 모양을 추정한다
@@ -431,8 +443,7 @@ def detect(
     else:
         raise ValueError(f"알 수 없는 분할 모드: {mode}")
 
-    if mode != "none":
-        groups = _drop_outlier_specks(groups, settings.min_relative_area)
+    groups = _drop_outlier_specks(groups, settings.min_relative_area)
 
     # 위 -> 아래, 왼쪽 -> 오른쪽 (읽는 순서)
     if groups:

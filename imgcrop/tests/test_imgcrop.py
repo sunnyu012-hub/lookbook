@@ -4,6 +4,7 @@ import shutil
 import sys
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
@@ -452,6 +453,80 @@ class PipelineTests(unittest.TestCase):
         gray = self.tmp / "gray.png"
         Image.new("L", (30, 30), 128).save(gray)
         self.assertEqual(load_rgba(gray).shape, (30, 30, 4))
+
+
+class TrimTests(unittest.TestCase):
+    """여백만 자르기(split_mode="none")."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_trim_box_covers_every_non_background_pixel(self):
+        # 큰 덩어리 하나와, 요소로는 쳐주지 않을 만큼 작은 점 두 개.
+        img = sheet_with_blocks([
+            (150, 120, 160, 126, (20, 20, 20)),
+            (300, 250, 600, 450, (40, 110, 220)),
+            (818, 600, 824, 606, (200, 30, 30)),
+        ], size=(900, 700))
+        det = detect(np.asarray(img.convert("RGBA")), preset("trim"))
+        self.assertEqual(len(det.elements), 1)
+        self.assertEqual(det.elements[0].box, (150, 120, 824, 606))
+
+    def test_trim_ignores_element_size_filters(self):
+        """작은 점을 버리는 설정을 켜 두어도 여백 자르기는 영향을 받지 않는다.
+
+        예전에는 요소 검출 필터를 그대로 통과시킨 뒤 남은 박스를 합쳤기 때문에,
+        점이나 얇은 선이 걸러지면 그만큼 크롭이 그림 안쪽을 파고들었다.
+        """
+        img = sheet_with_blocks([
+            (40, 40, 46, 46, (0, 0, 0)),
+            (150, 150, 300, 260, (10, 90, 200)),
+        ], size=(400, 300))
+        settings = replace(preset("trim"), min_area_ratio=0.05, min_side=60,
+                           min_relative_area=0.9)
+        det = detect(np.asarray(img.convert("RGBA")), settings)
+        self.assertEqual(det.elements[0].box, (40, 40, 300, 260))
+
+    def test_trim_handles_transparent_margin(self):
+        img = sheet_with_blocks([(60, 40, 180, 150, (220, 60, 60))],
+                                size=(320, 240), mode="RGBA")
+        det = detect(np.asarray(img), preset("trim"))
+        self.assertEqual(det.elements[0].box, (60, 40, 180, 150))
+
+    def test_trim_cutout_keeps_whole_foreground(self):
+        """누끼를 함께 켜도 잘라낸 안의 내용이 사라지지 않는다."""
+        img = sheet_with_blocks([
+            (40, 40, 80, 80, (0, 0, 0)),
+            (150, 150, 300, 260, (10, 90, 200)),
+        ], size=(400, 300))
+        settings = replace(preset("trim"), cutout=True, background="transparent")
+        rgba = np.asarray(img.convert("RGBA"))
+        det = detect(rgba, settings)
+        out = np.asarray(render_element(det, det.elements[0], settings))
+        # 두 덩어리 모두 불투명하게 남아 있어야 한다.
+        self.assertEqual(out[10, 10, 3], 255)          # 작은 사각형 안
+        self.assertEqual(out[160, 160, 3], 255)        # 큰 사각형 안
+        self.assertEqual(out[10, 200, 3], 0)           # 배경이던 자리
+
+    def test_trim_of_already_tight_image_is_a_no_op(self):
+        img = sheet_with_blocks([(0, 0, 200, 150, (30, 140, 90))], size=(200, 150))
+        det = detect(np.asarray(img.convert("RGBA")), preset("trim"))
+        self.assertEqual(det.elements[0].box, (0, 0, 200, 150))
+
+    def test_cli_trim_writes_one_file(self):
+        src = self.tmp / "sheet.png"
+        sheet_with_blocks([(40, 30, 90, 80, (0, 0, 0)),
+                           (200, 150, 340, 260, (20, 80, 200))],
+                          size=(400, 300)).save(src)
+        out = self.tmp / "out"
+        self.assertEqual(cli_main([str(src), "-o", str(out), "--preset", "trim", "-q"]), 0)
+        made = sorted(out.glob("*.png"))
+        self.assertEqual(len(made), 1)
+        with Image.open(made[0]) as done:
+            self.assertEqual(done.size, (300, 230))
 
 
 if __name__ == "__main__":
