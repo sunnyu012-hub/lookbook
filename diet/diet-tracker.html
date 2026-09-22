@@ -258,6 +258,12 @@ input.big{font-family:"IBM Plex Mono",monospace; font-size:31px; font-weight:600
 .mr-note{background:var(--surface); border:1px solid var(--line); font-size:14px; padding:10px 12px}
 .mealrow.done .mr-note{border-color:transparent}
 .menubank{margin-top:16px; padding-top:14px; border-top:1px solid var(--line2)}
+/* 끼니 만족도 — 별 다섯 개. 안 누르면 그냥 비어 있는 게 기본이다 */
+.satrow{display:flex; align-items:center; gap:8px; margin-top:9px}
+.satrow .sat-stars{display:flex; gap:1px; flex:none}
+.satrow .sat{font-size:17px; line-height:1; padding:3px 2px; color:var(--faint); transition:color .12s}
+.satrow .sat[aria-pressed="true"]{color:var(--ochre)}
+.satrow .sat-lb{font-size:11.5px; color:var(--muted); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .mealnote-line{display:block; width:100%; text-align:left; margin-top:12px; font-size:12.5px; color:var(--ink2); line-height:1.55}
 .mealnote-line.empty{color:var(--muted)}
 
@@ -851,6 +857,7 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
                 </span>
               </div>
               <input type="text" class="mr-note" id="mn-b" data-mn="b" placeholder="뭘 먹었나요 (쉼표로 나눠서)">
+              <div class="satrow" id="ms-b"></div>
               <div class="photorow" id="ph-b"></div>
             </div>
             <div class="mealrow" id="mrow-l">
@@ -865,6 +872,7 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
                 </span>
               </div>
               <input type="text" class="mr-note" id="mn-l" data-mn="l" placeholder="뭘 먹었나요 (쉼표로 나눠서)">
+              <div class="satrow" id="ms-l"></div>
               <div class="photorow" id="ph-l"></div>
             </div>
             <div class="mealrow" id="mrow-d">
@@ -879,6 +887,7 @@ svg.chart{width:100%; height:auto; display:block; overflow:visible}
                 </span>
               </div>
               <input type="text" class="mr-note" id="mn-d" data-mn="d" placeholder="뭘 먹었나요 (쉼표로 나눠서)">
+              <div class="satrow" id="ms-d"></div>
               <div class="photorow" id="ph-d"></div>
             </div>
             <div class="mealrow" id="mrow-s">
@@ -1318,6 +1327,9 @@ const SE_LABEL = SIDE_EFFECTS.reduce((o,[k,v])=>{o[k]=v; return o;}, {});
 const PERIODS = {start:"생리 시작", on:"생리 중"};
 const MEALS3 = [["b","아침","🌅"],["l","점심","🍚"],["d","저녁","🌙"]];
 const MEAL_KIND = {home:"집밥", out:"외식·배달", conv:"간편식"};
+/* 끼니 만족도 — "많이 먹었나"가 아니라 "그 끼니로 충분했나".
+   아래쪽은 모자람, 위쪽은 만족. 약을 바꾸면 여기가 먼저 움직인다. */
+const MEALSAT = {1:"턱없이 부족", 2:"조금 아쉬움", 3:"적당", 4:"좋았음", 5:"아주 좋았음"};
 const APPETITE = {none:"없음", low:"적음", ok:"적당", high:"많음"};
 const APP_SCORE = {none:0, low:1, ok:2, high:3};
 const INTAKE = {less:"조금", same:"원래대로", more:"많이"};
@@ -1456,7 +1468,8 @@ const state = {
 
 function emptyDay(date){
   return { date, meals:{b:false,l:false,d:false}, lunchbox:null, eatout:null, caffeine:null,
-           mealNotes:{b:"",l:"",d:""}, mealKind:{b:null,l:null,d:null}, photos:{b:[],l:[],d:[],s:[]}, steps:null,
+           mealNotes:{b:"",l:"",d:""}, mealKind:{b:null,l:null,d:null}, mealSat:{b:null,l:null,d:null},
+           photos:{b:[],l:[],d:[],s:[]}, steps:null,
            appetite:null, intake:null, drink:null, latenight:null, gut:null, period:null, flow:null, poop:null, poopType:null, review:null, weights:[], workouts:[], snacks:[], meds:[], fits:[], inbody:[], habits:{} };
 }
 /* db가 돌려주는 문서는 얼려져 있어 그대로 고칠 수 없다.
@@ -1467,6 +1480,10 @@ function normalizeDay(src, date){
     n.meals = Object.assign(n.meals, src.meals || {});
     n.mealNotes = Object.assign(n.mealNotes, src.mealNotes || {});
     n.mealKind  = Object.assign(n.mealKind,  src.mealKind  || {});
+    if(src.mealSat) MEALS3.forEach(([k])=>{
+      const v = Math.round(Number(src.mealSat[k]));
+      n.mealSat[k] = (v >= 1 && v <= 5) ? v : null;
+    });
     if(src.photos) PHOTO_SLOTS.forEach(([k])=>{ if(Array.isArray(src.photos[k])) n.photos[k] = src.photos[k].slice(); });
     ["weights","workouts","snacks","meds","fits","inbody"].forEach(k=>{
       if(Array.isArray(src[k])) n[k] = src[k].map(x=> Object.assign({}, x));
@@ -2175,8 +2192,10 @@ function dayDetailHTML(ds){
 
   const mealsTxt = MEALS3
     .map(([k,n])=> '<span class="pill '+(o.meals[k]?"done":"rest")+'">'+n+(o.meals[k]?" ✓":"")+'</span>').join(" ");
-  const noteLines = MEALS3.filter(([k])=> (o.mealNotes[k]||"").trim()).map(([k,n])=>
-    '<p class="rvline" style="margin-bottom:6px"><b>'+n+(o.mealKind[k]?" · "+MEAL_KIND[o.mealKind[k]]:"")+'</b>'+esc(o.mealNotes[k])+'</p>');
+  const noteLines = MEALS3.filter(([k])=> (o.mealNotes[k]||"").trim() || o.mealSat[k]).map(([k,n])=>
+    '<p class="rvline" style="margin-bottom:6px"><b>'+n+(o.mealKind[k]?" · "+MEAL_KIND[o.mealKind[k]]:"")
+    + (o.mealSat[k] ? ' · <span style="color:var(--ochre)">'+"★".repeat(o.mealSat[k])+'</span> '+esc(MEALSAT[o.mealSat[k]]) : "")
+    + '</b>'+esc(o.mealNotes[k]||"")+'</p>');
   const photoLines = PHOTO_SLOTS.filter(([k])=> (o.photos[k]||[]).length).map(([k,nm])=>
     '<p class="tiny muted" style="margin:10px 0 0">'+esc(nm)+'</p><div class="photorow">'+photoStripHTML(ds, k, false)+'</div>');
   const extra = [];
@@ -2499,6 +2518,16 @@ function renderMenuBank(){
   $("#menubank-chips").innerHTML = names.map(n=>
     '<button class="chip xs" type="button" data-menu="'+esc(n)+'">'+esc(n)+'</button>').join("");
 }
+/* 별 다섯 개. 같은 별을 다시 누르면 지워진다 (칩과 같은 규칙) */
+function satRowHTML(k, v){
+  let stars = "";
+  for(let i=1;i<=5;i++){
+    stars += '<button class="sat" type="button" data-msat="'+k+':'+i+'" aria-pressed="'+(v >= i ? "true" : "false")
+      + '" aria-label="'+i+'점">'+(v >= i ? "★" : "☆")+'</button>';
+  }
+  return '<span class="sat-stars">'+stars+'</span>'
+    + '<span class="sat-lb">'+(v ? esc(MEALSAT[v]) : "이 끼니로 충분했나요")+'</span>';
+}
 function renderMealPanel(){
   const ds = mealDate(), d = day(ds);
   $("#m-datelabel").textContent = fullLabel(ds);
@@ -2507,6 +2536,7 @@ function renderMealPanel(){
     $("#mrow-"+k).classList.toggle("done", done);
     $$('[data-mmeal="'+k+'"]')[0].setAttribute("aria-pressed", done ? "true" : "false");
     setChip($("#mk-"+k), d.mealKind[k]);
+    $("#ms-"+k).innerHTML = satRowHTML(k, d.mealSat[k]);
     const el = $("#mn-"+k), val = d.mealNotes[k] || "";
     if(document.activeElement !== el && el.value !== val) el.value = val;
   });
@@ -2811,7 +2841,7 @@ function drugPhases(){
   };
 }
 function phaseStats(p){
-  const kgs = [], app = [], intake = [], steps = [], se = {};
+  const kgs = [], app = [], intake = [], steps = [], mealSat = [], se = {};
   let snacks = 0, snackDays = 0, poopN = 0, poopNone = 0, gutN = 0, gutBad = 0, medN = 0;
   let cur = p.from;
   while(cur <= p.to){
@@ -2822,6 +2852,7 @@ function phaseStats(p){
       if(o.intake)   intake.push(INTAKE_SCORE[o.intake]);
       /* 간식은 "0개인 날"도 세야 평균이 맞다. 그날 뭔가 적은 날만 분모에 넣는다 */
       if(o.appetite || o.intake || o.snacks.length){ snackDays++; snacks += o.snacks.length; }
+      MEALS3.forEach(([k])=>{ if(o.mealSat[k]) mealSat.push(o.mealSat[k]); });
       if(typeof o.steps === "number") steps.push(o.steps);
       if(o.poop){ poopN++; if(o.poop === "none") poopNone++; }
       if(o.gut){ gutN++; if(o.gut !== "none") gutBad++; }
@@ -2843,6 +2874,7 @@ function phaseStats(p){
           app: app.length ? avg(app) : null, appN: app.length,
           intake: intake.length ? avg(intake) : null, intakeN: intake.length,
           snackPer: snackDays ? snacks / snackDays : null, snackDays,
+          mealSat: mealSat.length ? avg(mealSat) : null, mealSatN: mealSat.length,
           stepAvg: steps.length ? avg(steps) : null, stepN: steps.length,
           poopNonePct: poopN ? poopNone / poopN * 100 : null, poopN,
           gutBadPct: gutN ? gutBad / gutN * 100 : null, gutN, se, medN};
@@ -2982,8 +3014,8 @@ function switchCompareCard(){
   /* 아직 바꾸지도 않았고 앞쪽 기록도 얇으면 굳이 띄우지 않는다 */
   if(!hasB && A.kgN < 7) return "";
 
-  const num = (v, n, min, fmtFn, unit)=> (v === null || n < min) ? null
-    : fmtFn(v) + (unit||"") + '<small>'+n+'일</small>';
+  const num = (v, n, min, fmtFn, unit, cu)=> (v === null || n < min) ? null
+    : fmtFn(v) + (unit||"") + '<small>'+n+(cu||"일")+'</small>';
   const sign = v => (v > 0 ? "+" : "") + fmtKg(Math.round(v*100)/100);
 
   let rows = "";
@@ -2999,6 +3031,9 @@ function switchCompareCard(){
   rows += phzRow("하루 간식",
     num(A.snackPer, A.snackDays, 3, v=>String(Math.round(v*10)/10), "개"),
     B ? num(B.snackPer, B.snackDays, 3, v=>String(Math.round(v*10)/10), "개") : null, hasB);
+  rows += phzRow("끼니 만족도",
+    num(A.mealSat, A.mealSatN, 3, v=>String(Math.round(v*10)/10), "점", "끼"),
+    B ? num(B.mealSat, B.mealSatN, 3, v=>String(Math.round(v*10)/10), "점", "끼") : null, hasB);
   rows += phzRow("하루 걸음",
     num(A.stepAvg, A.stepN, 3, v=>Math.round(v).toLocaleString(), ""),
     B ? num(B.stepAvg, B.stepN, 3, v=>Math.round(v).toLocaleString(), "") : null, hasB);
@@ -3034,8 +3069,8 @@ function switchCompareCard(){
     + '</p>'
     + '<div class="phz">'+head+rows+'</div>'
     + '<p class="tiny muted" style="margin:14px 0 0">'+esc(note)+'</p>'
-    + '<p class="tiny muted" style="margin:8px 0 0">칸 아래 작은 숫자는 그 항목이 기록된 날 수예요. '
-    + '3일보다 적으면 비교하지 않고 – 로 둡니다.</p></div>';
+    + '<p class="tiny muted" style="margin:8px 0 0">칸 아래 작은 숫자는 그 항목이 기록된 횟수예요. '
+    + '3번보다 적으면 비교하지 않고 – 로 둡니다.</p></div>';
 }
 
 function secSummary(c){
@@ -3488,6 +3523,61 @@ function secLife(c){
     });
     out += '<p class="tiny muted" style="margin:10px 0 0">집밥 '+Math.round(kindCount.home/kTot*100)+'% · 기록한 '+kTot+'끼니 기준.</p>';
   }
+  /* 끼니 만족도 — 덜 먹어서 생긴 빈자리는 대개 다른 걸로 채워진다 */
+  const satAll = [], satBy = {b:[], l:[], d:[]}, satKind = {home:[], out:[], conv:[]};
+  c.dates.forEach(ds=>{
+    const o = day(ds);
+    MEALS3.forEach(([k])=>{
+      const v = o.mealSat[k];
+      if(!v) return;
+      satAll.push(v); satBy[k].push(v);
+      if(o.mealKind[k] && satKind[o.mealKind[k]]) satKind[o.mealKind[k]].push(v);
+    });
+  });
+  if(satAll.length >= 5){
+    const lowN = satAll.filter(v=> v <= 2).length;
+    out += '<div class="hr"></div><p class="sec-label">끼니 만족도</p>'
+      + '<p class="tiny muted" style="margin:-4px 0 10px">많이 먹었는지가 아니라 <b>그 끼니로 충분했는지</b>예요. '
+      + '약을 바꾸거나 용량이 달라지면 여기가 먼저 움직입니다.</p>'
+      + '<div class="statgrid" style="margin-bottom:6px">'
+      + '<div class="stat"><div class="v">'+(Math.round(avg(satAll)*10)/10)+'</div><div class="l">평균 · 기록 '+satAll.length+'끼</div></div>'
+      + '<div class="stat"><div class="v" style="color:'+(lowN?"var(--clay)":"var(--ink)")+'">'+lowN+'끼</div><div class="l">아쉬웠던 끼니 (2점 이하)</div></div>'
+      + '</div>';
+    const bar = (label, arr) => {
+      if(!arr.length) return "";
+      const m = avg(arr);
+      return '<div class="barrow"><span class="lb">'+esc(label)+'</span><span class="tr"><span class="fl" style="width:'
+        + Math.round(m/5*100)+'%; background:'+(m < 3 ? "var(--clay)" : "var(--ochre)")+'"></span></span>'
+        + '<span class="vl">'+(Math.round(m*10)/10)+'</span></div>';
+    };
+    out += '<p class="sec-label" style="margin:18px 0 4px">끼니별</p>'
+      + MEALS3.map(([k,nm])=> bar(nm, satBy[k])).join("");
+    if(satKind.home.length + satKind.out.length + satKind.conv.length >= 5){
+      out += '<p class="sec-label" style="margin:18px 0 4px">종류별</p>'
+        + bar("집밥", satKind.home) + bar("외식·배달", satKind.out) + bar("간편식", satKind.conv);
+    }
+    /* 아쉬운 끼니가 그날 간식으로 이어지는지 */
+    const lowDays = [], okDays = [];
+    c.dates.forEach(ds=>{
+      const o = day(ds);
+      const vs = MEALS3.map(([k])=> o.mealSat[k]).filter(Boolean);
+      if(!vs.length) return;
+      (vs.some(v=> v <= 2) ? lowDays : okDays).push(o.snacks.length);
+    });
+    if(lowDays.length >= 3 && okDays.length >= 3){
+      /* 해석은 실제 방향을 따라간다. 미리 정해둔 결론을 붙이면 거짓말이 된다 */
+      const lm = avg(lowDays), om = avg(okDays);
+      out += '<p class="tiny muted" style="margin:14px 0 0">아쉬운 끼니가 있던 날은 간식이 하루 <b>'
+        + (Math.round(lm*10)/10)+'개</b>, 없던 날은 <b>'+(Math.round(om*10)/10)+'개</b>였어요.'
+        + (lm - om >= 0.3 ? ' 덜 먹어서 생긴 빈자리가 다른 걸로 채워지는 모양이에요.'
+         : om - lm >= 0.3 ? ' 아쉬운 끼니와 간식이 같이 가지는 않네요.'
+         : ' 아직 뚜렷한 차이는 없어요.')+'</p>';
+    }
+  } else {
+    out += '<div class="hr"></div><p class="sec-label">끼니 만족도</p>'
+      + needMore("기록 > 식사에서 끼니마다 별을 눌러두면, 어떤 끼니가 충분했고 어떤 끼니가 아쉬웠는지 정리해 드려요.");
+  }
+
   out += compareBlock("집밥만 먹은 날 vs 외식한 날", "집밥만", "외식 있음",
     splitCompare(c.inRange, o=> { const a = ateOut(o); return a === null ? null : !a; }),
     "외식이 다음날 숫자에 어떻게 이어지는지 봅니다. 외식은 원래 계획의 일부예요.");
@@ -3842,7 +3932,7 @@ function csvCell(v){
 function buildCsv(){
   const hs = state.settings.habits || [];
   const rows = [["날짜","요일","체중(kg)","컨디션(1-5)","수면(h)","붓기","생리","아침","점심","저녁",
-    "도시락","외식","카페인","아침 메뉴","점심 메뉴","저녁 메뉴","끼니 종류","식욕","식사량","음주","야식","속 불편함","배변","배변 상태","생리 양","운동","간식","약","몸의 반응","옷 핏","기준 옷","허리(cm)","엉덩이(cm)","허벅지(cm)",
+    "도시락","외식","카페인","아침 메뉴","점심 메뉴","저녁 메뉴","끼니 종류","끼니 만족도","식욕","식사량","음주","야식","속 불편함","배변","배변 상태","생리 양","운동","간식","약","몸의 반응","옷 핏","기준 옷","허리(cm)","엉덩이(cm)","허벅지(cm)",
     "걸음 수","인바디 체중(kg)","골격근량(kg)","체지방률(%)","내장지방레벨",
     "습관 달성","습관 전체","메모"]];
   Object.keys(state.days).sort().forEach(ds=>{
@@ -3859,6 +3949,7 @@ function buildCsv(){
       o.caffeine ? (CAFF[o.caffeine]||o.caffeine) : "",
       o.mealNotes.b || "", o.mealNotes.l || "", o.mealNotes.d || "",
       MEALS3.filter(([k])=> o.mealKind[k]).map(([k,n])=> n+" "+MEAL_KIND[o.mealKind[k]]).join(" | "),
+      MEALS3.filter(([k])=> o.mealSat[k]).map(([k,n])=> n+" "+o.mealSat[k]+"("+MEALSAT[o.mealSat[k]]+")").join(" | "),
       o.appetite ? APPETITE[o.appetite] : "",
       o.intake ? INTAKE[o.intake] : "",
       o.drink ? DRINK[o.drink] : "",
@@ -4803,6 +4894,15 @@ function handleClick(e){
     inp.value = parts.join(", ");
     saveMealNote(k);
     return;
+  }
+
+  const msat = el.closest("[data-msat]");
+  if(msat){
+    const parts = msat.dataset.msat.split(":"), k = parts[0], v = Number(parts[1]);
+    return mutate(mealDate(), d=>{
+      d.mealSat[k] = (d.mealSat[k] === v) ? null : v;
+      if(d.mealSat[k] && !d.meals[k]) d.meals[k] = true;
+    });
   }
 
   const mmeal = el.closest("[data-mmeal]");
