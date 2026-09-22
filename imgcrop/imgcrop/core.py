@@ -370,7 +370,20 @@ def detect(
         if mask.any():
             ys, xs = np.nonzero(mask)
             box = (int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1)
+            # 누끼용 마스크는 잡티 제거를 빼고 다시 만든다. 잡티 제거는
+            # "점 하나 때문에 크롭이 넓어지는 것"을 막으려고 있는 것이지,
+            # 그림에 구멍을 내라는 뜻이 아니다. 잘라내기는 요소가 하나뿐이라
+            # 지워야 할 이웃도 없으므로 깎지 않은 마스크가 맞다.
             keep = mask
+            if settings.denoise > 0 and settings.cutout:
+                keep, _ = build_mask(
+                    rgba,
+                    tolerance=settings.tolerance,
+                    denoise=0,
+                    fill=settings.fill,
+                    edge_barrier=settings.edge_barrier,
+                )
+                keep |= mask
         else:
             # 전부 한 가지 색이면 잘라낼 여백이 없다는 뜻이다.
             # 빈 결과를 돌려주면 파일이 하나도 안 나오므로 원본을 그대로 쓴다.

@@ -511,6 +511,52 @@ class TrimTests(unittest.TestCase):
         self.assertEqual(out[160, 160, 3], 255)        # 큰 사각형 안
         self.assertEqual(out[10, 200, 3], 0)           # 배경이던 자리
 
+    def test_trim_cutout_keeps_lone_pixels_that_denoise_would_eat(self):
+        """잡티 제거가 켜져 있어도 누끼가 그림에 구멍을 내면 안 된다.
+
+        잡티 제거는 점 하나 때문에 크롭이 넓어지는 걸 막으려고 있는 것이지,
+        칠해진 픽셀을 지우라는 뜻이 아니다. 잘라내기는 요소가 하나뿐이라
+        지워야 할 이웃도 없다.
+        """
+        canvas = np.zeros((300, 300, 4), dtype=np.uint8)
+        canvas[60:140, 60:140] = (30, 120, 200, 255)     # 본체 왼쪽
+        canvas[60:140, 200:260] = (30, 120, 200, 255)    # 본체 오른쪽
+        canvas[100, 170] = (30, 120, 200, 255)           # 둘 사이에 떨어진 점 하나
+        settings = replace(preset("trim"), cutout=True, background="transparent",
+                           denoise=1)
+        det = detect(canvas, settings)
+        x0, y0, x1, y1 = det.elements[0].box
+        self.assertEqual((x0, x1), (60, 260))
+        out = np.asarray(render_element(det, det.elements[0], settings))
+        self.assertEqual(out[100 - y0, 170 - x0, 3], 255)
+
+    def test_trim_cutout_only_drops_near_invisible_alpha(self):
+        """알파가 임계값 아래인 픽셀만 사라진다."""
+        canvas = np.zeros((120, 120, 4), dtype=np.uint8)
+        canvas[40:80, 40:80] = (200, 40, 40, 255)
+        canvas[40:80, 26:30] = (200, 40, 40, 90)   # 흐리지만 보이는 띠
+        canvas[40:80, 90:94] = (200, 40, 40, 4)    # 거의 안 보이는 띠
+        settings = replace(preset("trim"), cutout=True, background="transparent")
+        det = detect(canvas, settings)
+        x0, y0, x1, y1 = det.elements[0].box
+        self.assertEqual(x0, 26)    # 흐린 띠까지 포함
+        self.assertEqual(x1, 80)    # 알파 4짜리 띠는 뺀다
+        out = np.asarray(render_element(det, det.elements[0], settings))
+        self.assertEqual(out[50 - y0, 27 - x0, 3], 90)
+
+    def test_cli_denoise_flag_reaches_settings(self):
+        src = self.tmp / "dot.png"
+        canvas = np.zeros((160, 160, 4), dtype=np.uint8)
+        canvas[50:110, 50:110] = (20, 160, 90, 255)
+        canvas[80, 130] = (20, 160, 90, 255)
+        Image.fromarray(canvas, "RGBA").save(src)
+        out = self.tmp / "out"
+        self.assertEqual(
+            cli_main([str(src), "-o", str(out), "--mode", "none",
+                      "--denoise", "0", "-q"]), 0)
+        with Image.open(next(out.glob("*.png"))) as done:
+            self.assertEqual(done.size, (81, 60))   # 떨어진 점까지 포함
+
     def test_trim_of_already_tight_image_is_a_no_op(self):
         img = sheet_with_blocks([(0, 0, 200, 150, (30, 140, 90))], size=(200, 150))
         det = detect(np.asarray(img.convert("RGBA")), preset("trim"))

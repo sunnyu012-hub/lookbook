@@ -44,6 +44,8 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--tolerance", metavar="N|auto", help="배경 판정 임계값 (기본: auto)")
     g.add_argument("--edge-barrier", type=float, metavar="F",
                    help="경계 장벽 강도, 0이면 끔 (기본: 1.0)")
+    g.add_argument("--denoise", type=int, metavar="PX",
+                   help="잡티 제거 반경(px). 0이면 끔 (기본 1)")
     g.add_argument("--min-area", type=float, metavar="R",
                    help="전체 대비 최소 요소 크기 비율 (기본: 0.0005)")
     g.add_argument("--min-relative-area", type=float, metavar="R",
@@ -100,6 +102,8 @@ def settings_from_args(args: argparse.Namespace) -> Settings:
         s.tolerance = args.tolerance if args.tolerance == "auto" else int(args.tolerance)
     if args.edge_barrier is not None:
         s.edge_barrier = args.edge_barrier
+    if args.denoise is not None:
+        s.denoise = max(0, args.denoise)
     if args.min_area is not None:
         s.min_area_ratio = args.min_area
     if args.min_relative_area is not None:
