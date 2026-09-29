@@ -206,6 +206,12 @@
     background:color-mix(in srgb,var(--c) 14%,transparent);
   }
   .cell .ev.plan{opacity:.75;border:1px dashed color-mix(in srgb,var(--c) 45%,transparent)}
+  .cell .ev{cursor:grab}
+  .cell .ev:active{cursor:grabbing}
+  .cell .ev.dragging{opacity:.35}
+  .cell.drop{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent-soft)}
+  #calMsg{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)}
+  #calUndo{padding:3px 10px;font-size:12px}
   @media(max-width:700px){.cell{min-height:64px}.cell .ev{font-size:10px;padding:1px 4px}}
 
   /* ── 키워드 보드 ── */
@@ -395,8 +401,10 @@
       <span class="mon" id="mon"></span>
       <button class="ghost" id="nextM" type="button">›</button>
       <button class="ghost" id="todayB" type="button">오늘</button>
+      <span class="state" id="calMsg"></span>
     </div>
     <div class="cal" id="cal"></div>
+    <p class="foot">칩을 다른 날짜 칸으로 <b>끌어다 놓으면</b> 발행일이 바뀝니다. 잘못 옮겼으면 위쪽 <b>되돌리기</b>를 누르세요. 다른 달로 옮길 때는 글을 <b>불러오기</b> 해서 날짜를 고치면 됩니다. 터치 화면에서는 끌기가 동작하지 않습니다.</p>
     <div class="card" id="dayPanel" style="margin-top:16px"></div>
   </section>
 
@@ -749,7 +757,7 @@ function renderCal(){
     const key=y+'-'+pad(m+1)+'-'+pad(d);
     // 칸이 좁아 제목 대신 메인키워드를 쓴다. 키워드가 없으면 제목으로 대신하고, 전체 제목은 툴팁에 남긴다.
     const evs=(byDate[key]||[]).map(p=>
-      '<div class="ev'+(p.status==='발행'?'':' plan')+'" style="--c:'+chColor(p.ch)+'" data-load="'+p.id+'" title="'+esc(p.title)+(p.kw?' — '+esc(p.kw):'')+'">'+esc(p.kw||p.title)+'</div>').join('');
+      '<div class="ev'+(p.status==='발행'?'':' plan')+'" style="--c:'+chColor(p.ch)+'" data-load="'+p.id+'" data-id="'+p.id+'" draggable="true" title="'+esc(p.title)+(p.kw?' — '+esc(p.kw):'')+' · 끌어서 날짜 이동">'+esc(p.kw||p.title)+'</div>').join('');
     html+='<div class="cell'+(key===TODAY?' today':'')+(key===selDate?' sel':'')+'" data-date="'+key+'">'+
       '<span class="d">'+d+'</span>'+evs+'</div>';
   }
@@ -787,6 +795,59 @@ $('#dayPanel').addEventListener('click',e=>{
   const b=e.target.closest('[data-load]');
   if(b) loadPost(b.dataset.load);
 });
+// ── 칩을 다른 날짜로 끌어다 놓아 발행일 옮기기 ──
+let dragId=null, lastMove=null;
+$('#cal').addEventListener('dragstart',e=>{
+  const ev=e.target.closest('.ev'); if(!ev) return;
+  dragId=ev.dataset.id;
+  e.dataTransfer.effectAllowed='move';
+  try{ e.dataTransfer.setData('text/plain',dragId) }catch(err){}
+  ev.classList.add('dragging');
+});
+$('#cal').addEventListener('dragend',()=>{
+  dragId=null;
+  $$('#cal .dragging').forEach(x=>x.classList.remove('dragging'));
+  $$('#cal .drop').forEach(x=>x.classList.remove('drop'));
+});
+$('#cal').addEventListener('dragover',e=>{
+  const cell=e.target.closest('.cell'); if(!cell||!cell.dataset.date) return;
+  e.preventDefault(); e.dataTransfer.dropEffect='move';
+  if(!cell.classList.contains('drop')){
+    $$('#cal .drop').forEach(x=>x.classList.remove('drop'));
+    cell.classList.add('drop');
+  }
+});
+$('#cal').addEventListener('drop',e=>{
+  const cell=e.target.closest('.cell'); if(!cell||!cell.dataset.date) return;
+  e.preventDefault();
+  movePost(dragId||e.dataTransfer.getData('text/plain'),cell.dataset.date);
+});
+// 날짜만 바꾼다. 실수로 놓아도 한 번에 복구되도록 되돌리기를 남긴다.
+function movePost(id,date){
+  const p=posts.find(x=>x.id===id);
+  if(!p||!date||p.date===date){ renderCal(); return }
+  const from=p.date;
+  p.date=date; savePosts();
+  lastMove={id,from,to:date};
+  if(editingId===id) $('#pdate').value=date;
+  renderCal(); renderNav();
+  calMsg(esc(p.kw||p.title)+' · '+(from?fmtD(from):'날짜 없음')+' → <b>'+fmtD(date)+'</b>',true);
+}
+function calMsg(html,undo){
+  $('#calMsg').innerHTML=html+(undo?' <button class="ghost" id="calUndo" type="button">되돌리기</button>':'');
+  const u=$('#calUndo');
+  if(u) u.onclick=()=>{
+    if(!lastMove) return;
+    const back=lastMove, p=posts.find(x=>x.id===back.id);
+    lastMove=null;
+    if(p){
+      p.date=back.from; savePosts();
+      if(editingId===p.id) $('#pdate').value=p.date;
+    }
+    renderCal(); renderNav();
+    calMsg(esc((p&&(p.kw||p.title))||'')+' · '+fmtD(back.to)+' → <b>'+(back.from?fmtD(back.from):'날짜 없음')+'</b> 로 되돌렸습니다.');
+  };
+}
 $('#prevM').onclick=()=>{cur.setMonth(cur.getMonth()-1);renderCal()};
 $('#nextM').onclick=()=>{cur.setMonth(cur.getMonth()+1);renderCal()};
 $('#todayB').onclick=()=>{cur=new Date();cur.setDate(1);selDate=TODAY;renderCal()};
