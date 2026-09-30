@@ -29,6 +29,7 @@ from .core import (
     preset,
     process_file,
 )
+from . import prefs
 from .layout import infer_grid
 
 SPLIT_MODES = [
@@ -88,7 +89,12 @@ class App:
     def _build_vars(self) -> None:
         # GUI는 가장 자주 쓰는 형태(배경 지운 투명 PNG, 원본 크기)로 시작한다
         d = preset("cutout")
-        self.v_split = tk.StringVar(value=d.split_mode)
+        # 지난번에 고른 방식으로 시작한다. 켤 때마다 "나누기"로 돌아가면
+        # 여백만 자르려는 사람은 매번 같은 곳을 다시 찾아 눌러야 한다.
+        self.v_split = tk.StringVar(value=prefs.split_mode(d.split_mode))
+        # "나누기"로 되돌릴 때 복구할 방식 (격자나 XY-cut 을 쓰던 사람 배려)
+        start = self.v_split.get()
+        self.last_split_mode = start if start != "none" else d.split_mode
         self.v_cols = tk.IntVar(value=d.grid_cols)
         self.v_rows = tk.IntVar(value=d.grid_rows)
         self.v_auto_tol = tk.BooleanVar(value=True)
@@ -119,6 +125,7 @@ class App:
         self.v_source = tk.StringVar(value="미리보기")
         self.v_out_dir = tk.StringVar(value="")
         self.v_out_label = tk.StringVar(value=DEFAULT_OUT_LABEL)
+        self.v_mode_hint = tk.StringVar(value="")
 
     @staticmethod
     def _number(var, fallback, cast=int):
@@ -235,6 +242,18 @@ class App:
         tk.Frame(self.root, background=self.colors["border"], height=1).pack(fill="x")
 
     def _build_sidebar(self, parent: ttk.Frame) -> None:
+        mode_card = self._card(parent, "작업 방식", fill="x", pady=(0, 10))
+        self.btn_split = ttk.Button(
+            mode_card, text="요소별로 나누기",
+            command=lambda: self._set_split(self.last_split_mode))
+        self.btn_split.pack(fill="x")
+        self.btn_trim = ttk.Button(
+            mode_card, text="여백만 자르기",
+            command=lambda: self._set_split("none"))
+        self.btn_trim.pack(fill="x", pady=(5, 0))
+        ttk.Label(mode_card, textvariable=self.v_mode_hint, style="Muted.TLabel",
+                  wraplength=196, justify="left").pack(anchor="w", pady=(8, 0))
+
         card = self._card(parent, "이미지", fill="both", expand=True)
 
         holder = ttk.Frame(card, style="Card.TFrame")
@@ -425,7 +444,16 @@ class App:
 
     def _set_split(self, value: str) -> None:
         self.v_split.set(value)
+        if value != "none":
+            self.last_split_mode = value
+        prefs.save(split_mode=value)
         self._sync_combo(self.split_combo, SPLIT_MODES, value)
+        trimming = value == "none"
+        self.btn_trim.configure(style="Accent.TButton" if trimming else "TButton")
+        self.btn_split.configure(style="TButton" if trimming else "Accent.TButton")
+        self.v_mode_hint.set("여백만 잘라 한 장으로 저장합니다."
+                             if trimming else
+                             "요소를 찾아 낱장으로 나눠 저장합니다.")
         if value == "grid":
             self.grid_frame.pack(fill="x", pady=(0, 12), before=self.tol_scale.row)
         else:

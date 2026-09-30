@@ -3,6 +3,7 @@
 헤드리스 환경에서는 Xvfb 등으로 DISPLAY를 띄운 뒤 실행하면 된다.
 """
 
+import os
 import shutil
 import sys
 import tempfile
@@ -62,6 +63,10 @@ class GuiTests(unittest.TestCase):
         gui_module.messagebox = self.messages
 
         self.tmp = Path(tempfile.mkdtemp())
+        # 설정 저장 위치를 테스트 폴더로 돌려, 실제 사용자 설정을 건드리지 않는다
+        self.real_config_dir = os.environ.get("IMGCROP_CONFIG_DIR")
+        os.environ["IMGCROP_CONFIG_DIR"] = str(self.tmp / "cfg")
+
         self.source = self.tmp / "sheet.png"
         make_sheet(self.source)
 
@@ -70,6 +75,10 @@ class GuiTests(unittest.TestCase):
 
     def tearDown(self):
         self.gui_module.messagebox = self.real_messagebox
+        if self.real_config_dir is None:
+            os.environ.pop("IMGCROP_CONFIG_DIR", None)
+        else:
+            os.environ["IMGCROP_CONFIG_DIR"] = self.real_config_dir
         try:
             self.app.close()
         except Exception:
@@ -244,6 +253,47 @@ class GuiTests(unittest.TestCase):
         self.assertEqual(len(made), 1)
         with Image.open(made[0]) as done:
             self.assertEqual(done.size, (190, 200))
+
+    def test_mode_buttons_switch_and_highlight(self):
+        self.app._set_split("none")
+        self.root.update()
+        self.assertEqual(str(self.app.btn_trim["style"]), "Accent.TButton")
+        self.assertEqual(str(self.app.btn_split["style"]), "TButton")
+        self.assertIn("여백만", self.app.v_mode_hint.get())
+
+        self.app.btn_split.invoke()
+        self.root.update()
+        self.assertEqual(self.app.v_split.get(), "auto")
+        self.assertEqual(str(self.app.btn_split["style"]), "Accent.TButton")
+
+        self.app.btn_trim.invoke()
+        self.root.update()
+        self.assertEqual(self.app.v_split.get(), "none")
+
+    def test_mode_button_restores_the_last_splitting_mode(self):
+        """격자를 쓰던 사람이 여백만 자르기를 갔다 오면 격자로 돌아와야 한다."""
+        self.app._set_split("grid")
+        self.app._set_split("none")
+        self.app.btn_split.invoke()
+        self.assertEqual(self.app.v_split.get(), "grid")
+
+    def test_chosen_mode_survives_a_restart(self):
+        """다시 켰을 때 "나누기"로 되돌아가면 안 된다."""
+        self.app._set_split("none")
+        self.root.update()
+        self.app.close()
+
+        root2 = tk.Tk()
+        try:
+            app2 = self.gui_module.App(root2, initial=[str(self.source)])
+            self.assertEqual(app2.v_split.get(), "none")
+            self.assertEqual(app2.settings().split_mode, "none")
+            app2.close()
+        finally:
+            try:
+                root2.destroy()
+            except Exception:
+                pass
 
 
 if __name__ == "__main__":

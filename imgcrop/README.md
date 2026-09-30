@@ -85,6 +85,19 @@ python -m imgcrop assets/ -o out -r
 python -m imgcrop sheet.png --dry-run
 ```
 
+## GUI 작업 방식
+
+왼쪽 위 **작업 방식**에서 둘 중 하나를 고릅니다.
+
+| 버튼 | 결과 |
+|---|---|
+| 요소별로 나누기 | 요소를 찾아 낱장으로 나눠 저장 |
+| 여백만 자르기 | 나누지 않고 바깥 여백만 잘라 한 장으로 저장 |
+
+고른 방식은 설정 파일에 기억되어 다음에 켤 때도 그대로 유지됩니다.
+저장 위치는 리눅스/맥 `~/.config/imgcrop/imgcrop.json`,
+윈도우 `%APPDATA%\imgcrop\imgcrop.json` 입니다.
+
 ## 프리셋
 
 | 프리셋 | 하는 일 |
