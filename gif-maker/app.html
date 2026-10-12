@@ -55,6 +55,7 @@ button:focus-visible, input:focus-visible, label.seg-opt input:focus-visible + s
 .btn.primary:disabled { opacity: .45; cursor: default; }
 .btn.ghost { border-color: transparent; background: transparent; color: var(--muted); }
 .btn.small { padding: 4px 9px; font-size: 13px; }
+.btn[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
 .btn.danger:hover { border-color: var(--danger); color: var(--danger); }
 
 .layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; align-items: start; }
@@ -78,7 +79,7 @@ button:focus-visible, input:focus-visible, label.seg-opt input:focus-visible + s
 /* 플레이어 */
 .player { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .vwrap { position: relative; width: 100%; margin: 0 auto; background: #000; border-radius: var(--r); overflow: hidden; touch-action: none; }
-.vwrap video { display: block; width: 100%; height: 100%; }
+.vwrap video { display: block; position: absolute; left: 50%; top: 50%; width: 100%; height: 100%; transform: translate(-50%, -50%); }
 .crop { position: absolute; border: 2px solid var(--seg); box-shadow: 0 0 0 9999px var(--shade); cursor: grab; border-radius: 2px; }
 .crop:active { cursor: grabbing; }
 .crop span { position: absolute; left: 6px; top: 4px; font-size: 11px; color: #fff; background: rgba(0,0,0,.55); padding: 1px 6px; border-radius: 4px; pointer-events: none; }
@@ -181,6 +182,8 @@ hr.sep { border: none; border-top: 1px solid var(--line); margin: 0; }
           <button class="playbtn" id="playBtn" aria-label="재생"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path id="playIco" d="M3 1.5v11l9-5.5z" fill="currentColor"/></svg></button>
           <span class="num" id="tcur">0:00.0</span><span class="num" style="color:var(--muted)">/ <span id="tdur">0:00</span></span>
           <span class="fname" id="fname"></span>
+          <button class="btn small" id="rotBtn" title="시계 방향으로 90° 돌리기">⟳ 회전 <span class="num" id="rotVal">0°</span></button>
+          <button class="btn small" id="flipBtn" aria-pressed="false" title="좌우 뒤집기">⇋ 좌우 반전</button>
           <button class="btn small" id="another">다른 영상</button>
         </div>
         <div class="timeline" id="tl" aria-label="타임라인">
@@ -260,7 +263,8 @@ hr.sep { border: none; border-top: 1px solid var(--line); margin: 0; }
   const KEY = "cutjjal.gifmaker.v1";
   let S = { ...DEFAULTS };
   try { const saved = JSON.parse(localStorage.getItem(KEY) || "null"); if (saved) S = { ...DEFAULTS, ...saved }; } catch (e) {}
-  const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+  const persist = () => { try { const { rot, flip, ...keep } = S; localStorage.setItem(KEY, JSON.stringify(keep)); } catch (e) {} };
+  S.rot = 0; S.flip = false; // 회전·반전은 영상마다 새로 정해요
 
   function buildSegControls() {
     document.querySelectorAll(".segc[data-key]").forEach((box) => {
@@ -419,16 +423,62 @@ hr.sep { border: none; border-top: 1px solid var(--line); margin: 0; }
     $("drop").hidden = true; $("work").hidden = false;
     $("fname").textContent = file.name + " · " + V.w + "×" + V.h;
     $("tdur").textContent = fmt(dur, 0);
+    S.rot = 0; S.flip = false; syncRotUi();
     sizePlayer(); pv.playbackRate = S.speed;
     await analyze(token);
     if (token !== fileToken) return;
     autoPick();
   }
 
+  /* ---------- 회전 / 반전 ----------
+     GIF·크롭 계산은 모두 '돌린 뒤 화면' 좌표(RW×RH)에서 해요. */
+  const turned = () => S.rot === 90 || S.rot === 270;
+  const RW = () => (turned() ? V.h : V.w);
+  const RH = () => (turned() ? V.w : V.h);
+  // 원본 영상 좌표(0~1)를 돌린 뒤 좌표로
+  function mapPt(c) {
+    let x = c.cx, y = c.cy;
+    if (S.rot === 90) [x, y] = [1 - y, x];
+    else if (S.rot === 180) [x, y] = [1 - x, 1 - y];
+    else if (S.rot === 270) [x, y] = [y, 1 - x];
+    if (S.flip) x = 1 - x;
+    return { cx: x, cy: y };
+  }
+  // 돌린 화면의 r 영역을 캔버스 (0,0,w,h)에 그리기
+  function drawSrc(ctx, r, w, h) {
+    ctx.save();
+    ctx.scale(w / r.sw, h / r.sh);
+    ctx.translate(-r.sx, -r.sy);
+    if (S.flip) { ctx.translate(RW(), 0); ctx.scale(-1, 1); }
+    if (S.rot === 90) { ctx.translate(RW(), 0); ctx.rotate(Math.PI / 2); }
+    else if (S.rot === 180) { ctx.translate(RW(), RH()); ctx.rotate(Math.PI); }
+    else if (S.rot === 270) { ctx.translate(0, RH()); ctx.rotate(-Math.PI / 2); }
+    ctx.drawImage(wv, 0, 0, V.w, V.h);
+    ctx.restore();
+  }
+  function fitVideoEl() {
+    if (!V) return;
+    const box = $("vwrap").getBoundingClientRect();
+    const w = turned() ? box.height : box.width, h = turned() ? box.width : box.height;
+    pv.style.width = w + "px"; pv.style.height = h + "px";
+    pv.style.transform = `translate(-50%, -50%) scaleX(${S.flip ? -1 : 1}) rotate(${S.rot}deg)`;
+  }
+  function syncRotUi() { $("rotVal").textContent = S.rot + "°"; $("flipBtn").setAttribute("aria-pressed", String(S.flip)); }
+  function onTransform() {
+    syncRotUi(); if (!V) return;
+    sizePlayer(); updateCropBox();
+    $("fname").textContent = V.file.name + " · " + RW() + "×" + RH();
+    invalidate(segs, 400);
+  }
+  $("rotBtn").addEventListener("click", () => { S.rot = (S.rot + 90) % 360; onTransform(); });
+  $("flipBtn").addEventListener("click", () => { S.flip = !S.flip; onTransform(); });
+  if (window.ResizeObserver) new ResizeObserver(fitVideoEl).observe($("vwrap"));
+
   function sizePlayer() {
-    const ar = V.w / V.h; const vw = $("vwrap");
-    vw.style.aspectRatio = V.w + " / " + V.h;
+    const ar = RW() / RH(); const vw = $("vwrap");
+    vw.style.aspectRatio = RW() + " / " + RH();
     vw.style.maxWidth = Math.round(440 * ar) + "px";
+    fitVideoEl();
   }
   window.addEventListener("resize", () => { if (V) { drawTimeline(); updateCropBox(); } });
 
@@ -527,12 +577,12 @@ hr.sep { border: none; border-top: 1px solid var(--line); margin: 0; }
   function cropCenter(seg) {
     if (S.cropMode === "manual") return S.manualCrop;
     if (S.cropMode === "center") return { cx: 0.5, cy: 0.5 };
-    return seg.autoCrop;
+    return mapPt(seg.autoCrop);
   }
   function recomputeAutoCrop(seg) { const w = windowScore(seg.start, seg.end - seg.start); seg.autoCrop = { cx: smoothC(w.cx), cy: smoothC(w.cy) }; }
 
   /* ---------- 출력 크기 / 크롭 ---------- */
-  function aspectVal() { return S.aspect === "16:9" ? 16 / 9 : S.aspect === "4:3" ? 4 / 3 : S.aspect === "1:1" ? 1 : V.w / V.h; }
+  function aspectVal() { return S.aspect === "16:9" ? 16 / 9 : S.aspect === "4:3" ? 4 / 3 : S.aspect === "1:1" ? 1 : RW() / RH(); }
   function outDims(W) {
     const a = aspectVal();
     if (Math.abs(a - 1) < 0.01) { const s = even(W * 0.8); return { w: s, h: s }; }
@@ -541,8 +591,9 @@ hr.sep { border: none; border-top: 1px solid var(--line); margin: 0; }
   }
   function cropRect(c) {
     const a = aspectVal(); let sw, sh;
-    if (V.w / V.h > a) { sh = V.h; sw = V.h * a; } else { sw = V.w; sh = V.w / a; }
-    const sx = clamp(c.cx * V.w - sw / 2, 0, V.w - sw), sy = clamp(c.cy * V.h - sh / 2, 0, V.h - sh);
+    const W = RW(), H = RH();
+    if (W / H > a) { sh = H; sw = H * a; } else { sw = W; sh = W / a; }
+    const sx = clamp(c.cx * W - sw / 2, 0, W - sw), sy = clamp(c.cy * H - sh / 2, 0, H - sh);
     return { sx, sy, sw, sh };
   }
 
@@ -551,10 +602,11 @@ hr.sep { border: none; border-top: 1px solid var(--line); margin: 0; }
   function updateCropBox() {
     if (!V || !activeSeg) { cropBox.hidden = true; return; }
     const r = cropRect(cropCenter(activeSeg));
-    const full = r.sw >= V.w - 1 && r.sh >= V.h - 1;
+    const W = RW(), H = RH();
+    const full = r.sw >= W - 1 && r.sh >= H - 1;
     cropBox.hidden = false;
-    cropBox.style.left = (r.sx / V.w) * 100 + "%"; cropBox.style.top = (r.sy / V.h) * 100 + "%";
-    cropBox.style.width = (r.sw / V.w) * 100 + "%"; cropBox.style.height = (r.sh / V.h) * 100 + "%";
+    cropBox.style.left = (r.sx / W) * 100 + "%"; cropBox.style.top = (r.sy / H) * 100 + "%";
+    cropBox.style.width = (r.sw / W) * 100 + "%"; cropBox.style.height = (r.sh / H) * 100 + "%";
     $("cropLbl").textContent = full ? "GIF 영역 · 전체 화면" : "GIF 영역 · 드래그해서 이동";
   }
   cropBox.addEventListener("pointerdown", (e) => {
@@ -565,7 +617,7 @@ hr.sep { border: none; border-top: 1px solid var(--line); margin: 0; }
     const r = cropRect(start);
     const move = (ev) => {
       let cx = start.cx + (ev.clientX - x0) / box.width, cy = start.cy + (ev.clientY - y0) / box.height;
-      const hw = r.sw / V.w / 2, hh = r.sh / V.h / 2;
+      const hw = r.sw / RW() / 2, hh = r.sh / RH() / 2;
       S.manualCrop = { cx: clamp(cx, hw, 1 - hw), cy: clamp(cy, hh, 1 - hh) };
       if (S.cropMode !== "manual") { S.cropMode = "manual"; setRadio("cropMode"); }
       updateCropBox();
@@ -837,7 +889,7 @@ hr.sep { border: none; border-top: 1px solid var(--line); margin: 0; }
       if (gen !== seg.gen) return null;
       const t = Math.min(seg.start + (i / fps) * S.speed, V.dur - 0.04);
       await seek(wv, t);
-      ctx.drawImage(wv, r.sx, r.sy, r.sw, r.sh, 0, 0, w, h);
+      drawSrc(ctx, r, w, h);
       drawOverlays(ctx, w, h, seg);
       frames.push(ctx.getImageData(0, 0, w, h).data);
       if (i % 3 === 0) { seg.progress = `프레임 담는 중 ${i + 1}/${n}`; updateCard(seg); }
@@ -917,7 +969,7 @@ hr.sep { border: none; border-top: 1px solid var(--line); margin: 0; }
     const ctx = c.getContext("2d"); ctx.imageSmoothingQuality = "high";
     const keep = wv.currentTime;
     await seek(wv, (seg.start + seg.end) / 2);
-    ctx.drawImage(wv, r.sx, r.sy, r.sw, r.sh, 0, 0, w, h);
+    drawSrc(ctx, r, w, h);
     drawOverlays(ctx, w, h, null);
     if (!running) await seek(wv, keep);
     return new Promise((res) => c.toBlob(res, "image/jpeg", 0.9));
