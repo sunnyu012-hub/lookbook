@@ -1,0 +1,945 @@
+<!doctype html><html lang="ko"><head><!-- app.html 을 감싼 단독 실행용 파일. 수정은 app.html 에서 하고 다시 생성 --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>
+<title>컷짤 GIF 메이커</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* 작업대 레이아웃: 왼쪽은 영상·타임라인(필름), 오른쪽은 설정 패널, 아래는 만들어진 GIF 카드 */
+:root {
+  --bg: #f3f4f1;
+  --surface: #ffffff;
+  --ink: #1d2124;
+  --muted: #5f676c;
+  --line: #dde0dc;
+  --accent: #0d6e6a;
+  --accent-ink: #ffffff;
+  --accent-soft: #dcefed;
+  --seg: #f0a32a;
+  --seg-soft: rgba(240, 163, 42, .28);
+  --danger: #c2413b;
+  --graph: #9fb7b4;
+  --shade: rgba(20, 24, 26, .55);
+  --font-display: "Do Hyeon", "IBM Plex Sans KR", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141719; --surface: #1d2124; --ink: #e9ecea; --muted: #9aa3a6; --line: #2f3538;
+    --accent: #3fb6ae; --accent-ink: #0d1716; --accent-soft: #19302e; --seg: #f2b04a;
+    --seg-soft: rgba(242, 176, 74, .25); --danger: #ef7a72; --graph: #46605d; --shade: rgba(0, 0, 0, .6);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141719; --surface: #1d2124; --ink: #e9ecea; --muted: #9aa3a6; --line: #2f3538;
+  --accent: #3fb6ae; --accent-ink: #0d1716; --accent-soft: #19302e; --seg: #f2b04a;
+  --seg-soft: rgba(242, 176, 74, .25); --danger: #ef7a72; --graph: #46605d; --shade: rgba(0, 0, 0, .6);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { background: var(--bg); color: var(--ink); }
+body { font-family: var(--font-body); font-size: 14px; line-height: 1.5; }
+.app { max-width: 1180px; margin: 0 auto; padding: 20px 16px 48px; display: flex; flex-direction: column; gap: 18px; }
+header.top { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+header.top h1 { font-family: var(--font-display); font-weight: 400; font-size: 30px; margin: 0; letter-spacing: .5px; }
+header.top h1 span { color: var(--accent); }
+header.top p { margin: 0; color: var(--muted); }
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible, label.seg-opt input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn { white-space: nowrap; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 7px 12px; font-weight: 500; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
+.btn.primary:disabled { opacity: .45; cursor: default; }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--muted); }
+.btn.small { padding: 4px 9px; font-size: 13px; }
+.btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; align-items: start; }
+@media (max-width: 860px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+/* 드롭존 */
+.drop { border: 2px dashed var(--line); border-radius: 14px; background: var(--surface); padding: 44px 20px; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; transition: border-color .15s, background .15s; }
+.drop.over, body.dragging .drop { border-color: var(--accent); background: var(--accent-soft); }
+.drop h2 { font-family: var(--font-display); font-weight: 400; font-size: 26px; margin: 0; text-wrap: balance; }
+.drop .film { display: flex; gap: 6px; }
+.drop .film i { width: 34px; height: 22px; border-radius: 3px; background: var(--seg-soft); border: 1px solid var(--seg); }
+.drop .film i:nth-child(2) { background: var(--seg); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.chip { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 2px 10px; }
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; width: 100%; max-width: 560px; margin-top: 6px; }
+.steps div { border-top: 2px solid var(--line); padding-top: 8px; text-align: left; font-size: 13px; color: var(--muted); }
+.steps b { display: block; color: var(--ink); font-weight: 700; }
+@media (max-width: 520px) { .steps { grid-template-columns: minmax(0, 1fr); } }
+.err { color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, transparent); border-radius: 8px; padding: 10px 12px; text-align: left; max-width: 560px; }
+
+/* 플레이어 */
+.player { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.vwrap { position: relative; width: 100%; margin: 0 auto; background: #000; border-radius: var(--r); overflow: hidden; touch-action: none; }
+.vwrap video { display: block; width: 100%; height: 100%; }
+.crop { position: absolute; border: 2px solid var(--seg); box-shadow: 0 0 0 9999px var(--shade); cursor: grab; border-radius: 2px; }
+.crop:active { cursor: grabbing; }
+.crop span { position: absolute; left: 6px; top: 4px; font-size: 11px; color: #fff; background: rgba(0,0,0,.55); padding: 1px 6px; border-radius: 4px; pointer-events: none; }
+.pctl { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pctl .fname { color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.playbtn { width: 36px; height: 36px; border-radius: 50%; border: none; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; }
+
+/* 타임라인 */
+.timeline { position: relative; height: 74px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; touch-action: none; cursor: pointer; }
+.timeline canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.segblk { position: absolute; top: 6px; bottom: 6px; background: var(--seg-soft); border: 2px solid var(--seg); border-radius: 5px; cursor: grab; display: flex; align-items: flex-start; justify-content: center; }
+.segblk.active { background: color-mix(in srgb, var(--seg) 45%, transparent); }
+.segblk b { font-family: var(--font-mono); font-size: 11px; background: var(--seg); color: #1d2124; padding: 0 5px; border-radius: 0 0 4px 4px; pointer-events: none; }
+.segblk .h { position: absolute; top: 0; bottom: 0; width: 12px; cursor: ew-resize; }
+.segblk .h.l { left: -7px; } .segblk .h.r { right: -7px; }
+.playhead { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--ink); pointer-events: none; }
+.tlrow { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.tlrow .legend { font-size: 12px; color: var(--muted); margin-left: auto; }
+.status { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); min-height: 22px; }
+.bar { flex: 0 0 120px; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .15s; }
+
+/* 설정 패널 */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.panel h3 { margin: 0; font-size: 15px; display: flex; justify-content: space-between; align-items: baseline; }
+.panel h3 small { font-weight: 400; color: var(--muted); font-size: 12px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field > .lbl { font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: .3px; display: flex; justify-content: space-between; }
+.field > .lbl em { font-style: normal; font-weight: 400; }
+.segc { display: flex; background: var(--bg); border-radius: 8px; padding: 3px; gap: 2px; }
+label.seg-opt { flex: 1; position: relative; }
+label.seg-opt input { position: absolute; opacity: 0; pointer-events: none; }
+label.seg-opt span { display: block; text-align: center; padding: 5px 2px; border-radius: 6px; font-size: 13px; cursor: pointer; white-space: nowrap; }
+label.seg-opt input:checked + span { background: var(--surface); color: var(--accent); font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.hint { font-size: 12px; color: var(--muted); margin: 0; }
+.check { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; cursor: pointer; }
+.check input { margin-top: 3px; accent-color: var(--accent); }
+.txt { border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 8px; padding: 7px 10px; font: inherit; width: 100%; min-width: 0; }
+.wmrow { display: flex; gap: 6px; }
+.wmrow .segc { flex: 0 0 auto; }
+hr.sep { border: none; border-top: 1px solid var(--line); margin: 0; }
+
+/* 결과 */
+.results { display: flex; flex-direction: column; gap: 12px; }
+.reshead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.reshead h2 { font-family: var(--font-display); font-weight: 400; font-size: 24px; margin: 0; }
+.reshead .sum { color: var(--muted); }
+.reshead .grow { flex: 1; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+.card.active { border-color: var(--seg); }
+.thumb { position: relative; background: repeating-conic-gradient(var(--line) 0 25%, transparent 0 50%) 0 0 / 16px 16px; display: grid; place-items: center; aspect-ratio: 16 / 9; max-width: 100%; }
+.thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.thumb .ov { position: absolute; inset: 0; display: grid; place-items: center; background: var(--shade); color: #fff; font-size: 13px; text-align: center; padding: 8px; }
+.thumb .no { position: absolute; left: 8px; top: 8px; font-family: var(--font-mono); font-size: 12px; background: var(--seg); color: #1d2124; padding: 0 7px; border-radius: 4px; }
+.cbody { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 8px; }
+.range { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px; }
+.range .rng { min-width: 0; }
+.meta { font-size: 12px; color: var(--muted); }
+.meta.warn { color: var(--danger); }
+.nudge { display: grid; grid-template-columns: auto auto auto 1fr auto auto; gap: 4px; align-items: center; font-size: 12px; color: var(--muted); }
+.nudge button { border: 1px solid var(--line); background: var(--bg); border-radius: 6px; width: 28px; height: 26px; padding: 0; }
+.nudge span:nth-of-type(2) { text-align: right; padding-right: 4px; }
+.cact { display: flex; gap: 6px; flex-wrap: wrap; }
+.cact .btn.primary { flex: 1; }
+.empty { border: 1px dashed var(--line); border-radius: 12px; padding: 22px; color: var(--muted); text-align: center; }
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 9px 16px; border-radius: 99px; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: calc(100% - 32px); }
+.toast.show { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="app">
+  <header class="top">
+    <h1>컷짤 <span>GIF</span> 메이커</h1>
+    <p>영상을 넣으면 블로그용 GIF를 골라서 만들어 줘요. 영상은 이 기기 밖으로 나가지 않아요.</p>
+  </header>
+
+  <div class="layout">
+    <div class="player" id="left">
+      <section class="drop" id="drop">
+        <div class="film" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <h2>영상을 여기에 끌어다 놓으세요</h2>
+        <button class="btn primary" id="pick">영상 파일 선택</button>
+        <input type="file" id="fileInput" accept="video/*,.mov,.mp4,.webm,.m4v" hidden>
+        <div class="chips"><span class="chip">MP4 · MOV · WEBM</span><span class="chip">업로드 없음</span><span class="chip">설정은 자동 저장</span></div>
+        <div class="steps">
+          <div><b>① 넣기</b>영상을 끌어다 놓아요</div>
+          <div><b>② 자동 추천</b>움직임 많은 3~5초를 골라요</div>
+          <div><b>③ 저장</b>ZIP 하나로 전부 받아요</div>
+        </div>
+        <div class="err" id="err" hidden></div>
+      </section>
+
+      <section id="work" hidden class="player">
+        <div class="vwrap" id="vwrap">
+          <video id="pv" muted playsinline preload="auto"></video>
+          <div class="crop" id="cropBox" hidden><span id="cropLbl">GIF 영역 · 드래그해서 이동</span></div>
+        </div>
+        <div class="pctl">
+          <button class="playbtn" id="playBtn" aria-label="재생"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path id="playIco" d="M3 1.5v11l9-5.5z" fill="currentColor"/></svg></button>
+          <span class="num" id="tcur">0:00.0</span><span class="num" style="color:var(--muted)">/ <span id="tdur">0:00</span></span>
+          <span class="fname" id="fname"></span>
+          <button class="btn small" id="another">다른 영상</button>
+        </div>
+        <div class="timeline" id="tl" aria-label="타임라인">
+          <canvas id="tlc"></canvas>
+          <div id="segLayer"></div>
+          <div class="playhead" id="playhead"></div>
+        </div>
+        <div class="tlrow">
+          <button class="btn small" id="addSeg">+ 현재 위치에 구간 추가</button>
+          <button class="btn small" id="reAuto">자동 추천 다시 하기</button>
+          <span class="legend">그래프 높을수록 움직임 많음 · 노란 박스 끌어서 조정</span>
+        </div>
+        <div class="status" id="status" aria-live="polite"><span class="bar"><i id="barFill"></i></span><span id="statusTxt">준비됨</span></div>
+      </section>
+    </div>
+
+    <aside class="panel" id="panel">
+      <h3>설정 <small>바꾸면 바로 다시 만들어요</small></h3>
+      <div class="field"><div class="lbl">자동 추천 개수 <em>긴 영상은 고르게 나눠서</em></div><div class="segc" data-key="count"></div></div>
+      <div class="field"><div class="lbl">GIF 길이</div><div class="segc" data-key="len"></div></div>
+      <div class="field"><div class="lbl">비율</div><div class="segc" data-key="aspect"></div></div>
+      <div class="field"><div class="lbl">화질 <em id="qInfo"></em></div><div class="segc" data-key="quality"></div></div>
+      <div class="field"><div class="lbl">용량 상한 <em>넘으면 자동으로 줄여요</em></div><div class="segc" data-key="cap"></div></div>
+      <div class="field"><div class="lbl">재생 속도</div><div class="segc" data-key="speed"></div></div>
+      <div class="field"><div class="lbl">반복 방식</div><div class="segc" data-key="loop"></div>
+        <p class="hint">부메랑은 앞으로 갔다 되돌아와서 끊김 없이 이어져요.</p></div>
+      <div class="field"><div class="lbl">GIF 영역 위치</div>
+        <div class="segc" data-key="cropMode"></div>
+        <p class="hint">직접 맞추려면 영상 위 노란 박스를 끌어 주세요.</p></div>
+      <hr class="sep">
+      <div class="field"><div class="lbl">워터마크</div>
+        <label class="check"><input type="checkbox" id="wmOn"> 블로그 이름을 구석에 작게 넣기</label>
+        <div class="wmrow"><input class="txt" id="wmText" placeholder="예: @유니니 블로그" maxlength="30"><div class="segc" data-key="wmPos"></div></div>
+      </div>
+      <hr class="sep">
+      <label class="check"><input type="checkbox" id="autoRun"> 영상 넣으면 GIF까지 바로 만들기 (원클릭)</label>
+      <label class="check"><input type="checkbox" id="withJpg"> ZIP에 대표 이미지(JPG)도 넣기</label>
+    </aside>
+  </div>
+
+  <section class="results" id="results">
+    <div class="reshead">
+      <h2>만든 GIF</h2>
+      <span class="sum num" id="sum"></span>
+      <span class="grow"></span>
+      <button class="btn" id="makeAll" hidden>GIF 만들기</button>
+      <button class="btn primary" id="zipAll" disabled>전체 저장 (ZIP)</button>
+    </div>
+    <div class="cards" id="cards"></div>
+    <div class="empty" id="emptyCards">영상을 넣으면 추천 구간이 여기에 카드로 나와요. 카드마다 자막을 달거나 시작·끝을 0.5초씩 조정할 수 있어요.</div>
+  </section>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<video id="wv" muted playsinline preload="auto" aria-hidden="true" style="position:fixed;left:-10000px;top:0;width:4px;height:4px;opacity:0;pointer-events:none"></video>
+
+<script>
+(() => {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const sleep0 = () => new Promise((r) => setTimeout(r, 0));
+
+  /* ---------- 설정 ---------- */
+  const OPTIONS = {
+    count: [[1, "1"], [2, "2"], [3, "3"], [4, "4"], [5, "5"], [6, "6"]],
+    len: [[3, "3초"], [4, "4초"], [5, "5초"]],
+    aspect: [["16:9", "16:9"], ["4:3", "4:3"], ["1:1", "1:1"], ["orig", "원본"]],
+    quality: [["light", "가벼움"], ["std", "표준"], ["hi", "선명"]],
+    cap: [[3, "3MB"], [5, "5MB"], [10, "10MB"], [0, "없음"]],
+    speed: [[1, "1x"], [1.5, "1.5x"], [2, "2x"]],
+    loop: [["normal", "기본"], ["boomerang", "부메랑"]],
+    cropMode: [["auto", "자동"], ["center", "가운데"], ["manual", "직접"]],
+    wmPos: [["br", "↘"], ["bl", "↙"], ["tr", "↗"], ["tl", "↖"]],
+  };
+  const QUALITY = { light: { w: 480, fps: 10, thr: 520 }, std: { w: 600, fps: 12, thr: 300 }, hi: { w: 720, fps: 15, thr: 160 } };
+  const DEFAULTS = { count: 3, len: 4, aspect: "16:9", quality: "std", cap: 5, speed: 1, loop: "normal", cropMode: "auto",
+    manualCrop: { cx: 0.5, cy: 0.5 }, wmOn: false, wmText: "", wmPos: "br", autoRun: true, withJpg: true };
+  const KEY = "cutjjal.gifmaker.v1";
+  let S = { ...DEFAULTS };
+  try { const saved = JSON.parse(localStorage.getItem(KEY) || "null"); if (saved) S = { ...DEFAULTS, ...saved }; } catch (e) {}
+  const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+
+  function buildSegControls() {
+    document.querySelectorAll(".segc[data-key]").forEach((box) => {
+      const key = box.dataset.key;
+      box.innerHTML = "";
+      OPTIONS[key].forEach(([val, label]) => {
+        const l = document.createElement("label"); l.className = "seg-opt";
+        const inp = document.createElement("input"); inp.type = "radio"; inp.name = "opt-" + key; inp.id = "opt-" + key + "-" + String(val).replace(/\W/g, "_");
+        inp.checked = String(S[key]) === String(val);
+        inp.addEventListener("change", () => { S[key] = val; persist(); onSetting(key); });
+        const sp = document.createElement("span"); sp.textContent = label;
+        l.append(inp, sp); box.append(l);
+      });
+    });
+    $("wmOn").checked = S.wmOn; $("wmText").value = S.wmText; $("autoRun").checked = S.autoRun; $("withJpg").checked = S.withJpg;
+    updateQInfo();
+  }
+  function setRadio(key) { const el = $("opt-" + key + "-" + String(S[key]).replace(/\W/g, "_")); if (el) el.checked = true; }
+  function updateQInfo() { const q = QUALITY[S.quality]; $("qInfo").textContent = `가로 ${q.w}px · ${q.fps}fps`; }
+
+  function onSetting(key) {
+    if (key === "quality") updateQInfo();
+    if (!V) return;
+    if (key === "count" || key === "len") { autoPick(); return; }
+    if (key === "cropMode") { if (S.cropMode !== "manual") updateCropBox(); invalidate(segs, 300); return; }
+    if (key === "speed") { pv.playbackRate = S.speed; }
+    invalidate(segs, 300);
+  }
+  $("wmOn").addEventListener("change", (e) => { S.wmOn = e.target.checked; persist(); if (V) invalidate(segs, 300); });
+  $("wmText").addEventListener("input", (e) => { S.wmText = e.target.value; persist(); if (V && S.wmOn) invalidate(segs, 900); });
+  $("autoRun").addEventListener("change", (e) => { S.autoRun = e.target.checked; persist(); refreshHead(); if (S.autoRun) runQueue(); });
+  $("withJpg").addEventListener("change", (e) => { S.withJpg = e.target.checked; persist(); });
+
+  /* ---------- 유틸 ---------- */
+  const fmt = (t, dec = 1) => { t = Math.max(0, t); const m = Math.floor(t / 60); const s = t - m * 60; return m + ":" + (s < 10 ? "0" : "") + s.toFixed(dec); };
+  const fmtMB = (b) => (b / 1048576).toFixed(b < 10 * 1048576 ? 1 : 0) + "MB";
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const even = (n) => Math.max(2, Math.round(n / 2) * 2);
+  let toastTimer;
+  function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 2600); }
+  function status(txt, frac) { $("statusTxt").textContent = txt; $("barFill").style.width = frac == null ? "0%" : Math.round(frac * 100) + "%"; }
+
+  function seek(v, t) {
+    return new Promise((res) => {
+      let done = false;
+      const fin = () => { if (done) return; done = true; v.removeEventListener("seeked", fin); clearTimeout(to); res(); };
+      const to = setTimeout(fin, 4000);
+      v.addEventListener("seeked", fin);
+      v.currentTime = t;
+    });
+  }
+
+  /* ---------- 라이브러리 ---------- */
+  let gifencP = null;
+  const gifenc = () => gifencP || (gifencP = import("https://cdn.jsdelivr.net/npm/gifenc@1.0.3/dist/gifenc.esm.js"));
+  gifenc().catch(() => { gifencP = null; });
+  let dlP = null;
+  function getDownloads() {
+    if (!dlP) dlP = (window.claude && typeof window.claude.use === "function") ? window.claude.use("downloads").catch(() => null) : Promise.resolve(null);
+    return dlP;
+  }
+  getDownloads();
+  async function saveFile(name, blob) {
+    const dl = await getDownloads();
+    if (dl) {
+      try { const r = await dl.save({ filename: name, data: blob }); if (r && r.status === "saved") toast("저장했어요 · " + name); return; }
+      catch (e) {
+        if (e && e.code === "declined") { toast("저장을 취소했어요"); return; }
+        if (e && e.code === "rate_limited") { toast("저장 창이 이미 열려 있어요"); return; }
+        if (e && e.code === "too_large") { toast("파일이 너무 커요. 화질을 낮춰 주세요"); return; }
+      }
+    }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+
+  /* ---------- ZIP (무압축) ---------- */
+  const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  function crc32(u8) { let c = 0xffffffff; for (let i = 0; i < u8.length; i++) c = CRC[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+  function makeZip(files) {
+    const enc = new TextEncoder(); const parts = []; const central = []; let offset = 0;
+    const d = new Date(); const dtime = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+    const ddate = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+    for (const f of files) {
+      const name = enc.encode(f.name); const crc = crc32(f.data); const size = f.data.length;
+      const lh = new DataView(new ArrayBuffer(30));
+      lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, 0, true);
+      lh.setUint16(10, dtime, true); lh.setUint16(12, ddate, true); lh.setUint32(14, crc, true); lh.setUint32(18, size, true); lh.setUint32(22, size, true);
+      lh.setUint16(26, name.length, true); lh.setUint16(28, 0, true);
+      parts.push(lh.buffer, name, f.data);
+      const ch = new DataView(new ArrayBuffer(46));
+      ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true); ch.setUint16(10, 0, true);
+      ch.setUint16(12, dtime, true); ch.setUint16(14, ddate, true); ch.setUint32(16, crc, true); ch.setUint32(20, size, true); ch.setUint32(24, size, true);
+      ch.setUint16(28, name.length, true); ch.setUint32(42, offset, true);
+      central.push(ch.buffer, name);
+      offset += 30 + name.length + size;
+    }
+    const cdSize = central.reduce((s, p) => s + p.byteLength, 0);
+    const end = new DataView(new ArrayBuffer(22));
+    end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
+    end.setUint32(12, cdSize, true); end.setUint32(16, offset, true);
+    return new Blob([...parts, ...central, end.buffer], { type: "application/zip" });
+  }
+
+  /* ---------- 상태 ---------- */
+  const pv = $("pv"), wv = $("wv");
+  let V = null;           // { file, base, url, w, h, dur }
+  let samples = [];       // 분석 결과
+  let segs = [];          // GIF 구간
+  let segId = 0, fileToken = 0, activeSeg = null;
+
+  /* ---------- 파일 불러오기 ---------- */
+  $("pick").addEventListener("click", () => $("fileInput").click());
+  $("fileInput").addEventListener("change", (e) => { const f = e.target.files[0]; if (f) loadFile(f); e.target.value = ""; });
+  $("another").addEventListener("click", () => $("fileInput").click());
+  let dragDepth = 0;
+  window.addEventListener("dragenter", (e) => { e.preventDefault(); dragDepth++; document.body.classList.add("dragging"); });
+  window.addEventListener("dragleave", () => { if (--dragDepth <= 0) { dragDepth = 0; document.body.classList.remove("dragging"); } });
+  window.addEventListener("dragover", (e) => e.preventDefault());
+  window.addEventListener("drop", (e) => {
+    e.preventDefault(); dragDepth = 0; document.body.classList.remove("dragging");
+    const f = [...(e.dataTransfer.files || [])].find((x) => x.type.startsWith("video/") || /\.(mov|mp4|m4v|webm|mkv)$/i.test(x.name));
+    if (f) loadFile(f); else toast("영상 파일을 넣어 주세요");
+  });
+
+  function showError(msg) { $("work").hidden = true; $("drop").hidden = false; const e = $("err"); e.hidden = false; e.textContent = msg; }
+
+  function loadVideo(v, url) {
+    return new Promise((res, rej) => {
+      const ok = () => { cleanup(); v.videoWidth ? res() : rej(new Error("nodim")); };
+      const bad = () => { cleanup(); rej(new Error("decode")); };
+      const cleanup = () => { v.removeEventListener("loadeddata", ok); v.removeEventListener("error", bad); };
+      v.addEventListener("loadeddata", ok); v.addEventListener("error", bad);
+      v.src = url; v.load();
+    });
+  }
+
+  async function loadFile(file) {
+    const token = ++fileToken;
+    $("err").hidden = true;
+    if (V) URL.revokeObjectURL(V.url);
+    segs.forEach((s) => s.out && URL.revokeObjectURL(s.out.url));
+    segs = []; samples = []; activeSeg = null; renderCards(); drawTimeline();
+    const url = URL.createObjectURL(file);
+    try { await Promise.all([loadVideo(pv, url), loadVideo(wv, url)]); }
+    catch (e) {
+      if (token !== fileToken) return;
+      V = null;
+      showError("이 영상은 브라우저에서 열 수 없어요. 아이폰으로 찍은 HEVC(.mov) 영상이라면 사파리에서 열거나, 아이폰 설정 › 카메라 › 포맷을 '호환성 우선'으로 바꾸고 찍어 주세요.");
+      return;
+    }
+    if (token !== fileToken) return;
+    const dur = isFinite(wv.duration) ? wv.duration : 0;
+    if (!dur) { showError("영상 길이를 읽지 못했어요. 다른 파일로 시도해 주세요."); return; }
+    V = { file, url, base: file.name.replace(/\.[^.]+$/, "").replace(/[\\/:*?"<>|]+/g, "_").slice(0, 60) || "video", w: wv.videoWidth, h: wv.videoHeight, dur };
+    $("drop").hidden = true; $("work").hidden = false;
+    $("fname").textContent = file.name + " · " + V.w + "×" + V.h;
+    $("tdur").textContent = fmt(dur, 0);
+    sizePlayer(); pv.playbackRate = S.speed;
+    await analyze(token);
+    if (token !== fileToken) return;
+    autoPick();
+  }
+
+  function sizePlayer() {
+    const ar = V.w / V.h; const vw = $("vwrap");
+    vw.style.aspectRatio = V.w + " / " + V.h;
+    vw.style.maxWidth = Math.round(440 * ar) + "px";
+  }
+  window.addEventListener("resize", () => { if (V) { drawTimeline(); updateCropBox(); } });
+
+  /* ---------- 영상 분석 ---------- */
+  async function analyze(token) {
+    const AW = 64, AH = clamp(Math.round(64 * V.h / V.w), 16, 128);
+    const c = document.createElement("canvas"); c.width = AW; c.height = AH;
+    const ctx = c.getContext("2d", { willReadFrequently: true });
+    const n = clamp(Math.round(V.dur * 2), 12, 240);
+    let prev = null; samples = [];
+    const t0 = performance.now();
+    for (let i = 0; i < n; i++) {
+      if (token !== fileToken) return;
+      const t = (i + 0.5) * V.dur / n;
+      await seek(wv, t);
+      ctx.drawImage(wv, 0, 0, AW, AH);
+      const d = ctx.getImageData(0, 0, AW, AH).data;
+      const Y = new Float32Array(AW * AH);
+      let sum = 0;
+      for (let p = 0, q = 0; q < Y.length; p += 4, q++) { Y[q] = 0.299 * d[p] + 0.587 * d[p + 1] + 0.114 * d[p + 2]; sum += Y[q]; }
+      let sharp = 0;
+      for (let y = 0; y < AH - 1; y++) for (let x = 0; x < AW - 1; x++) { const q = y * AW + x; sharp += Math.abs(Y[q + 1] - Y[q]) + Math.abs(Y[q + AW] - Y[q]); }
+      let diff = 0, wx = 0, wy = 0;
+      if (prev) {
+        for (let y = 0; y < AH; y++) for (let x = 0; x < AW; x++) { const q = y * AW + x; const dd = Math.abs(Y[q] - prev[q]); diff += dd; wx += dd * x; wy += dd * y; }
+      }
+      samples.push({ t, luma: sum / Y.length, sharp: sharp / ((AW - 1) * (AH - 1)), diff: diff / Y.length, cx: diff ? (wx / diff + 0.5) / AW : 0.5, cy: diff ? (wy / diff + 0.5) / AH : 0.5 });
+      prev = Y;
+      if (i % 4 === 0) { status(`영상 분석 중 ${Math.round((i / n) * 100)}%`, i / n); drawTimeline(); }
+    }
+    if (samples.length > 1) { samples[0].diff = samples[1].diff; samples[0].cx = samples[1].cx; samples[0].cy = samples[1].cy; }
+    // 장면 전환: 주변 중앙값보다 훨씬 큰 변화
+    const med = (arr) => { const a = [...arr].sort((x, y) => x - y); return a[Math.floor(a.length / 2)] || 0; };
+    const sharpMed = med(samples.map((s) => s.sharp));
+    samples.forEach((s, i) => {
+      const nb = samples.slice(Math.max(0, i - 6), i + 7).filter((_, j) => j !== Math.min(6, i)).map((x) => x.diff);
+      const m = med(nb);
+      s.cut = i > 0 && s.diff > 14 && s.diff > 3.5 * Math.max(m, 2);
+      s.bad = s.luma < 22 || s.luma > 242 ? 0.15 : s.sharp < sharpMed * 0.35 ? 0.5 : 1;
+    });
+    const maxD = Math.max(1e-6, ...samples.filter((s) => !s.cut).map((s) => s.diff));
+    samples.forEach((s) => { s.m = s.cut ? 0.3 : Math.min(1, s.diff / maxD); });
+    status(`분석 끝 (${((performance.now() - t0) / 1000).toFixed(1)}초)`, 1);
+    drawTimeline();
+  }
+
+  /* ---------- 자동 구간 고르기 ---------- */
+  function windowScore(s, L) {
+    const inWin = samples.filter((x) => x.t >= s && x.t <= s + L);
+    const win = inWin.length ? inWin : [samples.reduce((a, b) => (Math.abs(b.t - (s + L / 2)) < Math.abs(a.t - (s + L / 2)) ? b : a))];
+    let m = 0, q = 0, cut = false, wx = 0, wy = 0, ws = 0;
+    win.forEach((x, i) => { m += x.m; q += x.bad; if (x.cut && i > 0) cut = true; const w = x.diff + 0.01; wx += x.cx * w; wy += x.cy * w; ws += w; });
+    m /= win.length; q /= win.length;
+    let score = (0.25 + m) * q;
+    if (cut) score *= 0.25;
+    return { score, cx: wx / ws, cy: wy / ws };
+  }
+  function autoPick() {
+    if (!V || !samples.length) return;
+    segs.forEach((s) => s.out && URL.revokeObjectURL(s.out.url));
+    segs = [];
+    const L = S.len * S.speed;
+    if (V.dur <= L + 0.3) {
+      const w = windowScore(0, V.dur);
+      segs.push(newSeg(0, V.dur, w));
+    } else {
+      const maxCount = Math.max(1, Math.floor(V.dur / (L * 1.25)));
+      const N = Math.min(S.count, maxCount);
+      const step = Math.max(0.2, Math.min(L / 6, V.dur / 400));
+      for (let k = 0; k < N; k++) {
+        let z0 = (k * V.dur) / N, z1 = ((k + 1) * V.dur) / N;
+        if (z1 - z0 < L) { const mid = (z0 + z1) / 2; z0 = mid - L / 2; z1 = mid + L / 2; }
+        z0 = Math.max(0.15, z0); z1 = Math.min(V.dur - 0.1, z1);
+        let best = null;
+        for (let s = z0; s + L <= z1 + 1e-6; s += step) {
+          if (segs.some((g) => s < g.end && s + L > g.start)) continue;
+          const w = windowScore(s, L);
+          if (!best || w.score > best.w.score) best = { s, w };
+        }
+        if (best) segs.push(newSeg(best.s, best.s + L, best.w));
+      }
+      if (!segs.length) segs.push(newSeg(0, Math.min(L, V.dur), windowScore(0, L)));
+    }
+    segs.sort((a, b) => a.start - b.start);
+    segs.forEach((s, i) => (s.n = i + 1));
+    activeSeg = segs[0] || null;
+    if (activeSeg) previewSeg(activeSeg, false);
+    renderCards(); drawTimeline();
+    status(`추천 구간 ${segs.length}개`, 1);
+    invalidate(segs, 0);
+  }
+  function newSeg(start, end, w) {
+    return { id: ++segId, n: 0, start, end, caption: "", autoCrop: w ? { cx: smoothC(w.cx), cy: smoothC(w.cy) } : { cx: 0.5, cy: 0.5 }, out: null, status: "idle", dirty: true, gen: 0, note: "" };
+  }
+  const smoothC = (c) => 0.5 + (clamp(c, 0, 1) - 0.5) * 0.75;
+  function cropCenter(seg) {
+    if (S.cropMode === "manual") return S.manualCrop;
+    if (S.cropMode === "center") return { cx: 0.5, cy: 0.5 };
+    return seg.autoCrop;
+  }
+  function recomputeAutoCrop(seg) { const w = windowScore(seg.start, seg.end - seg.start); seg.autoCrop = { cx: smoothC(w.cx), cy: smoothC(w.cy) }; }
+
+  /* ---------- 출력 크기 / 크롭 ---------- */
+  function aspectVal() { return S.aspect === "16:9" ? 16 / 9 : S.aspect === "4:3" ? 4 / 3 : S.aspect === "1:1" ? 1 : V.w / V.h; }
+  function outDims(W) {
+    const a = aspectVal();
+    if (Math.abs(a - 1) < 0.01) { const s = even(W * 0.8); return { w: s, h: s }; }
+    if (a > 1) return { w: even(W), h: even(W / a) };
+    const h = even(W * 0.85); return { w: even(h * a), h };
+  }
+  function cropRect(c) {
+    const a = aspectVal(); let sw, sh;
+    if (V.w / V.h > a) { sh = V.h; sw = V.h * a; } else { sw = V.w; sh = V.w / a; }
+    const sx = clamp(c.cx * V.w - sw / 2, 0, V.w - sw), sy = clamp(c.cy * V.h - sh / 2, 0, V.h - sh);
+    return { sx, sy, sw, sh };
+  }
+
+  /* ---------- 크롭 박스 ---------- */
+  const cropBox = $("cropBox");
+  function updateCropBox() {
+    if (!V || !activeSeg) { cropBox.hidden = true; return; }
+    const r = cropRect(cropCenter(activeSeg));
+    const full = r.sw >= V.w - 1 && r.sh >= V.h - 1;
+    cropBox.hidden = false;
+    cropBox.style.left = (r.sx / V.w) * 100 + "%"; cropBox.style.top = (r.sy / V.h) * 100 + "%";
+    cropBox.style.width = (r.sw / V.w) * 100 + "%"; cropBox.style.height = (r.sh / V.h) * 100 + "%";
+    $("cropLbl").textContent = full ? "GIF 영역 · 전체 화면" : "GIF 영역 · 드래그해서 이동";
+  }
+  cropBox.addEventListener("pointerdown", (e) => {
+    if (!V || !activeSeg) return;
+    e.preventDefault(); cropBox.setPointerCapture(e.pointerId);
+    const box = $("vwrap").getBoundingClientRect();
+    const start = { ...cropCenter(activeSeg) }, x0 = e.clientX, y0 = e.clientY;
+    const r = cropRect(start);
+    const move = (ev) => {
+      let cx = start.cx + (ev.clientX - x0) / box.width, cy = start.cy + (ev.clientY - y0) / box.height;
+      const hw = r.sw / V.w / 2, hh = r.sh / V.h / 2;
+      S.manualCrop = { cx: clamp(cx, hw, 1 - hw), cy: clamp(cy, hh, 1 - hh) };
+      if (S.cropMode !== "manual") { S.cropMode = "manual"; setRadio("cropMode"); }
+      updateCropBox();
+    };
+    const up = () => { cropBox.removeEventListener("pointermove", move); cropBox.removeEventListener("pointerup", up); cropBox.removeEventListener("pointercancel", up); persist(); invalidate(segs, 200); };
+    cropBox.addEventListener("pointermove", move); cropBox.addEventListener("pointerup", up); cropBox.addEventListener("pointercancel", up);
+  });
+
+  /* ---------- 미리보기 플레이어 ---------- */
+  function setPlayIcon() { $("playIco").setAttribute("d", pv.paused ? "M3 1.5v11l9-5.5z" : "M3 2h3v10H3zM8 2h3v10H8z"); $("playBtn").setAttribute("aria-label", pv.paused ? "재생" : "일시정지"); }
+  $("playBtn").addEventListener("click", () => { if (pv.paused) pv.play().catch(() => {}); else pv.pause(); });
+  pv.addEventListener("play", () => { setPlayIcon(); tick(); });
+  pv.addEventListener("pause", setPlayIcon);
+  pv.addEventListener("seeked", updatePlayhead);
+  function tick() {
+    if (activeSeg && pv.currentTime >= activeSeg.end) pv.currentTime = activeSeg.start;
+    updatePlayhead();
+    if (!pv.paused) requestAnimationFrame(tick);
+  }
+  function updatePlayhead() { if (!V) return; $("playhead").style.left = (pv.currentTime / V.dur) * 100 + "%"; $("tcur").textContent = fmt(pv.currentTime); }
+  function previewSeg(seg, play = true) {
+    activeSeg = seg;
+    pv.currentTime = seg.start; pv.playbackRate = S.speed;
+    if (play) pv.play().catch(() => {});
+    document.querySelectorAll(".segblk").forEach((b) => b.classList.toggle("active", +b.dataset.id === seg.id));
+    document.querySelectorAll(".card").forEach((c) => c.classList.toggle("active", +c.dataset.id === seg.id));
+    updateCropBox();
+  }
+
+  /* ---------- 타임라인 ---------- */
+  const tl = $("tl"), tlc = $("tlc");
+  function drawTimeline() {
+    const r = tl.getBoundingClientRect(); if (!r.width) return;
+    const dpr = window.devicePixelRatio || 1;
+    tlc.width = Math.round(r.width * dpr); tlc.height = Math.round(r.height * dpr);
+    const ctx = tlc.getContext("2d"); ctx.scale(dpr, dpr);
+    const cs = getComputedStyle(document.documentElement);
+    const W = r.width, H = r.height;
+    ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = cs.getPropertyValue("--line"); ctx.lineWidth = 1;
+    [0.33, 0.66].forEach((f) => { ctx.beginPath(); ctx.moveTo(0, Math.round(H * f) + 0.5); ctx.lineTo(W, Math.round(H * f) + 0.5); ctx.stroke(); });
+    if (V && samples.length) {
+      const bw = W / (V ? Math.max(samples.length, 1) : 1);
+      samples.forEach((s) => {
+        const x = (s.t / V.dur) * W;
+        if (s.bad < 1) { ctx.fillStyle = cs.getPropertyValue("--line"); ctx.fillRect(x - bw / 2, 0, bw + 0.5, H); }
+      });
+      ctx.beginPath(); ctx.moveTo(0, H);
+      samples.forEach((s) => ctx.lineTo((s.t / V.dur) * W, H - 4 - (s.m || 0) * (H - 16)));
+      ctx.lineTo((samples[samples.length - 1].t / V.dur) * W, H); ctx.closePath();
+      ctx.fillStyle = cs.getPropertyValue("--graph"); ctx.fill();
+      ctx.fillStyle = cs.getPropertyValue("--danger");
+      samples.forEach((s) => { if (s.cut) ctx.fillRect((s.t / V.dur) * W - 1, H - 10, 2, 10); });
+    }
+    renderSegBlocks();
+  }
+  function renderSegBlocks() {
+    const layer = $("segLayer"); layer.innerHTML = "";
+    if (!V) return;
+    segs.forEach((seg) => {
+      const b = document.createElement("div"); b.className = "segblk" + (seg === activeSeg ? " active" : ""); b.dataset.id = seg.id;
+      b.style.left = (seg.start / V.dur) * 100 + "%"; b.style.width = Math.max(0.6, ((seg.end - seg.start) / V.dur) * 100) + "%";
+      b.innerHTML = `<b>${seg.n}</b><div class="h l"></div><div class="h r"></div>`;
+      b.addEventListener("pointerdown", (e) => segDrag(e, seg, e.target.classList.contains("l") ? "l" : e.target.classList.contains("r") ? "r" : "m"));
+      layer.append(b);
+    });
+  }
+  function segDrag(e, seg, mode) {
+    e.preventDefault(); e.stopPropagation();
+    const blk = e.currentTarget; blk.setPointerCapture(e.pointerId);
+    const w = tl.getBoundingClientRect().width, x0 = e.clientX, s0 = seg.start, e0 = seg.end;
+    let moved = false;
+    const move = (ev) => {
+      const dt = ((ev.clientX - x0) / w) * V.dur; if (Math.abs(ev.clientX - x0) > 3) moved = true;
+      if (mode === "m") { const L = e0 - s0; seg.start = clamp(s0 + dt, 0, V.dur - L); seg.end = seg.start + L; }
+      if (mode === "l") seg.start = clamp(s0 + dt, Math.max(0, e0 - 15), e0 - 0.5);
+      if (mode === "r") seg.end = clamp(e0 + dt, s0 + 0.5, Math.min(V.dur, s0 + 15));
+      blk.style.left = (seg.start / V.dur) * 100 + "%"; blk.style.width = ((seg.end - seg.start) / V.dur) * 100 + "%";
+      pv.currentTime = mode === "r" ? seg.end : seg.start;
+      updateCardRange(seg);
+    };
+    const up = () => {
+      blk.removeEventListener("pointermove", move); blk.removeEventListener("pointerup", up); blk.removeEventListener("pointercancel", up);
+      if (moved) { recomputeAutoCrop(seg); invalidate([seg], 150); }
+      previewSeg(seg, !moved);
+    };
+    blk.addEventListener("pointermove", move); blk.addEventListener("pointerup", up); blk.addEventListener("pointercancel", up);
+  }
+  tl.addEventListener("pointerdown", (e) => {
+    if (!V || e.target.closest(".segblk")) return;
+    const r = tl.getBoundingClientRect();
+    const t = clamp(((e.clientX - r.left) / r.width) * V.dur, 0, V.dur);
+    const inside = segs.find((s) => t >= s.start && t <= s.end);
+    activeSeg = inside || null;
+    pv.currentTime = t; updatePlayhead();
+    document.querySelectorAll(".segblk").forEach((b) => b.classList.toggle("active", activeSeg && +b.dataset.id === activeSeg.id));
+    updateCropBox();
+  });
+  $("addSeg").addEventListener("click", () => {
+    if (!V) return;
+    const L = Math.min(S.len * S.speed, V.dur);
+    const start = clamp(pv.currentTime, 0, V.dur - L);
+    const seg = newSeg(start, start + L, windowScore(start, L));
+    segs.push(seg); segs.sort((a, b) => a.start - b.start); segs.forEach((s, i) => (s.n = i + 1));
+    renderCards(); drawTimeline(); previewSeg(seg, false); invalidate([seg], 0);
+    toast(`${seg.n}번 구간을 추가했어요`);
+  });
+  $("reAuto").addEventListener("click", () => autoPick());
+
+  /* ---------- 카드 ---------- */
+  const cardEls = new Map();
+  function renderCards() {
+    const box = $("cards");
+    [...cardEls.keys()].forEach((id) => { if (!segs.find((s) => s.id === id)) { cardEls.get(id).remove(); cardEls.delete(id); } });
+    segs.forEach((seg) => { if (!cardEls.has(seg.id)) cardEls.set(seg.id, makeCard(seg)); box.append(cardEls.get(seg.id)); updateCard(seg); });
+    $("emptyCards").hidden = segs.length > 0;
+    refreshHead();
+  }
+  function makeCard(seg) {
+    const c = document.createElement("article"); c.className = "card"; c.dataset.id = seg.id;
+    c.innerHTML = `
+      <div class="thumb"><img alt=""><span class="no num"></span><div class="ov"></div></div>
+      <div class="cbody">
+        <div class="range"><span class="num rng"></span><button class="btn ghost small view">영상에서 보기</button></div>
+        <div class="meta num"></div>
+        <div class="nudge">
+          <span>시작</span><button data-a="s-" aria-label="시작 0.5초 앞으로">−</button><button data-a="s+" aria-label="시작 0.5초 뒤로">+</button>
+          <span>끝</span><button data-a="e-" aria-label="끝 0.5초 앞으로">−</button><button data-a="e+" aria-label="끝 0.5초 뒤로">+</button>
+        </div>
+        <input class="txt cap" placeholder="자막 한 줄 (선택) 예: 실제 발림성" maxlength="40" id="cap-${seg.id}">
+        <div class="cact">
+          <button class="btn primary small save">GIF 저장</button>
+          <button class="btn small jpg" title="대표 이미지 저장">JPG</button>
+          <button class="btn small redo">다시</button>
+          <button class="btn small danger del" aria-label="삭제">삭제</button>
+        </div>
+      </div>`;
+    const nudge = c.querySelector(".nudge");
+    nudge.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+      const a = b.dataset.a, d = a.endsWith("+") ? 0.5 : -0.5;
+      if (a[0] === "s") seg.start = clamp(seg.start + d, Math.max(0, seg.end - 15), seg.end - 0.5);
+      else seg.end = clamp(seg.end + d, seg.start + 0.5, Math.min(V.dur, seg.start + 15));
+      recomputeAutoCrop(seg); updateCardRange(seg); renderSegBlocks(); previewSeg(seg, false); invalidate([seg], 700);
+    }));
+    const cap = c.querySelector(".cap"); cap.value = seg.caption;
+    cap.addEventListener("input", () => { seg.caption = cap.value; invalidate([seg], 900); });
+    c.querySelector(".view").addEventListener("click", () => { previewSeg(seg, true); $("vwrap").scrollIntoView({ behavior: "smooth", block: "center" }); });
+    c.querySelector(".thumb").addEventListener("click", () => previewSeg(seg, true));
+    c.querySelector(".save").addEventListener("click", () => { if (seg.out) saveFile(fileName(seg, "gif"), seg.out.blob); });
+    c.querySelector(".jpg").addEventListener("click", async () => { const b = await makeJpg(seg); if (b) saveFile(fileName(seg, "jpg"), b); });
+    c.querySelector(".redo").addEventListener("click", () => { invalidate([seg], 0, true); });
+    c.querySelector(".del").addEventListener("click", () => {
+      if (seg.out) URL.revokeObjectURL(seg.out.url);
+      seg.gen++; segs = segs.filter((s) => s !== seg); segs.forEach((s, i) => (s.n = i + 1));
+      if (activeSeg === seg) activeSeg = segs[0] || null;
+      renderCards(); drawTimeline(); updateCropBox();
+    });
+    return c;
+  }
+  function updateCardRange(seg) {
+    const c = cardEls.get(seg.id); if (!c) return;
+    c.querySelector(".rng").textContent = `${fmt(seg.start)} – ${fmt(seg.end)} · ${((seg.end - seg.start) / S.speed).toFixed(1)}초`;
+  }
+  function updateCard(seg) {
+    const c = cardEls.get(seg.id); if (!c) return;
+    c.querySelector(".no").textContent = "#" + seg.n;
+    c.classList.toggle("active", seg === activeSeg);
+    const th = c.querySelector(".thumb");
+    const d = outDims(QUALITY[S.quality].w); th.style.aspectRatio = d.w + " / " + d.h;
+    updateCardRange(seg);
+    const img = c.querySelector("img"), ov = c.querySelector(".ov"), meta = c.querySelector(".meta");
+    if (seg.out) { if (img.src !== seg.out.url) img.src = seg.out.url; img.hidden = false; } else { img.removeAttribute("src"); img.hidden = true; }
+    ov.hidden = !(seg.status === "rendering" || seg.status === "queued" || (!seg.out && seg.status !== "error"));
+    ov.textContent = seg.status === "rendering" ? (seg.progress || "만드는 중…") : seg.status === "queued" ? "차례 기다리는 중…" : seg.dirty && !S.autoRun ? "‘GIF 만들기’를 눌러 주세요" : "준비 중…";
+    meta.classList.toggle("warn", seg.status === "error" || (seg.out && S.cap && seg.out.bytes > S.cap * 1048576));
+    if (seg.status === "error") meta.textContent = "만들지 못했어요: " + seg.err;
+    else if (seg.out) meta.textContent = `${fmtMB(seg.out.bytes)} · ${seg.out.w}×${seg.out.h} · ${seg.out.frames}프레임 · ${seg.out.fps}fps${seg.out.note ? " · " + seg.out.note : ""}${seg.dirty && seg.status !== "rendering" ? " · 설정 바뀜" : ""}`;
+    else meta.textContent = "";
+    c.querySelector(".save").disabled = !seg.out;
+  }
+  function refreshHead() {
+    const done = segs.filter((s) => s.out);
+    const total = done.reduce((a, s) => a + s.out.bytes, 0);
+    $("sum").textContent = segs.length ? `${done.length}/${segs.length}개 · 합계 ${fmtMB(total)}` : "";
+    const busy = segs.some((s) => s.status === "rendering" || s.status === "queued");
+    $("zipAll").disabled = !segs.length || done.length !== segs.length || busy;
+    const pending = segs.filter((s) => s.dirty).length;
+    $("makeAll").hidden = S.autoRun || !pending;
+    $("makeAll").textContent = `GIF 만들기 (${pending}개)`;
+  }
+  $("makeAll").addEventListener("click", () => runQueue(true));
+  function fileName(seg, ext) {
+    const m = Math.floor(seg.start / 60), s = Math.floor(seg.start % 60);
+    return `${V.base}_${String(seg.n).padStart(2, "0")}_${m}m${String(s).padStart(2, "0")}s.${ext}`;
+  }
+
+  /* ---------- 렌더 큐 ---------- */
+  let queueTimer = null, running = false;
+  function invalidate(list, delay = 400, force = false) {
+    list.forEach((s) => { s.dirty = true; s.gen++; });
+    list.forEach(updateCard); refreshHead();
+    clearTimeout(queueTimer);
+    queueTimer = setTimeout(() => runQueue(force), delay);
+  }
+  async function runQueue(force = false) {
+    if (!S.autoRun && !force) { segs.forEach(updateCard); refreshHead(); return; }
+    if (running) { pendingForce = pendingForce || force; return; }
+    running = true;
+    try {
+      const token = fileToken;
+      let seg;
+      while ((seg = segs.find((s) => s.dirty)) && token === fileToken) {
+        segs.filter((s) => s.dirty && s !== seg).forEach((s) => { s.status = "queued"; updateCard(s); });
+        const gen = seg.gen; seg.status = "rendering"; updateCard(seg); refreshHead();
+        try {
+          const out = await renderGif(seg, gen);
+          if (out && gen === seg.gen && segs.includes(seg)) {
+            if (seg.out) URL.revokeObjectURL(seg.out.url);
+            seg.out = out; seg.dirty = false; seg.status = "done";
+          } else if (out) URL.revokeObjectURL(out.url);
+        } catch (e) {
+          console.error(e);
+          if (gen === seg.gen) { seg.status = "error"; seg.err = e && e.message ? e.message : "알 수 없는 오류"; seg.dirty = false; }
+        }
+        if (seg.status === "rendering") seg.status = seg.out ? "done" : "idle";
+        updateCard(seg); refreshHead();
+      }
+      segs.forEach((s) => { if (s.status === "queued") s.status = s.out ? "done" : "idle"; updateCard(s); });
+      const done = segs.filter((s) => s.out && !s.dirty).length;
+      if (segs.length && done === segs.length) status(`GIF ${done}개 완성 · ‘전체 저장’으로 한 번에 받으세요`, 1);
+    } finally {
+      running = false; refreshHead();
+      if (pendingForce || (S.autoRun && segs.some((s) => s.dirty))) { const f = pendingForce; pendingForce = false; if (segs.some((s) => s.dirty)) runQueue(f); }
+    }
+  }
+  let pendingForce = false;
+
+  /* ---------- 프레임 그리기 ---------- */
+  function drawOverlays(ctx, w, h, seg) {
+    if (seg && seg.caption.trim()) {
+      const fs = Math.max(14, Math.round(h * 0.075));
+      ctx.font = `700 ${fs}px "IBM Plex Sans KR", "Apple SD Gothic Neo", sans-serif`;
+      ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+      ctx.lineJoin = "round"; ctx.lineWidth = Math.max(3, fs * 0.2); ctx.strokeStyle = "rgba(0,0,0,0.85)"; ctx.fillStyle = "#fff";
+      const y = h - Math.round(h * 0.07);
+      ctx.strokeText(seg.caption.trim(), w / 2, y, w * 0.92); ctx.fillText(seg.caption.trim(), w / 2, y, w * 0.92);
+    }
+    if (S.wmOn && S.wmText.trim()) {
+      const fs = Math.max(11, Math.round(h * 0.045)), pad = Math.round(fs * 0.6);
+      ctx.font = `500 ${fs}px "IBM Plex Sans KR", "Apple SD Gothic Neo", sans-serif`;
+      const right = S.wmPos[1] === "r", bottom = S.wmPos[0] === "b";
+      ctx.textAlign = right ? "right" : "left"; ctx.textBaseline = bottom ? "bottom" : "top";
+      const x = right ? w - pad : pad;
+      const y = bottom ? h - pad : pad;
+      ctx.lineWidth = Math.max(2, fs * 0.18); ctx.strokeStyle = "rgba(0,0,0,0.55)"; ctx.fillStyle = "rgba(255,255,255,0.9)";
+      ctx.strokeText(S.wmText.trim(), x, y); ctx.fillText(S.wmText.trim(), x, y);
+    }
+  }
+
+  async function captureFrames(seg, gen, w, h, fps) {
+    const c = document.createElement("canvas"); c.width = w; c.height = h;
+    const ctx = c.getContext("2d", { willReadFrequently: true });
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+    const r = cropRect(cropCenter(seg));
+    const outDur = (seg.end - seg.start) / S.speed;
+    const n = Math.max(2, Math.round(outDur * fps));
+    const frames = [];
+    for (let i = 0; i < n; i++) {
+      if (gen !== seg.gen) return null;
+      const t = Math.min(seg.start + (i / fps) * S.speed, V.dur - 0.04);
+      await seek(wv, t);
+      ctx.drawImage(wv, r.sx, r.sy, r.sw, r.sh, 0, 0, w, h);
+      drawOverlays(ctx, w, h, seg);
+      frames.push(ctx.getImageData(0, 0, w, h).data);
+      if (i % 3 === 0) { seg.progress = `프레임 담는 중 ${i + 1}/${n}`; updateCard(seg); }
+    }
+    return frames;
+  }
+
+  async function encode(frames, w, h, fps, thr, seg, gen) {
+    const { GIFEncoder, quantize, applyPalette } = await gifenc();
+    let seq = frames;
+    if (S.loop === "boomerang" && frames.length > 2) seq = frames.concat(frames.slice(1, -1).reverse());
+    // 전체 프레임에서 고르게 뽑아 공통 팔레트 만들기
+    const px = w * h, target = 260000;
+    const stride = Math.max(1, Math.floor((px * frames.length) / target));
+    const sample = new Uint8Array(Math.ceil((px * frames.length) / stride) * 4);
+    let k = 0, g = 0;
+    for (const f of frames) for (let p = 0; p < px; p++, g++) if (g % stride === 0) { const o = p * 4; sample[k++] = f[o]; sample[k++] = f[o + 1]; sample[k++] = f[o + 2]; sample[k++] = 255; }
+    const palette = quantize(sample.subarray(0, k), 255, { format: "rgb565" });
+    const T = palette.length; const full = palette.concat([[0, 0, 0]]);
+    const gif = GIFEncoder();
+    const delay = Math.round(1000 / fps);
+    const shown = new Uint8Array(px);
+    for (let i = 0; i < seq.length; i++) {
+      if (gen !== seg.gen) return null;
+      const f = seq[i];
+      const idx = applyPalette(f, palette, "rgb565");
+      if (i === 0) { shown.set(idx); gif.writeFrame(idx, w, h, { palette: full, delay, dispose: 1 }); }
+      else {
+        for (let p = 0; p < px; p++) {
+          const s = shown[p];
+          if (idx[p] === s) { idx[p] = T; continue; }
+          const c = palette[s], o = p * 4;
+          const dr = f[o] - c[0], dg = f[o + 1] - c[1], db = f[o + 2] - c[2];
+          if (dr * dr + dg * dg + db * db < thr) idx[p] = T; else shown[p] = idx[p];
+        }
+        gif.writeFrame(idx, w, h, { delay, transparent: true, transparentIndex: T, dispose: 1 });
+      }
+      if (i % 4 === 0) { seg.progress = `GIF로 굽는 중 ${i + 1}/${seq.length}`; updateCard(seg); await sleep0(); }
+    }
+    gif.finish();
+    return { bytes: gif.bytes(), frames: seq.length };
+  }
+
+  async function renderGif(seg, gen) {
+    if (!V) return null;
+    const q = QUALITY[S.quality];
+    let W = q.w, fps = q.fps, thr = q.thr, note = "";
+    const cap = S.cap ? S.cap * 1048576 : Infinity;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const d = outDims(W);
+      const frames = await captureFrames(seg, gen, d.w, d.h, fps);
+      if (!frames) return null;
+      const res = await encode(frames, d.w, d.h, fps, thr, seg, gen);
+      if (!res) return null;
+      if (res.bytes.length <= cap || attempt === 3) {
+        const blob = new Blob([res.bytes], { type: "image/gif" });
+        if (res.bytes.length > cap) note = "상한 초과: 구간을 줄여 보세요";
+        return { blob, url: URL.createObjectURL(blob), bytes: res.bytes.length, w: d.w, h: d.h, frames: res.frames, fps, note };
+      }
+      // 용량 초과: 비율에 맞춰 크기·fps를 낮춰 다시
+      let ratio = cap / res.bytes.length;
+      if (fps > 10 && ratio < 0.8) { const nf = Math.max(10, fps - 3); ratio *= fps / nf; fps = nf; }
+      const scale = clamp(Math.sqrt(ratio) * 0.95, 0.6, 0.95);
+      W = Math.max(320, Math.round(W * scale));
+      thr = Math.round(thr * 1.4);
+      note = `${S.cap}MB에 맞추려고 줄였어요`;
+      seg.progress = "용량 맞추는 중…"; updateCard(seg);
+    }
+    return null;
+  }
+
+  async function makeJpg(seg) {
+    if (!V) return null;
+    const r = cropRect(cropCenter(seg));
+    const w = Math.round(Math.min(1200, r.sw)), h = Math.round(w * r.sh / r.sw);
+    const c = document.createElement("canvas"); c.width = w; c.height = h;
+    const ctx = c.getContext("2d"); ctx.imageSmoothingQuality = "high";
+    const keep = wv.currentTime;
+    await seek(wv, (seg.start + seg.end) / 2);
+    ctx.drawImage(wv, r.sx, r.sy, r.sw, r.sh, 0, 0, w, h);
+    drawOverlays(ctx, w, h, null);
+    if (!running) await seek(wv, keep);
+    return new Promise((res) => c.toBlob(res, "image/jpeg", 0.9));
+  }
+
+  $("zipAll").addEventListener("click", async () => {
+    const btn = $("zipAll"); btn.disabled = true; const label = btn.textContent; btn.textContent = "ZIP 묶는 중…";
+    try {
+      const files = [];
+      for (const seg of segs) {
+        if (!seg.out) continue;
+        files.push({ name: fileName(seg, "gif"), data: new Uint8Array(await seg.out.blob.arrayBuffer()) });
+        if (S.withJpg) { const j = await makeJpg(seg); if (j) files.push({ name: fileName(seg, "jpg"), data: new Uint8Array(await j.arrayBuffer()) }); }
+      }
+      await saveFile(`${V.base}_GIF${segs.length}개.zip`, makeZip(files));
+    } finally { btn.textContent = label; refreshHead(); }
+  });
+
+  buildSegControls();
+  drawTimeline();
+})();
+</script>
+
+</body></html>
