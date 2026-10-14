@@ -1350,6 +1350,7 @@ $('#bkCopy').onclick=()=>{
 };
 // 백업 복원과 서버 동기화가 같은 경로를 쓴다
 function applyData(d,quiet){
+  const keepEdit=editingId;   // 서버 내용을 받아도 편집 중이던 글을 놓치지 않는다
   posts=Array.isArray(d.posts)?d.posts:[];
   ideas=Array.isArray(d.ideas)?d.ideas:[];
   mine=d.presets&&typeof d.presets==='object'?d.presets:{};
@@ -1360,7 +1361,13 @@ function applyData(d,quiet){
   applyingRemote=!!quiet;
   savePosts(); saveIdeas(); DB.set(P+'presets',mine); DB.set(P+'blogs',blogs); DB.set(P+'ranks',ranks); DB.set(P+'tracked',tracked); DB.set(P+'vols',vols);
   applyingRemote=false;
-  setEditing(null); tabs(); fillChannelSelects(); $('#blogUrl').value=blogOf(activeCh); renderAll();
+  // 편집 중이던 글이 그대로 있으면 편집 상태를 이어간다.
+  // (예전에는 무조건 해제돼서, 고친 내용을 저장하면 원글이 아니라 새 글로 저장됐다)
+  const stillThere=keepEdit&&posts.some(p=>p.id===keepEdit);
+  setEditing(stillThere?keepEdit:null);
+  tabs(); fillChannelSelects(); $('#blogUrl').value=blogOf(activeCh); renderAll();
+  if(keepEdit&&stillThere) msg('#saveMsg','서버의 최신 내용을 받았습니다. 편집 중인 글은 그대로입니다.');
+  else if(keepEdit) msg('#saveMsg','편집 중이던 글이 서버 쪽에서 사라졌습니다. 저장하면 새 글로 저장됩니다.');
 }
 const snapshot=()=>({presets:mine,blogs,posts,ideas,ranks,tracked,vols});
 
