@@ -1,2 +1,3 @@
-pp_detail1 404 https://popomon.com/campaignDetail/324691 3573
-pp_detail2 404 https://popomon.com/next/campaignDetail/324691 21023
+pp_d3 200 https://popomon.com/next/campaign/324691 25756
+pp_d4 200 https://popomon.com/next/campaign/324691 25756
+pp_cpage_ctx2 200 https://popomon.com/next/_next/static/chunks/app/campaign/page-2026.10.15-1.js 61586
