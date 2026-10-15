@@ -1,2 +1,3 @@
-pp_cpage_grep 200 https://popomon.com/next/_next/static/chunks/app/campaign/page-2026.10.15-1.js 61586
-pp_cpage_ctx 200 https://popomon.com/next/_next/static/chunks/app/campaign/page-2026.10.15-1.js 61586
+pp_list_visit 200 https://popomon.com/api_p/campaign/fetch_getcampaignlist?searchAlign=latest&bigRecruitType=Lvisiting&recruitType=visiting&interestsFilter=ALL&cityLocation=ALL&pageNum=0 18099
+pp_list_ship 200 https://popomon.com/api_p/campaign/fetch_getcampaignlist?searchAlign=latest&bigRecruitType=Pshipping&recruitType=shipping&interestsFilter=ALL&pageNum=0 16920
+pp_list_visit_p50 200 https://popomon.com/api_p/campaign/fetch_getcampaignlist?searchAlign=latest&bigRecruitType=Lvisiting&recruitType=visiting&interestsFilter=ALL&cityLocation=ALL&pageNum=50 16702
