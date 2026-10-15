@@ -1,4 +1,2 @@
-revu_ctx2 200 https://www.revu.net/build/www.min.js?6d0d94850d255a0cdee01e77b3f371f908ed3fdb 10599032
-revu_api2 401 https://api.weble.net/v1/campaigns?cat=%EB%A7%9B%EC%A7%91&type=all&sort=latest&page=1&limit=5 81
-rn_api_p1 200 https://www.reviewnote.co.kr/api/v2/campaigns?page=1&limit=50&s=default 11143
-rn_api_p40 200 https://www.reviewnote.co.kr/api/v2/campaigns?page=40&limit=50&s=default 11003
+revu_ctx3 200 https://www.revu.net/build/www.min.js?6d0d94850d255a0cdee01e77b3f371f908ed3fdb 10599032
+revu_campaign_page 200 https://www.revu.net/campaign/%EB%A7%9B%EC%A7%91 6873
