@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import urllib.parse
 from pathlib import Path
 
 from common import UA, fetch_json, make_item, norm_sido, polite_sleep, split_address, to_kst_date, today_kst
@@ -42,6 +43,7 @@ def _debug(name: str, data) -> None:
         text = data if isinstance(data, str) else json.dumps(data, ensure_ascii=False, indent=1)
         # 토큰·아이디·비밀번호는 남기지 않는다 (공개 저장소에 올라간다)
         text = re.sub(r"Bearer\s+[\w\-.]+", "Bearer [REDACTED]", text)
+        text = re.sub(r"(users/|userId=)\d+", r"\1[REDACTED]", text)  # 부계정 번호
         for secret in (os.environ.get("REVU_PW"), os.environ.get("REVU_ID")):
             if secret:
                 text = text.replace(secret, "[REDACTED]")
@@ -72,8 +74,8 @@ def _left_login(url: str) -> bool:
     return "revu.net" in url and "/login" not in url
 
 
-def login_token() -> str:
-    """로그인하고 api.weble.net 에 쓰는 'Bearer …' 값을 돌려준다."""
+def login_token() -> tuple[str, list[str]]:
+    """로그인하고 (api.weble.net 에 쓰는 'Bearer …', 카테고리 화면이 부른 목록 API 주소들) 을 돌려준다."""
     from playwright.sync_api import sync_playwright
 
     uid, pw = os.environ.get("REVU_ID"), os.environ.get("REVU_PW")
@@ -127,6 +129,16 @@ def login_token() -> str:
                 page.goto(f"{WWW}/campaign", wait_until="domcontentloaded", timeout=60_000)
                 page.wait_for_timeout(5000)
                 _find_token(page, token)
+            if "v" in token:
+                # 로그인한 상태로 메인의 카테고리 화면(/category/지역/맛집 …)을 차례로 열어,
+                # 화면이 부르는 목록 API 주소(조건 포함)를 받아 둔다. 카테고리 화면은 로그인해야 열린다(10-15 확인).
+                page.goto(f"{WWW}/", wait_until="domcontentloaded", timeout=60_000)
+                page.wait_for_timeout(3000)
+                hrefs = page.eval_on_selector_all(
+                    "a[href^='/category/']", "els => [...new Set(els.map(e => e.getAttribute('href')))]")
+                for h in hrefs[:30]:
+                    page.goto(WWW + h, wait_until="domcontentloaded", timeout=60_000)
+                    page.wait_for_timeout(3000)
             if "v" in token and state is not None:
                 # 갱신된 쿠키를 다시 저장해서 로그인 상태를 오래 유지한다
                 fresh = ctx.storage_state()
@@ -143,7 +155,8 @@ def login_token() -> str:
             browser.close()
     if "v" not in token:
         raise RuntimeError("로그인은 됐지만 토큰을 찾지 못함")
-    return token["v"]
+    lists = {_with_page(u, 1): None for u in seen_api if re.search(r"api\.weble\.net/v1/campaigns\?", u)}
+    return token["v"], list(lists)
 
 
 # ── 응답 → 공통 레코드 ─────────────────────────────────
@@ -163,59 +176,83 @@ def _first(o: dict, *keys):
 
 
 def parse(o: dict) -> dict | None:
-    cid = _first(o, "id", "campaignId")
-    title = _first(o, "title", "name", "campaignTitle")
-    if not cid or not title:
+    """응답 필드는 10-15 첫 수집 샘플(_debug/revu_sample.json) 기준.
+    이름은 item, 제공은 campaignData.reward, 유형은 category 배열('방문형'·'배송형'·'기자단'), 모집 중 = status REQUEST."""
+    cid = o.get("id")
+    title = _first(o, "item", "title")
+    if not cid or not title or o.get("status") not in (None, "REQUEST") or o.get("active") is False:
         return None
-    end = to_kst_date(_first(o, "requestEndedOn", "requestEndAt", "recruitEndAt", "applyEndAt", "endDate"))
-    if end and end < today_kst():
+    end = to_kst_date(o.get("requestEndedOn"))
+    if not end or end < today_kst():
         return None
-    cat = _first(o, "category", "categoryName", "cat") or ""
-    if isinstance(cat, dict):
-        cat = cat.get("name") or cat.get("title") or ""
-    kind = str(_first(o, "type", "campaignType", "kind") or "").lower()
-    ctype = _TYPE.get(kind)
-    if not ctype:
-        ctype = "visit" if any(w in str(cat) for w in ("지역", "맛집", "방문", "여행", "숙박")) else "delivery"
-    addr = _first(o, "address", "venueAddress", "localAddress", "addr") or ""
-    if isinstance(addr, dict):
-        addr = addr.get("address") or addr.get("roadAddress") or ""
-    sido, sgg = split_address(addr)
-    if not sido:
-        sido = norm_sido(_first(o, "area", "region", "sido") or "")
-    media = str(_first(o, "media", "mediaType", "channel") or "blog").lower()
+    cats = [c for c in (o.get("category") or []) if isinstance(c, str)]
+    joined = " ".join(cats)
+    if "기자단" in joined:
+        ctype = "reporter"
+    elif "구매평" in joined or (o.get("campaignOptions") or {}).get("onlyMarketReview"):
+        ctype = "purchase"
+    elif "포장" in joined:
+        ctype = "takeout"
+    elif "방문" in joined or "지역" in joined or o.get("localTag"):
+        ctype = "visit"
+    else:
+        ctype = "delivery"
+    venue = o.get("venue") or {}
+    sido, sgg = split_address(venue.get("addressFirst") or "")
+    if not sido and o.get("localTag"):
+        sido, sgg = split_address(" ".join(map(str, o["localTag"])))
+    media = str(o.get("media") or "blog").lower()
+    channel = _CHANNEL.get(media, "etc")
+    short = str((o.get("campaignOptions") or {}).get("shortForm") or "")
+    if channel == "insta" and "reels" in short:
+        channel = "reels"
+    data = o.get("campaignData") or {}
+    offer = str(data.get("reward") or "")
+    if data.get("point"):
+        offer = f"{offer} + {int(data['point']):,}P" if offer else f"{int(data['point']):,}P"
+    site_cat = next((c for c in cats if c not in ("방문형", "배송형", "기자단", "프리미어형")), cats[0] if cats else "")
     return make_item(
         site=SITE, sid=cid, url=f"{WWW}/campaign/{cid}",
-        title=title, offer=str(_first(o, "item", "offer", "reward", "providedItem", "benefit") or ""),
-        ctype=ctype, channel=_CHANNEL.get(media, "etc"),
-        sido=sido, sigungu=sgg, site_category=str(cat), apply_end=end,
-        recruit=_first(o, "reviewerLimit", "recruitCount", "limit", "quota"),
-        applicants=_first(o, "requestCount", "applicantCount", "applyCount"),
+        title=title, offer=offer, ctype=ctype, channel=channel,
+        sido=sido, sigungu=sgg, site_category=site_cat, apply_end=end,
+        recruit=o.get("reviewerLimit"),
+        applicants=(o.get("campaignStats") or {}).get("requestCount"),
     )
 
 
+def _with_page(url: str, page: int) -> str:
+    parts = urllib.parse.urlsplit(url)
+    q = dict(urllib.parse.parse_qsl(parts.query, keep_blank_values=True))
+    q["page"] = str(page)
+    return urllib.parse.urlunsplit(parts._replace(query=urllib.parse.urlencode(q)))
+
+
 def collect() -> list[dict]:
-    auth = login_token()
-    headers = {"Authorization": auth, "Origin": WWW, "Referer": f"{WWW}/campaign"}
+    auth, list_urls = login_token()
+    headers = {"Authorization": auth, "Origin": WWW, "Referer": f"{WWW}/"}
+    # 카테고리 화면이 부른 목록 주소를 그대로 쓴다. 못 잡았으면 전체 최신순(지난 공고가 섞여 있어 모집 중이 끝나면 멈춤).
+    bases = list_urls or [f"{API}?type=all&sort=latest&limit={PAGE_SIZE}&page=1"]
     out, seen = [], set()
-    for page in range(1, MAX_PAGES + 1):
-        res = fetch_json(API, params={"type": "all", "sort": "latest", "page": page, "limit": PAGE_SIZE},
-                         headers=headers)
-        rows = res.get("items") or res.get("data") or []
-        if page == 1:
-            _debug("revu_sample.json", {"keys": list(res.keys()), "total": res.get("total"), "first": rows[:2]})
-        if not rows:
-            break
-        new = 0
-        for o in rows:
-            if o.get("id") in seen:
-                continue
-            seen.add(o.get("id"))
-            new += 1
-            it = parse(o)
-            if it:
-                out.append(it)
-        if not new:
-            break
-        polite_sleep(1.2)  # 계정 보호: 천천히
+    for base in bases:
+        empty = 0
+        for page in range(1, MAX_PAGES + 1):
+            res = fetch_json(_with_page(base, page), headers=headers)
+            rows = res.get("items") or res.get("data") or []
+            if base == bases[0] and page == 1:
+                _debug("revu_sample.json", {"url": base, "keys": list(res.keys()), "total": res.get("total"),
+                                            "first": rows[:2]})
+            new = [o for o in rows if o.get("id") not in seen]
+            if not new:
+                break
+            got = 0
+            for o in new:
+                seen.add(o.get("id"))
+                it = parse(o)
+                if it:
+                    out.append(it)
+                    got += 1
+            empty = 0 if got else empty + 1
+            if empty >= 3:  # 모집 중이 세 페이지 연속 없으면 그 뒤는 지난 공고
+                break
+            polite_sleep(1.2)  # 계정 보호: 천천히
     return out
