@@ -47,7 +47,7 @@ chehumdan/
 - 참고: 인플렉서는 자기 수집 서버(inflexer.net:5000)에 40여 개 플랫폼을 모아 두고 화면은 그 API만 읽는다.
 
 ## 다음 할 일
-1. 사용자: `KR_PC.md` 대로 레뷰 부계정 Secrets 넣기 + 사무실 PC(Windows, 24시간)를 runner(라벨 chehumdan-kr)로 등록
+1. 사용자: `KR_PC.md` 대로 레뷰 부계정(이메일 가입, 10-15) Secrets 넣기 + 사무실 PC(Windows, 24시간)를 runner(라벨 chehumdan-kr)로 등록
 2. 한국 PC에서 강남맛집 구조 확인(probe) → 수집기 구현, 레뷰 첫 로그인·응답 필드 맞추기
 3. 이 브랜치를 main 에 병합 → Pages 공개 + 정기 수집 시작(정기 실행은 기본 브랜치에서만 돈다)
 4. 분류 규칙은 실제 데이터를 보며 `test_common.py` 에 사례를 추가하면서 다듬는다
