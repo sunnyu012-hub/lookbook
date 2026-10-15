@@ -9,7 +9,7 @@ from common import fetch_json, make_item, norm_sido, polite_sleep, to_kst_date, 
 
 SITE = "reviewnote"
 BASE = "https://www.reviewnote.co.kr"
-MAX_PAGES = 2500  # 한 페이지 16건(사이트가 정한 최대) → 최대 40,000건
+MAX_PAGES = 790   # 한 페이지 16건(사이트가 정한 최대). 사이트가 약 800페이지에서 끊는다
 PAGE_SIZE = 16
 
 # 모집 중 상태만 받는다. SELECT=모집(선정 전), PROGRESS=상시 모집형(구매평 등).
@@ -47,10 +47,12 @@ def parse(o: dict) -> dict | None:
     )
 
 
-def collect() -> list[dict]:
-    out, seen = [], set()
+def _pages(city: str, seen: set, out: list) -> int:
+    """한 지역(city)의 목록을 끝까지 넘긴다. 받은 새 공고 수를 돌려준다."""
+    before = len(out)
     for page in range(MAX_PAGES):
-        data = fetch_json(f"{BASE}/api/v2/campaigns", params={"page": page, "limit": PAGE_SIZE, "s": "default"},
+        data = fetch_json(f"{BASE}/api/v2/campaigns",
+                          params={"page": page, "limit": PAGE_SIZE, "s": "default", "city": city},
                           headers={"Referer": f"{BASE}/campaigns"})
         objs = data.get("objects") or []
         if objs and all(o.get("id") in seen for o in objs):
@@ -65,4 +67,15 @@ def collect() -> list[dict]:
         if not data.get("has_more") or not objs:
             break
         polite_sleep(0.4)
+    return len(out) - before
+
+
+def collect() -> list[dict]:
+    # 전체 목록은 약 800페이지(12,800건)에서 끊겨서, 시/도별로 나눠 받는다.
+    sidos = fetch_json(f"{BASE}/api/v2/sidos", headers={"Referer": f"{BASE}/campaigns"})
+    cities = [s["name"] for s in sidos if s.get("name")]
+    out, seen = [], set()
+    for city in cities:
+        n = _pages(city, seen, out)
+        print(f"  리뷰노트 {city}: {n}건")
     return out

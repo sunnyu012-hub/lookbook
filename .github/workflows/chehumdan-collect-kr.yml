@@ -1,0 +1,67 @@
+name: chehumdan-collect-kr
+# 체험단 다모아: 한국 PC(self-hosted runner)에서만 되는 사이트 — 레뷰(부계정 로그인), 강남맛집(해외 IP 차단)
+# 계정 보호를 위해 하루 두 번만 돈다. 러너 라벨: chehumdan-kr
+on:
+  schedule:
+    # KST 08:40, 18:40
+    - cron: "40 23,9 * * *"
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "collect = 수집, probe = 사이트 구조 확인"
+        default: collect
+        type: choice
+        options: [collect, probe]
+      sites:
+        description: "수집할 사이트 (공백으로 구분)"
+        default: "revu gangnam"
+permissions:
+  contents: write
+concurrency:
+  group: chehumdan-collect-kr
+  cancel-in-progress: false
+jobs:
+  collect:
+    runs-on: [self-hosted, chehumdan-kr]
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    env:
+      PYTHONIOENCODING: utf-8
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 준비
+        run: |
+          python -m pip install -q --upgrade pip playwright
+          python -m playwright install chromium
+      - name: 수집
+        if: ${{ github.event_name == 'schedule' || inputs.task == 'collect' }}
+        working-directory: chehumdan/collect
+        env:
+          REVU_ID: ${{ secrets.REVU_ID }}
+          REVU_PW: ${{ secrets.REVU_PW }}
+          CHEHUMDAN_DEBUG: ${{ github.workspace }}/chehumdan/_debug
+        run: python run.py ${{ inputs.sites || 'revu gangnam' }}
+      - name: 구조 확인
+        if: ${{ inputs.task == 'probe' }}
+        run: rm -rf chehumdan/_probe2 && python chehumdan/scripts/probe2.py chehumdan/scripts/probe-kr-urls.txt; cat chehumdan/_probe2/_summary.txt
+      - name: 저장
+        if: ${{ always() }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898+github-actions[bot]@users.noreply.github.com"
+          git add chehumdan/data/sites || true
+          [ -d chehumdan/_debug ] && git add -f chehumdan/_debug
+          [ -d chehumdan/_probe2 ] && git add -f chehumdan/_probe2
+          git diff --cached --quiet && exit 0
+          git commit -m "체험단 다모아: 한국 PC 수집 $(TZ=Asia/Seoul date '+%m-%d %H:%M')"
+          for i in 1 2 3; do
+            git pull --rebase -q origin "${GITHUB_REF_NAME}" && git push -q origin "HEAD:${GITHUB_REF_NAME}" && exit 0
+            sleep $((i * 5))
+          done
+          exit 1

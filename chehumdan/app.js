@@ -7,6 +7,8 @@
   const SIDO = ["전국", "서울", "경기", "인천", "부산", "대구", "광주", "대전", "울산", "세종", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"];
   const SITE_URL = {
     reviewnote: (id) => `https://www.reviewnote.co.kr/campaigns/${id}`,
+    revu: (id) => `https://www.revu.net/campaign/${id}`,
+    popomon: (id) => `https://popomon.com/campaignDetail/${id}`,
   };
   const SOON_DAYS = 2;
   const PAGE = 60;
@@ -263,14 +265,29 @@
 
   function renderUpdated(data) {
     const when = data.updated ? new Date(data.updated).toLocaleString("ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "알 수 없음";
-    const sites = Object.entries(data.sites || {}).map(([k, s]) => `${SITES[k] || k} ${s.ok ? s.count.toLocaleString() + "건" : "수집 실패"}`);
+    const sites = Object.entries(data.sites || {}).map(([k, s]) => `${SITES[k] || k} ${s.count.toLocaleString()}건${s.ok ? "" : "(최근 수집 실패)"}`);
     $("updated").textContent = `마지막 수집 ${when}` + (sites.length ? ` · ${sites.join(" · ")}` : "");
   }
 
   readHash();
   bind();
-  (window.__CAMPAIGNS__ ? Promise.resolve(window.__CAMPAIGNS__) : fetch("data/campaigns.json", { cache: "no-cache" })
-    .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }))
+  // 사이트마다 파일이 따로 있다: data/sites/<사이트>.json (없는 사이트는 건너뜀)
+  const loadSite = (k) => fetch(`data/sites/${k}.json`, { cache: "no-cache" })
+    .then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  const load = window.__CAMPAIGNS__
+    ? Promise.resolve(window.__CAMPAIGNS__)
+    : Promise.all(Object.keys(SITES).map(loadSite)).then((files) => {
+        const data = { sites: {}, items: [], updated: null };
+        for (const f of files) {
+          if (!f) continue;
+          data.sites[f.site] = { ok: f.ok, count: f.count, updated: f.updated };
+          data.items.push(...(f.items || []));
+          if (f.updated && (!data.updated || f.updated > data.updated)) data.updated = f.updated;
+        }
+        if (!data.items.length) throw new Error("no data");
+        return data;
+      });
+  load
     .then((data) => {
       const now = today;
       items = (data.items || []).filter((it) => !it.end || it.end >= now);

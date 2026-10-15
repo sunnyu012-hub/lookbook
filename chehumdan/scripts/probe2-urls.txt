@@ -1,4 +1,3 @@
 # 이름 모드 URL [헤더JSON]   (모드: raw | grep | ctx:키워드1|키워드2)
-pp_list_visit raw https://popomon.com/api_p/campaign/fetch_getcampaignlist?searchAlign=latest&bigRecruitType=Lvisiting&recruitType=visiting&interestsFilter=ALL&cityLocation=ALL&pageNum=0 {"Referer":"https://popomon.com/next/campaign"}
-pp_list_ship raw https://popomon.com/api_p/campaign/fetch_getcampaignlist?searchAlign=latest&bigRecruitType=Pshipping&recruitType=shipping&interestsFilter=ALL&pageNum=0 {"Referer":"https://popomon.com/next/campaign"}
-pp_list_visit_p50 raw https://popomon.com/api_p/campaign/fetch_getcampaignlist?searchAlign=latest&bigRecruitType=Lvisiting&recruitType=visiting&interestsFilter=ALL&cityLocation=ALL&pageNum=50 {"Referer":"https://popomon.com/next/campaign"}
+pp_detail1 raw https://popomon.com/campaignDetail/324691
+pp_detail2 raw https://popomon.com/next/campaignDetail/324691
