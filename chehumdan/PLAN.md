@@ -26,8 +26,8 @@ chehumdan/
     kr_job.py                     한국 PC 작업(할 일 정하기→준비→수집/probe→커밋). 워크플로는 shell: cmd 에서 이것만 부른다
     run.py                        전체 실행 + first_seen 유지 + 마감 지난 공고 제거
     test_common.py                분류기 테스트 (python -m unittest test_common)
-.github/workflows/chehumdan-collect.yml      GitHub 서버: 리뷰노트·포포몬 + 10-15 추가 7곳(시험 중), 하루 4번(KST 07·11·16·21시)
-.github/workflows/chehumdan-collect-kr.yml   한국 PC: 레뷰·강남맛집, 하루 2번(KST 08:40·18:40)
+.github/workflows/chehumdan-collect.yml      GitHub 서버: 리뷰노트·포포몬·디너의여왕·놀러와·체험뷰·똑똑, 하루 4번(KST 07·11·16·21시)
+.github/workflows/chehumdan-collect-kr.yml   한국 PC: 레뷰·강남맛집·리뷰의민족·포블로그·클라우드리뷰, 하루 2번(KST 08:40·18:40)
 ```
 - 사이트 하나가 실패해도 나머지는 계속 돌고, 실패한 사이트는 지난번 데이터를 유지한다.
 - 화면: PC는 왼쪽 필터 사이드바 + 교환권 모양 카드 격자. 모바일(860px 이하)은 지역·목적 빠른 분류 띠 + 한 줄 목록 + 아래에서 올라오는 필터 시트.
@@ -44,6 +44,8 @@ chehumdan/
 | 강남맛집 | 사무실 PC, 하루 2번 | 해외 IP 차단. `/theme/go/_list_cmp_tpl.php?rpage=N` 목록 조각(28건씩). 10-15 7,003건 |
 
 ### 10-15 추가 (사용자가 알려 준 사이트) — 모두 로그인 없음·robots 허용, 건수는 한국 PC 기준
+GitHub 서버 시험(10-15 18:57): 디너의여왕·체험뷰·놀러와·똑똑은 해외에서도 됨. 리뷰의민족·포블로그는 접속 실패, 클라우드리뷰는 0건 → 한국 PC로 옮김(18:59 성공).
+사이트마다 수집 상한 25분(`run.py SITE_TIMEOUT`) — 한 곳이 막혀도 나머지는 저장된다. 리뷰노트는 서버에서 12분 넘게 걸린다.
 | 사이트 | 목록 출처 | 건수 |
 |---|---|---|
 | 디너의여왕 dinnerqueen.net | `POST /taste/taste_list?page=N` (카드 HTML 30건) | 8,470 |
@@ -65,7 +67,6 @@ chehumdan/
 - 참고: 인플렉서는 자기 수집 서버(inflexer.net:5000)에 40여 개 플랫폼을 모아 두고 화면은 그 API만 읽는다.
 
 ## 다음 할 일
-1. 추가 7곳이 GitHub 서버(해외 IP)에서 되는지 확인 → 막히는 곳은 한국 PC 워크플로로 옮긴다
-2. 보류 사이트 결정(사용자)
-3. 이 브랜치를 main 에 병합 → Pages 공개 + 정기 수집 시작(정기 실행은 기본 브랜치에서만 돈다)
-4. 분류 규칙은 실제 데이터를 보며 `test_common.py` 에 사례를 추가하면서 다듬는다
+1. 보류 사이트 결정(사용자)
+2. 이 브랜치를 main 에 병합 → Pages 공개 + 정기 수집 시작(정기 실행은 기본 브랜치에서만 돈다)
+3. 분류 규칙은 실제 데이터를 보며 `test_common.py` 에 사례를 추가하면서 다듬는다
