@@ -42,7 +42,7 @@ chehumdan/
 | 레뷰 | 사무실 PC, 하루 2번 | 목록 API `api.weble.net/v1/campaigns` 가 로그인 토큰 필요. 사용자 결정(10-15): **부계정 + 한국 PC + 하루 1~2번**. 화면 없는 크롬으로 accounts.revu.net 로그인 → 토큰 → 목록. 응답 필드는 첫 실행 결과 보고 맞춤 |
 | 강남맛집 | 사무실 PC, 하루 2번 | 해외 IP 차단(GitHub 서버에서 시간 초과). 한국 PC에서 구조 확인 후 구현 |
 
-- 사무실 PC(Windows) 설정 방법: `KR_PC.md`. 브랜치에서 시험할 때는 `scripts/kr-task.txt`(1줄 collect|probe, 2줄 사이트)를 바꿔 올린다.
+- 사무실 PC(Windows) 설정 방법: `KR_PC.md`(손으로) 또는 `OFFICE_PC_SESSION.md`(사무실 PC에서 Claude 세션을 열어 진행). 브랜치에서 시험할 때는 `scripts/kr-task.txt`(1줄 collect|probe, 2줄 사이트)를 바꿔 올린다.
 - 레뷰는 로그인해야 보이는 정보인데 사이트가 공개라 누구나 보게 된다는 점은 사용자에게 알렸음.
 - 참고: 인플렉서는 자기 수집 서버(inflexer.net:5000)에 40여 개 플랫폼을 모아 두고 화면은 그 API만 읽는다.
 
