@@ -1,0 +1,24 @@
+# 이름 모드 URL [헤더JSON]
+rn_campaigns_js grep https://www.reviewnote.co.kr/_next/static/chunks/pages/campaigns-2977f684cfaaf604.js
+rn_app_js grep https://www.reviewnote.co.kr/_next/static/chunks/pages/_app-e21684bdf12ae15b.js
+rn_7536 grep https://www.reviewnote.co.kr/_next/static/chunks/7536-acf6aaa14f74219f.js
+rn_6950 grep https://www.reviewnote.co.kr/_next/static/chunks/6950-e8536f8c2a24c50f.js
+rn_7867 grep https://www.reviewnote.co.kr/_next/static/chunks/7867-0b7b96464572f09a.js
+rn_7739 grep https://www.reviewnote.co.kr/_next/static/chunks/7739-81302e51f90a05b1.js
+rn_1958 grep https://www.reviewnote.co.kr/_next/static/chunks/1958-61f8c0c82fc312f4.js
+rn_9409 grep https://www.reviewnote.co.kr/_next/static/chunks/9409-04a892f624d81f3f.js
+rn_9731 grep https://www.reviewnote.co.kr/_next/static/chunks/9731-d38882d6164de32e.js
+rn_8911 grep https://www.reviewnote.co.kr/_next/static/chunks/8911-218bae8807888e1b.js
+rn_7652 grep https://www.reviewnote.co.kr/_next/static/chunks/7652-5f7c121b8a8884be.js
+revu_www_js grep https://www.revu.net/build/www.min.js?6d0d94850d255a0cdee01e77b3f371f908ed3fdb
+pp_page_js grep https://popomon.com/next/_next/static/chunks/app/page-2026.10.15-1.js
+pp_layout_js grep https://popomon.com/next/_next/static/chunks/app/layout-2026.10.15-1.js
+pp_8339 grep https://popomon.com/next/_next/static/chunks/8339-2026.10.15-1.js
+pp_1244 grep https://popomon.com/next/_next/static/chunks/1244-2026.10.15-1.js
+pp_4155 grep https://popomon.com/next/_next/static/chunks/4155-2026.10.15-1.js
+pp_8113 grep https://popomon.com/next/_next/static/chunks/8113-2026.10.15-1.js
+pp_6029 grep https://popomon.com/next/_next/static/chunks/6029-2026.10.15-1.js
+pp_1623 grep https://popomon.com/next/_next/static/chunks/1623-2026.10.15-1.js
+gn_http raw http://xn--939au0g4vj8sq.net/
+gn_www raw https://www.xn--939au0g4vj8sq.net/
+gn_https raw https://xn--939au0g4vj8sq.net/

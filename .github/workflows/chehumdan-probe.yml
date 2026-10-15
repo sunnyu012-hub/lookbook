@@ -2,8 +2,8 @@ name: chehumdan-probe
 # 개발용 임시 워크플로 — 사이트 구조 확인이 끝나면 삭제한다.
 on:
   push:
-    branches: [claude/epic-carson-v9sxdd]
-    paths: [chehumdan/scripts/probe-urls.txt]
+    branches: [claude/epic-carson-v9sxdd, claude/clever-dijkstra-0mvpvv]
+    paths: [chehumdan/scripts/probe-urls.txt, chehumdan/scripts/probe2-urls.txt]
   workflow_dispatch:
 permissions:
   contents: write
@@ -12,10 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: rm -rf chehumdan/_probe && bash chehumdan/scripts/probe.sh chehumdan/scripts/probe-urls.txt && cat chehumdan/_probe/_summary.txt
+      - run: rm -rf chehumdan/_probe2 && python3 chehumdan/scripts/probe2.py chehumdan/scripts/probe2-urls.txt; cat chehumdan/_probe2/_summary.txt
       - run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898+github-actions[bot]@users.noreply.github.com"
-          git add -f chehumdan/_probe
+          git add -f chehumdan/_probe2
           git commit -m "probe: 사이트 원본 수집" || exit 0
-          git push
+          git push origin HEAD:${{ github.ref_name }}
