@@ -1,0 +1,4 @@
+# 이름 모드 URL [헤더JSON]   (모드: raw | grep | ctx:키워드1|키워드2)
+ifx_home raw https://www.inflexer.net/
+ifx_robots raw https://www.inflexer.net/robots.txt
+ifx_home_grep grep https://www.inflexer.net/
