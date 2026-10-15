@@ -64,7 +64,7 @@ def parse(o: dict, ctype: str) -> dict | None:
     if o.get("transformedPrice"):
         offer = f"{offer} ({o['transformedPrice']})" if offer else o["transformedPrice"]
     return make_item(
-        site=SITE, sid=o["C_idx"], url=f"{BASE}/campaignDetail/{o['C_idx']}",
+        site=SITE, sid=o["C_idx"], url=f"{BASE}/campaign/{o['C_idx']}",
         title=title.strip() or raw, offer=offer,
         ctype=ctype, channel=_channel(o.get("CS_type")),
         sido=sido, sigungu=sgg,

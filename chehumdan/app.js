@@ -8,7 +8,7 @@
   const SITE_URL = {
     reviewnote: (id) => `https://www.reviewnote.co.kr/campaigns/${id}`,
     revu: (id) => `https://www.revu.net/campaign/${id}`,
-    popomon: (id) => `https://popomon.com/campaignDetail/${id}`,
+    popomon: (id) => `https://popomon.com/campaign/${id}`,
   };
   const SOON_DAYS = 2;
   const PAGE = 60;
