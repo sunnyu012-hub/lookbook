@@ -228,7 +228,12 @@ def collect() -> list[dict]:
     for cat in CATS:
         empty = 0
         for page in range(1, MAX_PAGES + 1):
-            res = fetch_json(_list_url(cat, page), headers=headers)
+            try:
+                res = fetch_json(_list_url(cat, page), headers=headers)
+            except RuntimeError as e:
+                if "404" in str(e) and page > 1:  # 마지막 쪽 다음은 404
+                    break
+                raise
             rows = res.get("items") or res.get("data") or []
             if cat == CATS[0] and page == 1:
                 _debug("revu_sample.json", {"cat": cat, "keys": list(res.keys()), "total": res.get("total"),
@@ -245,7 +250,7 @@ def collect() -> list[dict]:
                     out.append(it)
                     got += 1
             empty = 0 if got else empty + 1
-            if empty >= 3:  # 모집 중이 세 페이지 연속 없으면 그 뒤는 지난 공고
+            if empty >= 3 or len(rows) < PAGE_SIZE:  # 덜 찬 쪽이 마지막 (지역 10-15: 2,494건 = 84쪽)
                 break
             polite_sleep(1.2)  # 계정 보호: 천천히
     return out
