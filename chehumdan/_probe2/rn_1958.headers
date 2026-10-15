@@ -1,0 +1,16 @@
+Accept-Ranges: bytes
+Access-Control-Allow-Origin: *
+Age: 72031
+Cache-Control: public,max-age=31536000,immutable
+Content-Disposition: inline; filename="1958-61f8c0c82fc312f4.js"
+Content-Length: 18430
+Content-Type: application/javascript; charset=utf-8
+Date: Thu, 15 Oct 2026 05:33:42 GMT
+Etag: "f36b87005faf5c733c53343db24f8189"
+Last-Modified: Wed, 14 Oct 2026 09:33:10 GMT
+Server: Vercel
+Strict-Transport-Security: max-age=63072000
+X-Matched-Path: /_next/static/chunks/1958-61f8c0c82fc312f4.js
+X-Vercel-Cache: HIT
+X-Vercel-Id: iad1::8jt7x-1792042422323-90a10000bc82
+Connection: close

@@ -1,0 +1,39 @@
+/api/userLikes
+/api/v2/community/newPosts
+/campaigns
+/api/v2/notifications/hasNotification
+/campaigns/new
+/users/my_campaign
+/users/campaigns
+https://pf.kakao.com/_FwxjDxb
+https://blog.naver.com/reviewnote_official
+https://www.instagram.com/reviewnote_in/
+https://www.youtube.com/channel/UCdgLy04wfKLOEisR5iyzyeg
+/guides/reviewer/campaign_apply
+http://m-link.shop
+https://pf.kakao.com/_FwxjDxb/friend
+/users/campaigns?toolbar=true
+/navigations/campaign
+/users/campaigns?mypage=true&showMenu=true
+/api/v2/mypageBanners
+/api/user/getNewCommunity
+/icon/mypage/my_campaigns.webp
+/users/campaigns/cancels
+/icon/mypage/cancel_campaigns.webp
+/users/campaigns?mypage=false&time=
+/icon/mypage/manage_campaigns.webp
+/campaigns/new?time=
+/icon/mypage/new_campaign.webp
+https://cafe.naver.com/jihosoccer123/2588821
+/api/user/logout?deleteDeviceToken=
+/api/v2/applies/applyChecks
+/api/user/updateVisitedAt
+/guides/advertiser/campaign_progress
+
+==== CONTEXT ====
+--- /campaigns? @65426
+en:(0,a.jsxs)("div",{onClick:()=>{if("/"===t.pathname&&(0,F.GV)("my_campaign"),!e)return(0,E.Z)("\ub85c\uadf8\uc778 \ud6c4 \uc0ac\uc6a9 \uac00\ub2a5\ud569\ub2c8\ub2e4"),void t.push("/sns/login");"INFLUENCER"===(null===e||void 0===e?void 0:e.sort)?t.push("/users/calendar?toolbar=true"):t.push("/users/campaigns?toolbar=true")},className:"flex flex-col items-center py-2 ".concat(("INFLUENCER"===(null===e||void 0===e?void 0:e.sort)?["/users/calendar","/users/my_campaign"].includes(t.pathname):"/users/campaigns"===t.pathname)&&!s?"text-rn-btn":""),children:[(0,a.jsx)(p(),{src:"/navigations/campaign".concat(("INFLUENCER"===(null===e||void 0===e?void 0:e.sort)?["/users/calendar","/users/my_campaign
+--- /campaigns? @67413
+4\ub274 \uc5f4\uae30",tabIndex:0,onClick:()=>{if("/"===t.pathname&&(0,F.GV)("mypage"),!e)return(0,E.Z)("\ub85c\uadf8\uc778 \ud6c4 \uc0ac\uc6a9 \uac00\ub2a5\ud569\ub2c8\ub2e4"),void t.push("/sns/login");const n="INFLUENCER"===(null===e||void 0===e?void 0:e.sort)?"/users/profile?showMenu=true":"/users/campaigns?mypage=true&showMenu=true";t.push(n)},className:"flex w-full flex-col items-center py-2 ".concat((n||r)&&s?"text-rn-btn":""),children:[(0,a.jsx)(p(),{src:"/navigations/mypage".concat((n||r)&&s?"_active":"",".webp"),width:30,height:30,alt:"mypage",objectFit:"cover",blurDataURL:"/empty.webp",unoptimized:!0}),(0,a.jsx)("span",{className:"mt-1 text-xs",children:"\ub9c8\uc774\ud398\uc774\uc9
+--- /campaigns? @71561
+ER:!1,AGENCY:!1,display:!!g,isBeta:!1},{name:"\uccb4\ud5d8\ub2e8 \ucde8\uc18c",href:"/users/campaigns/cancels",blank:!1,iconUrl:"/icon/mypage/cancel_campaigns.webp",current:"cancels"===t,INFLUENCER:!0,ADVERTISER:!1,AGENCY:!1,display:!!g,isBeta:!1},{name:"\uccb4\ud5d8\ub2e8 \uad00\ub9ac",href:"/users/campaigns?mypage=false&time=".concat(F),blank:!1,iconUrl:"/icon/mypage/manage_campaigns.webp",current:"campaigns"===t,INFLUENCER:!1,ADVERTISER:!0,AGENCY:!0,display:!!g,isBeta:!1},{name:"\uccb4\ud5d8\ub2e8 \ubaa8\uc9d1",href:(null===g||void 0===g?void 0:g.penalty)>0?"#":"/campaigns/new?time=".concat(F),blank:!1,iconUrl:"/icon/mypage/new_campaign.webp",current:"new_campaign"===t,INFLUENCER:!1,ADVER

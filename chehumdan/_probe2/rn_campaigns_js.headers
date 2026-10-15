@@ -1,0 +1,16 @@
+Accept-Ranges: bytes
+Access-Control-Allow-Origin: *
+Age: 72030
+Cache-Control: public,max-age=31536000,immutable
+Content-Disposition: inline; filename="campaigns-2977f684cfaaf604.js"
+Content-Length: 31182
+Content-Type: application/javascript; charset=utf-8
+Date: Thu, 15 Oct 2026 05:33:41 GMT
+Etag: "95fa241ae69a767277a7f65208015f27"
+Last-Modified: Wed, 14 Oct 2026 09:33:10 GMT
+Server: Vercel
+Strict-Transport-Security: max-age=63072000
+X-Matched-Path: /_next/static/chunks/pages/campaigns-2977f684cfaaf604.js
+X-Vercel-Cache: HIT
+X-Vercel-Id: iad1::bkjtl-1792042421152-d797b619261b
+Connection: close

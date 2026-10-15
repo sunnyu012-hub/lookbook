@@ -1,0 +1,10 @@
+http://www.w3.org/2000/svg
+/api_p/main/fetch_readUserNotification?idx=
+/client/campaignManager?searchKind=&status=ONGOING
+/campaignManager?searchKind=&status=ONGOING
+
+==== CONTEXT ====
+--- fetch( @15387
+rn(0,u.useEffect)(()=>{!l&&_&&(null==a?void 0:a.isIntersecting)&&(console.debug("[CompleteList] infinite-scroll page bump",{from:h,to:h+1,isMoreData:_}),g(!1),f(h+1))},[a]),(0,u.useEffect)(()=>{if(!(null==j?void 0:j.length)||!(null==d?void 0:d.C_idx))return;let e=!1;(async()=>{try{var t;let n=await fetch("".concat(i._n,"api_p/campaignRecruit/fetch_isResetSubmitedReview?cidx=").concat(d.C_idx,"&uidx=").concat(j[0]),{method:"GET"}),s=await n.json(),l=null==s?void 0:null===(t=s.data)||void 0===t?void 0:t.CVSI_submit_state;"RESET"===l&&((0,c.Tc)("알림","인플루언서의 리뷰 제출 상태가 변경되어 <br /> 선정 현황으로 이동합니다.").then(()=>{location.href="".concat(i._n,"next/client/campaignRecruit/").concat(d.C_idx,"?status=CHOIC
+--- fetch( @36249
+ 13.8C19.4 9.822 16.178 6.6 12.2 6.6Z",fill:"#383838"})}),(0,s.jsx)("defs",{children:(0,s.jsx)("clipPath",{id:"clip0_1638_17542",children:(0,s.jsx)("rect",{width:"24",height:"24",fill:"white"})})})]}),(0,s.jsx)("span",{children:"초기화"})]})]})]})]})]})},Q=n(33481),K=n(67730);let J=e=>{let t=!1;return fetch("".concat(i._n,"/api_p/main/fetch_readUserNotification?idx=").concat(e)).then(e=>e.json()).then(e=>{t=e}),t};var X=e=>{var t,n,h,p,m,f,g,_,b,j,w;let{guest:v,id:C,isDatePassed:y,initialSearchParams:N={}}=e,{isTab:E,setCampaignDetailData:k,setIsCampType:L,isListLoading:O,setCampaignCntData:D,campaignListData:S,setCampaignListData:R,keyword:B,setKeyword:Z,isOrderList:H,isFilterList:A,isPageNum:

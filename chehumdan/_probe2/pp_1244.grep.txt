@@ -1,0 +1,11 @@
+http://www.w3.org/2000/svg
+/campaign?searchAlign=latest&bigRecruitType=Lvisiting&recruitType=visiting
+/campaignRegist?status=CampRegi
+/mycampaign
+/campaignManager
+
+==== CONTEXT ====
+--- fetch( @29008
+.jsx)("span",{className:"mt-1 ".concat(w(e)?"text-[#8567FE]":"text-gray-400"),children:e.label})]},e.label))})]})})})]})}},75967:function(e,t,l){var a=l(57437),s=l(2265),r=l(92542),n=l(97085);t.Z=e=>{let{buttonUseFn:t}=e,[l,i]=(0,s.useState)(""),[c,o]=(0,s.useState)(null);return(0,s.useEffect)(()=>{fetch("".concat(r._n,"terms/privacyPolicy")).then(e=>{if(!e.ok)throw Error("HTML 파일을 가져올 수 없습니다.");return e.text()}).then(e=>{let t=new DOMParser().parseFromString(e,"text/html").querySelector(".terms-body.policy-content .pb100");t?i(t.innerHTML):o("terms-body 클래스를 찾을 수 없습니다.")}).catch(e=>{console.error("데이터 가져오기 오류:",e),o(e.message)})},[]),(0,a.jsx)("div",{className:"fixed inset-0 z-[9999] flex j
+--- fetch( @30332
+children:(0,a.jsx)(n.Y,{label:"확인",color:"primary-solid",className:"w-full h-12 text-b-1",buttonUseFn:()=>{t()}})})]})})}},19137:function(e,t,l){var a=l(57437),s=l(2265),r=l(92542),n=l(97085);t.Z=e=>{let{buttonUseFn:t}=e,[l,i]=(0,s.useState)(""),[c,o]=(0,s.useState)(null);return(0,s.useEffect)(()=>{fetch("".concat(r._n,"terms/service")).then(e=>{if(!e.ok)throw Error("HTML 파일을 가져올 수 없습니다.");return e.text()}).then(e=>{let t=new DOMParser().parseFromString(e,"text/html").querySelector(".terms-body .pb100");t?i(t.innerHTML):o("terms-body 클래스를 찾을 수 없습니다.")}).catch(e=>{console.error("데이터 가져오기 오류:",e),o(e.message)})},[]),(0,a.jsxs)("div",{className:"scroll_hidden mx-auto min-h-screen max-h-full bg-

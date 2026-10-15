@@ -1,0 +1,9 @@
+/campaigns
+/api/v2/campaigns
+/api/v2/sidos
+/campaigns?
+/api/v2/user/agreeLocationTerms
+
+==== CONTEXT ====
+--- /campaigns? @22058
+ation?e.location:r.toString(),s:void 0!==e.s?e.s:l.toString(),search:void 0!==e.search?e.search:o.toString(),isPremium:void 0!==e.isPremium?e.isPremium:a.toString()},d=Object.fromEntries(Object.entries(c).filter((e=>{let[t,n]=e;return""!==n}))),u=new URLSearchParams(d).toString();return u.length>0?"/campaigns?".concat(u):"/campaigns"},Se=()=>{J(!0);const e=(e,t)=>{const n=!!B&&!T.includes(B);"\uc7ac\ud0dd"===q&&K(""),X("".concat(e,"|").concat(t)),I(w,Ne({s:"distances asc",..."\uc7ac\ud0dd"===q?{city:""}:{},...n?{sort:""}:{}})),J(!1)},t=function(){let e=arguments.length>0&&void 0!==arguments[0]?arguments[0]:"\uc704\uce58\ub97c \ud655\uc778\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4.";J(!1),(0,R.Z)
