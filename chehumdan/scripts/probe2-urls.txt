@@ -1,3 +1,4 @@
 # 이름 모드 URL [헤더JSON]   (모드: raw | grep | ctx:키워드1|키워드2)
-pp_detail1 raw https://popomon.com/campaignDetail/324691
-pp_detail2 raw https://popomon.com/next/campaignDetail/324691
+pp_d3 raw https://popomon.com/campaign/324691
+pp_d4 raw https://popomon.com/next/campaign/324691
+pp_cpage_ctx2 ctx:C_idx https://popomon.com/next/_next/static/chunks/app/campaign/page-2026.10.15-1.js
