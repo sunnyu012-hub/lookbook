@@ -1,4 +1,0 @@
-/icon/sns/v2/
-/campaigns/
-
-==== CONTEXT ====

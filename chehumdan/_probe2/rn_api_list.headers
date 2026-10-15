@@ -1,0 +1,13 @@
+Age: 0
+Cache-Control: public, max-age=0, must-revalidate
+Content-Length: 14561
+Content-Type: application/json; charset=utf-8
+Date: Thu, 15 Oct 2026 05:35:53 GMT
+Etag: "7ro79hg4kna1b"
+Server: Vercel
+Set-Cookie: _ui_cfg=NjYxODk2ZDUtNjkxYi00ZDljLTkwNWYtYmYxY2YzM2Q0YjVh; Path=/; HttpOnly; SameSite=Strict; Max-Age=31536000
+Strict-Transport-Security: max-age=63072000
+X-Matched-Path: /api/v2/campaigns
+X-Vercel-Cache: MISS
+X-Vercel-Id: iad1::icn1::5jvjs-1792042553095-94d6c951ea27
+Connection: close
