@@ -1,0 +1,6 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Disallow:
+
+Sitemap:https://inflexer.net/sitemap.xml
+#DaumWebMasterTool:3b2e7a533711a1092e01606a49a0701c86b8f9a4b73e8f60470460c8322d4d1e:IG57dfjN7jDSPiMgqB1lgA==

@@ -1,0 +1,3 @@
+ifx_home 200 https://www.inflexer.net/ 2912
+ifx_robots 200 https://www.inflexer.net/robots.txt 217
+ifx_home_grep 200 https://www.inflexer.net/ 2912

@@ -1,0 +1,12 @@
+Server: nginx/1.22.1
+Date: Thu, 15 Oct 2026 06:02:31 GMT
+Content-Type: text/html; charset=utf-8
+Content-Length: 2912
+Connection: close
+X-Powered-By: Express
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: *
+Access-Control-Allow-Headers: *
+Accept-Ranges: bytes
+ETag: W/"b60-q7RcBuoV8IbuVJLNob0h8OOVAG4"
+Vary: Accept-Encoding
