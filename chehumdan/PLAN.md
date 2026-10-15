@@ -23,9 +23,10 @@ chehumdan/
   collect/
     common.py                     HTTP, 날짜, 지역 정규화, 목적 분류, 공통 스키마
     site_*.py                     사이트별 수집기 (reviewnote, popomon, revu, gangnam)
+    kr_job.py                     한국 PC 작업(할 일 정하기→준비→수집/probe→커밋). 워크플로는 shell: cmd 에서 이것만 부른다
     run.py                        전체 실행 + first_seen 유지 + 마감 지난 공고 제거
     test_common.py                분류기 테스트 (python -m unittest test_common)
-.github/workflows/chehumdan-collect.yml      GitHub 서버: 리뷰노트·포포몬, 하루 4번(KST 07·11·16·21시)
+.github/workflows/chehumdan-collect.yml      GitHub 서버: 리뷰노트·포포몬 + 10-15 추가 7곳(시험 중), 하루 4번(KST 07·11·16·21시)
 .github/workflows/chehumdan-collect-kr.yml   한국 PC: 레뷰·강남맛집, 하루 2번(KST 08:40·18:40)
 ```
 - 사이트 하나가 실패해도 나머지는 계속 돌고, 실패한 사이트는 지난번 데이터를 유지한다.
@@ -39,15 +40,32 @@ chehumdan/
 |---|---|---|
 | 리뷰노트 | GitHub 서버, 하루 4번 | `/api/v2/campaigns?page=N&limit=16&city=시도` 공개 API. 전체 목록이 약 800페이지에서 끊겨 `/api/v2/sidos` 의 시/도별로 나눠 받음. 모집 중 = status SELECT/PROGRESS |
 | 포포몬 | GitHub 서버, 하루 4번 | `/api_p/campaign/fetch_getcampaignlist` 공개 API(한 페이지 12건). robots.txt 는 목록 수집을 금지하지만 사용자 결정으로 수집(10-15). 지역은 제목 앞 `[충남/태안군]` |
-| 레뷰 | 사무실 PC, 하루 2번 | 목록 API `api.weble.net/v1/campaigns` 가 로그인 토큰 필요. 사용자 결정(10-15): **부계정 + 한국 PC + 하루 1~2번**. 화면 없는 크롬으로 accounts.revu.net 로그인 → 토큰 → 목록. 응답 필드는 첫 실행 결과 보고 맞춤 |
-| 강남맛집 | 사무실 PC, 하루 2번 | 해외 IP 차단(GitHub 서버에서 시간 초과). 한국 PC에서 구조 확인 후 구현 |
+| 레뷰 | 사무실 PC, 하루 2번 | 부계정(이메일) 로그인 필요. 사용자 결정(10-15): **부계정 + 한국 PC + 하루 1~2번**. 화면 없는 크롬으로 `www.revu.net/login` → 토큰 → 카테고리 화면과 같은 `v1/campaigns?cat=지역·제품·서비스·기자단&type=play`(모집 중, 30건씩). 10-15 3,281건 |
+| 강남맛집 | 사무실 PC, 하루 2번 | 해외 IP 차단. `/theme/go/_list_cmp_tpl.php?rpage=N` 목록 조각(28건씩). 10-15 7,003건 |
+
+### 10-15 추가 (사용자가 알려 준 사이트) — 모두 로그인 없음·robots 허용, 건수는 한국 PC 기준
+| 사이트 | 목록 출처 | 건수 |
+|---|---|---|
+| 디너의여왕 dinnerqueen.net | `POST /taste/taste_list?page=N` (카드 HTML 30건) | 8,470 |
+| 체험뷰 chvu.co.kr | `/v2/campaigns?category=search&services=…&sort=+close` JSON (robots 는 상세 `/campaign/` 만 금지) | 817 |
+| 포블로그 4blog.net | `/loadMoreDataCategoryV2?category1=local·deliv·reporter` JSON | 763 |
+| 놀러와체험단 cometoplay.kr | `item_list.php?category_id=…&page=N` HTML | 317 |
+| 리뷰의민족 remin.co.kr | `/category/searchlist?p_cateType=A·B·D·E` HTML 조각 (robots.txt 없음) | 178 |
+| 클라우드리뷰 cloudreview.co.kr | `/campaign/blog·instagram·short·buy` 화면 하나에 전체 | 1,295 |
+| 똑똑리워드 ddok.it | `/api/campaigns?limit=50&cursor=` JSON (옛 ddok.co.kr 은 07-31 종료) | 125 |
+
+보류 — 사용자 결정 대기 (10-15)
+- robots.txt 가 목록을 막음: 서울오빠(전체 금지), 링블(`/category.php`), 클립뷰(검색엔진만 허용), 구구다스(`/amz/list/`), 리뷰플레이스(`/pr`·`/theme`)
+- 로그인해야 목록이 보임: 미블(mrblog.net)
+- 애매: 어디야(odiya.kr) — robots 가 `/category/` 처럼 폴더만 막아 실제 주소 `/category.php` 는 허용이지만 막으려던 의도로 보임. `site_odiya.py` 는 만들어 두었지만 커밋 안 함
+
 
 - 사무실 PC(Windows) 설정 방법: `KR_PC.md`(손으로) 또는 `OFFICE_PC_SESSION.md`(사무실 PC에서 Claude 세션을 열어 진행). 브랜치에서 시험할 때는 `scripts/kr-task.txt`(1줄 collect|probe, 2줄 사이트)를 바꿔 올린다.
 - 레뷰는 로그인해야 보이는 정보인데 사이트가 공개라 누구나 보게 된다는 점은 사용자에게 알렸음.
 - 참고: 인플렉서는 자기 수집 서버(inflexer.net:5000)에 40여 개 플랫폼을 모아 두고 화면은 그 API만 읽는다.
 
 ## 다음 할 일
-1. 사용자: `KR_PC.md` 대로 레뷰 부계정(이메일 가입, 10-15) Secrets 넣기 + 사무실 PC(Windows, 24시간)를 runner(라벨 chehumdan-kr)로 등록
-2. 한국 PC에서 강남맛집 구조 확인(probe) → 수집기 구현, 레뷰 첫 로그인·응답 필드 맞추기
+1. 추가 7곳이 GitHub 서버(해외 IP)에서 되는지 확인 → 막히는 곳은 한국 PC 워크플로로 옮긴다
+2. 보류 사이트 결정(사용자)
 3. 이 브랜치를 main 에 병합 → Pages 공개 + 정기 수집 시작(정기 실행은 기본 브랜치에서만 돈다)
 4. 분류 규칙은 실제 데이터를 보며 `test_common.py` 에 사례를 추가하면서 다듬는다
