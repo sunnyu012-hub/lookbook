@@ -16,7 +16,7 @@ concurrency:
 jobs:
   collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 120  # 사이트별 상한 12분(run.py SITE_TIMEOUT)
+    timeout-minutes: 120  # 사이트별 상한 25분(run.py SITE_TIMEOUT)
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -24,7 +24,7 @@ jobs:
           python-version: "3.12"
       - name: 수집
         working-directory: chehumdan/collect
-        run: python run.py reviewnote popomon dinnerqueen cometoplay chvu remin fourblog cloudreview ddok
+        run: python run.py reviewnote popomon dinnerqueen cometoplay chvu ddok
       - name: 저장
         run: |
           git config user.name "github-actions[bot]"

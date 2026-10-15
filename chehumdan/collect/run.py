@@ -32,7 +32,7 @@ SITES = {
     "ddok": "site_ddok",
 }
 DATA = Path(__file__).resolve().parent.parent / "data" / "sites"
-SITE_TIMEOUT = 12 * 60  # 초. 10-15 한국 PC 기준 오래 걸리는 곳: 리뷰노트·포포몬·디너의여왕 7~9분
+SITE_TIMEOUT = 25 * 60  # 초. 오래 걸리는 곳: 리뷰노트(GitHub 서버에서 12분 넘음)·포포몬·디너의여왕 7~9분
 
 
 def load(path: Path) -> dict:

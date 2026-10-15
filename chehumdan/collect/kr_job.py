@@ -26,7 +26,7 @@ def sh(*args, cwd=ROOT) -> int:
 
 def decide() -> tuple[str, list[str]]:
     task = os.environ.get("IN_TASK") or "collect"
-    sites = os.environ.get("IN_SITES") or "revu gangnam"
+    sites = os.environ.get("IN_SITES") or "revu gangnam remin fourblog cloudreview"
     if os.environ.get("EVENT") == "push":
         lines = (CH / "scripts" / "kr-task.txt").read_text(encoding="utf-8-sig").splitlines()
         task = lines[0].strip()
