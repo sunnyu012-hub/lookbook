@@ -1,32 +1,99 @@
-[revu] 실패 — 지난 데이터 56건 유지: Page.screenshot: Timeout 30000ms exceeded.
-Call log:
-  - taking page screenshot
-
+  레뷰 지역 1쪽: 30건 (전체 2494)
+  레뷰 지역 2쪽: 30건 (전체 2494)
+  레뷰 지역 3쪽: 30건 (전체 2494)
+  레뷰 지역 4쪽: 30건 (전체 2494)
+  레뷰 지역 5쪽: 30건 (전체 2494)
+  레뷰 지역 6쪽: 30건 (전체 2494)
+  레뷰 지역 7쪽: 30건 (전체 2494)
+  레뷰 지역 8쪽: 30건 (전체 2494)
+  레뷰 지역 9쪽: 30건 (전체 2494)
+  레뷰 지역 10쪽: 30건 (전체 2494)
+  레뷰 지역 11쪽: 30건 (전체 2494)
+  레뷰 지역 12쪽: 30건 (전체 2494)
+  레뷰 지역 13쪽: 30건 (전체 2494)
+  레뷰 지역 14쪽: 30건 (전체 2494)
+  레뷰 지역 15쪽: 30건 (전체 2494)
+  레뷰 지역 16쪽: 30건 (전체 2494)
+  레뷰 지역 17쪽: 30건 (전체 2494)
+  레뷰 지역 18쪽: 30건 (전체 2494)
+  레뷰 지역 19쪽: 30건 (전체 2494)
+  레뷰 지역 20쪽: 30건 (전체 2494)
+  레뷰 지역 21쪽: 30건 (전체 2494)
+  레뷰 지역 22쪽: 30건 (전체 2494)
+  레뷰 지역 23쪽: 30건 (전체 2494)
+  레뷰 지역 24쪽: 30건 (전체 2494)
+  레뷰 지역 25쪽: 30건 (전체 2494)
+  레뷰 지역 26쪽: 30건 (전체 2494)
+  레뷰 지역 27쪽: 30건 (전체 2494)
+  레뷰 지역 28쪽: 30건 (전체 2494)
+  레뷰 지역 29쪽: 30건 (전체 2494)
+  레뷰 지역 30쪽: 30건 (전체 2494)
+  레뷰 지역 31쪽: 30건 (전체 2494)
+  레뷰 지역 32쪽: 30건 (전체 2494)
+  레뷰 지역 33쪽: 30건 (전체 2494)
+  레뷰 지역 34쪽: 30건 (전체 2494)
+  레뷰 지역 35쪽: 30건 (전체 2494)
+  레뷰 지역 36쪽: 30건 (전체 2494)
+  레뷰 지역 37쪽: 30건 (전체 2494)
+  레뷰 지역 38쪽: 30건 (전체 2494)
+  레뷰 지역 39쪽: 30건 (전체 2494)
+  레뷰 지역 40쪽: 30건 (전체 2494)
+  레뷰 지역 41쪽: 30건 (전체 2494)
+  레뷰 지역 42쪽: 30건 (전체 2494)
+  레뷰 지역 43쪽: 30건 (전체 2494)
+  레뷰 지역 44쪽: 30건 (전체 2494)
+  레뷰 지역 45쪽: 30건 (전체 2494)
+  레뷰 지역 46쪽: 30건 (전체 2494)
+  레뷰 지역 47쪽: 30건 (전체 2494)
+  레뷰 지역 48쪽: 30건 (전체 2494)
+  레뷰 지역 49쪽: 30건 (전체 2494)
+  레뷰 지역 50쪽: 30건 (전체 2494)
+  레뷰 지역 51쪽: 30건 (전체 2494)
+  레뷰 지역 52쪽: 30건 (전체 2494)
+  레뷰 지역 53쪽: 30건 (전체 2494)
+  레뷰 지역 54쪽: 30건 (전체 2494)
+  레뷰 지역 55쪽: 30건 (전체 2494)
+  레뷰 지역 56쪽: 30건 (전체 2494)
+  레뷰 지역 57쪽: 30건 (전체 2494)
+  레뷰 지역 58쪽: 30건 (전체 2494)
+  레뷰 지역 59쪽: 30건 (전체 2494)
+  레뷰 지역 60쪽: 30건 (전체 2494)
+  레뷰 지역 61쪽: 30건 (전체 2494)
+  레뷰 지역 62쪽: 30건 (전체 2494)
+  레뷰 지역 63쪽: 30건 (전체 2494)
+  레뷰 지역 64쪽: 30건 (전체 2494)
+  레뷰 지역 65쪽: 30건 (전체 2494)
+  레뷰 지역 66쪽: 30건 (전체 2494)
+  레뷰 지역 67쪽: 30건 (전체 2494)
+  레뷰 지역 68쪽: 30건 (전체 2494)
+  레뷰 지역 69쪽: 30건 (전체 2494)
+  레뷰 지역 70쪽: 30건 (전체 2494)
+  레뷰 지역 71쪽: 30건 (전체 2494)
+  레뷰 지역 72쪽: 30건 (전체 2494)
+  레뷰 지역 73쪽: 30건 (전체 2494)
+  레뷰 지역 74쪽: 30건 (전체 2494)
+  레뷰 지역 75쪽: 30건 (전체 2494)
+  레뷰 지역 76쪽: 30건 (전체 2494)
+  레뷰 지역 77쪽: 30건 (전체 2494)
+  레뷰 지역 78쪽: 30건 (전체 2494)
+  레뷰 지역 79쪽: 30건 (전체 2494)
+  레뷰 지역 80쪽: 30건 (전체 2494)
+  레뷰 지역 81쪽: 30건 (전체 2494)
+  레뷰 지역 82쪽: 30건 (전체 2494)
+  레뷰 지역 83쪽: 30건 (전체 2494)
+  레뷰 지역 84쪽: 4건 (전체 2494)
+[revu] 실패 — 지난 데이터 56건 유지: fetch failed: https://api.weble.net/v1/campaigns?cat=%EC%A7%80%EC%97%AD&limit=30&media%5B%5D=blog&media%5B%5D=instagram&media%5B%5D=youtube&media%5B%5D=clip&media%5B%5D=etc&page=85&sort=latest&type=play: <HTTPError 404: 'Not Found'>
 [revu] 저장 56건 → C:\actions-runner\_work\lookbook\lookbook\chehumdan\data\sites\revu.json
 Traceback (most recent call last):
-  File "C:\actions-runner\_work\lookbook\lookbook\chehumdan\collect\run.py", line 44, in run_site
+  File "C:\actions-runner\_work\lookbook\lookbook\chehumdan\collect\run.py", line 51, in run_site
     got = importlib.import_module(SITES[name]).collect()
           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "C:\actions-runner\_work\lookbook\lookbook\chehumdan\collect\site_revu.py", line 231, in collect
-    auth, list_urls = login_token()
-                      ^^^^^^^^^^^^^
-  File "C:\actions-runner\_work\lookbook\lookbook\chehumdan\collect\site_revu.py", line 149, in login_token
-    _debug("revu_login.png", page.screenshot(full_page=True))
-                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Windows\ServiceProfiles\NetworkService\AppData\Roaming\Python\Python312\site-packages\playwright\sync_api\_generated.py", line 20239, in screenshot
-    self._sync(
-  File "C:\Windows\ServiceProfiles\NetworkService\AppData\Roaming\Python\Python312\site-packages\playwright\_impl\_sync_base.py", line 111, in _sync
-    return task.result()
-           ^^^^^^^^^^^^^
-  File "C:\Windows\ServiceProfiles\NetworkService\AppData\Roaming\Python\Python312\site-packages\playwright\_impl\_page.py", line 832, in screenshot
-    encoded_binary = await self._channel.send(
-                     ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Windows\ServiceProfiles\NetworkService\AppData\Roaming\Python\Python312\site-packages\playwright\_impl\_connection.py", line 78, in send
-    return await self._connection.wrap_api_call(
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Windows\ServiceProfiles\NetworkService\AppData\Roaming\Python\Python312\site-packages\playwright\_impl\_connection.py", line 636, in wrap_api_call
-    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
-playwright._impl._errors.TimeoutError: Page.screenshot: Timeout 30000ms exceeded.
-Call log:
-  - taking page screenshot
-
+    res = fetch_json(_list_url(cat, page), headers=headers)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\actions-runner\_work\lookbook\lookbook\chehumdan\collect\common.py", line 38, in fetch_json
+    return json.loads(fetch(url, **kw))
+                      ^^^^^^^^^^^^^^^^
+  File "C:\actions-runner\_work\lookbook\lookbook\chehumdan\collect\common.py", line 33, in fetch
+    raise RuntimeError(f"fetch failed: {url}: {last!r}")
+RuntimeError: fetch failed: https://api.weble.net/v1/campaigns?cat=%EC%A7%80%EC%97%AD&limit=30&media%5B%5D=blog&media%5B%5D=instagram&media%5B%5D=youtube&media%5B%5D=clip&media%5B%5D=etc&page=85&sort=latest&type=play: <HTTPError 404: 'Not Found'>
