@@ -1,0 +1,416 @@
+https://ads-partners.coupang.com/widgets.html?id=786057&template=carousel&trackingCode=AF2025463&subId=inflexer01&width=2000&height=120&tsource=
+https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js
+http://localhost:3000
+https://inflexer.net
+https://blog.naver.com/tyami/223500172766
+https://blog.naver.com/tyami/223488321051
+https://blog.naver.com/tyami/224209415429
+https://bit.ly/m/inflexer
+https://forms.gle/y3Jr9D2D6Rdh6mwe8
+http://${CURRENT_HOST}:5001
+https://inflexer.net:5000
+/search
+https://blog.naver.com/tyami/224061992133
+http://www.w3.org/2000/svg
+https://${url}
+https://${normUrl}
+http://localhost
+http://www.w3.org/1999/xlink
+http://www.w3.org/XML/1998/namespace
+https://reactjs.org/link/controlled-components
+http://www.w3.org/1999/xhtml
+http://www.w3.org/1998/Math/MathML
+https://reactjs.org/link/react-devtools
+https://reactjs.org/link/strict-mode-string-ref
+https://reactjs.org/link/rules-of-hooks
+https://reactjs.org/link/unsafe-component-lifecycles
+https://reactjs.org/link/strict-mode-find-node
+https://reactjs.org/link/react-devtools-faq
+https://github.com/ungap/url-search-params.
+/list
+https://reactrouter.com/v6/upgrading/future#v7_starttransition
+https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath
+https://reactrouter.com/v6/upgrading/future#v7_fetcherpersist
+https://reactrouter.com/v6/upgrading/future#v7_normalizeformmethod
+https://reactrouter.com/v6/upgrading/future#v7_partialhydration
+https://reactrouter.com/v6/upgrading/future#v7_skipactionerrorrevalidation
+https://github.com/facebook/react/issues/3236).
+https://github.com/zloirock/core-js/blob/v3.37.1/LICENSE
+https://github.com/zloirock/core-js
+https://oapi.map.naver.com/openapi/v3/maps.js?${clientIdQuery}
+
+==== CONTEXT ====
+--- baseURL @2536894
+rotocol).concat(host).concat(pathname).concat(search).concat(hash);
+}
+
+/**
+ * @param {URL & { fromCurrentScript?: boolean }} parsedURL
+ * @returns {string}
+ */
+function createSocketURL(parsedURL) {
+  var hostname = parsedURL.hostname;
+
+  // Node.js module parses it as `::`
+  // `new URL(urlString, [baseURLString])` parses it as '[::]'
+  var isInAddrAny = hostname === "0.0.0.0" || hostname === "::" || hostname === "[::]";
+
+  // why do we need this check?
+  // hostname n/a for file protocol (example, when using electron, ionic)
+  // see: https://github.com/webpack/webpack-dev-server/pull/384
+  if (isInAddrAny && self.location.hostname && self.location.protocol.indexOf("http") === 0) {
+    host
+--- baseURL @2537834
+s.
+  if (socketURLProtocol === "auto:" || hostname && isInAddrAny && self.location.protocol === "https:") {
+    socketURLProtocol = self.location.protocol;
+  }
+  socketURLProtocol = socketURLProtocol.replace(/^(?:http|.+-extension|file)/i, "ws");
+  var socketURLAuth = "";
+
+  // `new URL(urlString, [baseURLstring])` doesn't have `auth` property
+  // Parse authentication credentials in case we need them
+  if (parsedURL.username) {
+    socketURLAuth = parsedURL.username;
+
+    // Since HTTP basic authentication does not allow empty username,
+    // we only include password if the username is not empty.
+    if (parsedURL.password) {
+      // Result: <username>:<password>
+      socketURLAuth = soc
+--- baseURL @2544986
+
+      options[pair[0]] = decodeURIComponent(pair[1]);
+    }
+  } else {
+    // Else, get the url from the <script> this file was called with.
+    var scriptSource = (0,_getCurrentScriptSource_js__WEBPACK_IMPORTED_MODULE_0__["default"])();
+    var scriptSourceURL;
+    try {
+      // The placeholder `baseURL` with `window.location.href`,
+      // is to allow parsing of path-relative or protocol-relative URLs,
+      // and will have no effect if `scriptSource` is a fully valid URL.
+      scriptSourceURL = new URL(scriptSource, self.location.href);
+    } catch (error) {
+      // URL parsing failed, do nothing.
+      // We will still proceed to see if we can recover using `resourceQuery`
+    }
+  
+--- API_URL @78354
+ap';
+const STASH_WEB_URL = BASE_WEB_URL + '/stash';
+
+// window.location.hostname을 사용하면 localhost로 접근하든 192.168.x.x로 접근하든 현재 띄워진 IP를 따라가게 됨
+const CURRENT_HOST = typeof window !== 'undefined' ? window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname : '127.0.0.1';
+const BASE_API_URL = _configs_js__WEBPACK_IMPORTED_MODULE_0__.DEBUG ? `http://${CURRENT_HOST}:5001` : 'https://inflexer.net:5000';
+const API_ENDPOINT_SEARCH = BASE_API_URL + '/search';
+const API_ENDPOINT_COUNT = BASE_API_URL + '/count';
+const API_ENDPOINT_RELOAD = BASE_API_URL + '/reload';
+const API_ENDPOINT_PRESS = BASE_API_URL + '/press';
+const API_ENDPOINT_SHIPPING = BASE_API_URL + '/shipping';
+const API_
+--- API_URL @78507
+HOST = typeof window !== 'undefined' ? window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname : '127.0.0.1';
+const BASE_API_URL = _configs_js__WEBPACK_IMPORTED_MODULE_0__.DEBUG ? `http://${CURRENT_HOST}:5001` : 'https://inflexer.net:5000';
+const API_ENDPOINT_SEARCH = BASE_API_URL + '/search';
+const API_ENDPOINT_COUNT = BASE_API_URL + '/count';
+const API_ENDPOINT_RELOAD = BASE_API_URL + '/reload';
+const API_ENDPOINT_PRESS = BASE_API_URL + '/press';
+const API_ENDPOINT_SHIPPING = BASE_API_URL + '/shipping';
+const API_ENDPOINT_MAP = BASE_API_URL + '/map';
+const NOTICE_IMAGE_PATH = _common_banner_fishing_warning2_png__WEBPACK_IMPORTED_MODULE_6__;
+const NOTICE_MESSAGE = 
+--- API_URL @78560
+n.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname : '127.0.0.1';
+const BASE_API_URL = _configs_js__WEBPACK_IMPORTED_MODULE_0__.DEBUG ? `http://${CURRENT_HOST}:5001` : 'https://inflexer.net:5000';
+const API_ENDPOINT_SEARCH = BASE_API_URL + '/search';
+const API_ENDPOINT_COUNT = BASE_API_URL + '/count';
+const API_ENDPOINT_RELOAD = BASE_API_URL + '/reload';
+const API_ENDPOINT_PRESS = BASE_API_URL + '/press';
+const API_ENDPOINT_SHIPPING = BASE_API_URL + '/shipping';
+const API_ENDPOINT_MAP = BASE_API_URL + '/map';
+const NOTICE_IMAGE_PATH = _common_banner_fishing_warning2_png__WEBPACK_IMPORTED_MODULE_6__;
+const NOTICE_MESSAGE = `<a href="${BASE_WEB_URL}" target="_blank">방문</a> | <
+--- API_URL @78613
+ation.hostname : '127.0.0.1';
+const BASE_API_URL = _configs_js__WEBPACK_IMPORTED_MODULE_0__.DEBUG ? `http://${CURRENT_HOST}:5001` : 'https://inflexer.net:5000';
+const API_ENDPOINT_SEARCH = BASE_API_URL + '/search';
+const API_ENDPOINT_COUNT = BASE_API_URL + '/count';
+const API_ENDPOINT_RELOAD = BASE_API_URL + '/reload';
+const API_ENDPOINT_PRESS = BASE_API_URL + '/press';
+const API_ENDPOINT_SHIPPING = BASE_API_URL + '/shipping';
+const API_ENDPOINT_MAP = BASE_API_URL + '/map';
+const NOTICE_IMAGE_PATH = _common_banner_fishing_warning2_png__WEBPACK_IMPORTED_MODULE_6__;
+const NOTICE_MESSAGE = `<a href="${BASE_WEB_URL}" target="_blank">방문</a> | <a href="${MAP_WEB_URL}" target="_blank">지도</a> | <a h
+--- API_URL @78666
+onfigs_js__WEBPACK_IMPORTED_MODULE_0__.DEBUG ? `http://${CURRENT_HOST}:5001` : 'https://inflexer.net:5000';
+const API_ENDPOINT_SEARCH = BASE_API_URL + '/search';
+const API_ENDPOINT_COUNT = BASE_API_URL + '/count';
+const API_ENDPOINT_RELOAD = BASE_API_URL + '/reload';
+const API_ENDPOINT_PRESS = BASE_API_URL + '/press';
+const API_ENDPOINT_SHIPPING = BASE_API_URL + '/shipping';
+const API_ENDPOINT_MAP = BASE_API_URL + '/map';
+const NOTICE_IMAGE_PATH = _common_banner_fishing_warning2_png__WEBPACK_IMPORTED_MODULE_6__;
+const NOTICE_MESSAGE = `<a href="${BASE_WEB_URL}" target="_blank">방문</a> | <a href="${MAP_WEB_URL}" target="_blank">지도</a> | <a href="${SHIPPING_WEB_URL}" target="_blank">제품</a> | <a
+--- API_URL @78721
+${CURRENT_HOST}:5001` : 'https://inflexer.net:5000';
+const API_ENDPOINT_SEARCH = BASE_API_URL + '/search';
+const API_ENDPOINT_COUNT = BASE_API_URL + '/count';
+const API_ENDPOINT_RELOAD = BASE_API_URL + '/reload';
+const API_ENDPOINT_PRESS = BASE_API_URL + '/press';
+const API_ENDPOINT_SHIPPING = BASE_API_URL + '/shipping';
+const API_ENDPOINT_MAP = BASE_API_URL + '/map';
+const NOTICE_IMAGE_PATH = _common_banner_fishing_warning2_png__WEBPACK_IMPORTED_MODULE_6__;
+const NOTICE_MESSAGE = `<a href="${BASE_WEB_URL}" target="_blank">방문</a> | <a href="${MAP_WEB_URL}" target="_blank">지도</a> | <a href="${SHIPPING_WEB_URL}" target="_blank">제품</a> | <a href="${PRESS_WEB_URL}" target="_blank">기자단</a> | <a h
+--- API_URL @78774
+const API_ENDPOINT_SEARCH = BASE_API_URL + '/search';
+const API_ENDPOINT_COUNT = BASE_API_URL + '/count';
+const API_ENDPOINT_RELOAD = BASE_API_URL + '/reload';
+const API_ENDPOINT_PRESS = BASE_API_URL + '/press';
+const API_ENDPOINT_SHIPPING = BASE_API_URL + '/shipping';
+const API_ENDPOINT_MAP = BASE_API_URL + '/map';
+const NOTICE_IMAGE_PATH = _common_banner_fishing_warning2_png__WEBPACK_IMPORTED_MODULE_6__;
+const NOTICE_MESSAGE = `<a href="${BASE_WEB_URL}" target="_blank">방문</a> | <a href="${MAP_WEB_URL}" target="_blank">지도</a> | <a href="${SHIPPING_WEB_URL}" target="_blank">제품</a> | <a href="${PRESS_WEB_URL}" target="_blank">기자단</a> | <a href="${STASH_WEB_URL}">🔖 찜</a> | <a href="${OPEN_URL}
+--- fetch( @13583
+  const [inputCode, setInputCode] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)('');
+  const reloadData = async () => {
+    if (inputCode !== 'reload') {
+      setMessage('Invalid code. Please try again.');
+      return;
+    }
+    setMessage('Runnnig...');
+    try {
+      const response = await fetch(`${_constants_js__WEBPACK_IMPORTED_MODULE_3__.API_ENDPOINT_RELOAD}`, {
+        method: 'POST'
+      });
+      const data = await response.json();
+      if (data.status === 'success') {
+        setMessage('Runned successfully!');
+      } else {
+        setMessage('Failed to run code: ' + data.message);
+      }
+    } catch (error) {
+      setMessage('Error: ' + error.message);
+    }
+  };
+  ret
+--- fetch( @104381
+   }
+    if (typeFilters.length > 0) {
+      typeFilters.forEach(type => params.append('type', type));
+    }
+    if (pointFilters.length > 0) {
+      pointFilters.forEach(point => params.append('point', point));
+    }
+    params.append('target', targetFilter);
+    try {
+      const response = await fetch(`${_constants_js__WEBPACK_IMPORTED_MODULE_2__.API_ENDPOINT_SEARCH}?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
+      setResults(data.result);
+      if (data.is_valid) {
+        if (data.result.length === 0) {
+          setCountMessage(`적합한 체험이 없네요. 다른 검색어를 입력해보세요!<br /><small>당신을 위
+--- fetch( @105774
+(`서버에 접속할 수 없어요.<br /><small>문제가 지속될 경우 <a href="${_constants_js__WEBPACK_IMPORTED_MODULE_2__.NOTICE_URL}" target="_blank">공지글</a>에 댓글로 알려주세요.</small>`);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const getCount = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${_constants_js__WEBPACK_IMPORTED_MODULE_2__.API_ENDPOINT_COUNT}`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
+      setCountMessage(`현재 ${data.num_campaign}개의 체험이 있어요!<br/><small><strong>${data.num_platform}개 플랫폼을 한꺼번에 찾아 드릴게요. </strong><br /><a href="https://blog.naver.com/tyami/223500172766" target="
+--- fetch( @135814
+currentBounds;
+    if (searchBounds) {
+      params.append('min_lat', searchBounds.min_lat);
+      params.append('max_lat', searchBounds.max_lat);
+      params.append('min_lng', searchBounds.min_lng);
+      params.append('max_lng', searchBounds.max_lng);
+    }
+    try {
+      const response = await fetch(`${_constants_js__WEBPACK_IMPORTED_MODULE_1__.API_ENDPOINT_MAP}?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
+      setMarkers(data.result);
+      if (data.is_valid) {
+        if (data.result.length === 0) {
+          setCountMessage('지금은 적합한 체험이 없네요');
+        } else {
+          set
+--- fetch( @137298
+    setCurrentBounds(bounds);
+    search(bounds);
+  };
+  const handleMainSearch = () => {
+    // Clear bounds on main search
+    setMaintainCenter(false);
+    setCurrentBounds(null);
+    search(null);
+  };
+  const getCount = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${_constants_js__WEBPACK_IMPORTED_MODULE_1__.API_ENDPOINT_COUNT}?for_map=True`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
+      setCountMessage(`주소가 있는 ${data.num_campaign}개의 체험이 있어요!<br/><small><strong>${data.num_platform}개 플랫폼을 한꺼번에 찾아 드릴게요. </strong><br /><a href="https://blog.naver.com/tyami/22350
+--- fetch( @210313
+s();
+    if (mediaFilters.length > 0) {
+      mediaFilters.forEach(media => params.append('media', media));
+    }
+    if (typeFilters.length > 0) {
+      typeFilters.forEach(type => params.append('type', type));
+    }
+    params.append('target', targetFilter);
+    try {
+      const response = await fetch(`${_constants_js__WEBPACK_IMPORTED_MODULE_1__.API_ENDPOINT_PRESS}?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
+      setResults(data.result);
+      if (data.is_valid) {
+        if (data.result.length === 0) {
+          setCountMessage('지금은 적합한 기자단이 없네요');
+          setNoResultsMessa
+--- fetch( @238961
+  typeFilters.forEach(type => params.append('type', type));
+    }
+    if (pointFilters.length > 0) {
+      pointFilters.forEach(point => params.append('point', point));
+    }
+    params.append('target', targetFilter);
+    params.append('target', targetFilter);
+    try {
+      const response = await fetch(`${_constants_js__WEBPACK_IMPORTED_MODULE_1__.API_ENDPOINT_SHIPPING}?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
+      setResults(data.result);
+      if (data.is_valid) {
+        if (data.result.length === 0) {
+          setCountMessage('지금은 적합한 제품 체험이 없네요');
+          setNoResults
+--- fetch( @404203
+tate.fetchers.get(rf.key);
+      let revalidatingFetcher = getLoadingFetcher(undefined, fetcher ? fetcher.data : undefined);
+      state.fetchers.set(rf.key, revalidatingFetcher);
+    });
+    return new Map(state.fetchers);
+  }
+  // Trigger a fetcher load/submit for the given fetcher key
+  function fetch(key, routeId, href, opts) {
+    if (isServer) {
+      throw new Error("router.fetch() was called during the server render, but it shouldn't be. " + "You are likely calling a useFetcher() method in the body of your component. " + "Try moving it to a useEffect or a callback.");
+    }
+    abortFetcher(key);
+    let flushSync = (opts && opts.flushSync) === true;
+    let routesToUse = inFlightDat
+--- fetch( @404287
+ed, fetcher ? fetcher.data : undefined);
+      state.fetchers.set(rf.key, revalidatingFetcher);
+    });
+    return new Map(state.fetchers);
+  }
+  // Trigger a fetcher load/submit for the given fetcher key
+  function fetch(key, routeId, href, opts) {
+    if (isServer) {
+      throw new Error("router.fetch() was called during the server render, but it shouldn't be. " + "You are likely calling a useFetcher() method in the body of your component. " + "Try moving it to a useEffect or a callback.");
+    }
+    abortFetcher(key);
+    let flushSync = (opts && opts.flushSync) === true;
+    let routesToUse = inFlightDataRoutes || dataRoutes;
+    let normalizedPath = normalizeTo(state.location, state.ma
+--- fetch( @1998166
+    options = {};
+    }
+    validateClientSideSubmission();
+    let {
+      action,
+      method,
+      encType,
+      formData,
+      body
+    } = getFormSubmissionInfo(target, basename);
+    if (options.navigate === false) {
+      let key = options.fetcherKey || getUniqueFetcherId();
+      router.fetch(key, currentRouteId, options.action || action, {
+        preventScrollReset: options.preventScrollReset,
+        formData,
+        body,
+        formMethod: options.method || method,
+        formEncType: options.encType || encType,
+        flushSync: options.flushSync
+      });
+    } else {
+      router.navigate(options.action || action, {
+        preventScrollReset: options.preventScrollRes
+--- fetch( @2004062
+);
+    };
+  }, [router, fetcherKey]);
+  // Fetcher additions
+  let load = react__WEBPACK_IMPORTED_MODULE_0__.useCallback((href, opts) => {
+    !routeId ?  true ? (0,react_router__WEBPACK_IMPORTED_MODULE_3__.UNSAFE_invariant)(false, "No routeId available for fetcher.load()") : 0 : void 0;
+    router.fetch(fetcherKey, routeId, href, opts);
+  }, [fetcherKey, routeId, router]);
+  let submitImpl = useSubmit();
+  let submit = react__WEBPACK_IMPORTED_MODULE_0__.useCallback((target, opts) => {
+    submitImpl(target, _extends({}, opts, {
+      navigate: false,
+      fetcherKey
+    }));
+  }, [fetcherKey, submitImpl]);
+  let FetcherForm = react__WEBPACK_IMPORTED_MODULE_0__.useMemo(() => {
+    let Fetch
+--- fetch( @2516218
+      if (message.moduleIdentifier) {
+          applyStyle(typeElement, {
+            cursor: "pointer"
+          });
+          // element.dataset not supported in IE
+          typeElement.setAttribute("data-can-open", true);
+          typeElement.addEventListener("click", function () {
+            fetch("/webpack-dev-server/open-editor?fileName=".concat(message.moduleIdentifier));
+          });
+        }
+
+        // Make it look similar to our terminal.
+        var text = ansi_html_community__WEBPACK_IMPORTED_MODULE_0___default()((0,html_entities__WEBPACK_IMPORTED_MODULE_1__.encode)(body));
+        var messageTextNode = document.createElement("div");
+        applyStyle(messageTextNode, _ove
+--- fetch( @2927910
+hunkId));
+/******/ 						currentUpdateChunks[chunkId] = true;
+/******/ 					}
+/******/ 				};
+/******/ 			}
+/******/ 		};
+/******/ 		
+/******/ 		__webpack_require__.hmrM = () => {
+/******/ 			if (typeof fetch === "undefined") throw new Error("No browser support: need fetch API");
+/******/ 			return fetch(__webpack_require__.p + __webpack_require__.hmrF()).then((response) => {
+/******/ 				if(response.status === 404) return; // no update available
+/******/ 				if(!response.ok) throw new Error("Failed to fetch update manifest " + response.statusText);
+/******/ 				return response.json();
+/******/ 			});
+/******/ 		};
+/******/ 		
+/******/ 		// no on chunks loaded
+/******/ 		
+/******/ 		// insta
