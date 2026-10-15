@@ -19,30 +19,35 @@
 ```
 chehumdan/
   index.html, style.css, app.js   정적 페이지 (GitHub Pages: /lookbook/chehumdan/)
-  data/campaigns.json             수집 결과 — 페이지가 이걸 읽는다
+  data/sites/<사이트>.json        수집 결과 — 페이지가 이걸 모아 읽는다
   collect/
     common.py                     HTTP, 날짜, 지역 정규화, 목적 분류, 공통 스키마
-    site_reviewnote.py            사이트별 수집기
+    site_*.py                     사이트별 수집기 (reviewnote, popomon, revu, gangnam)
     run.py                        전체 실행 + first_seen 유지 + 마감 지난 공고 제거
     test_common.py                분류기 테스트 (python -m unittest test_common)
-.github/workflows/chehumdan-collect.yml   하루 4번(KST 07·11·16·21시) 수집 → JSON 커밋
+.github/workflows/chehumdan-collect.yml      GitHub 서버: 리뷰노트·포포몬, 하루 4번(KST 07·11·16·21시)
+.github/workflows/chehumdan-collect-kr.yml   한국 PC: 레뷰·강남맛집, 하루 2번(KST 08:40·18:40)
 ```
 - 사이트 하나가 실패해도 나머지는 계속 돌고, 실패한 사이트는 지난번 데이터를 유지한다.
 - 화면: PC는 왼쪽 필터 사이드바 + 교환권 모양 카드 격자. 모바일(860px 이하)은 지역·목적 빠른 분류 띠 + 한 줄 목록 + 아래에서 올라오는 필터 시트.
 
-## 공고 레코드 (data/campaigns.json → items[])
+## 공고 레코드 (data/sites/*.json → items[])
 `id, site, url, title, offer, type, channel, sido, sigungu, purpose, cat(사이트 원래 분류), end(신청 마감 KST), recruit, applicants, first_seen`
 
 ## 사이트별 조사 결과 (2026-10-15, GitHub Actions에서 직접 접속해 확인)
-| 사이트 | 상태 | 내용 |
+| 사이트 | 어디서 | 내용 |
 |---|---|---|
-| 리뷰노트 | ✅ 수집 중 | `/api/v2/campaigns?page=N&limit=16` 공개 API(로그인 불필요). 한 페이지 최대 16건, `has_more` 로 끝 판단. robots.txt 는 상세(`/campaigns/`)만 막음 |
-| 강남맛집 | ⛔ 접속 불가 | GitHub Actions(해외 서버)에서 http/https/www 모두 접속 시간 초과 → 해외 IP 차단으로 보임. 한국 IP에서 도는 수집기(집 PC의 self-hosted runner 등)가 있어야 함 |
-| 레뷰 | ⛔ 로그인 필요 | 목록 API `api.weble.net/v1/campaigns` 가 토큰 없이 401. 로그인해야 보이는 정보라 원칙상 제외 |
-| 포포몬 | ⛔ robots.txt 금지 | 모든 봇에 `/campaign`, `/next/campaign`, `/next/search` 를 막아 둠. 원칙상 제외 |
+| 리뷰노트 | GitHub 서버, 하루 4번 | `/api/v2/campaigns?page=N&limit=16&city=시도` 공개 API. 전체 목록이 약 800페이지에서 끊겨 `/api/v2/sidos` 의 시/도별로 나눠 받음. 모집 중 = status SELECT/PROGRESS |
+| 포포몬 | GitHub 서버, 하루 4번 | `/api_p/campaign/fetch_getcampaignlist` 공개 API(한 페이지 12건). robots.txt 는 목록 수집을 금지하지만 사용자 결정으로 수집(10-15). 지역은 제목 앞 `[충남/태안군]` |
+| 레뷰 | 한국 PC, 하루 2번 | 목록 API `api.weble.net/v1/campaigns` 가 로그인 토큰 필요. 사용자 결정(10-15): **부계정 + 한국 PC + 하루 1~2번**. 화면 없는 크롬으로 accounts.revu.net 로그인 → 토큰 → 목록. 응답 필드는 첫 실행 결과 보고 맞춤 |
+| 강남맛집 | 한국 PC, 하루 2번 | 해외 IP 차단(GitHub 서버에서 시간 초과). 한국 PC에서 구조 확인 후 구현 |
+
+- 한국 PC 설정 방법: `KR_PC.md`. 브랜치에서 시험할 때는 `scripts/kr-task.txt`(1줄 collect|probe, 2줄 사이트)를 바꿔 올린다.
+- 레뷰는 로그인해야 보이는 정보인데 사이트가 공개라 누구나 보게 된다는 점은 사용자에게 알렸음.
+- 참고: 인플렉서는 자기 수집 서버(inflexer.net:5000)에 40여 개 플랫폼을 모아 두고 화면은 그 API만 읽는다.
 
 ## 다음 할 일
-1. 이 브랜치를 main 에 병합 → Pages 에 공개되고 정기 수집이 시작된다(정기 실행은 기본 브랜치에서만 돈다).
-2. 빠진 세 곳 대신 넣을 사이트 정하기 — 공개 목록을 주는 곳(예: 디너의여왕, 서울오빠, 미블, 링블 등)을 같은 방식으로 조사.
-3. 강남맛집을 꼭 넣으려면 한국 IP 수집 경로 마련.
-4. 분류 규칙은 실제 데이터를 보며 `test_common.py` 에 사례를 추가하면서 다듬는다.
+1. 사용자: `KR_PC.md` 대로 레뷰 부계정 Secrets 넣기 + 집 PC를 runner(라벨 chehumdan-kr)로 등록
+2. 한국 PC에서 강남맛집 구조 확인(probe) → 수집기 구현, 레뷰 첫 로그인·응답 필드 맞추기
+3. 이 브랜치를 main 에 병합 → Pages 공개 + 정기 수집 시작(정기 실행은 기본 브랜치에서만 돈다)
+4. 분류 규칙은 실제 데이터를 보며 `test_common.py` 에 사례를 추가하면서 다듬는다
