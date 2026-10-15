@@ -1,11 +1,14 @@
-"""레뷰 (www.revu.net) — 부계정 로그인 후 목록 수집. 한국 PC(self-hosted runner)에서만 돈다.
+"""레뷰 (www.revu.net) — 부계정 로그인 후 목록 수집. 사무실 PC(self-hosted runner)에서만 돈다.
 
 공고 목록 API(api.weble.net/v1/campaigns)는 로그인 토큰이 있어야 열린다.
-로그인은 accounts.revu.net(OIDC)을 거쳐서, 화면 없는 크롬(Playwright)으로 실제 로그인한 뒤
-레뷰 화면이 API에 보내는 Authorization 토큰을 받아 쓴다.
+화면 없는 크롬(Playwright)으로 레뷰를 열어, 레뷰 화면이 API에 보내는 Authorization 토큰을 받아 쓴다.
 
-환경 변수: REVU_ID, REVU_PW (GitHub Secrets)
-디버그: CHEHUMDAN_DEBUG 폴더를 주면 실패 때 화면 캡처·HTML·받은 API 주소를 남긴다.
+로그인 방법 (위가 우선)
+1. 저장된 로그인 상태: 사람이 revu_login.py(tools/revu-login.ps1)로 한 번 로그인해 둔 파일.
+   SNS(네이버·카카오) 부계정은 이 방식. 만료되면 같은 SNS 버튼을 눌러 조용히 다시 로그인해 본다.
+   파일: CHEHUMDAN_REVU_STATE (기본 C:\\chehumdan\\revu-state.json)
+2. 이메일 계정: REVU_ID, REVU_PW (GitHub Secrets)
+디버그: CHEHUMDAN_DEBUG 폴더를 주면 실패 때 화면 캡처·HTML·받은 API 주소를 남긴다(비밀값은 가림).
 """
 from __future__ import annotations
 
@@ -23,6 +26,9 @@ PAGE_SIZE = 35
 MAX_PAGES = 400
 
 DEBUG = Path(os.environ["CHEHUMDAN_DEBUG"]) if os.environ.get("CHEHUMDAN_DEBUG") else None
+STATE = Path(os.environ.get("CHEHUMDAN_REVU_STATE", r"C:\chehumdan\revu-state.json"))
+_PROVIDER_BUTTON = {"naver": "네이버", "kakao": "카카오", "google": "구글|Google", "apple": "Apple|애플",
+                    "facebook": "페이스북|Facebook"}
 
 
 def _debug(name: str, data) -> None:
@@ -42,19 +48,49 @@ def _debug(name: str, data) -> None:
         p.write_text(text, encoding="utf-8")
 
 
+def _find_token(page, token: dict) -> None:
+    if "v" in token:
+        return
+    try:
+        stored = page.evaluate("() => JSON.stringify({...localStorage})")
+    except Exception:  # noqa: BLE001
+        return
+    m = re.search(r"eyJ[\w\-]+\.[\w\-]+\.[\w\-]+", stored or "")
+    if m:
+        token["v"] = "Bearer " + m.group(0)
+
+
+def _open_login(page) -> None:
+    """레뷰 메인에서 로그인 버튼을 눌러 accounts.revu.net 으로 간다."""
+    page.goto(f"{WWW}/", wait_until="domcontentloaded", timeout=60_000)
+    page.wait_for_timeout(2500)
+    for sel in ["text=로그인", "a[href*='login']", "button:has-text('로그인')"]:
+        loc = page.locator(sel).first
+        if loc.count():
+            loc.click()
+            break
+    page.wait_for_url(re.compile(r"accounts\.revu\.net|/login"), timeout=30_000)
+    page.wait_for_timeout(1500)
+
+
 def login_token() -> str:
-    """부계정으로 로그인하고 api.weble.net 에 쓰는 'Bearer …' 값을 돌려준다."""
+    """로그인하고 api.weble.net 에 쓰는 'Bearer …' 값을 돌려준다."""
     from playwright.sync_api import sync_playwright
 
     uid, pw = os.environ.get("REVU_ID"), os.environ.get("REVU_PW")
-    if not uid or not pw:
-        raise RuntimeError("REVU_ID / REVU_PW 가 없음 (GitHub Secrets 확인)")
+    state = None
+    if STATE.exists():
+        state = json.loads(STATE.read_text(encoding="utf-8"))
+    elif not (uid and pw):
+        raise RuntimeError(f"로그인 정보 없음: {STATE} 도 REVU_ID/REVU_PW 도 없음 (KR_PC.md 참고)")
+    provider = (state or {}).pop("chehumdan_provider", None)
 
     token: dict[str, str] = {}
     seen_api: list[str] = []
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        ctx = browser.new_context(locale="ko-KR", user_agent=UA, viewport={"width": 1280, "height": 900})
+        ctx = browser.new_context(locale="ko-KR", user_agent=UA, viewport={"width": 1280, "height": 900},
+                                  storage_state=state)
         page = ctx.new_page()
 
         def on_request(req):
@@ -64,41 +100,45 @@ def login_token() -> str:
                 if auth.startswith("Bearer ") and len(auth) > 20:
                     token["v"] = auth
 
-        page.on("request", on_request)
+        ctx.on("request", on_request)
         try:
-            page.goto(f"{WWW}/", wait_until="domcontentloaded", timeout=60_000)
-            page.wait_for_timeout(2500)
-            # 로그인 버튼 → accounts.revu.net
-            for sel in ["text=로그인", "a[href*='login']", "button:has-text('로그인')"]:
-                loc = page.locator(sel).first
-                if loc.count():
-                    loc.click()
-                    break
-            page.wait_for_url(re.compile(r"accounts\.revu\.net|/login"), timeout=30_000)
-            page.wait_for_timeout(1500)
-            # 이메일 로그인 폼이 탭/버튼 뒤에 숨어 있으면 연다
-            for sel in ["text=이메일로 로그인", "text=이메일 로그인", "text=아이디로 로그인"]:
-                loc = page.locator(sel).first
-                if loc.count() and loc.is_visible():
-                    loc.click()
-                    page.wait_for_timeout(800)
-                    break
-            id_box = page.locator("input[type=email], input[name*=email i], input[name*=id i], input[type=text]").first
-            pw_box = page.locator("input[type=password]").first
-            id_box.fill(uid)
-            pw_box.fill(pw)
-            pw_box.press("Enter")
-            page.wait_for_url(re.compile(r"www\.revu\.net"), timeout=45_000)
-            page.wait_for_timeout(3000)
-            if "v" not in token:
+            if state is not None:
+                # 1) 저장된 로그인 상태로 바로 공고 화면
                 page.goto(f"{WWW}/campaign", wait_until="domcontentloaded", timeout=60_000)
                 page.wait_for_timeout(5000)
+                _find_token(page, token)
+                if "v" not in token and provider in _PROVIDER_BUTTON:
+                    # 만료됐으면 같은 SNS 버튼으로 조용히 다시 로그인 (SNS 쪽 로그인이 살아 있으면 통과)
+                    _open_login(page)
+                    page.locator(f"text=/{_PROVIDER_BUTTON[provider]}/").first.click()
+                    page.wait_for_url(re.compile(r"www\.revu\.net"), timeout=45_000)
+                    page.goto(f"{WWW}/campaign", wait_until="domcontentloaded", timeout=60_000)
+                    page.wait_for_timeout(5000)
+                    _find_token(page, token)
+                if "v" not in token and not (uid and pw):
+                    raise RuntimeError("레뷰 로그인이 만료됨 — 사무실 PC에서 로그인 도우미를 다시 실행해 주세요")
             if "v" not in token:
-                # 화면이 토큰을 저장소에 두는 경우
-                stored = page.evaluate("() => JSON.stringify({...localStorage})")
-                m = re.search(r"eyJ[\w\-]+\.[\w\-]+\.[\w\-]+", stored)
-                if m:
-                    token["v"] = "Bearer " + m.group(0)
+                # 2) 이메일 계정
+                _open_login(page)
+                for sel in ["text=이메일로 로그인", "text=이메일 로그인", "text=아이디로 로그인"]:
+                    loc = page.locator(sel).first
+                    if loc.count() and loc.is_visible():
+                        loc.click()
+                        page.wait_for_timeout(800)
+                        break
+                page.locator("input[type=email], input[name*=email i], input[name*=id i], input[type=text]").first.fill(uid)
+                pw_box = page.locator("input[type=password]").first
+                pw_box.fill(pw)
+                pw_box.press("Enter")
+                page.wait_for_url(re.compile(r"www\.revu\.net"), timeout=45_000)
+                page.goto(f"{WWW}/campaign", wait_until="domcontentloaded", timeout=60_000)
+                page.wait_for_timeout(5000)
+                _find_token(page, token)
+            if "v" in token and state is not None:
+                # 갱신된 쿠키를 다시 저장해서 로그인 상태를 오래 유지한다
+                fresh = ctx.storage_state()
+                fresh["chehumdan_provider"] = provider
+                STATE.write_text(json.dumps(fresh, ensure_ascii=False), encoding="utf-8")
         except Exception:
             if DEBUG:
                 _debug("revu_login.png", page.screenshot(full_page=True))
