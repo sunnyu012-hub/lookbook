@@ -19,6 +19,4 @@ pp_4155 grep https://popomon.com/next/_next/static/chunks/4155-2026.10.15-1.js
 pp_8113 grep https://popomon.com/next/_next/static/chunks/8113-2026.10.15-1.js
 pp_6029 grep https://popomon.com/next/_next/static/chunks/6029-2026.10.15-1.js
 pp_1623 grep https://popomon.com/next/_next/static/chunks/1623-2026.10.15-1.js
-gn_http raw http://xn--939au0g4vj8sq.net/
-gn_www raw https://www.xn--939au0g4vj8sq.net/
-gn_https raw https://xn--939au0g4vj8sq.net/
+# rerun 1792042411

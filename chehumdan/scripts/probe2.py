@@ -7,6 +7,12 @@ os.makedirs(OUT, exist_ok=True)
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36"
 PAT = re.compile(r"""["'`]((?:https?:)?//[^"'`\s]{4,200}|/[a-zA-Z0-9_\-./{}$:]*(?:api|campaign|search|list|v\d)[a-zA-Z0-9_\-./{}$:?=&]*)["'`]""", re.I)
 summary = open(f"{OUT}/_summary.txt", "a")
+# 번들 안에 섞인 남의 비밀값(웹훅·키)은 저장하지 않는다.
+SECRET = re.compile(r"hooks\.slack\.com\S*|discord(?:app)?\.com/api/webhooks\S*|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_\-]{35}|xox[abprs]-[0-9A-Za-z\-]+|sk_live_\w+|-----BEGIN[^-]+-----")
+
+
+def scrub(t: str) -> str:
+    return SECRET.sub("[REDACTED]", t)
 
 for line in open(sys.argv[1], encoding="utf-8"):
     line = line.strip()
@@ -43,6 +49,6 @@ for line in open(sys.argv[1], encoding="utf-8"):
                 ctx.append(f"--- {kw} @{m.start()}\n{text[max(0, m.start()-300):m.start()+400]}")
                 if len(ctx) > 60:
                     break
-        open(f"{OUT}/{name}.grep.txt", "w").write("\n".join(found) + "\n\n==== CONTEXT ====\n" + "\n".join(ctx))
+        open(f"{OUT}/{name}.grep.txt", "w").write(scrub("\n".join(found) + "\n\n==== CONTEXT ====\n" + "\n".join(ctx)))
     else:
         open(f"{OUT}/{name}.body", "wb").write(body[:400_000])
