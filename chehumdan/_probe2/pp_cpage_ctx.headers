@@ -1,0 +1,15 @@
+Date: Thu, 15 Oct 2026 06:19:20 GMT
+Content-Type: application/javascript; charset=UTF-8
+Content-Length: 61586
+Connection: close
+Set-Cookie: AWSALBTG=0CB8P71NJlLwOvOlHGMCGbbkByaPc7GpApNWett1Xbf9nGu9f55W9reeKlxCYaFXF4GFXDdmzxBKDCq5SaDDQ65RFExK+5vDXt/bvxncPMj+Ll6xQKq7OCFeYVru8cTgelkVpQv8wjurdM1ZYc1hWfY1APQMyHjzJGYrnNbzLQVIFQlmNJw=; Expires=Thu, 22 Oct 2026 06:19:20 GMT; Path=/
+Set-Cookie: AWSALBTGCORS=0CB8P71NJlLwOvOlHGMCGbbkByaPc7GpApNWett1Xbf9nGu9f55W9reeKlxCYaFXF4GFXDdmzxBKDCq5SaDDQ65RFExK+5vDXt/bvxncPMj+Ll6xQKq7OCFeYVru8cTgelkVpQv8wjurdM1ZYc1hWfY1APQMyHjzJGYrnNbzLQVIFQlmNJw=; Expires=Thu, 22 Oct 2026 06:19:20 GMT; Path=/; SameSite=None; Secure
+Set-Cookie: AWSALB=LfSiEp2MUd5CIhHemYSpkPFq+9C4zlhofwBPIEjBAzZzSoEf9X5BUqhBwhdqOA+Nmfi5soEGWAR40ftvdyNTwXQhc/JvooUysS2PNglN4g8UcekQ6W4qSMUlBdH6; Expires=Thu, 22 Oct 2026 06:19:20 GMT; Path=/
+Set-Cookie: AWSALBCORS=LfSiEp2MUd5CIhHemYSpkPFq+9C4zlhofwBPIEjBAzZzSoEf9X5BUqhBwhdqOA+Nmfi5soEGWAR40ftvdyNTwXQhc/JvooUysS2PNglN4g8UcekQ6W4qSMUlBdH6; Expires=Thu, 22 Oct 2026 06:19:20 GMT; Path=/; SameSite=None; Secure
+Server: Apache
+Cache-Control: private, no-cache, no-store, max-age=0, must-revalidate
+Accept-Ranges: bytes
+Last-Modified: Thu, 15 Oct 2026 03:15:22 GMT
+ETag: W/"f092-1a13d8ea910"
+Vary: Accept-Encoding
+Via: 1.1 popomon.com
