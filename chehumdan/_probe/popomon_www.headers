@@ -1,0 +1,27 @@
+HTTP/2 301 
+date: Thu, 15 Oct 2026 05:25:00 GMT
+content-type: text/html; charset=iso-8859-1
+content-length: 228
+location: https://popomon.com/
+set-cookie: AWSALBTG=2URXn3M3e8GKwBA0kerS8m2NW1WhW1ulkoudejLFAfeyxBL0eRX8fijgJWP9Dd2N7WfZrTFVz7/wlZp5UP7DMfMJKXSilKYINQJurPCOpXJNsKqXslmRwAA0ncTU8LN8ksGe5inEVrEITVMwoUZUZvceG8sdMoYALuKu3y8MoqZdAZ5XpRw=; Expires=Thu, 22 Oct 2026 05:25:00 GMT; Path=/
+set-cookie: AWSALBTGCORS=2URXn3M3e8GKwBA0kerS8m2NW1WhW1ulkoudejLFAfeyxBL0eRX8fijgJWP9Dd2N7WfZrTFVz7/wlZp5UP7DMfMJKXSilKYINQJurPCOpXJNsKqXslmRwAA0ncTU8LN8ksGe5inEVrEITVMwoUZUZvceG8sdMoYALuKu3y8MoqZdAZ5XpRw=; Expires=Thu, 22 Oct 2026 05:25:00 GMT; Path=/; SameSite=None; Secure
+set-cookie: AWSALB=FjzNnRnAtUeMbUvdQAyXkJiBMpZaNDzY3byuYiNy7daLxtpIQ90jfKsnZzcu6+Q7jybdO8sgasLe9QsE+VTwamJ8xHifKg0HZ9XKeNnN4tzZn2I1pYlPfAx1NKFk; Expires=Thu, 22 Oct 2026 05:25:00 GMT; Path=/
+set-cookie: AWSALBCORS=FjzNnRnAtUeMbUvdQAyXkJiBMpZaNDzY3byuYiNy7daLxtpIQ90jfKsnZzcu6+Q7jybdO8sgasLe9QsE+VTwamJ8xHifKg0HZ9XKeNnN4tzZn2I1pYlPfAx1NKFk; Expires=Thu, 22 Oct 2026 05:25:00 GMT; Path=/; SameSite=None; Secure
+server: Apache
+
+HTTP/2 200 
+date: Thu, 15 Oct 2026 05:25:00 GMT
+content-type: text/html; charset=utf-8
+content-length: 34042
+set-cookie: AWSALBTG=LHYFOVZGdbMR+/a8SohYXFVRwwQwyFz/OznJJ0ASR1dCaUYU5bCIjnWAHY9Yk5JOUAcd0BSWpHLAVmpDHdq/1S5cj7JqWL1rE6Cv4iYJbM5sYYfIYZnJMGFNIU1baeOu3hCDjs7fikucUamNsr2w3gD0GyWVKp3/2Ju+LKJB3P+7fwoMtkc=; Expires=Thu, 22 Oct 2026 05:25:00 GMT; Path=/
+set-cookie: AWSALBTGCORS=LHYFOVZGdbMR+/a8SohYXFVRwwQwyFz/OznJJ0ASR1dCaUYU5bCIjnWAHY9Yk5JOUAcd0BSWpHLAVmpDHdq/1S5cj7JqWL1rE6Cv4iYJbM5sYYfIYZnJMGFNIU1baeOu3hCDjs7fikucUamNsr2w3gD0GyWVKp3/2Ju+LKJB3P+7fwoMtkc=; Expires=Thu, 22 Oct 2026 05:25:00 GMT; Path=/; SameSite=None; Secure
+set-cookie: AWSALB=X0zdIwkVdC0AxQXIm/7+xxrDt7rmy7zUcrOAQg4FNPg4HF0KjYhu0u06gHKrHoQSOfYMVqmN5MeCNPQPF5kchwkiyM5U7N1drIHHI+r43pRvYTBjfqahX7jDrn9p; Expires=Thu, 22 Oct 2026 05:25:00 GMT; Path=/
+set-cookie: AWSALBCORS=X0zdIwkVdC0AxQXIm/7+xxrDt7rmy7zUcrOAQg4FNPg4HF0KjYhu0u06gHKrHoQSOfYMVqmN5MeCNPQPF5kchwkiyM5U7N1drIHHI+r43pRvYTBjfqahX7jDrn9p; Expires=Thu, 22 Oct 2026 05:25:00 GMT; Path=/; SameSite=None; Secure
+server: Apache
+cache-control: private, no-cache, no-store, max-age=0, must-revalidate
+vary: RSC,Next-Router-State-Tree,Next-Router-Prefetch,Accept-Encoding
+x-nextjs-cache: HIT
+x-powered-by: Next.js
+etag: "qs1n3s3qkkp4g"
+via: 1.1 popomon.com
+

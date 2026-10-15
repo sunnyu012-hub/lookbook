@@ -1,0 +1,12 @@
+HTTP/2 200 
+content-type: text/html; charset=utf-8
+content-length: 6873
+date: Thu, 15 Oct 2026 05:24:58 GMT
+access-control-allow-credentials: true
+etag: W/"1ad9-v00d+DMzQfTdFO13gb773xOIyTc"
+vary: Origin,Accept-Encoding
+x-cache: Miss from cloudfront
+via: 1.1 681ab9e4f5f9289fb3da74c25dab5b5c.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD61-P9
+x-amz-cf-id: vQ-mnRkZvdXEwRb4n7yrj35u1TUakbmXZNoej2ucwhDw4psuOEUo5A==
+

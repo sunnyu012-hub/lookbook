@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /ads.txt
+Allow: /app-ads.txt
+Disallow: /mypage/
+Disallow: /community/
+Disallow: /terms/
