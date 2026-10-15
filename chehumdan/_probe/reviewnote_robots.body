@@ -1,6 +1,0 @@
-User-Agent: *
-Allow: /
-Allow: /users/customerSupport
-Disallow: /campaigns/
-Disallow: /users/
-Disallow: /applies/

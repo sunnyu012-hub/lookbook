@@ -1,2 +1,0 @@
-revu_ctx3 200 https://www.revu.net/build/www.min.js?6d0d94850d255a0cdee01e77b3f371f908ed3fdb 10599032
-revu_campaign_page 200 https://www.revu.net/campaign/%EB%A7%9B%EC%A7%91 6873

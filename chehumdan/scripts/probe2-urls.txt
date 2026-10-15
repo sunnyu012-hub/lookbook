@@ -1,3 +1,0 @@
-# 이름 모드 URL [헤더JSON]   (모드: raw | grep | ctx:키워드1|키워드2)
-revu_ctx3 ctx:makeResource|setDomain('campaign|setDomain("campaign|interceptors.push|x-api|X-Api|api-key|apiKey https://www.revu.net/build/www.min.js?6d0d94850d255a0cdee01e77b3f371f908ed3fdb
-revu_campaign_page raw https://www.revu.net/campaign/%EB%A7%9B%EC%A7%91
