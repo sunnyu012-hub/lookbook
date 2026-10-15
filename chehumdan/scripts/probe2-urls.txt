@@ -1,5 +1,3 @@
 # 이름 모드 URL [헤더JSON]   (모드: raw | grep | ctx:키워드1|키워드2)
-revu_login_ctx ctx:api.accounts.revu.net|ACCOUNTS_API|/auth/login|/login|signin|/token|grant_type https://www.revu.net/build/www.min.js?6d0d94850d255a0cdee01e77b3f371f908ed3fdb
-revu_acc_home raw https://accounts.revu.net/
-pp_campaign raw https://popomon.com/campaign?searchAlign=latest&bigRecruitType=Lvisiting&recruitType=visiting&interestsFilter=ALL&cityLocation=ALL
-pp_campaign_grep grep https://popomon.com/campaign?searchAlign=latest&bigRecruitType=Lvisiting&recruitType=visiting&interestsFilter=ALL&cityLocation=ALL
+pp_cpage_grep grep https://popomon.com/next/_next/static/chunks/app/campaign/page-2026.10.15-1.js
+pp_cpage_ctx ctx:api_p|fetch_|recruitType|searchAlign|cityLocation https://popomon.com/next/_next/static/chunks/app/campaign/page-2026.10.15-1.js
