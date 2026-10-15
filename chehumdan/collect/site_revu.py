@@ -61,16 +61,15 @@ def _find_token(page, token: dict) -> None:
 
 
 def _open_login(page) -> None:
-    """레뷰 메인에서 로그인 버튼을 눌러 accounts.revu.net 으로 간다."""
-    page.goto(f"{WWW}/", wait_until="domcontentloaded", timeout=60_000)
-    page.wait_for_timeout(2500)
-    for sel in ["text=로그인", "a[href*='login']", "button:has-text('로그인')"]:
-        loc = page.locator(sel).first
-        if loc.count():
-            loc.click()
-            break
-    page.wait_for_url(re.compile(r"accounts\.revu\.net|/login"), timeout=30_000)
-    page.wait_for_timeout(1500)
+    """로그인 화면(www.revu.net/login: 이메일·비밀번호 칸 + SNS 버튼, 10-15 확인)으로 바로 간다.
+    메인의 '로그인' 글자는 첫 번째가 버튼이 아닌 안내 문구라 누르면 안 넘어간다."""
+    page.goto(f"{WWW}/login", wait_until="domcontentloaded", timeout=60_000)
+    page.locator("input[type=password]").first.wait_for(timeout=30_000)
+    page.wait_for_timeout(1000)
+
+
+def _left_login(url: str) -> bool:
+    return "revu.net" in url and "/login" not in url
 
 
 def login_token() -> str:
@@ -111,7 +110,7 @@ def login_token() -> str:
                     # 만료됐으면 같은 SNS 버튼으로 조용히 다시 로그인 (SNS 쪽 로그인이 살아 있으면 통과)
                     _open_login(page)
                     page.locator(f"text=/{_PROVIDER_BUTTON[provider]}/").first.click()
-                    page.wait_for_url(re.compile(r"www\.revu\.net"), timeout=45_000)
+                    page.wait_for_url(_left_login, timeout=45_000)
                     page.goto(f"{WWW}/campaign", wait_until="domcontentloaded", timeout=60_000)
                     page.wait_for_timeout(5000)
                     _find_token(page, token)
@@ -120,17 +119,11 @@ def login_token() -> str:
             if "v" not in token:
                 # 2) 이메일 계정
                 _open_login(page)
-                for sel in ["text=이메일로 로그인", "text=이메일 로그인", "text=아이디로 로그인"]:
-                    loc = page.locator(sel).first
-                    if loc.count() and loc.is_visible():
-                        loc.click()
-                        page.wait_for_timeout(800)
-                        break
-                page.locator("input[type=email], input[name*=email i], input[name*=id i], input[type=text]").first.fill(uid)
-                pw_box = page.locator("input[type=password]").first
-                pw_box.fill(pw)
-                pw_box.press("Enter")
-                page.wait_for_url(re.compile(r"www\.revu\.net"), timeout=45_000)
+                token.clear()  # 로그인 전 손님용 토큰(/tokens)은 버린다
+                page.locator("input[placeholder*='이메일'], input[type=email], input[type=text]").first.fill(uid)
+                page.locator("input[type=password]").first.fill(pw)
+                page.locator("button[type=submit]").first.click()
+                page.wait_for_url(_left_login, timeout=45_000)
                 page.goto(f"{WWW}/campaign", wait_until="domcontentloaded", timeout=60_000)
                 page.wait_for_timeout(5000)
                 _find_token(page, token)

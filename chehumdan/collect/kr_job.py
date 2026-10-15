@@ -56,6 +56,21 @@ def probe() -> int:
     return rc
 
 
+def collect(sites: list[str]) -> int:
+    """run.py 를 돌리고, 출력을 _debug/kr_job.log 에도 남긴다(Actions 기록을 못 볼 때 확인용, 계정 정보는 가림)."""
+    print("+ run.py", *sites, flush=True)
+    p = subprocess.run([PY, "run.py", *sites], cwd=CH / "collect", capture_output=True, text=True,
+                       encoding="utf-8", errors="replace")
+    log = p.stdout + p.stderr
+    print(log, flush=True)
+    for secret in (os.environ.get("REVU_PW"), os.environ.get("REVU_ID")):
+        if secret:
+            log = log.replace(secret, "[REDACTED]")
+    (CH / "_debug").mkdir(exist_ok=True)
+    (CH / "_debug" / "kr_job.log").write_text(log, encoding="utf-8")
+    return p.returncode
+
+
 def save() -> int:
     """바뀐 결과를 커밋해 지금 브랜치에 올린다. 화면 캡처(png)는 계정이 보일 수 있어 올리지 않는다."""
     git = lambda *a: sh("git", *a)  # noqa: E731
@@ -64,7 +79,8 @@ def save() -> int:
     git("add", "chehumdan/data/sites")
     for d in ("_debug", "_probe2"):
         if (CH / d).exists():
-            git("add", "-f", f"chehumdan/{d}", ":!*.png")
+            git("add", "-f", f"chehumdan/{d}")
+    git("rm", "--cached", "-q", "-r", "--ignore-unmatch", "--", "chehumdan/_debug/*.png")
     if git("diff", "--cached", "--quiet") == 0:
         print("바뀐 것 없음")
         return 0
@@ -85,7 +101,7 @@ def main() -> int:
     rc = 1
     try:
         prepare()
-        rc = sh(PY, "run.py", *sites, cwd=CH / "collect") if task == "collect" else probe()
+        rc = collect(sites) if task == "collect" else probe()
     finally:
         rc = save() or rc
     return rc
