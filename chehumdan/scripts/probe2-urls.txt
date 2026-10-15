@@ -1,4 +1,0 @@
-# 이름 모드 URL [헤더JSON]   (모드: raw | grep | ctx:키워드1|키워드2)
-ifx_bundle_grep grep https://www.inflexer.net/static/js/bundle.js
-ifx_bundle_ctx ctx:/api/|baseURL|axios.create|revu|gangnam|강남맛집|popomon|platform https://www.inflexer.net/static/js/bundle.js
-ifx_sitemap raw https://inflexer.net/sitemap.xml

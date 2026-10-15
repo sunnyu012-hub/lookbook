@@ -1,3 +1,0 @@
-ifx_bundle_grep 200 https://www.inflexer.net/static/js/bundle.js 2947098
-ifx_bundle_ctx 200 https://www.inflexer.net/static/js/bundle.js 2947098
-ifx_sitemap 200 https://inflexer.net/sitemap.xml 840
