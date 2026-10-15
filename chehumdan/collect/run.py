@@ -10,6 +10,7 @@ from __future__ import annotations
 import importlib
 import json
 import sys
+import threading
 import traceback
 from datetime import datetime
 from pathlib import Path
@@ -31,6 +32,7 @@ SITES = {
     "ddok": "site_ddok",
 }
 DATA = Path(__file__).resolve().parent.parent / "data" / "sites"
+SITE_TIMEOUT = 12 * 60  # 초. 10-15 한국 PC 기준 오래 걸리는 곳: 리뷰노트·포포몬·디너의여왕 7~9분
 
 
 def load(path: Path) -> dict:
@@ -38,6 +40,27 @@ def load(path: Path) -> dict:
         return json.loads(path.read_text(encoding="utf-8"))
     except (FileNotFoundError, json.JSONDecodeError):
         return {}
+
+
+def collect_timed(module: str) -> list[dict]:
+    """사이트 하나가 해외 IP 차단 등으로 시간 초과를 반복해도 전체 작업이 멈추지 않게 상한을 둔다."""
+    box: dict = {}
+
+    def work():
+        try:
+            box["v"] = importlib.import_module(module).collect()
+        except Exception as e:  # noqa: BLE001
+            box["e"] = e
+
+    # ponytail: 상한을 넘긴 스레드는 멈추지 않고 뒤에서 끝까지 돈다(데몬이라 프로세스가 끝나면 같이 끝남)
+    t = threading.Thread(target=work, daemon=True)
+    t.start()
+    t.join(SITE_TIMEOUT)
+    if t.is_alive():
+        raise TimeoutError(f"{SITE_TIMEOUT // 60}분 넘게 걸림 — 접속이 막혔거나 아주 느림")
+    if "e" in box:
+        raise box["e"]
+    return box["v"]
 
 
 def run_site(name: str) -> bool:
@@ -48,7 +71,7 @@ def run_site(name: str) -> bool:
     today = today_kst()
     meta = {"site": name}
     try:
-        got = importlib.import_module(SITES[name]).collect()
+        got = collect_timed(SITES[name])
         if not got:
             raise RuntimeError("0건 — 사이트 구조가 바뀌었을 수 있음")
         items, ok = got, True
@@ -72,8 +95,7 @@ def run_site(name: str) -> bool:
         out.append(it)
     out.sort(key=lambda x: (x.get("end") or "9999", x["id"]))
 
-    if not ok and not prev:
-        return False  # 한 번도 성공한 적 없는 사이트는 파일을 만들지 않는다
+    # 한 번도 성공 못 한 사이트도 실패 이유를 남긴다(items 0건, 화면은 건너뜀)
     now = datetime.now(KST).isoformat(timespec="minutes")
     meta.update({
         "ok": ok,

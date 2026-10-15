@@ -288,7 +288,7 @@
     : Promise.all(Object.keys(SITES).map(loadSite)).then((files) => {
         const data = { sites: {}, items: [], updated: null };
         for (const f of files) {
-          if (!f) continue;
+          if (!f || (!f.ok && !f.count)) continue; // 아직 한 번도 수집 못 한 사이트
           data.sites[f.site] = { ok: f.ok, count: f.count, updated: f.updated };
           data.items.push(...(f.items || []));
           if (f.updated && (!data.updated || f.updated > data.updated)) data.updated = f.updated;
