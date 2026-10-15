@@ -1,5 +1,3 @@
 # 이름 모드 URL [헤더JSON]   (모드: raw | grep | ctx:키워드1|키워드2)
-revu_ctx2 ctx:Authorization|CampaignService=|BaseService.prototype.get|guest|withCredentials|/v1/campaigns|campaign/search https://www.revu.net/build/www.min.js?6d0d94850d255a0cdee01e77b3f371f908ed3fdb
-revu_api2 raw https://api.weble.net/v1/campaigns?cat=%EB%A7%9B%EC%A7%91&type=all&sort=latest&page=1&limit=5 {"Origin":"https://www.revu.net","Referer":"https://www.revu.net/campaign","Accept":"application/json, text/plain, */*"}
-rn_api_p1 raw https://www.reviewnote.co.kr/api/v2/campaigns?page=1&limit=50&s=default {"Referer":"https://www.reviewnote.co.kr/campaigns"}
-rn_api_p40 raw https://www.reviewnote.co.kr/api/v2/campaigns?page=40&limit=50&s=default {"Referer":"https://www.reviewnote.co.kr/campaigns"}
+revu_ctx3 ctx:makeResource|setDomain('campaign|setDomain("campaign|interceptors.push|x-api|X-Api|api-key|apiKey https://www.revu.net/build/www.min.js?6d0d94850d255a0cdee01e77b3f371f908ed3fdb
+revu_campaign_page raw https://www.revu.net/campaign/%EB%A7%9B%EC%A7%91
