@@ -1,22 +1,9 @@
-# 이름 모드 URL [헤더JSON]
-rn_campaigns_js grep https://www.reviewnote.co.kr/_next/static/chunks/pages/campaigns-2977f684cfaaf604.js
-rn_app_js grep https://www.reviewnote.co.kr/_next/static/chunks/pages/_app-e21684bdf12ae15b.js
-rn_7536 grep https://www.reviewnote.co.kr/_next/static/chunks/7536-acf6aaa14f74219f.js
-rn_6950 grep https://www.reviewnote.co.kr/_next/static/chunks/6950-e8536f8c2a24c50f.js
-rn_7867 grep https://www.reviewnote.co.kr/_next/static/chunks/7867-0b7b96464572f09a.js
-rn_7739 grep https://www.reviewnote.co.kr/_next/static/chunks/7739-81302e51f90a05b1.js
-rn_1958 grep https://www.reviewnote.co.kr/_next/static/chunks/1958-61f8c0c82fc312f4.js
-rn_9409 grep https://www.reviewnote.co.kr/_next/static/chunks/9409-04a892f624d81f3f.js
-rn_9731 grep https://www.reviewnote.co.kr/_next/static/chunks/9731-d38882d6164de32e.js
-rn_8911 grep https://www.reviewnote.co.kr/_next/static/chunks/8911-218bae8807888e1b.js
-rn_7652 grep https://www.reviewnote.co.kr/_next/static/chunks/7652-5f7c121b8a8884be.js
-revu_www_js grep https://www.revu.net/build/www.min.js?6d0d94850d255a0cdee01e77b3f371f908ed3fdb
-pp_page_js grep https://popomon.com/next/_next/static/chunks/app/page-2026.10.15-1.js
-pp_layout_js grep https://popomon.com/next/_next/static/chunks/app/layout-2026.10.15-1.js
-pp_8339 grep https://popomon.com/next/_next/static/chunks/8339-2026.10.15-1.js
-pp_1244 grep https://popomon.com/next/_next/static/chunks/1244-2026.10.15-1.js
-pp_4155 grep https://popomon.com/next/_next/static/chunks/4155-2026.10.15-1.js
-pp_8113 grep https://popomon.com/next/_next/static/chunks/8113-2026.10.15-1.js
-pp_6029 grep https://popomon.com/next/_next/static/chunks/6029-2026.10.15-1.js
-pp_1623 grep https://popomon.com/next/_next/static/chunks/1623-2026.10.15-1.js
-# rerun 1792042411
+# 이름 모드 URL [헤더JSON]   (모드: raw | grep | ctx:키워드1|키워드2)
+rn_campaigns_ctx ctx:/api/v2/campaigns|/api/v2/sidos|limit https://www.reviewnote.co.kr/_next/static/chunks/pages/campaigns-2977f684cfaaf604.js
+rn_api_list raw https://www.reviewnote.co.kr/api/v2/campaigns?page=0&limit=20 {"Referer":"https://www.reviewnote.co.kr/campaigns"}
+rn_api_list2 raw https://www.reviewnote.co.kr/api/v2/campaigns {"Referer":"https://www.reviewnote.co.kr/campaigns"}
+rn_api_sidos raw https://www.reviewnote.co.kr/api/v2/sidos {"Referer":"https://www.reviewnote.co.kr/campaigns"}
+revu_ctx ctx:api.weble.net|/campaigns?filter=|"/campaigns"|campaignList https://www.revu.net/build/www.min.js?6d0d94850d255a0cdee01e77b3f371f908ed3fdb
+revu_api1 raw https://api.weble.net/v1/campaigns?page=1&limit=5 {"Origin":"https://www.revu.net","Referer":"https://www.revu.net/"}
+revu_api_robots raw https://api.weble.net/robots.txt
+pp_page_ctx ctx:api_p|fetch_|axios https://popomon.com/next/_next/static/chunks/app/page-2026.10.15-1.js

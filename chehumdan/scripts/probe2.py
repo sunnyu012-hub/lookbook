@@ -37,7 +37,15 @@ for line in open(sys.argv[1], encoding="utf-8"):
     summary.write(f"{name} {status} {final} {len(body)}\n")
     open(f"{OUT}/{name}.headers", "w").write(hdr)
     text = body.decode("utf-8", "replace")
-    if mode == "grep":
+    if mode.startswith("ctx:"):
+        out = []
+        for kw in mode[4:].split("|"):
+            for i, m in enumerate(re.finditer(re.escape(kw), text)):
+                if i >= 8:
+                    break
+                out.append(f"--- {kw} @{m.start()}\n{text[max(0, m.start()-700):m.start()+900]}")
+        open(f"{OUT}/{name}.ctx.txt", "w").write(scrub("\n".join(out)))
+    elif mode == "grep":
         found = []
         for m in PAT.finditer(text):
             s = m.group(1)
