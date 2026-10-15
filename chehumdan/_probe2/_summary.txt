@@ -1,0 +1,4 @@
+revu_login_ctx 200 https://www.revu.net/build/www.min.js?6d0d94850d255a0cdee01e77b3f371f908ed3fdb 10599032
+revu_acc_home 200 https://www.revu.net/ 6868
+pp_campaign 200 https://popomon.com/next/campaign?searchAlign=latest&bigRecruitType=Lvisiting&recruitType=visiting&interestsFilter=ALL&cityLocation=ALL 37878
+pp_campaign_grep 200 https://popomon.com/next/campaign?searchAlign=latest&bigRecruitType=Lvisiting&recruitType=visiting&interestsFilter=ALL&cityLocation=ALL 37878

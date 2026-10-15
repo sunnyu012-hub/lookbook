@@ -1,0 +1,786 @@
+--- api.accounts.revu.net @736605
+mazonaws.com/file1.weble.net',
+    NAVER_CLIENT_ID: 'bzB5Kpq6b040MCudxegF',
+    APPLE_CLIENT_ID: 'net.revu.client',
+    NCP_CLIENT_ID: 'yoixccxk8h',
+    GOOGLE_CLIENT_ID: '1064163805883-jhi9blvnd5ceph7fjcdl29si29biaev7.apps.googleusercontent.com',
+    RECOBELL_CUID: 'e74de114-556c-4727-a1d0-8817040af892',
+    IS_MOBILE_WIDTH: 799,
+    IS_PC_XS_WIDTH: 800,
+    IS_PC_SM_WIDTH: 1024,
+    IS_PC_MD_WIDTH: 1280,
+    IS_PC_LG_WIDTH: 1600,
+    IS_PC_XL_WIDTH: 1920,
+    FB_APP_ID: '438639080374342',
+    CAMPAIGN_DATA_CUT: 549669,
+    RENDER_PDF_API_HOST: 'https://render-pdf.crm.revu.net',
+    PDF_API_KEY: 'hotspicycrispyfriedchicken',
+    OIDC_WWW: 'https://accounts.revu.net',
+    OIDC_API: 'https://api.accounts.revu.net',
+    OIDC_ID: '9afe7a82-64c5-41f2-b55f-2b8b27af847a',
+    OIDC_KEY: 'jJA4GAAhrzsSedpFrZ8pLY2f7eB0mM7iRmoRXiAb'
+};
+
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+__webpack_require__(185);
+module.exports = angular;
+
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CampaignModel = exports.MARKET_TYPE_ONLY_DISCOUNT = exports.MARKET_TYPE_BLOG_AND_DISCOUNT = exports.MARKET_TYPE_ONLY_REVIEW = exports.MARKET_TYPE_BLOG_AND_REVIEW = void 0;
+var environment_1 = __webpack_require__(3);
+var moment = __webpack_require__(0);
+var _ = __webpack_require__(1);
+var pv_guess_category_model_1 = __webpack_require__(338);
+var user_meta_tag_model_1 = __webpack_require__(168);
+exports.MARKET_TYPE_BLOG_AND_REVIEW = "blog_and_review";
+exports.MARKET_TY
+--- /login @4742553
+;
+                    var meta = _this.RouteService.getCurrentRouteMeta();
+                    meta && meta.title && _this.EventService.broadcast('$setTitle', meta.title);
+                    meta && meta.menu && meta.menu.title && _this.EventService.broadcast('$setTitle', meta.menu.title);
+                });
+                this.$rootScope.$on('$routeChangeError', function (event, current, previous, rejection) {
+                    _this.AuthService.errorHandler(rejection);
+                });
+                this.$rootScope.$on('$locationChangeSuccess', function (event, newUrl, oldUrl) {
+                    var excludeUrlList = [
+                        '/naver',
+                        '/login',
+                        '/logout',
+                    ];
+                    if (window.history.length === 1) {
+                        _this.BucketService.set('$talkUrl', oldUrl);
+                    }
+                    if (oldUrl && _this.$location.$$absUrl != oldUrl) {
+                        var url_1 = "/" + _(oldUrl).split('//').last().split('/').splice(1).join('/');
+                        var pass_1 = true;
+                        _.forEach(excludeUrlList, function (excludeUrl) {
+                            if (~url_1.indexOf(excludeUrl)) {
+                                pass_1 = false;
+                            }
+                        });
+                        if (pass_1) {
+                            _this.BucketService.set('$referer', url_1);
+                        }
+                    }
+                });
+            };
+            class_1.prototype.chec
+--- /login @5332499
+=== 0 || Number(res.preferredStats.media) === 0;
+    };
+    AuthService.prototype.hasPermitUserAddInfo = function () {
+        var getSubDomain = function () {
+            return _(location.hostname).split('.').first();
+        };
+        if (getSubDomain() === 'admin') {
+            return false;
+        }
+        var path = this.$location.$$path.split('/');
+        if (!!~['report', 'loginBy', 'welcome', 'user-addition-info'].indexOf(path[1])) {
+            return false;
+        }
+        return true;
+    };
+    AuthService.prototype.errorHandler = function (httpStatusCode) {
+        if (httpStatusCode == this.HttpStatusCodeService.UNAUTHORIZED) {
+            if (this.$location.$$path != "/login") {
+                var redirect = encodeURIComponent(this.$location.$$url);
+                this.$location.path('/login').search('redirect', redirect);
+            }
+        }
+        else if (httpStatusCode == this.HttpStatusCodeService.FORBIDDEN) {
+            this.$location.path('/');
+        }
+        else {
+            this.$location.path('/');
+        }
+    };
+    AuthService.prototype.requestLogin = function (username, password, remember) {
+        return this.post({
+            username: username,
+            password: password,
+            remember: remember,
+        });
+    };
+    AuthService.prototype.requestLoginSms = function (userIdx, key) {
+        return this.post({
+            ID: userIdx,
+            SEGMENT: 'auth',
+            key: key,
+        });
+    };
+    AuthService.prototype.requestRenew = function (token) {
+        return this.post({
+            SEGMENT
+--- /login @5332620
+      var getSubDomain = function () {
+            return _(location.hostname).split('.').first();
+        };
+        if (getSubDomain() === 'admin') {
+            return false;
+        }
+        var path = this.$location.$$path.split('/');
+        if (!!~['report', 'loginBy', 'welcome', 'user-addition-info'].indexOf(path[1])) {
+            return false;
+        }
+        return true;
+    };
+    AuthService.prototype.errorHandler = function (httpStatusCode) {
+        if (httpStatusCode == this.HttpStatusCodeService.UNAUTHORIZED) {
+            if (this.$location.$$path != "/login") {
+                var redirect = encodeURIComponent(this.$location.$$url);
+                this.$location.path('/login').search('redirect', redirect);
+            }
+        }
+        else if (httpStatusCode == this.HttpStatusCodeService.FORBIDDEN) {
+            this.$location.path('/');
+        }
+        else {
+            this.$location.path('/');
+        }
+    };
+    AuthService.prototype.requestLogin = function (username, password, remember) {
+        return this.post({
+            username: username,
+            password: password,
+            remember: remember,
+        });
+    };
+    AuthService.prototype.requestLoginSms = function (userIdx, key) {
+        return this.post({
+            ID: userIdx,
+            SEGMENT: 'auth',
+            key: key,
+        });
+    };
+    AuthService.prototype.requestRenew = function (token) {
+        return this.post({
+            SEGMENT: 'refresh',
+            token: token,
+        });
+    };
+    AuthService.prototype.checkExpired = function (token) {
+   
+--- /login @5839034
+                 deferred.resolve();
+                    }
+                })
+                    .catch(function () {
+                    deferred.resolve();
+                });
+                return deferred.promise;
+            }];
+    };
+    return Router;
+}());
+exports.Router = Router;
+
+
+/***/ }),
+/* 427 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.route = void 0;
+exports.route = {
+    '/': {
+        template: '<home></home>',
+        mobileOn: 'home',
+    },
+    '/welcome': {
+        template: '<welcome></welcome>',
+        title: '회원가입 완료',
+        requiredLoggedIn: true,
+    },
+    '/loginBy': {
+        template: '<login-by></login-by>',
+    },
+    '/login': {
+        template: '<login></login>',
+        title: '로그인',
+        requiredNotLoggedIn: true,
+    },
+    '/naver-id-hurdle': {
+        template: '<naver-id-hurdle></naver-id-hurdle>',
+        title: '네이버 계정 연결안내',
+        requiredNotLoggedIn: true,
+    },
+    '/facebook-id-hurdle': {
+        template: '<facebook-id-hurdle></facebook-id-hurdle>',
+        title: '페이스북 계정 연결안내',
+        requiredNotLoggedIn: true,
+    },
+    '/naver-id-login-callback': {
+        template: '<naver-id-login-callback></naver-id-login-callback>',
+    },
+    '/nice-check-callback': {
+        template: '<nice-check-callback></nice-check-callback>',
+    },
+    '/nice-check-agree': {
+        template: '<nice-check-agree></nice-check-agree>',
+    },
+    '/apple-id-hurdle': {
+        template: '<apple-id-hurdle></apple-id-hurdle>',
+        
+--- /login @5839077
+              }
+                })
+                    .catch(function () {
+                    deferred.resolve();
+                });
+                return deferred.promise;
+            }];
+    };
+    return Router;
+}());
+exports.Router = Router;
+
+
+/***/ }),
+/* 427 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.route = void 0;
+exports.route = {
+    '/': {
+        template: '<home></home>',
+        mobileOn: 'home',
+    },
+    '/welcome': {
+        template: '<welcome></welcome>',
+        title: '회원가입 완료',
+        requiredLoggedIn: true,
+    },
+    '/loginBy': {
+        template: '<login-by></login-by>',
+    },
+    '/login': {
+        template: '<login></login>',
+        title: '로그인',
+        requiredNotLoggedIn: true,
+    },
+    '/naver-id-hurdle': {
+        template: '<naver-id-hurdle></naver-id-hurdle>',
+        title: '네이버 계정 연결안내',
+        requiredNotLoggedIn: true,
+    },
+    '/facebook-id-hurdle': {
+        template: '<facebook-id-hurdle></facebook-id-hurdle>',
+        title: '페이스북 계정 연결안내',
+        requiredNotLoggedIn: true,
+    },
+    '/naver-id-login-callback': {
+        template: '<naver-id-login-callback></naver-id-login-callback>',
+    },
+    '/nice-check-callback': {
+        template: '<nice-check-callback></nice-check-callback>',
+    },
+    '/nice-check-agree': {
+        template: '<nice-check-agree></nice-check-agree>',
+    },
+    '/apple-id-hurdle': {
+        template: '<apple-id-hurdle></apple-id-hurdle>',
+        title: '애플 계정 연결안내',
+        requiredNotLog
+--- /login @5839102
+       })
+                    .catch(function () {
+                    deferred.resolve();
+                });
+                return deferred.promise;
+            }];
+    };
+    return Router;
+}());
+exports.Router = Router;
+
+
+/***/ }),
+/* 427 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.route = void 0;
+exports.route = {
+    '/': {
+        template: '<home></home>',
+        mobileOn: 'home',
+    },
+    '/welcome': {
+        template: '<welcome></welcome>',
+        title: '회원가입 완료',
+        requiredLoggedIn: true,
+    },
+    '/loginBy': {
+        template: '<login-by></login-by>',
+    },
+    '/login': {
+        template: '<login></login>',
+        title: '로그인',
+        requiredNotLoggedIn: true,
+    },
+    '/naver-id-hurdle': {
+        template: '<naver-id-hurdle></naver-id-hurdle>',
+        title: '네이버 계정 연결안내',
+        requiredNotLoggedIn: true,
+    },
+    '/facebook-id-hurdle': {
+        template: '<facebook-id-hurdle></facebook-id-hurdle>',
+        title: '페이스북 계정 연결안내',
+        requiredNotLoggedIn: true,
+    },
+    '/naver-id-login-callback': {
+        template: '<naver-id-login-callback></naver-id-login-callback>',
+    },
+    '/nice-check-callback': {
+        template: '<nice-check-callback></nice-check-callback>',
+    },
+    '/nice-check-agree': {
+        template: '<nice-check-agree></nice-check-agree>',
+    },
+    '/apple-id-hurdle': {
+        template: '<apple-id-hurdle></apple-id-hurdle>',
+        title: '애플 계정 연결안내',
+        requiredNotLoggedIn: true,
+    },
+    '
+--- /login @5839140
+unction () {
+                    deferred.resolve();
+                });
+                return deferred.promise;
+            }];
+    };
+    return Router;
+}());
+exports.Router = Router;
+
+
+/***/ }),
+/* 427 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.route = void 0;
+exports.route = {
+    '/': {
+        template: '<home></home>',
+        mobileOn: 'home',
+    },
+    '/welcome': {
+        template: '<welcome></welcome>',
+        title: '회원가입 완료',
+        requiredLoggedIn: true,
+    },
+    '/loginBy': {
+        template: '<login-by></login-by>',
+    },
+    '/login': {
+        template: '<login></login>',
+        title: '로그인',
+        requiredNotLoggedIn: true,
+    },
+    '/naver-id-hurdle': {
+        template: '<naver-id-hurdle></naver-id-hurdle>',
+        title: '네이버 계정 연결안내',
+        requiredNotLoggedIn: true,
+    },
+    '/facebook-id-hurdle': {
+        template: '<facebook-id-hurdle></facebook-id-hurdle>',
+        title: '페이스북 계정 연결안내',
+        requiredNotLoggedIn: true,
+    },
+    '/naver-id-login-callback': {
+        template: '<naver-id-login-callback></naver-id-login-callback>',
+    },
+    '/nice-check-callback': {
+        template: '<nice-check-callback></nice-check-callback>',
+    },
+    '/nice-check-agree': {
+        template: '<nice-check-agree></nice-check-agree>',
+    },
+    '/apple-id-hurdle': {
+        template: '<apple-id-hurdle></apple-id-hurdle>',
+        title: '애플 계정 연결안내',
+        requiredNotLoggedIn: true,
+    },
+    '/apple-id-login-callback': {
+        t
+--- /login @6127322
+environment_1.environment.OIDC_WWW + '/register?';
+                this.$window.location.href = url + '&service=revu' +
+                    "&callback_url=".concat(environment_1.environment.WWW_HOST);
+            };
+            class_1.prototype.dismissBizTooltip = function () {
+                this.showBizTooltip = false;
+            };
+            class_1.prototype.closeChatbot = function () {
+                this.AiChatbotService.closeChat();
+            };
+            class_1.prototype.openChatbot = function () {
+                if (this.isLoggedIn) {
+                    this.AiChatbotService.toggleChat();
+                }
+                else {
+                    this.$location.path('/login');
+                }
+            };
+            class_1.prototype.loadTrendingKeywords = function () {
+                var _this = this;
+                this.HomeService.getTrendingKeywords()
+                    .then(function (res) {
+                    _this.trendingKeywords = Array.isArray(res) ? res : [];
+                })
+                    .catch(function () { });
+            };
+            class_1.prototype.loadLatestNotice = function () {
+                var _this = this;
+                this.NoticeService.getLatest()
+                    .then(function (res) {
+                    if (res && res.items && res.items[0]) {
+                        _this.noticeText = res.items[0].title;
+                        _this.noticeId = res.items[0].id;
+                    }
+                })
+                    .catch(function () { });
+            };
+            class_1.prototype.load
+--- signin @242615
+an unwrapped value.
+     * wrapped.reduce(_.add);
+     * // => 6
+     *
+     * // Returns a wrapped value.
+     * var squares = wrapped.map(square);
+     *
+     * _.isArray(squares);
+     * // => false
+     *
+     * _.isArray(squares.value());
+     * // => true
+     */
+    function lodash(value) {
+      if (isObjectLike(value) && !isArray(value) && !(value instanceof LazyWrapper)) {
+        if (value instanceof LodashWrapper) {
+          return value;
+        }
+        if (hasOwnProperty.call(value, '__wrapped__')) {
+          return wrapperClone(value);
+        }
+      }
+      return new LodashWrapper(value);
+    }
+
+    /**
+     * The base implementation of `_.create` without support for assigning
+     * properties to the created object.
+     *
+     * @private
+     * @param {Object} proto The object to inherit from.
+     * @returns {Object} Returns the new object.
+     */
+    var baseCreate = (function() {
+      function object() {}
+      return function(proto) {
+        if (!isObject(proto)) {
+          return {};
+        }
+        if (objectCreate) {
+          return objectCreate(proto);
+        }
+        object.prototype = proto;
+        var result = new object;
+        object.prototype = undefined;
+        return result;
+      };
+    }());
+
+    /**
+     * The function whose prototype chain sequence wrappers inherit from.
+     *
+     * @private
+     */
+    function baseLodash() {
+      // No operation performed.
+    }
+
+    /**
+     * The base constructor for creating `lodash` wrapper objects.
+     *
+     * @private
+     * @param {*} value The value to wrap.
+     * @para
+--- signin @2356269
+hr|img|input|link|meta|param)(([\w:-]+)[^>]*)\/>/gi;
+
+// Table parts need to be wrapped with `<table>` or they're
+// stripped to their contents when put in a div.
+// XHTML parsers do not magically insert elements in the
+// same way that tag soup parsers do, so we cannot shorten
+// this by omitting <tbody> or other required elements.
+var wrapMap = {
+  thead: ['table'],
+  col: ['colgroup', 'table'],
+  tr: ['tbody', 'table'],
+  td: ['tr', 'tbody', 'table']
+};
+
+wrapMap.tbody = wrapMap.tfoot = wrapMap.colgroup = wrapMap.caption = wrapMap.thead;
+wrapMap.th = wrapMap.td;
+
+// Support: IE <10 only
+// IE 9 requires an option wrapper & it needs to have the whole table structure
+// set up in advance; assigning `"<td></td>"` to `tr.innerHTML` doesn't work, etc.
+var wrapMapIE9 = {
+  option: [1, '<select multiple="multiple">', '</select>'],
+  _default: [0, '', '']
+};
+
+for (var key in wrapMap) {
+  var wrapMapValueClosing = wrapMap[key];
+  var wrapMapValue = wrapMapValueClosing.slice().reverse();
+  wrapMapIE9[key] = [wrapMapValue.length, '<' + wrapMapValue.join('><') + '>', '</' + wrapMapValueClosing.join('></') + '>'];
+}
+
+wrapMapIE9.optgroup = wrapMapIE9.option;
+
+function jqLiteIsTextNode(html) {
+  return !HTML_REGEXP.test(html);
+}
+
+function jqLiteAcceptsData(node) {
+  // The window object can accept data but has no nodeType
+  // Otherwise we are only interested in elements (1) and documents (9)
+  var nodeType = node.nodeType;
+  return nodeType === NODE_TYPE_ELEMENT || !nodeType || nodeType === NODE_TYPE_DOCUMENT;
+}
+
+function jqLiteHasData(node) {
+  for (var key in jqCache[node.ng339]) {
+ 
+--- signin @2722066
+  *           return responseOrNewPromise
+     *         }
+     *         return $q.reject(rejection);
+     *       }
+     *     };
+     *   });
+     *
+     *   $httpProvider.interceptors.push('myHttpInterceptor');
+     *
+     *
+     *   // alternatively, register the interceptor via an anonymous factory
+     *   $httpProvider.interceptors.push(function($q, dependency1, dependency2) {
+     *     return {
+     *      'request': function(config) {
+     *          // same as above
+     *       },
+     *
+     *       'response': function(response) {
+     *          // same as above
+     *       }
+     *     };
+     *   });
+     * ```
+     *
+     * ## Security Considerations
+     *
+     * When designing web applications, consider security threats from:
+     *
+     * - [JSON vulnerability](http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx)
+     * - [XSRF](http://en.wikipedia.org/wiki/Cross-site_request_forgery)
+     *
+     * Both server and the client must cooperate in order to eliminate these threats. AngularJS comes
+     * pre-configured with strategies that address these issues, but for this to work backend server
+     * cooperation is required.
+     *
+     * ### JSON Vulnerability Protection
+     *
+     * A [JSON vulnerability](http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx)
+     * allows third party website to turn your JSON resource URL into
+     * [JSONP](http://en.wikipedia.org/wiki/JSONP) request under some conditions. To
+     * counter this your server can prefix all JSON requests with following string `
+--- signin @3059273
+HR, it
+// doesn't know about mocked locations and resolves URLs to the real document - which is
+// exactly the behavior needed here.  There is little value is mocking these out for this
+// service.
+var urlParsingNode = window.document.createElement('a');
+var originUrl = urlResolve(window.location.href);
+var baseUrlParsingNode;
+
+urlParsingNode.href = 'http://[::1]';
+
+// Support: IE 9-11 only, Edge 16-17 only (fixed in 18 Preview)
+// IE/Edge don't wrap IPv6 addresses' hostnames in square brackets
+// when parsed out of an anchor element.
+var ipv6InBrackets = urlParsingNode.hostname === '[::1]';
+
+/**
+ *
+ * Implementation Notes for non-IE browsers
+ * ----------------------------------------
+ * Assigning a URL to the href property of an anchor DOM node, even one attached to the DOM,
+ * results both in the normalizing and parsing of the URL.  Normalizing means that a relative
+ * URL will be resolved into an absolute URL in the context of the application document.
+ * Parsing means that the anchor node's host, hostname, protocol, port, pathname and related
+ * properties are all populated to reflect the normalized URL.  This approach has wide
+ * compatibility - Safari 1+, Mozilla 1+ etc.  See
+ * http://www.aptana.com/reference/html/api/HTMLAnchorElement.html
+ *
+ * Implementation Notes for IE
+ * ---------------------------
+ * IE <= 10 normalizes the URL when assigned to the anchor node similar to the other
+ * browsers.  However, the parsed components will not be set if the URL assigned did not specify
+ * them.  (e.g. if you assign a.href = "foo", then a.protocol, a.host, etc. will be 
+--- signin @3060297
+e, protocol, port, pathname and related
+ * properties are all populated to reflect the normalized URL.  This approach has wide
+ * compatibility - Safari 1+, Mozilla 1+ etc.  See
+ * http://www.aptana.com/reference/html/api/HTMLAnchorElement.html
+ *
+ * Implementation Notes for IE
+ * ---------------------------
+ * IE <= 10 normalizes the URL when assigned to the anchor node similar to the other
+ * browsers.  However, the parsed components will not be set if the URL assigned did not specify
+ * them.  (e.g. if you assign a.href = "foo", then a.protocol, a.host, etc. will be empty.)  We
+ * work around that by performing the parsing in a 2nd step by taking a previously normalized
+ * URL (e.g. by assigning to a.href) and assigning it a.href again.  This correctly populates the
+ * properties such as protocol, hostname, port, etc.
+ *
+ * References:
+ *   http://developer.mozilla.org/en-US/docs/Web/API/HTMLAnchorElement
+ *   http://www.aptana.com/reference/html/api/HTMLAnchorElement.html
+ *   http://url.spec.whatwg.org/#urlutils
+ *   https://github.com/angular/angular.js/pull/2902
+ *   http://james.padolsey.com/javascript/parsing-urls-with-the-dom/
+ *
+ * @kind function
+ * @param {string|object} url The URL to be parsed. If `url` is not a string, it will be returned
+ *     unchanged.
+ * @description Normalizes and parses a URL.
+ * @returns {object} Returns the normalized URL as a dictionary.
+ *
+ *   | member name   | Description                                                            |
+ *   |---------------|------------------------------------------------------------------------|
+ * 
+--- signin @3060322
+me and related
+ * properties are all populated to reflect the normalized URL.  This approach has wide
+ * compatibility - Safari 1+, Mozilla 1+ etc.  See
+ * http://www.aptana.com/reference/html/api/HTMLAnchorElement.html
+ *
+ * Implementation Notes for IE
+ * ---------------------------
+ * IE <= 10 normalizes the URL when assigned to the anchor node similar to the other
+ * browsers.  However, the parsed components will not be set if the URL assigned did not specify
+ * them.  (e.g. if you assign a.href = "foo", then a.protocol, a.host, etc. will be empty.)  We
+ * work around that by performing the parsing in a 2nd step by taking a previously normalized
+ * URL (e.g. by assigning to a.href) and assigning it a.href again.  This correctly populates the
+ * properties such as protocol, hostname, port, etc.
+ *
+ * References:
+ *   http://developer.mozilla.org/en-US/docs/Web/API/HTMLAnchorElement
+ *   http://www.aptana.com/reference/html/api/HTMLAnchorElement.html
+ *   http://url.spec.whatwg.org/#urlutils
+ *   https://github.com/angular/angular.js/pull/2902
+ *   http://james.padolsey.com/javascript/parsing-urls-with-the-dom/
+ *
+ * @kind function
+ * @param {string|object} url The URL to be parsed. If `url` is not a string, it will be returned
+ *     unchanged.
+ * @description Normalizes and parses a URL.
+ * @returns {object} Returns the normalized URL as a dictionary.
+ *
+ *   | member name   | Description                                                            |
+ *   |---------------|------------------------------------------------------------------------|
+ *   | href          | A nor
+--- signin @3499435
+     function updateElementText(newText) {
+        element.text(newText || '');
+      }
+    }
+  };
+}];
+
+/**
+ * @ngdoc directive
+ * @name ngRef
+ * @restrict A
+ *
+ * @description
+ * The `ngRef` attribute tells AngularJS to assign the controller of a component (or a directive)
+ * to the given property in the current scope. It is also possible to add the jqlite-wrapped DOM
+ * element to the scope.
+ *
+ * If the element with `ngRef` is destroyed `null` is assigned to the property.
+ *
+ * Note that if you want to assign from a child into the parent scope, you must initialize the
+ * target property on the parent scope, otherwise `ngRef` will assign on the child scope.
+ * This commonly happens when assigning elements or components wrapped in {@link ngIf} or
+ * {@link ngRepeat}. See the second example below.
+ *
+ *
+ * @element ANY
+ * @param {string} ngRef property name - A valid AngularJS expression identifier to which the
+ *                       controller or jqlite-wrapped DOM element will be bound.
+ * @param {string=} ngRefRead read value - The name of a directive (or component) on this element,
+ *                            or the special string `$element`. If a name is provided, `ngRef` will
+ *                            assign the matching controller. If `$element` is provided, the element
+ *                            itself is assigned (even if a controller is available).
+ *
+ *
+ * @example
+ * ### Simple toggle
+ * This example shows how the controller of the component toggle
+ * is reused in the template through the scope to use its logic.
+ * <example name="ng-ref-component" mod
+--- signin @4414603
+te.  This service depends on the specific behavior of anchor nodes created by the
+    // browser (resolving and parsing URLs) that is unlikely to be provided by mock objects and
+    // cause us to break tests.  In addition, when the browser resolves a URL for XHR, it
+    // doesn't know about mocked locations and resolves URLs to the real document - which is
+    // exactly the behavior needed here.  There is little value is mocking these out for this
+    // service.
+    var urlParsingNode = document.createElement("a");
+    var originUrl = urlResolve(window.location.href);
+
+    /**
+     *
+     * Implementation Notes for non-IE browsers
+     * ----------------------------------------
+     * Assigning a URL to the href property of an anchor DOM node, even one attached to the DOM,
+     * results both in the normalizing and parsing of the URL.  Normalizing means that a relative
+     * URL will be resolved into an absolute URL in the context of the application document.
+     * Parsing means that the anchor node's host, hostname, protocol, port, pathname and related
+     * properties are all populated to reflect the normalized URL.  This approach has wide
+     * compatibility - Safari 1+, Mozilla 1+, Opera 7+,e etc.  See
+     * http://www.aptana.com/reference/html/api/HTMLAnchorElement.html
+     *
+     * Implementation Notes for IE
+     * ---------------------------
+     * IE <= 10 normalizes the URL when assigned to the anchor node similar to the other
+     * browsers.  However, the parsed components will not be set if the URL assigned did not specify
+     * them.  (e.g. if you a
