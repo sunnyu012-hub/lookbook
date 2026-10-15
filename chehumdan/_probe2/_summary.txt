@@ -1,3 +1,2 @@
-pp_list_visit 200 https://popomon.com/api_p/campaign/fetch_getcampaignlist?searchAlign=latest&bigRecruitType=Lvisiting&recruitType=visiting&interestsFilter=ALL&cityLocation=ALL&pageNum=0 18099
-pp_list_ship 200 https://popomon.com/api_p/campaign/fetch_getcampaignlist?searchAlign=latest&bigRecruitType=Pshipping&recruitType=shipping&interestsFilter=ALL&pageNum=0 16920
-pp_list_visit_p50 200 https://popomon.com/api_p/campaign/fetch_getcampaignlist?searchAlign=latest&bigRecruitType=Lvisiting&recruitType=visiting&interestsFilter=ALL&cityLocation=ALL&pageNum=50 16702
+pp_detail1 404 https://popomon.com/campaignDetail/324691 3573
+pp_detail2 404 https://popomon.com/next/campaignDetail/324691 21023

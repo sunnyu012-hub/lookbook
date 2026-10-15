@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="google" content="notranslate" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 모바일 대응 -->
+        <title>페이지를 찾을 수 없습니다</title>
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+
+            body, html {
+                margin: 0;
+                padding: 0;
+                width: 100%;
+                height: 100%;
+                font-family: Pretendard, sans-serif;
+            }
+
+            .container {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                padding: 16px;
+            }
+
+            .containerDiv {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                gap: 8px;
+                text-align: center;
+            }
+
+            .popomonHeading_1 {
+                font-size: 24px;
+                font-weight: 700;
+                color: #2A2A2A;
+                margin: 0;
+            }
+
+            .popomonTitle_1 {
+                font-size: 18px;
+                font-weight: 700;
+                color: #616161;
+                line-height: 1.4;
+                margin: 16px 0;
+            }
+
+            .containerBtn {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                width: 100%;
+                max-width: 360px;
+            }
+
+            .btn {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 12px;
+                width: 100%;
+                border-radius: 4px;
+                font-size: 16px;
+                font-weight: 600;
+            }
+
+            .bg_purple {
+                background-color: #714DFE;
+                color: white;
+                border: none;
+            }
+
+            .bg_white {
+                background-color: white;
+                color: #714DFE;
+                border: 1px solid #714DFE;
+            }
+
+            @media (max-width: 600px) {
+                .popomonHeading_1 {
+                    font-size: 20px;
+                }
+
+                .popomonTitle_1 {
+                    font-size: 16px;
+                }
+
+                .btn {
+                    font-size: 14px;
+                    padding: 10px;
+                }
+            }
+        </style>
+        <script>
+            const handelChatClick = () => {
+                location.href = "/";
+            }
+        </script>
+    </head>
+    <body style="overflow: hidden;">
+        <div class="container">
+            <div class="containerDiv">
+                <img src="/assets/images/icon/ico_caution_white.svg" alt="점검 이미지" title="점검 이미지"><br/>
+                <b class="popomonHeading_1">페이지를 찾을 수 없습니다.</b>
+                <p class="popomonTitle_1">네트워크가 일시적으로 끊겼거나 페이지를 불러오지<br>못하였으니 잠시 후 다시 시도해주세요.</p><br/>
+                <div class="containerBtn">
+                    <button class="btn bg_purple" onclick="handelChatClick()">홈으로</button>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
