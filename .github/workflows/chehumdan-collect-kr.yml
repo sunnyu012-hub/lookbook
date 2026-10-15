@@ -1,11 +1,12 @@
 name: chehumdan-collect-kr
-# 체험단 다모아: 한국 PC(self-hosted runner)에서만 되는 사이트 — 레뷰(부계정 로그인), 강남맛집(해외 IP 차단)
-# 계정 보호를 위해 하루 두 번만 돈다. 러너 라벨: chehumdan-kr
+# 체험단 다모아: 한국 사무실 PC(Windows self-hosted runner)에서만 되는 사이트
+#   레뷰(부계정 로그인), 강남맛집(해외 IP 차단). 계정 보호를 위해 하루 두 번만 돈다.
+# 러너 라벨: chehumdan-kr / PC 준비: chehumdan/KR_PC.md
 on:
   schedule:
     # KST 08:40, 18:40
     - cron: "40 23,9 * * *"
-  # 개발 중 시험: 이 파일을 바꿔 올리면 한국 PC에서 그 내용대로 한 번 돈다 (1줄: collect|probe, 2줄: 사이트)
+  # 개발 중 시험: 이 파일을 바꿔 올리면 PC에서 그 내용대로 한 번 돈다 (1줄: collect|probe, 2줄: 사이트)
   push:
     branches: [claude/clever-dijkstra-0mvpvv]
     paths: [chehumdan/scripts/kr-task.txt]
@@ -30,33 +31,36 @@ jobs:
     timeout-minutes: 60
     defaults:
       run:
-        shell: bash
+        shell: powershell
     env:
       PYTHONIOENCODING: utf-8
       PYTHONUTF8: "1"
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
       - name: 할 일 정하기
         id: task
         env:
           IN_TASK: ${{ inputs.task }}
           IN_SITES: ${{ inputs.sites }}
+          EVENT: ${{ github.event_name }}
         run: |
-          task="${IN_TASK:-collect}"; sites="${IN_SITES:-revu gangnam}"
-          if [ "${{ github.event_name }}" = "push" ]; then
-            task=$(sed -n 1p chehumdan/scripts/kr-task.txt | tr -d '\r ')
-            sites=$(sed -n 2p chehumdan/scripts/kr-task.txt | tr -d '\r')
-          fi
-          case "$task" in collect|probe) ;; *) echo "모르는 작업: $task"; exit 1;; esac
-          sites=$(echo "$sites" | tr -cd 'a-z ')
-          echo "task=$task" >> "$GITHUB_OUTPUT"; echo "sites=${sites:-revu gangnam}" >> "$GITHUB_OUTPUT"
+          $task = if ($env:IN_TASK) { $env:IN_TASK } else { "collect" }
+          $sites = if ($env:IN_SITES) { $env:IN_SITES } else { "revu gangnam" }
+          if ($env:EVENT -eq "push") {
+            $lines = Get-Content -Encoding UTF8 chehumdan/scripts/kr-task.txt
+            $task = $lines[0].Trim()
+            if ($lines.Count -gt 1 -and $lines[1].Trim()) { $sites = $lines[1].Trim() }
+          }
+          if ($task -notin @("collect", "probe")) { throw "모르는 작업: $task" }
+          $sites = ($sites -replace "[^a-z ]", "").Trim()
+          "task=$task" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
+          "sites=$sites" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
       - name: 준비
         run: |
+          python --version
           python -m pip install -q --upgrade pip playwright
           python -m playwright install chromium
+          if ($LASTEXITCODE -ne 0) { throw "준비 실패" }
       - name: 수집
         if: ${{ steps.task.outputs.task == 'collect' }}
         working-directory: chehumdan/collect
@@ -64,22 +68,35 @@ jobs:
           REVU_ID: ${{ secrets.REVU_ID }}
           REVU_PW: ${{ secrets.REVU_PW }}
           CHEHUMDAN_DEBUG: ${{ github.workspace }}/chehumdan/_debug
-        run: python run.py ${{ steps.task.outputs.sites }}
+          SITES: ${{ steps.task.outputs.sites }}
+        run: |
+          $sites = @($env:SITES -split " " | Where-Object { $_ })
+          python run.py @sites
+          if ($LASTEXITCODE -ne 0) { throw "수집 실패 ($LASTEXITCODE)" }
       - name: 구조 확인
         if: ${{ steps.task.outputs.task == 'probe' }}
-        run: rm -rf chehumdan/_probe2 && python chehumdan/scripts/probe2.py chehumdan/scripts/probe-kr-urls.txt; cat chehumdan/_probe2/_summary.txt
+        run: |
+          if (Test-Path chehumdan/_probe2) { Remove-Item -Recurse -Force chehumdan/_probe2 }
+          python chehumdan/scripts/probe2.py chehumdan/scripts/probe-kr-urls.txt
+          Get-Content -Encoding UTF8 chehumdan/_probe2/_summary.txt
       - name: 저장
         if: ${{ always() }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898+github-actions[bot]@users.noreply.github.com"
-          git add chehumdan/data/sites || true
-          [ -d chehumdan/_debug ] && git add -f chehumdan/_debug
-          [ -d chehumdan/_probe2 ] && git add -f chehumdan/_probe2
-          git diff --cached --quiet && exit 0
-          git commit -m "체험단 다모아: 한국 PC 수집 $(TZ=Asia/Seoul date '+%m-%d %H:%M')"
-          for i in 1 2 3; do
-            git pull --rebase -q origin "${GITHUB_REF_NAME}" && git push -q origin "HEAD:${GITHUB_REF_NAME}" && exit 0
-            sleep $((i * 5))
-          done
-          exit 1
+          git add chehumdan/data/sites
+          if (Test-Path chehumdan/_debug) { git add -f chehumdan/_debug }
+          if (Test-Path chehumdan/_probe2) { git add -f chehumdan/_probe2 }
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) { Write-Output "바뀐 것 없음"; exit 0 }
+          $kst = [System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId([DateTime]::UtcNow, "Korea Standard Time").ToString("MM-dd HH:mm")
+          git commit -q -m "체험단 다모아: 한국 PC 수집 $kst"
+          foreach ($i in 1..3) {
+            git pull --rebase -q origin $env:GITHUB_REF_NAME
+            if ($LASTEXITCODE -eq 0) {
+              git push -q origin "HEAD:$($env:GITHUB_REF_NAME)"
+              if ($LASTEXITCODE -eq 0) { exit 0 }
+            }
+            Start-Sleep -Seconds (5 * $i)
+          }
+          throw "저장 실패"
