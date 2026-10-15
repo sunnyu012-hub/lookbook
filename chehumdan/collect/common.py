@@ -179,7 +179,11 @@ _FOOD_WORDS = re.compile(
     r"횟집|생선회|물회|초밥|스시|오마카세|이자카야|술집|호프|포차|주점|혼술|칵테일|와인|펍|막걸리|"
     r"파스타|피자|버거|치킨|족발|보쌈|분식|떡볶이|라멘|우동|쌀국수|마라|중식|짜장|짬뽕|양꼬치|샤브|"
     r"뷔페|레스토랑|비스트로|다이닝|식사|정식|백반|한식|일식|양식|도시락|닭갈비|찜닭|오리|장어|"
-    r"해산물|해물|조개|대게|홍게|꽃게|게장|킹크랩|음식|시식|밀면|국수|냉면|칼국수|만두|돈까스|카츠|스테이크|순대|쭈꾸미|주꾸미|곰탕|유아식", re.I)
+    r"해산물|해물|조개|대게|홍게|꽃게|게장|킹크랩|음식|시식|밀면|국수|냉면|칼국수|만두|돈까스|카츠|스테이크|순대|쭈꾸미|주꾸미|곰탕|유아식|"
+    r"추어탕|돈가스|참치|방어|아구|닭|라면|김밥|수육|두부|숯불|돌솥|면옥|카레|강정|밥상|정육|요리", re.I)
+# 약한 단서: 가게 이름만 있는 식당 체험권('3만원 체험권 (2인 기준)', 강남맛집에 많음). 이용권·게임장은 빼고 본다.
+_MEAL_HINT = re.compile(r"메뉴|\d\s*인분|[2-9]\s*인\s*기준")
+_NOT_MEAL = re.compile(r"이용|게임|노래|당구|탁구|파티|참가|사주|타로|신점|상담|안마|낚시")
 
 _SITE_CAT = {
     # 사이트 카테고리 원문 → 목적 힌트
@@ -222,7 +226,7 @@ def classify(title: str, offer: str = "", site_category: str = "", ctype: str = 
         if hint == "product" and ctype in ("visit", "takeout"):
             return "food" if _FOOD_WORDS.search(text) else "service"
         return hint
-    if _FOOD_WORDS.search(text):
+    if _FOOD_WORDS.search(text) or (_MEAL_HINT.search(text) and not _NOT_MEAL.search(text)):
         return "food"
     return "service" if ctype in ("visit", "takeout", "reporter") else "product"
 

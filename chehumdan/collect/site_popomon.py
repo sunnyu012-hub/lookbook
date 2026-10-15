@@ -80,7 +80,7 @@ def collect() -> list[dict]:
         n0 = len(out)
         for page in range(MAX_PAGES):
             params = {"searchAlign": "latest", "bigRecruitType": big, "recruitType": kind,
-                      "interestsFilter": "ALL", "pageNum": page}
+                      "interestsFilter": "ALL", "pageNum": page * 12}  # pageNum 은 페이지 번호가 아니라 시작 위치(건)
             if big == "Lvisiting":
                 params["cityLocation"] = "ALL"
             res = fetch_json(f"{BASE}/api_p/campaign/fetch_getcampaignlist", params=params,

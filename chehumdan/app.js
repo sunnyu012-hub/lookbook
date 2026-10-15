@@ -9,6 +9,7 @@
     reviewnote: (id) => `https://www.reviewnote.co.kr/campaigns/${id}`,
     revu: (id) => `https://www.revu.net/campaign/${id}`,
     popomon: (id) => `https://popomon.com/campaign/${id}`,
+    gangnam: (id) => `https://xn--939au0g4vj8sq.net/cp/?id=${id}`,
   };
   const SOON_DAYS = 2;
   const PAGE = 60;
