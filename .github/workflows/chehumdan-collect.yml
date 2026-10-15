@@ -24,7 +24,7 @@ jobs:
           python-version: "3.12"
       - name: 수집
         working-directory: chehumdan/collect
-        run: python run.py reviewnote popomon
+        run: python run.py reviewnote popomon dinnerqueen cometoplay chvu remin fourblog cloudreview ddok
       - name: 저장
         run: |
           git config user.name "github-actions[bot]"

@@ -42,6 +42,7 @@ class Purpose(unittest.TestCase):
         ("KING돈가스", "3만원 체험권", "방문형", "visit", "food"),
         ("천궁대신", "신점 상담 1회(1인 기준) 체험권", "방문형", "visit", "service"),
         ("쑥뜸천하", "전신돔뜸 1시간 체험권 (1인 기준)", "방문형", "visit", "service"),
+        ("탄탄면공방 강남점", "탄탄면 2인", "맛집", "visit", "food"),
     ]
 
     def test_cases(self):

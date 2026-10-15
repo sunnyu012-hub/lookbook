@@ -22,6 +22,13 @@ SITES = {
     "popomon": "site_popomon",
     "revu": "site_revu",
     "gangnam": "site_gangnam",
+    "dinnerqueen": "site_dinnerqueen",
+    "cometoplay": "site_cometoplay",
+    "chvu": "site_chvu",
+    "remin": "site_remin",
+    "fourblog": "site_fourblog",
+    "cloudreview": "site_cloudreview",
+    "ddok": "site_ddok",
 }
 DATA = Path(__file__).resolve().parent.parent / "data" / "sites"
 

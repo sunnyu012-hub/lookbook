@@ -23,8 +23,10 @@ from common import UA, fetch_json, make_item, norm_sido, polite_sleep, split_add
 SITE = "revu"
 WWW = "https://www.revu.net"
 API = "https://api.weble.net/v1/campaigns"
-PAGE_SIZE = 35
-MAX_PAGES = 400
+PAGE_SIZE = 30
+MAX_PAGES = 300
+CATS = ["지역", "제품", "서비스", "기자단"]  # 상위 분류. 같은 공고가 겹치면 id 로 거른다
+MEDIA = ["blog", "instagram", "youtube", "clip", "etc"]
 
 DEBUG = Path(os.environ["CHEHUMDAN_DEBUG"]) if os.environ.get("CHEHUMDAN_DEBUG") else None
 STATE = Path(os.environ.get("CHEHUMDAN_REVU_STATE", r"C:\chehumdan\revu-state.json"))
@@ -74,8 +76,8 @@ def _left_login(url: str) -> bool:
     return "revu.net" in url and "/login" not in url
 
 
-def login_token() -> tuple[str, list[str]]:
-    """로그인하고 (api.weble.net 에 쓰는 'Bearer …', 카테고리 화면이 부른 목록 API 주소들) 을 돌려준다."""
+def login_token() -> str:
+    """로그인하고 api.weble.net 에 쓰는 'Bearer …' 값을 돌려준다."""
     from playwright.sync_api import sync_playwright
 
     uid, pw = os.environ.get("REVU_ID"), os.environ.get("REVU_PW")
@@ -129,16 +131,6 @@ def login_token() -> tuple[str, list[str]]:
                 page.goto(f"{WWW}/campaign", wait_until="domcontentloaded", timeout=60_000)
                 page.wait_for_timeout(5000)
                 _find_token(page, token)
-            if "v" in token:
-                # 로그인한 상태로 메인의 카테고리 화면(/category/지역/맛집 …)을 차례로 열어,
-                # 화면이 부르는 목록 API 주소(조건 포함)를 받아 둔다. 카테고리 화면은 로그인해야 열린다(10-15 확인).
-                page.goto(f"{WWW}/", wait_until="domcontentloaded", timeout=60_000)
-                page.wait_for_timeout(3000)
-                hrefs = page.eval_on_selector_all(
-                    "a[href^='/category/']", "els => [...new Set(els.map(e => e.getAttribute('href')))]")
-                for h in hrefs[:30]:
-                    page.goto(WWW + h, wait_until="domcontentloaded", timeout=60_000)
-                    page.wait_for_timeout(3000)
             if "v" in token and state is not None:
                 # 갱신된 쿠키를 다시 저장해서 로그인 상태를 오래 유지한다
                 fresh = ctx.storage_state()
@@ -146,17 +138,19 @@ def login_token() -> tuple[str, list[str]]:
                 STATE.write_text(json.dumps(fresh, ensure_ascii=False), encoding="utf-8")
         except Exception:
             if DEBUG:
-                _debug("revu_login.png", page.screenshot(full_page=True))
-                _debug("revu_login.html", page.content())
                 _debug("revu_url.txt", page.url)
+                try:  # 캡처가 시간 초과되면 원래 오류가 가려지므로 실패해도 넘어간다
+                    _debug("revu_login.html", page.content())
+                    _debug("revu_login.png", page.screenshot(timeout=10_000))
+                except Exception:  # noqa: BLE001
+                    pass
             raise
         finally:
             _debug("revu_api_urls.txt", "\n".join(dict.fromkeys(seen_api)))
             browser.close()
     if "v" not in token:
         raise RuntimeError("로그인은 됐지만 토큰을 찾지 못함")
-    lists = {_with_page(u, 1): None for u in seen_api if re.search(r"api\.weble\.net/v1/campaigns\?", u)}
-    return token["v"], list(lists)
+    return token["v"]
 
 
 # ── 응답 → 공통 레코드 ─────────────────────────────────
@@ -220,27 +214,26 @@ def parse(o: dict) -> dict | None:
     )
 
 
-def _with_page(url: str, page: int) -> str:
-    parts = urllib.parse.urlsplit(url)
-    q = dict(urllib.parse.parse_qsl(parts.query, keep_blank_values=True))
-    q["page"] = str(page)
-    return urllib.parse.urlunsplit(parts._replace(query=urllib.parse.urlencode(q)))
+def _list_url(cat: str, page: int) -> str:
+    """카테고리 화면이 부르는 목록 주소 그대로 (10-15 러너에서 확인). type=play = 모집 중."""
+    q = [("cat", cat), ("limit", PAGE_SIZE)] + [("media[]", m) for m in MEDIA] + \
+        [("page", page), ("sort", "latest"), ("type", "play")]
+    return f"{API}?{urllib.parse.urlencode(q)}"
 
 
 def collect() -> list[dict]:
-    auth, list_urls = login_token()
+    auth = login_token()
     headers = {"Authorization": auth, "Origin": WWW, "Referer": f"{WWW}/"}
-    # 카테고리 화면이 부른 목록 주소를 그대로 쓴다. 못 잡았으면 전체 최신순(지난 공고가 섞여 있어 모집 중이 끝나면 멈춤).
-    bases = list_urls or [f"{API}?type=all&sort=latest&limit={PAGE_SIZE}&page=1"]
     out, seen = [], set()
-    for base in bases:
+    for cat in CATS:
         empty = 0
         for page in range(1, MAX_PAGES + 1):
-            res = fetch_json(_with_page(base, page), headers=headers)
+            res = fetch_json(_list_url(cat, page), headers=headers)
             rows = res.get("items") or res.get("data") or []
-            if base == bases[0] and page == 1:
-                _debug("revu_sample.json", {"url": base, "keys": list(res.keys()), "total": res.get("total"),
+            if cat == CATS[0] and page == 1:
+                _debug("revu_sample.json", {"cat": cat, "keys": list(res.keys()), "total": res.get("total"),
                                             "first": rows[:2]})
+            print(f"  레뷰 {cat} {page}쪽: {len(rows)}건 (전체 {res.get('total')})", flush=True)
             new = [o for o in rows if o.get("id") not in seen]
             if not new:
                 break

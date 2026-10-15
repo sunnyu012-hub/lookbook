@@ -1,6 +1,7 @@
 // 체험단 다모아 — data/campaigns.json 을 읽어 분류 필터로 좁혀 보여준다.
 (() => {
-  const SITES = { reviewnote: "리뷰노트", gangnam: "강남맛집", revu: "레뷰", popomon: "포포몬" };
+  const SITES = { reviewnote: "리뷰노트", gangnam: "강남맛집", revu: "레뷰", popomon: "포포몬", dinnerqueen: "디너의여왕",
+    cometoplay: "놀러와체험단", chvu: "체험뷰", remin: "리뷰의민족", fourblog: "포블로그", cloudreview: "클라우드리뷰", ddok: "똑똑리워드" };
   const PURPOSES = { food: "맛집", cafe: "카페·디저트", travel: "여행·숙박", beauty: "뷰티·미용", health: "운동·건강", edu: "교육·체험", pet: "반려동물", product: "생활·제품", service: "기타 서비스" };
   const TYPES = { visit: "방문형", delivery: "배송형", reporter: "기자단", takeout: "포장", purchase: "구매평", etc: "기타" };
   const CHANNELS = { blog: "블로그", insta: "인스타그램", reels: "릴스", youtube: "유튜브", shorts: "쇼츠", tiktok: "틱톡", clip: "클립", etc: "기타" };
@@ -10,6 +11,13 @@
     revu: (id) => `https://www.revu.net/campaign/${id}`,
     popomon: (id) => `https://popomon.com/campaign/${id}`,
     gangnam: (id) => `https://xn--939au0g4vj8sq.net/cp/?id=${id}`,
+    dinnerqueen: (id) => `https://dinnerqueen.net/taste/${id}`,
+    cometoplay: (id) => `https://www.cometoplay.kr/item.php?it_id=${id}`,
+    chvu: (id) => `https://chvu.co.kr/campaign/${id}`,
+    remin: (id) => `https://remin.co.kr/category/information?cam_seq=${id}`,
+    fourblog: (id) => `https://4blog.net/campaign/${id}/`,
+    cloudreview: (id) => `https://cloudreview.co.kr/campaign/detail/${id}`,
+    ddok: (id) => `https://ddok.it/campaigns/${id}`,
   };
   const SOON_DAYS = 2;
   const PAGE = 60;
