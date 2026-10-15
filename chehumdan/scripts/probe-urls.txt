@@ -1,0 +1,11 @@
+reviewnote_home https://www.reviewnote.co.kr/
+reviewnote_campaigns https://www.reviewnote.co.kr/campaigns
+gangnam_home https://xn--939au0g4vj8sq.net/
+revu_home https://www.revu.net/
+revu_campaign https://www.revu.net/campaign
+popomon_home https://popomon.com/
+popomon_www https://www.popomon.com/
+reviewnote_robots https://www.reviewnote.co.kr/robots.txt
+gangnam_robots https://xn--939au0g4vj8sq.net/robots.txt
+revu_robots https://www.revu.net/robots.txt
+popomon_robots https://popomon.com/robots.txt
