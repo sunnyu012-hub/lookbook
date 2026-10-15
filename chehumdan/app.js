@@ -5,6 +5,9 @@
   const TYPES = { visit: "방문형", delivery: "배송형", reporter: "기자단", takeout: "포장", purchase: "구매평", etc: "기타" };
   const CHANNELS = { blog: "블로그", insta: "인스타그램", reels: "릴스", youtube: "유튜브", shorts: "쇼츠", tiktok: "틱톡", clip: "클립", etc: "기타" };
   const SIDO = ["전국", "서울", "경기", "인천", "부산", "대구", "광주", "대전", "울산", "세종", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"];
+  const SITE_URL = {
+    reviewnote: (id) => `https://www.reviewnote.co.kr/campaigns/${id}`,
+  };
   const SOON_DAYS = 2;
   const PAGE = 60;
 
@@ -40,7 +43,7 @@
     if (state.sgg) p.set("sgg", state.sgg);
     for (const k of SETS) if (state[k].size) p.set(k, [...state[k]].join(","));
     const h = p.toString();
-    history.replaceState(null, "", h ? "#" + h : location.pathname + location.search);
+    try { history.replaceState(null, "", h ? "#" + h : location.pathname + location.search); } catch { /* 미리보기 창 등 */ }
   }
 
   // ── 필터 ──
@@ -164,7 +167,8 @@
   function card(it) {
     const li = el("li");
     const a = el("a", "ticket");
-    a.href = it.url; a.target = "_blank"; a.rel = "noopener noreferrer";
+    const sid = it.id.slice(it.id.indexOf(":") + 1);
+    a.href = it.url || (SITE_URL[it.site] ? SITE_URL[it.site](sid) : "#"); a.target = "_blank"; a.rel = "noopener noreferrer";
     const d = daysLeft(it.end);
     const stub = el("div", "stub");
     const dd = el("span", "dd" + (d != null && d <= SOON_DAYS ? " soon" : d == null ? " far" : ""), d == null ? "상시" : d <= 0 ? "오늘" : `D-${d}`);
@@ -196,10 +200,11 @@
     return li;
   }
 
+  const numId = (it) => Number(it.id.slice(it.id.indexOf(":") + 1)) || 0;
   const ratio = (it) => it.recruit ? (it.applicants ?? 0) / it.recruit : Infinity;
   const SORTERS = {
     end: (a, b) => (a.end || "9999").localeCompare(b.end || "9999") || (b.first_seen || "").localeCompare(a.first_seen || ""),
-    new: (a, b) => (b.first_seen || "").localeCompare(a.first_seen || "") || (a.end || "9999").localeCompare(b.end || "9999"),
+    new: (a, b) => (b.first_seen || "").localeCompare(a.first_seen || "") || numId(b) - numId(a),
     ratio: (a, b) => ratio(a) - ratio(b) || (a.end || "9999").localeCompare(b.end || "9999"),
   };
 
@@ -264,8 +269,8 @@
 
   readHash();
   bind();
-  fetch("data/campaigns.json", { cache: "no-cache" })
-    .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
+  (window.__CAMPAIGNS__ ? Promise.resolve(window.__CAMPAIGNS__) : fetch("data/campaigns.json", { cache: "no-cache" })
+    .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }))
     .then((data) => {
       const now = today;
       items = (data.items || []).filter((it) => !it.end || it.end >= now);

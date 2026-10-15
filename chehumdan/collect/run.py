@@ -34,6 +34,7 @@ def load_prev() -> dict:
 def main(only: list[str]) -> int:
     prev = load_prev()
     prev_by_id = {it["id"]: it for it in prev.get("items", [])}
+    prev_sites = {it["site"] for it in prev.get("items", [])}
     today = today_kst()
     sites_meta = dict(prev.get("sites", {}))
     items: list[dict] = []
@@ -61,7 +62,12 @@ def main(only: list[str]) -> int:
         if it["id"] in seen or (it.get("end") and it["end"] < today):
             continue
         seen.add(it["id"])
-        it["first_seen"] = prev_by_id.get(it["id"], {}).get("first_seen") or it.get("first_seen") or today
+        it.pop("url", None)  # 주소는 화면에서 site+id 로 만든다(파일 크기 절약)
+        if it["id"] in prev_by_id:
+            it["first_seen"] = prev_by_id[it["id"]].get("first_seen")
+        else:
+            # 사이트를 처음 수집할 때는 기준선이라 '오늘 새로'로 치지 않는다(null).
+            it["first_seen"] = None if it["site"] not in prev_sites else today
         out.append(it)
     out.sort(key=lambda x: (x.get("end") or "9999", x["id"]))
 

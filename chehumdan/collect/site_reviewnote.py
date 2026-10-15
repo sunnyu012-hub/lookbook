@@ -5,12 +5,16 @@ robots.txt: /campaigns/(상세)·/users/·/applies/ 금지 — 상세 페이지�
 """
 from __future__ import annotations
 
-from common import fetch_json, make_item, norm_sido, polite_sleep, to_kst_date
+from common import fetch_json, make_item, norm_sido, polite_sleep, to_kst_date, today_kst
 
 SITE = "reviewnote"
 BASE = "https://www.reviewnote.co.kr"
-MAX_PAGES = 800   # 한 페이지 16건(사이트가 정한 최대) → 최대 12,800건
+MAX_PAGES = 2500  # 한 페이지 16건(사이트가 정한 최대) → 최대 40,000건
 PAGE_SIZE = 16
+
+# 모집 중 상태만 받는다. SELECT=모집(선정 전), PROGRESS=상시 모집형(구매평 등).
+# 목록 API는 신청 마감일이 먼 순서로 준다.
+OPEN_STATUS = {"SELECT", "PROGRESS"}
 
 _TYPE = {"VISIT": "visit", "DELIVERY": "delivery", "REPORTER": "reporter",
          "TAKEOUT": "takeout", "PAYBACK": "purchase", "PURCHASE": "purchase", "ETC": "etc"}
@@ -19,8 +23,11 @@ _CHANNEL = {"BLOG": "blog", "BLOG_CLIP": "clip", "CLIP": "clip", "INSTAGRAM": "i
 
 
 def parse(o: dict) -> dict | None:
-    if o.get("status") not in (None, "SELECT", "PROGRESS", "RECRUIT", "OPEN"):
+    if o.get("status") not in OPEN_STATUS:
         return None
+    end = to_kst_date(o.get("applyEndAt"))
+    if not end or end < today_kst():
+        return None  # 신청 마감이 지났으면 체험·리뷰 단계
     ctype = _TYPE.get(o.get("sort") or "", "etc")
     sido = norm_sido(o.get("city"))
     sgg = (o.get("sido") or {}).get("name")  # 리뷰노트의 'sido' 필드는 실제로 시/군/구
@@ -35,7 +42,7 @@ def parse(o: dict) -> dict | None:
         ctype=ctype, channel=_CHANNEL.get(o.get("channel") or "", "etc"),
         sido=sido, sigungu=sgg,
         site_category=(o.get("category") or {}).get("title") or "",
-        apply_end=to_kst_date(o.get("applyEndAt")),
+        apply_end=end,
         recruit=o.get("infNum"), applicants=o.get("applicantCount"),
     )
 
@@ -57,5 +64,5 @@ def collect() -> list[dict]:
                 out.append(it)
         if not data.get("has_more") or not objs:
             break
-        polite_sleep(0.7)
+        polite_sleep(0.4)
     return out
