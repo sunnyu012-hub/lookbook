@@ -5,6 +5,10 @@ on:
   schedule:
     # KST 08:40, 18:40
     - cron: "40 23,9 * * *"
+  # 개발 중 시험: 이 파일을 바꿔 올리면 한국 PC에서 그 내용대로 한 번 돈다 (1줄: collect|probe, 2줄: 사이트)
+  push:
+    branches: [claude/clever-dijkstra-0mvpvv]
+    paths: [chehumdan/scripts/kr-task.txt]
   workflow_dispatch:
     inputs:
       task:
@@ -35,20 +39,34 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: 할 일 정하기
+        id: task
+        env:
+          IN_TASK: ${{ inputs.task }}
+          IN_SITES: ${{ inputs.sites }}
+        run: |
+          task="${IN_TASK:-collect}"; sites="${IN_SITES:-revu gangnam}"
+          if [ "${{ github.event_name }}" = "push" ]; then
+            task=$(sed -n 1p chehumdan/scripts/kr-task.txt | tr -d '\r ')
+            sites=$(sed -n 2p chehumdan/scripts/kr-task.txt | tr -d '\r')
+          fi
+          case "$task" in collect|probe) ;; *) echo "모르는 작업: $task"; exit 1;; esac
+          sites=$(echo "$sites" | tr -cd 'a-z ')
+          echo "task=$task" >> "$GITHUB_OUTPUT"; echo "sites=${sites:-revu gangnam}" >> "$GITHUB_OUTPUT"
       - name: 준비
         run: |
           python -m pip install -q --upgrade pip playwright
           python -m playwright install chromium
       - name: 수집
-        if: ${{ github.event_name == 'schedule' || inputs.task == 'collect' }}
+        if: ${{ steps.task.outputs.task == 'collect' }}
         working-directory: chehumdan/collect
         env:
           REVU_ID: ${{ secrets.REVU_ID }}
           REVU_PW: ${{ secrets.REVU_PW }}
           CHEHUMDAN_DEBUG: ${{ github.workspace }}/chehumdan/_debug
-        run: python run.py ${{ inputs.sites || 'revu gangnam' }}
+        run: python run.py ${{ steps.task.outputs.sites }}
       - name: 구조 확인
-        if: ${{ inputs.task == 'probe' }}
+        if: ${{ steps.task.outputs.task == 'probe' }}
         run: rm -rf chehumdan/_probe2 && python chehumdan/scripts/probe2.py chehumdan/scripts/probe-kr-urls.txt; cat chehumdan/_probe2/_summary.txt
       - name: 저장
         if: ${{ always() }}
