@@ -40,11 +40,11 @@ def _debug(name: str, data) -> None:
         p.write_bytes(data)
     else:
         text = data if isinstance(data, str) else json.dumps(data, ensure_ascii=False, indent=1)
-        # 토큰·비밀번호는 남기지 않는다
+        # 토큰·아이디·비밀번호는 남기지 않는다 (공개 저장소에 올라간다)
         text = re.sub(r"Bearer\s+[\w\-.]+", "Bearer [REDACTED]", text)
-        pw = os.environ.get("REVU_PW")
-        if pw:
-            text = text.replace(pw, "[REDACTED]")
+        for secret in (os.environ.get("REVU_PW"), os.environ.get("REVU_ID")):
+            if secret:
+                text = text.replace(secret, "[REDACTED]")
         p.write_text(text, encoding="utf-8")
 
 
