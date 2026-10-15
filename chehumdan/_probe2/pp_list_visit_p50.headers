@@ -1,0 +1,16 @@
+Date: Thu, 15 Oct 2026 06:20:41 GMT
+Content-Type: application/json
+Transfer-Encoding: chunked
+Connection: close
+Set-Cookie: AWSALBTG=RqJwhB26LXjSNhCd/TA1wwXaC3bB1LDvrwJQa05KpbdJ6TSb4gEEZUf7SqzfS4csVtG+ZmqdWTJARxLzSOfZMxXfFrmnIR3IU39GToDZsivKJ7+be67jxGxabpZa0JBCROYQSbp4ltQZRvnxjEwzq1nyiMwoEwXmLPiOagguOTEh7clbkmU=; Expires=Thu, 22 Oct 2026 06:20:41 GMT; Path=/
+Set-Cookie: AWSALBTGCORS=RqJwhB26LXjSNhCd/TA1wwXaC3bB1LDvrwJQa05KpbdJ6TSb4gEEZUf7SqzfS4csVtG+ZmqdWTJARxLzSOfZMxXfFrmnIR3IU39GToDZsivKJ7+be67jxGxabpZa0JBCROYQSbp4ltQZRvnxjEwzq1nyiMwoEwXmLPiOagguOTEh7clbkmU=; Expires=Thu, 22 Oct 2026 06:20:41 GMT; Path=/; SameSite=None; Secure
+Set-Cookie: AWSALB=lKdGEaQ7iclJoxXODEd83NrmTUcrDJxSiw4vSfd/N/t+yNW2Syh9F1CWUrBq33mZwDn/N6lK/FDJJDCcfrHeofMScgp4K8Gw5LMh/nJAAFzQHfRzB4mjf9BmhOO2; Expires=Thu, 22 Oct 2026 06:20:41 GMT; Path=/
+Set-Cookie: AWSALBCORS=lKdGEaQ7iclJoxXODEd83NrmTUcrDJxSiw4vSfd/N/t+yNW2Syh9F1CWUrBq33mZwDn/N6lK/FDJJDCcfrHeofMScgp4K8Gw5LMh/nJAAFzQHfRzB4mjf9BmhOO2; Expires=Thu, 22 Oct 2026 06:20:41 GMT; Path=/; SameSite=None; Secure
+Server: Apache
+X-Powered-By: PHP/8.0.30
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: POST, GET, OPTIONS
+Access-Control-Allow-Headers: Content-Type, nuxtcookie
+Access-Control-Allow-Credentials: true
+Set-Cookie: ci_session=09l6fpdf5nuj775v1nb75fav1tkedh19; expires=Thu, 22-Oct-2026 06:20:41 GMT; Max-Age=604800; path=/; domain=.popomon.com; secure; HttpOnly; SameSite=None
+Content-Security-Policy: upgrade-insecure-requests
