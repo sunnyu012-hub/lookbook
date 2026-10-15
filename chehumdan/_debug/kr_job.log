@@ -82,18 +82,34 @@
   레뷰 지역 82쪽: 30건 (전체 2494)
   레뷰 지역 83쪽: 30건 (전체 2494)
   레뷰 지역 84쪽: 4건 (전체 2494)
-[revu] 실패 — 지난 데이터 56건 유지: fetch failed: https://api.weble.net/v1/campaigns?cat=%EC%A7%80%EC%97%AD&limit=30&media%5B%5D=blog&media%5B%5D=instagram&media%5B%5D=youtube&media%5B%5D=clip&media%5B%5D=etc&page=85&sort=latest&type=play: <HTTPError 404: 'Not Found'>
-[revu] 저장 56건 → C:\actions-runner\_work\lookbook\lookbook\chehumdan\data\sites\revu.json
-Traceback (most recent call last):
-  File "C:\actions-runner\_work\lookbook\lookbook\chehumdan\collect\run.py", line 51, in run_site
-    got = importlib.import_module(SITES[name]).collect()
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\actions-runner\_work\lookbook\lookbook\chehumdan\collect\site_revu.py", line 231, in collect
-    res = fetch_json(_list_url(cat, page), headers=headers)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\actions-runner\_work\lookbook\lookbook\chehumdan\collect\common.py", line 38, in fetch_json
-    return json.loads(fetch(url, **kw))
-                      ^^^^^^^^^^^^^^^^
-  File "C:\actions-runner\_work\lookbook\lookbook\chehumdan\collect\common.py", line 33, in fetch
-    raise RuntimeError(f"fetch failed: {url}: {last!r}")
-RuntimeError: fetch failed: https://api.weble.net/v1/campaigns?cat=%EC%A7%80%EC%97%AD&limit=30&media%5B%5D=blog&media%5B%5D=instagram&media%5B%5D=youtube&media%5B%5D=clip&media%5B%5D=etc&page=85&sort=latest&type=play: <HTTPError 404: 'Not Found'>
+  레뷰 제품 1쪽: 30건 (전체 639)
+  레뷰 제품 2쪽: 30건 (전체 639)
+  레뷰 제품 3쪽: 30건 (전체 639)
+  레뷰 제품 4쪽: 30건 (전체 639)
+  레뷰 제품 5쪽: 30건 (전체 639)
+  레뷰 제품 6쪽: 30건 (전체 639)
+  레뷰 제품 7쪽: 30건 (전체 639)
+  레뷰 제품 8쪽: 30건 (전체 639)
+  레뷰 제품 9쪽: 30건 (전체 639)
+  레뷰 제품 10쪽: 30건 (전체 639)
+  레뷰 제품 11쪽: 30건 (전체 639)
+  레뷰 제품 12쪽: 30건 (전체 639)
+  레뷰 제품 13쪽: 30건 (전체 639)
+  레뷰 제품 14쪽: 30건 (전체 639)
+  레뷰 제품 15쪽: 30건 (전체 639)
+  레뷰 제품 16쪽: 30건 (전체 639)
+  레뷰 제품 17쪽: 30건 (전체 639)
+  레뷰 제품 18쪽: 30건 (전체 639)
+  레뷰 제품 19쪽: 30건 (전체 639)
+  레뷰 제품 20쪽: 30건 (전체 639)
+  레뷰 제품 21쪽: 30건 (전체 639)
+  레뷰 제품 22쪽: 9건 (전체 639)
+  레뷰 서비스 1쪽: 30건 (전체 57)
+  레뷰 기자단 1쪽: 30건 (전체 167)
+  레뷰 기자단 2쪽: 30건 (전체 167)
+  레뷰 기자단 3쪽: 30건 (전체 167)
+  레뷰 기자단 4쪽: 30건 (전체 167)
+  레뷰 기자단 5쪽: 30건 (전체 167)
+  레뷰 기자단 6쪽: 17건 (전체 167)
+[revu] 3281건
+[revu] 저장 3281건 → C:\actions-runner\_work\lookbook\lookbook\chehumdan\data\sites\revu.json
