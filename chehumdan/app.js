@@ -30,7 +30,7 @@
   const daysLeft = (d) => d ? Math.round((Date.parse(d) - Date.parse(today)) / 86400e3) : null;
 
   // ── 상태 (주소 뒤 #에 담아 링크로 공유) ──
-  const state = { tab: "all", q: "", sort: "end", sido: "", sgg: "", purpose: new Set(), type: new Set(), channel: new Set(), site: new Set() };
+  const state = { tab: "all", q: "", sort: "end", sido: "", sgg: new Set(), purpose: new Set(), type: new Set(), channel: new Set(), site: new Set() };
   const SETS = ["purpose", "type", "channel", "site"];
   let items = [];
   let activeSites = Object.keys(SITES);
@@ -42,7 +42,7 @@
     state.q = p.get("q") || "";
     state.sort = ["end", "new", "ratio"].includes(p.get("sort")) ? p.get("sort") : "end";
     state.sido = p.get("sido") || "";
-    state.sgg = p.get("sgg") || "";
+    state.sgg = new Set((p.get("sgg") || "").split(",").filter(Boolean)); // 시/군/구는 여러 개
     for (const k of SETS) state[k] = new Set((p.get(k) || "").split(",").filter(Boolean));
   }
   function writeHash() {
@@ -51,7 +51,7 @@
     if (state.q) p.set("q", state.q);
     if (state.sort !== "end") p.set("sort", state.sort);
     if (state.sido) p.set("sido", state.sido);
-    if (state.sgg) p.set("sgg", state.sgg);
+    if (state.sgg.size) p.set("sgg", [...state.sgg].join(","));
     for (const k of SETS) if (state[k].size) p.set(k, [...state[k]].join(","));
     const h = p.toString();
     try { history.replaceState(null, "", h ? "#" + h : location.pathname + location.search); } catch { /* 미리보기 창 등 */ }
@@ -70,7 +70,7 @@
     }
     if (skip !== "sido" && state.sido) {
       if (it.sido !== state.sido) return false;
-      if (skip !== "sgg" && state.sgg && it.sigungu !== state.sgg) return false;
+      if (skip !== "sgg" && state.sgg.size && !state.sgg.has(it.sigungu)) return false;
     }
     for (const k of SETS) if (skip !== k && state[k].size && !state[k].has(it[k])) return false;
     return true;
@@ -81,6 +81,9 @@
     for (const it of items) if (matches(it, skip)) m.set(it[key], (m.get(it[key]) || 0) + 1);
     return m;
   }
+
+  // 모바일 띠에 보이는 선택한 시/군/구: '강남구' / '강남구 외 2'
+  const sggLabel = () => { const g = [...state.sgg]; return g.length > 1 ? `${g[0]} 외 ${g.length - 1}` : g[0]; };
 
   // ── 칩 그리기 ──
   function chip(label, count, pressed, onClick) {
@@ -97,13 +100,13 @@
     // 지역 1단계
     const sidoCount = countBy("sido", "sido");
     const sidoBox = $("sidoChips");
-    sidoBox.replaceChildren(chip("전체", null, !state.sido, () => { state.sido = ""; state.sgg = ""; update(); }));
+    sidoBox.replaceChildren(chip("전체", null, !state.sido, () => { state.sido = ""; state.sgg.clear(); update(); }));
     sidoBox.firstChild.disabled = false;
     for (const s of SIDO) {
       const n = sidoCount.get(s) || 0;
       if (!n && state.sido !== s) continue;
       sidoBox.append(chip(s === "전국" ? "전국·배송" : s, n, state.sido === s, () => {
-        state.sido = state.sido === s ? "" : s; state.sgg = ""; update();
+        state.sido = state.sido === s ? "" : s; state.sgg.clear(); update();
       }));
     }
     // 지역 2단계 (시/군/구)
@@ -113,8 +116,10 @@
     if (!sggBox.hidden) {
       const m = countBy("sgg", "sigungu");
       const names = [...m.keys()].filter(Boolean).sort((a, b) => a.localeCompare(b, "ko"));
-      if (state.sgg && !names.includes(state.sgg)) names.unshift(state.sgg);
-      for (const g of names) sggBox.append(chip(g, m.get(g) || 0, state.sgg === g, () => { state.sgg = state.sgg === g ? "" : g; update(); }));
+      for (const g of state.sgg) if (!names.includes(g)) names.unshift(g);
+      for (const g of names) sggBox.append(chip(g, m.get(g) || 0, state.sgg.has(g), () => {
+        state.sgg.has(g) ? state.sgg.delete(g) : state.sgg.add(g); update();
+      }));
       if (m.get(null)) sggBox.append(el("span", "stat", `시/군/구 미상 ${m.get(null)}`));
     }
     // 다중 선택 그룹
@@ -150,15 +155,15 @@
 
     // 모바일 빠른 분류 띠: 지역 한 줄, 목적 한 줄
     const qs = $("qSido");
-    qs.replaceChildren(chip("전 지역", null, !state.sido, () => { state.sido = ""; state.sgg = ""; update(); }));
+    qs.replaceChildren(chip("전 지역", null, !state.sido, () => { state.sido = ""; state.sgg.clear(); update(); }));
     qs.firstChild.disabled = false;
     for (const s of SIDO) {
       const n = sidoCount.get(s) || 0;
       if (!n && state.sido !== s) continue;
-      const label = state.sido === s && state.sgg ? `${s} ${state.sgg}` : (s === "전국" ? "전국·배송" : s);
+      const label = state.sido === s && state.sgg.size ? `${s} ${sggLabel()}` : (s === "전국" ? "전국·배송" : s);
       qs.append(chip(label, n, state.sido === s, () => {
         if (state.sido === s && s !== "전국") { openSheet(); return; } // 같은 지역을 다시 누르면 시/군/구 고르기
-        state.sido = s; state.sgg = ""; update();
+        state.sido = s; state.sgg.clear(); update();
       }));
     }
     const pm = countBy("purpose", "purpose");
@@ -261,7 +266,7 @@
     $("sort").value = state.sort;
     $("sort").addEventListener("change", (e) => { state.sort = e.target.value; update(); });
     $("more").addEventListener("click", () => { shown += PAGE; renderList(); });
-    const reset = () => { state.sido = ""; state.sgg = ""; for (const k of SETS) state[k].clear(); update(); };
+    const reset = () => { state.sido = ""; state.sgg.clear(); for (const k of SETS) state[k].clear(); update(); };
     $("reset").addEventListener("click", reset);
     $("emptyReset").addEventListener("click", () => { reset(); state.q = ""; q.value = ""; state.tab = "all"; update(); });
     $("filterToggle").addEventListener("click", () => ($("side").classList.contains("open") ? closeSheet() : openSheet()));
