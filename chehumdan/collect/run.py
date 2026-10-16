@@ -32,7 +32,8 @@ SITES = {
     "ddok": "site_ddok",
 }
 DATA = Path(__file__).resolve().parent.parent / "data" / "sites"
-SITE_TIMEOUT = 25 * 60  # 초. 오래 걸리는 곳: 리뷰노트(GitHub 서버에서 12분 넘음)·포포몬·디너의여왕 7~9분
+SITE_TIMEOUT = 25 * 60  # 초. 포포몬·디너의여왕 7~9분
+SITE_TIMEOUTS = {"reviewnote": 45 * 60}  # 시/도별 1,100여 번 요청 — GitHub 서버에서 25분 넘게 걸림(10-15)
 
 
 def load(path: Path) -> dict:
@@ -42,7 +43,7 @@ def load(path: Path) -> dict:
         return {}
 
 
-def collect_timed(module: str) -> list[dict]:
+def collect_timed(module: str, limit: int = SITE_TIMEOUT) -> list[dict]:
     """사이트 하나가 해외 IP 차단 등으로 시간 초과를 반복해도 전체 작업이 멈추지 않게 상한을 둔다."""
     box: dict = {}
 
@@ -55,9 +56,9 @@ def collect_timed(module: str) -> list[dict]:
     # ponytail: 상한을 넘긴 스레드는 멈추지 않고 뒤에서 끝까지 돈다(데몬이라 프로세스가 끝나면 같이 끝남)
     t = threading.Thread(target=work, daemon=True)
     t.start()
-    t.join(SITE_TIMEOUT)
+    t.join(limit)
     if t.is_alive():
-        raise TimeoutError(f"{SITE_TIMEOUT // 60}분 넘게 걸림 — 접속이 막혔거나 아주 느림")
+        raise TimeoutError(f"{limit // 60}분 넘게 걸림 — 접속이 막혔거나 아주 느림")
     if "e" in box:
         raise box["e"]
     return box["v"]
@@ -71,7 +72,7 @@ def run_site(name: str) -> bool:
     today = today_kst()
     meta = {"site": name}
     try:
-        got = collect_timed(SITES[name])
+        got = collect_timed(SITES[name], SITE_TIMEOUTS.get(name, SITE_TIMEOUT))
         if not got:
             raise RuntimeError("0건 — 사이트 구조가 바뀌었을 수 있음")
         items, ok = got, True
