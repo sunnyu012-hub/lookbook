@@ -30,7 +30,7 @@
   const daysLeft = (d) => d ? Math.round((Date.parse(d) - Date.parse(today)) / 86400e3) : null;
 
   // ── 상태 (주소 뒤 #에 담아 링크로 공유) ──
-  const state = { tab: "all", q: "", sort: "end", sido: "", sgg: new Set(), purpose: new Set(), type: new Set(), channel: new Set(), site: new Set() };
+  const state = { tab: "all", q: "", sort: "pick", sido: "", sgg: new Set(), purpose: new Set(), type: new Set(), channel: new Set(), site: new Set() };
   const SETS = ["purpose", "type", "channel", "site"];
   let items = [];
   let activeSites = Object.keys(SITES);
@@ -40,7 +40,7 @@
     const p = new URLSearchParams(location.hash.slice(1));
     state.tab = ["all", "new", "soon"].includes(p.get("tab")) ? p.get("tab") : "all";
     state.q = p.get("q") || "";
-    state.sort = ["end", "new", "ratio"].includes(p.get("sort")) ? p.get("sort") : "end";
+    state.sort = ["pick", "end", "new", "ratio"].includes(p.get("sort")) ? p.get("sort") : "pick";
     state.sido = p.get("sido") || "";
     state.sgg = new Set((p.get("sgg") || "").split(",").filter(Boolean)); // 시/군/구는 여러 개
     for (const k of SETS) state[k] = new Set((p.get(k) || "").split(",").filter(Boolean));
@@ -49,7 +49,7 @@
     const p = new URLSearchParams();
     if (state.tab !== "all") p.set("tab", state.tab);
     if (state.q) p.set("q", state.q);
-    if (state.sort !== "end") p.set("sort", state.sort);
+    if (state.sort !== "pick") p.set("sort", state.sort);
     if (state.sido) p.set("sido", state.sido);
     if (state.sgg.size) p.set("sgg", [...state.sgg].join(","));
     for (const k of SETS) if (state[k].size) p.set(k, [...state[k]].join(","));
@@ -64,7 +64,7 @@
       if (state.tab === "new" && it.first_seen !== today) return false;
       if (state.tab === "soon") { const d = daysLeft(it.end); if (d == null || d > SOON_DAYS) return false; }
     }
-    if (state.q) {
+    if (skip !== "q" && state.q) {
       const hay = norm(`${it.title} ${it.offer} ${it.sido || ""} ${it.sigungu || ""} ${it.cat || ""}`);
       if (!state.q.split(/\s+/).filter(Boolean).every((w) => hay.includes(norm(w)))) return false;
     }
@@ -82,9 +82,6 @@
     return m;
   }
 
-  // 모바일 띠에 보이는 선택한 시/군/구: '강남구' / '강남구 외 2'
-  const sggLabel = () => { const g = [...state.sgg]; return g.length > 1 ? `${g[0]} 외 ${g.length - 1}` : g[0]; };
-
   // ── 칩 그리기 ──
   function chip(label, count, pressed, onClick) {
     const b = el("button", "chip", label);
@@ -100,7 +97,7 @@
     // 지역 1단계
     const sidoCount = countBy("sido", "sido");
     const sidoBox = $("sidoChips");
-    sidoBox.replaceChildren(chip("전체", null, !state.sido, () => { state.sido = ""; state.sgg.clear(); update(); }));
+    sidoBox.replaceChildren(chip("전 지역", null, !state.sido, () => { state.sido = ""; state.sgg.clear(); update(); }));
     sidoBox.firstChild.disabled = false;
     for (const s of SIDO) {
       const n = sidoCount.get(s) || 0;
@@ -110,17 +107,19 @@
       }));
     }
     // 지역 2단계 (시/군/구)
-    const sggBox = $("sggChips");
-    sggBox.replaceChildren();
-    sggBox.hidden = !state.sido || state.sido === "전국";
+    const sggBox = $("sggChips"), qSgg = $("qSgg");
+    sggBox.replaceChildren(); qSgg.replaceChildren();
+    sggBox.hidden = qSgg.hidden = !state.sido || state.sido === "전국";
     if (!sggBox.hidden) {
       const m = countBy("sgg", "sigungu");
       const names = [...m.keys()].filter(Boolean).sort((a, b) => a.localeCompare(b, "ko"));
       for (const g of state.sgg) if (!names.includes(g)) names.unshift(g);
-      for (const g of names) sggBox.append(chip(g, m.get(g) || 0, state.sgg.has(g), () => {
-        state.sgg.has(g) ? state.sgg.delete(g) : state.sgg.add(g); update();
-      }));
-      if (m.get(null)) sggBox.append(el("span", "stat", `시/군/구 미상 ${m.get(null)}`));
+      const toggle = (g) => () => { state.sgg.has(g) ? state.sgg.delete(g) : state.sgg.add(g); update(); };
+      for (const g of names) {
+        sggBox.append(chip(g, m.get(g) || 0, state.sgg.has(g), toggle(g)));
+        qSgg.append(chip(g, m.get(g) || 0, state.sgg.has(g), toggle(g)));
+      }
+      if (m.get(null)) sggBox.append(el("span", "stat", `시/군/구 미상 ${m.get(null).toLocaleString()}`));
     }
     // 다중 선택 그룹
     const siteLabels = Object.fromEntries(activeSites.map((k) => [k, SITES[k] || k]));
@@ -147,7 +146,8 @@
     }
     for (const b of $("tabs").children) {
       const t = b.dataset.tab;
-      b.setAttribute("aria-selected", state.tab === t ? "true" : "false");
+      b.setAttribute("aria-pressed", state.tab === t ? "true" : "false");
+      b.setAttribute("aria-label", `${b.dataset.label} ${tabCount[t].toLocaleString()}개`);
       b.replaceChildren(b.dataset.label, el("small", null, tabCount[t].toLocaleString()));
     }
     const active = (state.sido ? 1 : 0) + SETS.reduce((n, k) => n + state[k].size, 0);
@@ -160,10 +160,8 @@
     for (const s of SIDO) {
       const n = sidoCount.get(s) || 0;
       if (!n && state.sido !== s) continue;
-      const label = state.sido === s && state.sgg.size ? `${s} ${sggLabel()}` : (s === "전국" ? "전국·배송" : s);
-      qs.append(chip(label, n, state.sido === s, () => {
-        if (state.sido === s && s !== "전국") { openSheet(); return; } // 같은 지역을 다시 누르면 시/군/구 고르기
-        state.sido = s; state.sgg.clear(); update();
+      qs.append(chip(s === "전국" ? "전국·배송" : s, n, state.sido === s, () => {
+        state.sido = state.sido === s ? "" : s; state.sgg.clear(); update();
       }));
     }
     const pm = countBy("purpose", "purpose");
@@ -176,7 +174,45 @@
         state.purpose.has(v) ? state.purpose.delete(v) : state.purpose.add(v); update();
       }));
     }
-    for (const strip of [qs, qp]) strip.querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    // 공유 링크로 열었을 때만 선택한 칩이 보이게 띠를 넘긴다. 누를 때마다 넘기면 손가락 아래 칩이 바뀐다
+    if (!stripsScrolled && items.length) {
+      stripsScrolled = true;
+      for (const strip of [qs, qSgg, qp]) {
+        const on = strip.querySelector('[aria-pressed="true"]');
+        if (on) strip.scrollLeft = on.offsetLeft - strip.offsetLeft - 16;
+      }
+    }
+    renderActive();
+  }
+
+  // ── 걸린 조건: 하나씩 끄는 줄 ──
+  function renderActive() {
+    const box = $("active");
+    const parts = [];
+    const add = (label, off) => parts.push([label, off]);
+    if (state.tab !== "all") add({ new: "오늘 새로", soon: "마감 임박" }[state.tab], () => { state.tab = "all"; });
+    if (state.q) add(`'${state.q}'`, () => { state.q = ""; $("q").value = ""; });
+    if (state.sido) {
+      if (state.sgg.size) for (const g of state.sgg) add(`${state.sido} ${g}`, () => { state.sgg.delete(g); });
+      else add(state.sido === "전국" ? "전국·배송" : state.sido, () => { state.sido = ""; });
+    }
+    const LABELS = { purpose: PURPOSES, type: TYPES, channel: CHANNELS, site: SITES };
+    for (const k of SETS) for (const v of state[k]) add(LABELS[k][v] || v, () => { state[k].delete(v); });
+    box.hidden = !parts.length;
+    box.replaceChildren(...parts.map(([label, off]) => {
+      const b = el("button", "pill", label);
+      b.type = "button";
+      b.setAttribute("aria-label", `${label} 조건 빼기`);
+      b.insertAdjacentHTML("beforeend", '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 2l6 6M8 2l-6 6"/></svg>');
+      b.addEventListener("click", () => { off(); update(); });
+      return b;
+    }));
+    if (parts.length > 1) {
+      const all = el("button", "link", "모두 지우기");
+      all.type = "button";
+      all.addEventListener("click", clearAll);
+      box.append(all);
+    }
   }
 
   // ── 공고 한 장 (PC: 교환권 카드 / 모바일: 한 줄 목록) ──
@@ -187,14 +223,16 @@
     a.href = it.url || (SITE_URL[it.site] ? SITE_URL[it.site](sid) : "#"); a.target = "_blank"; a.rel = "noopener noreferrer";
     const d = daysLeft(it.end);
     const stub = el("div", "stub");
-    const dd = el("span", "dd" + (d != null && d <= SOON_DAYS ? " soon" : d == null ? " far" : ""), d == null ? "상시" : d <= 0 ? "오늘" : `D-${d}`);
+    // 오늘 마감은 도장, D-1~2 는 빨간 글씨 — 빨강이 첫 화면을 덮지 않게 둘을 나눈다
+    const cls = d == null ? " far" : d <= 0 ? " today" : d <= SOON_DAYS ? " soon" : "";
+    const dd = el("span", "dd" + cls, d == null ? "상시" : d <= 0 ? "오늘" : `D-${d}`);
     stub.append(dd, el("span", "dd-label", d == null ? "마감일 없음" : it.end.slice(5).replace("-", ".") + " 마감"), el("span", "site", SITES[it.site] || it.site));
     const body = el("div", "body");
     body.append(el("p", "title", it.title));
     if (it.offer) body.append(el("p", "offer", it.offer));
     const meta = el("div", "meta");
     meta.append(el("span", "site-m", SITES[it.site] || it.site));
-    if (it.first_seen === today) meta.append(el("span", "tag new", "오늘 등록"));
+    if (it.first_seen === today) meta.append(el("span", "tag new", "새 공고"));
     meta.append(el("span", "tag purpose", PURPOSES[it.purpose] || it.purpose));
     const region = it.sido === "전국" ? "전국·배송" : [it.sido, it.sigungu].filter(Boolean).join(" ");
     if (region) meta.append(el("span", "tag", region));
@@ -212,26 +250,54 @@
     }
     body.append(meta);
     a.append(stub, body);
+    const when = d == null ? "상시 모집" : d <= 0 ? "오늘 마감" : `${d}일 남음`;
+    a.setAttribute("aria-label", `${it.title} — ${when}, ${region || "지역 미상"}, ${SITES[it.site] || it.site} (새 창)`);
     li.append(a);
     return li;
   }
 
   const numId = (it) => Number(it.id.slice(it.id.indexOf(":") + 1)) || 0;
-  const ratio = (it) => it.recruit ? (it.applicants ?? 0) / it.recruit : Infinity;
+  const ratio = (it) => it.recruit && it.applicants != null ? it.applicants / it.recruit : Infinity; // 신청 수를 모르면 뒤로
   const SORTERS = {
     end: (a, b) => (a.end || "9999").localeCompare(b.end || "9999") || (b.first_seen || "").localeCompare(a.first_seen || ""),
     new: (a, b) => (b.first_seen || "").localeCompare(a.first_seen || "") || numId(b) - numId(a),
     ratio: (a, b) => ratio(a) - ratio(b) || (a.end || "9999").localeCompare(b.end || "9999"),
   };
+  // 추천 순(기본): 마감 빠른 순인데 오늘 마감은 맨 뒤로 — 오늘 마감 2,500여 건이 첫 화면을 덮어서(10-16). 오늘 마감은 '마감 임박' 탭에서 본다
+  SORTERS.pick = (a, b) => (daysLeft(a.end) === 0) - (daysLeft(b.end) === 0) || SORTERS.end(a, b);
 
   function renderList() {
     const res = items.filter((it) => matches(it)).sort(SORTERS[state.sort]);
     $("list").replaceChildren(...res.slice(0, shown).map(card));
     $("more").hidden = res.length <= shown;
     $("empty").hidden = res.length > 0;
+    if (!res.length) renderRelax();
     const b = el("b", null, res.length.toLocaleString());
     $("summary").replaceChildren(b, "개 공고");
     $("sheetDone").textContent = `공고 ${res.length.toLocaleString()}개 보기`;
+  }
+
+  function renderRelax() {
+    const NAMES = { q: "검색어", sido: "지역", sgg: "시/군/구", purpose: "목적", type: "유형", channel: "채널", site: "사이트" };
+    const on = { tab: state.tab !== "all", q: !!state.q, sido: !!state.sido, sgg: state.sgg.size > 0 };
+    for (const k of SETS) on[k] = state[k].size > 0;
+    const tips = Object.keys(on).filter((k) => on[k] && !(k === "sido" && on.sgg))
+      .map((k) => [k, items.filter((it) => matches(it, k)).length]).filter(([, n]) => n > 0)
+      .sort((a, b) => b[1] - a[1]).slice(0, 3);
+    $("relax").replaceChildren(...tips.map(([k, n]) => {
+      const label = k === "tab" ? "전체 탭에서 보면" : `${NAMES[k]} 조건을 빼면`;
+      const b = el("button", "more", `${label} ${n.toLocaleString()}개`);
+      b.type = "button";
+      b.addEventListener("click", () => {
+        if (k === "tab") state.tab = "all";
+        else if (k === "q") { state.q = ""; $("q").value = ""; }
+        else if (k === "sido") { state.sido = ""; state.sgg.clear(); }
+        else if (k === "sgg") state.sgg.clear();
+        else state[k].clear();
+        update();
+      });
+      return b;
+    }));
   }
 
   function update(keepPage) {
@@ -242,15 +308,22 @@
   }
 
   // ── 모바일 필터 시트 ──
+  const side = () => $("side");
+  const focusables = () => [...side().querySelectorAll("button:not(:disabled)")];
   function openSheet() {
-    $("side").classList.add("open"); $("scrim").hidden = false;
+    side().classList.add("open"); $("scrim").hidden = false;
+    side().setAttribute("role", "dialog"); side().setAttribute("aria-modal", "true");
     $("filterToggle").setAttribute("aria-expanded", "true");
     document.body.style.overflow = "hidden";
+    focusables()[0]?.focus();
   }
   function closeSheet() {
-    $("side").classList.remove("open"); $("scrim").hidden = true;
+    const wasOpen = side().classList.contains("open");
+    side().classList.remove("open"); $("scrim").hidden = true;
+    side().removeAttribute("role"); side().removeAttribute("aria-modal");
     $("filterToggle").setAttribute("aria-expanded", "false");
     document.body.style.overflow = "";
+    if (wasOpen) $("filterToggle").focus();
   }
 
   // ── 시작 ──
@@ -268,20 +341,41 @@
     $("more").addEventListener("click", () => { shown += PAGE; renderList(); });
     const reset = () => { state.sido = ""; state.sgg.clear(); for (const k of SETS) state[k].clear(); update(); };
     $("reset").addEventListener("click", reset);
-    $("emptyReset").addEventListener("click", () => { reset(); state.q = ""; q.value = ""; state.tab = "all"; update(); });
+    $("emptyReset").addEventListener("click", clearAll);
+    $("reload").addEventListener("click", () => location.reload());
     $("filterToggle").addEventListener("click", () => ($("side").classList.contains("open") ? closeSheet() : openSheet()));
     $("sheetDone").addEventListener("click", () => { closeSheet(); window.scrollTo({ top: 0 }); });
     $("scrim").addEventListener("click", closeSheet);
-    document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeSheet(); });
+    document.addEventListener("keydown", (e) => {
+      if (!side().classList.contains("open")) return;
+      if (e.key === "Escape") closeSheet();
+      if (e.key === "Tab") { // 시트 안에서만 돈다
+        const f = focusables(), first = f[0], last = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    });
     matchMedia("(min-width: 861px)").addEventListener("change", (e) => { if (e.matches) closeSheet(); });
     window.addEventListener("hashchange", () => { readHash(); q.value = state.q; $("sort").value = state.sort; update(); });
   }
 
   function renderUpdated(data) {
     const when = data.updated ? new Date(data.updated).toLocaleString("ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "알 수 없음";
-    const sites = Object.entries(data.sites || {}).map(([k, s]) => `${SITES[k] || k} ${s.count.toLocaleString()}건${s.ok ? "" : "(최근 수집 실패)"}`);
-    $("updated").textContent = `마지막 수집 ${when}` + (sites.length ? ` · ${sites.join(" · ")}` : "");
+    const entries = Object.entries(data.sites || {});
+    $("updated").replaceChildren(`마지막 수집 ${when}`, ...entries.flatMap(([k, s]) =>
+      [" · ", el("span", "nowrap", `${SITES[k] || k} ${s.count.toLocaleString()}건${s.ok ? "" : "(최근 수집 실패)"}`)]));
+    const failed = entries.filter(([, s]) => !s.ok).map(([k]) => SITES[k] || k);
+    $("notice").hidden = !failed.length;
+    $("notice").textContent = failed.length ? `${failed.join(" · ")}는 최근 수집에 실패해서 지난번 공고를 보여 주고 있어요.` : "";
   }
+
+  // 검색어·탭까지 처음 상태로
+  function clearAll() {
+    state.sido = ""; state.sgg.clear(); for (const k of SETS) state[k].clear();
+    state.q = ""; $("q").value = ""; state.tab = "all";
+    update();
+  }
+  let stripsScrolled = false;
 
   readHash();
   bind();
@@ -311,7 +405,12 @@
       activeSites = Object.keys(data.sites || {});
       $("siteGroup").hidden = activeSites.length < 2;
       renderUpdated(data);
+      $("list").removeAttribute("aria-busy");
       update(true);
     })
-    .catch(() => { $("summary").textContent = "공고 데이터를 불러오지 못했어요. 잠시 후 다시 열어 주세요."; });
+    .catch(() => {
+      $("list").replaceChildren(); $("list").removeAttribute("aria-busy");
+      $("summary").textContent = "불러오지 못했어요";
+      $("loadError").hidden = false;
+    });
 })();

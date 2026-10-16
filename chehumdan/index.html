@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=1016b">
 </head>
 <body>
 <header class="top">
@@ -20,24 +20,25 @@
     <a class="brand" href="./" aria-label="체험단 다모아 by. 유니니 처음으로"><span>체험단<b>다모아</b></span><small>by. 유니니</small></a>
     <label class="search">
       <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="9" cy="9" r="6"/><path d="m14 14 4 4"/></svg>
-      <input id="q" type="search" placeholder="가게 이름, 오마카세, 네일…" autocomplete="off" aria-label="공고 검색">
+      <input id="q" type="search" placeholder="가게·메뉴 검색" autocomplete="off" aria-label="공고 검색">
     </label>
     <button class="filter-toggle" id="filterToggle" type="button" aria-expanded="false" aria-controls="side">
       <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M6 10h8M8.5 15h3"/></svg>
       <span>필터</span><em id="filterCount"></em>
     </button>
   </div>
-  <!-- 모바일 전용: 엄지로 넘기는 빠른 분류 -->
-  <nav class="quick" aria-label="빠른 분류">
-    <div class="strip" id="qSido"></div>
-    <div class="strip" id="qPurpose"></div>
-  </nav>
 </header>
+<!-- 모바일 전용: 엄지로 넘기는 빠른 분류 (고정 헤더 밖이라 스크롤하면 같이 올라간다) -->
+<nav class="quick" aria-label="빠른 분류">
+  <div class="strip" id="qSido"></div>
+  <div class="strip" id="qSgg" hidden></div>
+  <div class="strip" id="qPurpose"></div>
+</nav>
 
 <div class="shell">
-  <aside class="side" id="side" aria-label="분류">
+  <aside class="side" id="side" aria-labelledby="sideTitle">
     <div class="sheet-head">
-      <strong>필터</strong>
+      <strong id="sideTitle">필터</strong>
       <button class="link" id="reset" type="button">모두 지우기</button>
     </div>
     <div class="sheet-body">
@@ -71,33 +72,45 @@
 
   <main class="main">
     <div class="bar">
-      <div class="tabs" role="tablist" id="tabs">
-        <button role="tab" type="button" data-tab="all">전체</button>
-        <button role="tab" type="button" data-tab="new">오늘 새로</button>
-        <button role="tab" type="button" data-tab="soon">마감 임박</button>
+      <div class="tabs" role="group" aria-label="보기" id="tabs">
+        <button type="button" data-tab="all">전체</button>
+        <button type="button" data-tab="new">오늘 새로</button>
+        <button type="button" data-tab="soon">마감 임박</button>
       </div>
       <label class="sort">
         <span class="sr">정렬</span>
         <select id="sort">
+          <option value="pick" title="마감 빠른 순, 오늘 마감은 뒤로">추천 순</option>
           <option value="end">마감 빠른 순</option>
           <option value="new">새로 올라온 순</option>
           <option value="ratio">경쟁 낮은 순</option>
         </select>
       </label>
       <p class="summary" id="summary" aria-live="polite">불러오는 중…</p>
+      <div class="active" id="active" aria-label="걸린 조건" hidden></div>
     </div>
-    <ul class="list" id="list"></ul>
+    <p class="notice" id="notice" hidden></p>
+    <ul class="list" id="list" aria-busy="true">
+      <li class="skel" aria-hidden="true"></li><li class="skel" aria-hidden="true"></li><li class="skel" aria-hidden="true"></li>
+      <li class="skel" aria-hidden="true"></li><li class="skel" aria-hidden="true"></li><li class="skel" aria-hidden="true"></li>
+    </ul>
+    <div class="load-error" id="loadError" hidden>
+      <p>공고를 불러오지 못했어요. 인터넷 연결을 확인하고 다시 불러와 주세요.</p>
+      <button class="more" id="reload" type="button">다시 불러오기</button>
+    </div>
     <button class="more" id="more" type="button" hidden>더 보기</button>
     <div class="empty" id="empty" hidden>
       <p>조건에 맞는 공고가 없어요.</p>
-      <button class="link" id="emptyReset" type="button">필터 모두 지우기</button>
+      <div class="relax" id="relax"></div>
+      <button class="link" id="emptyReset" type="button">조건 모두 지우기</button>
     </div>
     <footer class="foot">
       <p id="updated"></p>
+      <p>경쟁률은 신청 ÷ 모집이에요. '여유'는 아직 신청이 모집 인원보다 적다는 뜻이고, 기자단은 가게에 가지 않고 원고만 쓰는 공고예요.</p>
       <p>신청은 각 사이트에서 해요. 공고를 누르면 원래 페이지로 이동합니다. 로그인 없이 공개된 목록 정보만 모으고, 사진과 상세 내용은 옮기지 않아요.</p>
     </footer>
   </main>
 </div>
-<script src="app.js"></script>
+<script src="app.js?v=1016b"></script>
 </body>
 </html>

@@ -33,9 +33,10 @@ def parse(o: dict) -> dict | None:
     sgg = (o.get("sido") or {}).get("name")  # 리뷰노트의 'sido' 필드는 실제로 시/군/구
     if sgg and norm_sido(sgg) == "전국":
         sgg = None
-    # 방문형인데 '재택'이면 실제로는 장소가 없는 공고
+    # 방문형인데 '재택'이면 실제로는 장소가 없는 공고.
+    # 그중 '[당일] ○○점 · 원고료 3,000원'은 가게에 가지 않고 원고만 쓰는 기자단형이다(10-16 확인)
     if ctype == "visit" and sido == "전국":
-        ctype = "etc"
+        ctype = "reporter" if "원고료" in (o.get("offer") or "") else "etc"
     return make_item(
         site=SITE, sid=o["id"], url=f"{BASE}/campaigns/{o['id']}",
         title=o.get("title") or "", offer=o.get("offer") or "",

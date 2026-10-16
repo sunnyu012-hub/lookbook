@@ -5,12 +5,12 @@
   --card: #ffffff;
   --ink: #17201b;
   --muted: #59645d;
-  --faint: #8a948d;
+  --faint: #626c65;      /* 바탕 위 4.6:1 · 카드 위 5.4:1 */
   --line: #d6ddd7;
   --accent: #0d7556;     /* 선정·선택 */
   --accent-ink: #ffffff;
   --accent-soft: #dcefe6;
-  --stamp: #d8432a;      /* 마감 임박 도장 */
+  --stamp: #c23a22;      /* 마감 임박 도장 (흰 바탕 5.2:1) */
   --stamp-soft: #fbe6e0;
   --new: #2a57cc;
   --new-soft: #e3eafb;
@@ -24,13 +24,13 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper: #121614; --card: #1b201d; --ink: #e8ece8; --muted: #a9b3ac; --faint: #77817a; --line: #2c342f;
+    --paper: #121614; --card: #1b201d; --ink: #e8ece8; --muted: #a9b3ac; --faint: #8b958e; --line: #2c342f;
     --accent: #4fc39a; --accent-ink: #0d1a14; --accent-soft: #19362b; --stamp: #ff7a5c; --stamp-soft: #3b2019;
     --new: #8eabff; --new-soft: #1d2846; --shadow: none; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --paper: #121614; --card: #1b201d; --ink: #e8ece8; --muted: #a9b3ac; --faint: #77817a; --line: #2c342f;
+  --paper: #121614; --card: #1b201d; --ink: #e8ece8; --muted: #a9b3ac; --faint: #8b958e; --line: #2c342f;
   --accent: #4fc39a; --accent-ink: #0d1a14; --accent-soft: #19362b; --stamp: #ff7a5c; --stamp-soft: #3b2019;
   --new: #8eabff; --new-soft: #1d2846; --shadow: none; color-scheme: dark;
 }
@@ -83,14 +83,18 @@ a { color: inherit; }
 .sheet-foot, .scrim { display: none; }
 
 .main { min-width: 0; }
-.bar { display: grid; grid-template-columns: auto auto; grid-template-areas: "tabs sort" "summary summary"; justify-content: space-between; align-items: center; gap: 14px 12px; margin-bottom: 12px; }
+.bar { display: grid; grid-template-columns: auto auto; grid-template-areas: "tabs sort" "summary summary" "active active"; justify-content: space-between; align-items: center; gap: 14px 12px; margin-bottom: 12px; }
 .tabs { grid-area: tabs; }
 .sort { grid-area: sort; }
 .summary { grid-area: summary; }
+.active { grid-area: active; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 3px 8px 3px 11px; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.pill svg { width: 10px; height: 10px; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; fill: none; }
+.pill:hover { background: var(--card); }
 .tabs { display: flex; gap: 2px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
 .tabs button { display: inline-flex; align-items: baseline; gap: 6px; border: 0; background: none; padding: 6px 14px; border-radius: 7px; cursor: pointer; color: var(--muted); }
-.tabs button small { font: 500 11px/1 var(--f-data); opacity: .8; }
-.tabs button[aria-selected="true"] { background: var(--ink); color: var(--paper); font-weight: 600; }
+.tabs button small { font: 500 11px/1 var(--f-data); }
+.tabs button[aria-pressed="true"] { background: var(--ink); color: var(--paper); font-weight: 600; }
 .sort select { border: 1px solid var(--line); background: var(--card); border-radius: 10px; padding: 7px 10px; cursor: pointer; }
 .summary { margin: 0; color: var(--muted); font-size: 13px; }
 .summary b { font: 600 13px var(--f-data); color: var(--ink); }
@@ -106,6 +110,7 @@ a { color: inherit; }
 .ticket::after { bottom: -8px; clip-path: inset(0 0 50% 0); }
 .dd { font: 22px/1 var(--f-display); color: var(--ink); }
 .dd.soon { color: var(--stamp); }
+.dd.today { align-self: flex-start; padding: 3px 6px 2px; border-radius: 4px; background: var(--stamp); color: var(--card); font-size: 18px; }
 .dd.far { color: var(--muted); }
 .dd-label { font-size: 11px; color: var(--faint); }
 .site { font-size: 11px; font-weight: 600; color: var(--muted); }
@@ -119,6 +124,16 @@ a { color: inherit; }
 .odds { margin-left: auto; font: 500 11.5px/1.5 var(--f-data); color: var(--faint); white-space: nowrap; }
 .odds b { font-weight: 600; color: var(--muted); }
 
+.notice { margin: 0 0 12px; padding: 9px 12px; border-radius: 10px; background: var(--stamp-soft); color: var(--ink); font-size: 13px; }
+/* 불러오는 동안: 교환권 모양 빈 자리 (절취선 위치까지 같게) */
+.skel { min-height: 118px; border: 1px solid var(--line); border-radius: 12px; background: var(--card) linear-gradient(var(--line), var(--line)) no-repeat 76px 14px / 1.5px calc(100% - 28px); animation: skel 1.4s ease-in-out infinite alternate; }
+@keyframes skel { to { opacity: .55; } }
+.load-error { text-align: center; color: var(--muted); padding: 40px 0; }
+.load-error p { margin: 0 0 4px; }
+.relax { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 12px 0 14px; }
+.relax .more { margin: 0; }
+.nowrap { white-space: nowrap; }
+.stat { align-self: center; font-size: 12px; color: var(--muted); }
 .more { display: block; margin: 20px auto 0; border: 1px solid var(--line); background: var(--card); border-radius: 10px; padding: 9px 28px; cursor: pointer; }
 .more:hover { border-color: var(--muted); }
 .empty { text-align: center; color: var(--muted); padding: 48px 0; }
@@ -131,14 +146,17 @@ a { color: inherit; }
   .top-in { gap: 10px; padding-block: 10px 8px; }
   .brand { flex-direction: column; align-items: flex-start; gap: 3px; }
   .brand span { font-size: 18px; }
-  .brand small { font-size: 10.5px; }
-  .filter-toggle { display: inline-flex; }
+  .brand small { font-size: 11px; }
+  .filter-toggle { display: inline-flex; min-height: 44px; }
+  .chip { min-height: 44px; align-items: center; }
+  .pill { min-height: 44px; }
 
   /* 빠른 분류 띠: 가로로 넘기는 칩 두 줄 */
-  .quick { display: flex; flex-direction: column; gap: 6px; padding-bottom: 10px; }
+  /* 고정 헤더 밖: 스크롤하면 같이 올라가서 목록을 덜 가린다 */
+  .quick { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; }
   .strip { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-left: var(--gutter-l); padding-right: var(--gutter-r); scroll-padding-inline: 16px; }
   .strip::-webkit-scrollbar { display: none; }
-  .strip .chip { flex: none; padding: 6px 12px; }
+  .strip .chip { flex: none; padding: 6px 13px; }
 
   .shell { display: block; padding-block: 12px 32px; }
 
@@ -157,9 +175,9 @@ a { color: inherit; }
   .scrim { display: block; position: fixed; inset: 0; z-index: 30; background: rgb(0 0 0 / .35); }
   .scrim[hidden] { display: none !important; }
 
-  .bar { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "tabs tabs" "summary sort"; gap: 8px; margin-bottom: 10px; }
-  .tabs button { flex: 1; justify-content: center; padding: 7px 4px; font-size: 13px; }
-  .sort select { padding: 5px 6px; font-size: 12.5px; border-color: transparent; background: none; color: var(--muted); }
+  .bar { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "tabs tabs" "summary sort" "active active"; gap: 8px; margin-bottom: 10px; }
+  .tabs button { flex: 1; justify-content: center; align-items: center; min-height: 44px; padding: 7px 4px; font-size: 13px; }
+  .sort select { min-height: 44px; padding: 5px 6px; font-size: 12.5px; border-color: transparent; background: none; color: var(--muted); }
 
   /* 한 줄 목록: 왼쪽 D-day 칸 + 본문, 구분선만 */
   .list { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
@@ -168,11 +186,13 @@ a { color: inherit; }
   .ticket:hover { transform: none; }
   .ticket:active { background: var(--paper); }
   .ticket::before, .ticket::after { display: none; }
-  .stub { border-right: 0; justify-content: flex-start; padding: 14px 0 12px 12px; align-items: flex-start; text-align: left; }
+  .stub { justify-content: flex-start; padding: 14px 0 12px 10px; align-items: flex-start; text-align: left; }
   .dd { font-size: 17px; }
+  .dd.today { font-size: 14px; padding: 3px 5px 2px; }
   .dd-label { display: none; }
   .stub .site { display: none; }
-  .body { padding: 12px 14px 12px 8px; gap: 4px; }
+  .body { padding: 12px 14px 12px 12px; gap: 4px; }
+  .skel { min-height: 76px; border: 0; border-radius: 0; background-position: 58px 12px; background-size: 1.5px calc(100% - 24px); }
   .title { font-size: 14.5px; }
   .offer { -webkit-line-clamp: 1; font-size: 12.5px; }
   .meta .site-m { display: inline; }
@@ -181,4 +201,5 @@ a { color: inherit; }
 
 @media (prefers-reduced-motion: reduce) {
   .ticket, .side { transition: none; }
+  .skel { animation: none; }
 }
