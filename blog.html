@@ -396,6 +396,7 @@
   <div class="brand">블로그 작업대 <span class="wsbadge" id="wsBadge"></span></div>
   <div class="right">
     <a class="ghost" id="wsSwitch" href="#" style="text-decoration:none"></a>
+    <a class="ghost" id="sheetLink" href="https://alibizgroup.sharepoint.com/:x:/r/sites/sorizava1/_layouts/15/Doc.aspx?sourcedoc=%7B710b2956-55ce-4781-a46c-c1853a57f513%7D&amp;action=default" target="_blank" rel="noopener" style="text-decoration:none" title="오가닉 콘텐츠 업로드 일정 및 성과 분석표 (Teams 엑셀, 회사 계정 로그인 필요)">성과 분석표 ↗</a>
     <button class="ghost" id="cfgBtn" type="button">연결 설정</button>
     <button class="ghost" id="bkBtn" type="button">백업 · 복원</button>
   </div>
@@ -1153,6 +1154,14 @@ function serpCell(ch,kw){
   return '<div class="serp" title="'+esc(tip)+'">'+b('모바일',x.m)+b('PC',x.pc)+'</div>';
 }
 const fmtD=d=>Number(d.slice(5,7))+'/'+Number(d.slice(8,10));
+// 블로그탭 순위(자동): 매일 아침 실제 네이버 블로그탭 첫 화면(30개)에서 센 순위. 직접 적은 기록과 따로 보여준다.
+function tabCell(ch,kw){
+  const h=serpOf(ch,kw).filter(x=>x.r!==undefined&&x.r!==null), x=h[h.length-1], p=h[h.length-2];
+  if(!x) return '<span class="none">'+(serp?'아직 없음':'—')+'</span>';
+  const tip=fmtD(x.d)+' 자동 확인 · 블로그탭 첫 화면 '+((serp&&serp.tabDepth)||30)+'개 기준'+(p?' · 직전 '+fmtD(p.d)+' '+(p.r?p.r+'위':'밖'):'');
+  return '<span title="'+esc(tip)+'">'+(x.r?'<span class="rank">'+x.r+'위</span>':'<span class="none">'+((serp&&serp.tabDepth)||30)+'위 밖</span>')+
+    (p?' '+cmp(p.r,x.r,true):'')+'</span>';
+}
 
 // 스파크라인: 단일 계열, 순위가 낮을수록(1위) 위로. 가로는 날짜 간격대로 놓아 빠진 날이 드러나게 한다.
 function sparkline(hist,color){
@@ -1206,7 +1215,7 @@ function renderTrend(){
     return;
   }
   $('#trendTbl').innerHTML=
-    '<tr><th style="width:28%">키워드</th><th>'+fmtD(d)+' 순위</th><th>직전 대비</th><th>시작 대비</th><th>최고</th><th>추이</th><th>통합검색 (자동)</th><th>기록</th><th></th></tr>'+
+    '<tr><th style="width:28%">키워드</th><th>'+fmtD(d)+' 순위</th><th>직전 대비</th><th>시작 대비</th><th>최고</th><th>추이</th><th>블로그탭 (자동)</th><th>통합검색 (자동)</th><th>기록</th><th></th></tr>'+
     rows.map((r,idx)=>{
       const h=histOf(r.ch,r.kw);
       const hit=h.find(x=>x.d===d), at=hit&&!hit.auto?hit:null, autoAt=hit&&hit.auto?hit:null;
@@ -1224,6 +1233,7 @@ function renderTrend(){
         '<td>'+sinceStart(h)+'</td>'+
         '<td>'+(best?'<span class="rank">'+best+'위</span>':'<span class="none">—</span>')+'</td>'+
         '<td>'+(h.length?sparkline(h,chColor(r.ch)):'<span class="none">—</span>')+'</td>'+
+        '<td>'+tabCell(r.ch,r.kw)+'</td>'+
         '<td>'+serpCell(r.ch,r.kw)+'</td>'+
         '<td>'+(h.length
           ? '<button class="histbtn" data-hist="'+idx+'" type="button" aria-expanded="'+open+'">'+(open?'▾':'▸')+' 기록 '+h.length+'회</button>'+
@@ -1231,7 +1241,7 @@ function renderTrend(){
           : '<span class="sub">없음</span>')+'</td>'+
         '<td style="text-align:right">'+(r.manual?'<button class="mini" data-untrack="'+idx+'" type="button" title="추적 해제">×</button>':'')+'</td>'+
       '</tr>'+
-      (open?'<tr class="histrow"><td colspan="9">'+histDetail(h,idx)+'</td></tr>':'');
+      (open?'<tr class="histrow"><td colspan="10">'+histDetail(h,idx)+'</td></tr>':'');
     }).join('');
 }
 
@@ -1545,6 +1555,7 @@ show(DB.get(P+'view','check'));
   const sw=$('#wsSwitch');
   if(work){ sw.classList.add('hide'); }
   else { sw.classList.remove('hide'); sw.textContent='업무 작업대 →'; sw.href=location.pathname; }
+  $('#sheetLink').classList.toggle('hide',!work);   // 분석표는 협회 업무용 — 개인 작업대에는 두지 않는다
   document.title='블로그 작업대 · '+(work?'업무':'개인');
 })();
 $('#syncKey').value=syncKey();
