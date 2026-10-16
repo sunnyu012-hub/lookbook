@@ -27,7 +27,7 @@ OUT = ROOT / "blog" / "data" / "serp.json"
 BRANCH = "blog-data"
 KEEP_DAYS = 120
 SKIP = set(filter(None, os.environ.get("SKIP_CHANNELS", "드리밍").split(",")))  # 드리밍: 10/16 운영 종료
-SITE = {"협회 브블": "kcost.org"}  # 블로그 말고 같이 셀 우리 사이트
+SITE: dict[str, str] = {}  # 블로그 글만 센다 (홈페이지 kcost.org 노출은 넣지 않음, 10/16 결정)
 KST = timezone(timedelta(hours=9))
 BOT = {"GIT_AUTHOR_NAME": "github-actions[bot]", "GIT_AUTHOR_EMAIL": "41898+github-actions[bot]@users.noreply.github.com",
        "GIT_COMMITTER_NAME": "github-actions[bot]", "GIT_COMMITTER_EMAIL": "41898+github-actions[bot]@users.noreply.github.com"}
@@ -70,7 +70,7 @@ def check(ts: list[dict]) -> dict[str, dict]:
     def page(kw: str, dev: str, tab: bool = False) -> str:
         k = (kw, dev, tab)
         if k not in pages:
-            time.sleep(1.5)  # 네이버 부담을 줄인다
+            time.sleep(3)  # 네이버 부담을 줄인다 (하루 한 번 · 키워드 52개면 약 8분)
             pages[k] = serp.fetch(kw, dev, tab)
         return pages[k]
 

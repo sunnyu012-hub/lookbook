@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import html
 import re
+import time
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -25,7 +27,14 @@ SKIP_HOST = ("naver.com", "naver.net", "pstatic.net", "navercorp.com", "w3.org",
 def fetch(query: str, device: str, blog_tab: bool = False) -> str:
     url = f"{HOST[device]}/search.naver?{'ssc=tab.blog.all&' if blog_tab else ''}query={urllib.parse.quote(query)}"
     req = urllib.request.Request(url, headers={"User-Agent": UA[device]})
-    return urllib.request.urlopen(req, timeout=20).read().decode("utf-8", "ignore")
+    for wait in (60, 180, 0):  # 짧은 시간에 많이 물으면 네이버가 403을 준다 → 쉬었다가 다시
+        try:
+            return urllib.request.urlopen(req, timeout=20).read().decode("utf-8", "ignore")
+        except urllib.error.HTTPError as e:
+            if e.code != 403 or not wait:
+                raise
+            time.sleep(wait)
+    raise RuntimeError("unreachable")
 
 
 def heads(page: str) -> list[tuple[int, str]]:
