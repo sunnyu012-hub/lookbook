@@ -1,3 +1,3 @@
 collect
-remin fourblog cloudreview
-# 데이터 브랜치(chehumdan-data)로 저장 시험
+odiya
+# 어디야 첫 수집 (한국 PC)

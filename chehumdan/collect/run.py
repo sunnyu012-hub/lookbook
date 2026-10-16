@@ -30,6 +30,7 @@ SITES = {
     "fourblog": "site_fourblog",
     "cloudreview": "site_cloudreview",
     "ddok": "site_ddok",
+    "odiya": "site_odiya",
 }
 DATA = Path(__file__).resolve().parent.parent / "data" / "sites"
 SITE_TIMEOUT = 25 * 60  # 초. 포포몬·디너의여왕 7~9분

@@ -28,7 +28,7 @@ chehumdan/
     run.py                        전체 실행 + first_seen 유지 + 마감 지난 공고 제거
     test_common.py                분류기 테스트 (python -m unittest test_common)
 .github/workflows/chehumdan-collect.yml      GitHub 서버: 리뷰노트·포포몬·디너의여왕·놀러와·체험뷰·똑똑, 하루 2번(KST 07:10·19:10)
-.github/workflows/chehumdan-collect-kr.yml   한국 PC: 레뷰·강남맛집·리뷰의민족·포블로그·클라우드리뷰, 하루 2번(KST 08:40·18:40)
+.github/workflows/chehumdan-collect-kr.yml   한국 PC: 레뷰·강남맛집·리뷰의민족·포블로그·클라우드리뷰·어디야, 하루 2번(KST 08:40·18:40)
 ```
 - 사이트 하나가 실패해도 나머지는 계속 돌고, 실패한 사이트는 지난번 데이터를 유지한다.
 - 데이터 위치(10-16): main 에 커밋하면 지난 버전이 쌓여 저장소가 커져서 `chehumdan-data` 브랜치를 매번 덮어쓴다.
@@ -58,12 +58,12 @@ GitHub 서버 시험(10-15 18:57): 디너의여왕·체험뷰·놀러와·똑똑
 | 놀러와체험단 cometoplay.kr | `item_list.php?category_id=…&page=N` HTML | 317 |
 | 리뷰의민족 remin.co.kr | `/category/searchlist?p_cateType=A·B·D·E` HTML 조각 (robots.txt 없음) | 178 |
 | 클라우드리뷰 cloudreview.co.kr | `/campaign/blog·instagram·short·buy` 화면 하나에 전체 | 1,295 |
+| 어디야 odiya.kr | `category.php?category=…&start=N` HTML(85건씩). robots 가 폴더 경로만 막아 규칙상 허용이지만 막으려던 의도로 보여, 사용자 결정(10-16)으로 알고도 수집 · 한국 PC | 391 |
 | 똑똑리워드 ddok.it | `/api/campaigns?limit=50&cursor=` JSON (옛 ddok.co.kr 은 07-31 종료) | 125 |
 
 보류 — 사용자 결정 대기 (10-15)
 - robots.txt 가 목록을 막음: 서울오빠(전체 금지), 링블(`/category.php`), 클립뷰(검색엔진만 허용), 구구다스(`/amz/list/`), 리뷰플레이스(`/pr`·`/theme`)
 - 로그인해야 목록이 보임: 미블(mrblog.net)
-- 애매: 어디야(odiya.kr) — robots 가 `/category/` 처럼 폴더만 막아 실제 주소 `/category.php` 는 허용이지만 막으려던 의도로 보임. `site_odiya.py` 는 만들어 두었지만 커밋 안 함
 
 
 - 사무실 PC(Windows) 설정 방법: `KR_PC.md`(손으로) 또는 `OFFICE_PC_SESSION.md`(사무실 PC에서 Claude 세션을 열어 진행). 브랜치에서 시험할 때는 `scripts/kr-task.txt`(1줄 collect|probe, 2줄 사이트)를 바꿔 올린다.
