@@ -1,6 +1,7 @@
 name: chehumdan-collect-kr
 # 체험단 다모아: 한국 사무실 PC(Windows self-hosted runner)에서만 되는 사이트
-#   레뷰(부계정 로그인), 강남맛집·리뷰의민족·포블로그·클라우드리뷰(해외 IP 차단), 어디야. 계정 보호를 위해 하루 두 번만 돈다.
+#   레뷰(부계정 로그인), 강남맛집·리뷰의민족·포블로그·클라우드리뷰(해외 IP 차단),
+#   어디야·링블·서울오빠·리뷰플레이스·클립뷰·구구다스(robots 금지를 알고도 수집, 사용자 결정 10-16). 계정 보호를 위해 하루 두 번만 돈다.
 #   결과는 chehumdan-data 브랜치에 올린다(kr_job.py → data_sync.py).
 # 러너 라벨: chehumdan-kr / PC 준비: chehumdan/KR_PC.md
 on:
@@ -20,7 +21,7 @@ on:
         options: [collect, probe]
       sites:
         description: "수집할 사이트 (공백으로 구분)"
-        default: "revu gangnam remin fourblog cloudreview odiya"
+        default: "revu gangnam remin fourblog cloudreview odiya ringble seoulouba reviewplace clipview gugudas"
 permissions:
   contents: write
 concurrency:

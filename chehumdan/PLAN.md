@@ -28,7 +28,7 @@ chehumdan/
     run.py                        전체 실행 + first_seen 유지 + 마감 지난 공고 제거
     test_common.py                분류기 테스트 (python -m unittest test_common)
 .github/workflows/chehumdan-collect.yml      GitHub 서버: 리뷰노트·포포몬·디너의여왕·놀러와·체험뷰·똑똑, 하루 2번(KST 07:10·19:10)
-.github/workflows/chehumdan-collect-kr.yml   한국 PC: 레뷰·강남맛집·리뷰의민족·포블로그·클라우드리뷰·어디야, 하루 2번(KST 08:40·18:40)
+.github/workflows/chehumdan-collect-kr.yml   한국 PC: 레뷰·강남맛집·리뷰의민족·포블로그·클라우드리뷰·어디야·링블·서울오빠·리뷰플레이스·클립뷰·구구다스, 하루 2번(KST 08:40·18:40)
 ```
 - 사이트 하나가 실패해도 나머지는 계속 돌고, 실패한 사이트는 지난번 데이터를 유지한다.
 - 데이터 위치(10-16): main 에 커밋하면 지난 버전이 쌓여 저장소가 커져서 `chehumdan-data` 브랜치를 매번 덮어쓴다.
@@ -61,9 +61,16 @@ GitHub 서버 시험(10-15 18:57): 디너의여왕·체험뷰·놀러와·똑똑
 | 어디야 odiya.kr | `category.php?category=…&start=N` HTML(85건씩). robots 가 폴더 경로만 막아 규칙상 허용이지만 막으려던 의도로 보여, 사용자 결정(10-16)으로 알고도 수집 · 한국 PC | 391 |
 | 똑똑리워드 ddok.it | `/api/campaigns?limit=50&cursor=` JSON (옛 ddok.co.kr 은 07-31 종료) | 125 |
 
-보류 — 사용자 결정 대기 (10-15)
-- robots.txt 가 목록을 막음: 서울오빠(전체 금지), 링블(`/category.php`), 클립뷰(검색엔진만 허용), 구구다스(`/amz/list/`), 리뷰플레이스(`/pr`·`/theme`)
-- 로그인해야 목록이 보임: 미블(mrblog.net)
+### 10-16 추가 — robots.txt 가 목록을 막지만 포포몬처럼 알고도 수집 (사용자 결정 10-16) · 모두 한국 PC, 요청 사이 1초 이상
+| 사이트 | robots 가 막는 곳 | 목록 출처 | 건수(10-16) |
+|---|---|---|---|
+| 서울오빠 seoulouba.co.kr | 첫 화면 외 전체 | `POST /campaign/ajax/list.ajax.php` cat=하위 27개, page, more, rows=36 | 1,305 |
+| 링블 ringble.co.kr | `/category.php`·`/detail.php` | `category.php?category=832·829·1015·833·834&start=N`(1부터, 72건) | 470 |
+| 리뷰플레이스 reviewplace.co.kr | `/pr`·`/theme` | `/theme/rp/_ajax_cmp_list_tpl.php?ct1=…&ct2=…&rpage=N`(0부터, 30건) | 1,321 |
+| 클립뷰 클립뷰.kr | 검색엔진 외 전체 | `cv_campaign_list.php?json=list&category_id=…&rows=100&page=N` JSON. 배송형은 거의 상시 모집(마감일 없음) | 4,921 |
+| 구구다스 99das.com | `/amz/list/` | `POST /amz/list/cmpnList.do` cmpnDcd=AMZ027.001~004·008, pageSize=100 | 139 |
+
+보류 — 로그인해야 목록이 보임: 미블(mrblog.net). 부계정을 쓸지 사용자 결정 대기
 
 
 - 사무실 PC(Windows) 설정 방법: `KR_PC.md`(손으로) 또는 `OFFICE_PC_SESSION.md`(사무실 PC에서 Claude 세션을 열어 진행). 브랜치에서 시험할 때는 `scripts/kr-task.txt`(1줄 collect|probe, 2줄 사이트)를 바꿔 올린다.
@@ -71,6 +78,6 @@ GitHub 서버 시험(10-15 18:57): 디너의여왕·체험뷰·놀러와·똑똑
 - 참고: 인플렉서는 자기 수집 서버(inflexer.net:5000)에 40여 개 플랫폼을 모아 두고 화면은 그 API만 읽는다.
 
 ## 다음 할 일
-1. 보류 사이트 결정(사용자)
+1. 미블(로그인 필요) 결정(사용자)
 2. 이 브랜치를 main 에 병합 → Pages 공개 + 정기 수집 시작(정기 실행은 기본 브랜치에서만 돈다)
 3. 분류 규칙은 실제 데이터를 보며 `test_common.py` 에 사례를 추가하면서 다듬는다
