@@ -129,6 +129,9 @@ def blog_rank(page: str, blog: str) -> int:
 
 
 def label(r: dict) -> str:
+    # AI 브리핑에 인용되면서 브리핑 밖 첫 화면에도 있으면 둘 다 남긴다 (10/16 사용자 결정)
+    if r["cited"] and r["post"]:
+        return "AI 브리핑 인용 + 첫 화면 노출"
     if r["cited"]:
         return "AI 브리핑 인용"
     if r["post"]:
@@ -149,7 +152,8 @@ if __name__ == "__main__":  # 자체 점검: 블록·광고·브리핑 판정
     assert r["ai"] and r["cited"] and r["post"] and not r["image"], r
     assert r["blocks"] == ["속기사", "이미지"], r
     assert r["sources"] == ["kcost77", "other1"], r
-    assert label(r) == "AI 브리핑 인용"
+    assert label(r) == "AI 브리핑 인용 + 첫 화면 노출"
+    assert label({**r, "post": False}) == "AI 브리핑 인용"
     r2 = analyze('<h2>속기사 관련 광고</h2><a href="https://blog.naver.com/kcost77/224000000002">', "kcost77")
     assert label(r2) == "없음", r2
     r3 = analyze('<h2>이미지</h2><a href="https://blog.naver.com/kcost77/224000000006">', "kcost77")

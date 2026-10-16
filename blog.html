@@ -1150,7 +1150,8 @@ function serpCell(ch,kw){
   const h=serpOf(ch,kw), x=h[h.length-1];
   if(!x) return '<span class="none">'+(serp?'아직 없음':'—')+'</span>';
   const tip=fmtD(x.d)+' 자동 확인'+(x.src&&x.src.length?' · AI 브리핑 출처: '+x.src.join(', '):'');
-  const b=(t,v)=>'<span><i>'+t+'</i><b class="'+(SERP_CLS[v]||'no')+'">'+esc(v)+'</b></span>';
+  // 'AI 브리핑 인용 + 첫 화면 노출' 처럼 둘 다면 배지를 나란히
+  const b=(t,v)=>'<span><i>'+t+'</i>'+String(v).split(' + ').map(s=>'<b class="'+(SERP_CLS[s]||'no')+'">'+esc(s)+'</b>').join(' ')+'</span>';
   return '<div class="serp" title="'+esc(tip)+'">'+b('모바일',x.m)+b('PC',x.pc)+'</div>';
 }
 const fmtD=d=>Number(d.slice(5,7))+'/'+Number(d.slice(8,10));
@@ -1604,10 +1605,10 @@ console.assert(cmp(3,3,true).includes('—')&&cmp(0,0,true).includes('—')&&cmp
 console.assert((histDetail([{d:'2026-09-01',r:9},{d:'2026-09-02',r:3}],0).match(/class="hc"/g)||[]).length===2,'펼친 기록은 날짜마다 한 칸');
 loadSerp();
 // 자동 확인 병합: 직접 기록이 있는 날은 그 값, 없는 날만 자동 값
-serp={kw:{'["T","k"]':[{d:'2026-01-01',r:3,pc:'없음',m:'첫 화면 노출'},{d:'2026-01-02',r:5,pc:'AI 브리핑 인용',m:'없음'}]}};
+serp={kw:{'["T","k"]':[{d:'2026-01-01',r:3,pc:'없음',m:'첫 화면 노출'},{d:'2026-01-02',r:5,pc:'AI 브리핑 인용 + 첫 화면 노출',m:'없음'}]}};
 ranks['["T","k"]']=[{d:'2026-01-01',r:9}];
 console.assert(histOf('T','k').length===2&&histOf('T','k')[0].r===9&&histOf('T','k')[1].auto,'자동은 빈 날만 채운다');
-console.assert(serpCell('T','k').includes('AI 브리핑 인용')&&serpCell('T','x').includes('아직 없음'),'통합검색 칸 표시');
+console.assert(serpCell('T','k').includes('>AI 브리핑 인용</b> <b class="post">첫 화면 노출')&&serpCell('T','x').includes('아직 없음'),'통합검색 칸 표시');
 delete ranks['["T","k"]']; serp=null;
 console.assert(normalizeProxy('p.workers.dev/')==='https://p.workers.dev'&&normalizeProxy('https://a.dev')==='https://a.dev'&&normalizeProxy('')==='','프록시 주소는 https:// 보정 + 끝 슬래시 제거');
 </script>

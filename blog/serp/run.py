@@ -125,7 +125,7 @@ def main() -> int:
     data = merge(previous(), today, res)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    cited = sum(v["pc"] == "AI 브리핑 인용" or v["m"] == "AI 브리핑 인용" for v in res.values())
+    cited = sum("AI 브리핑 인용" in (v["pc"] or "") or "AI 브리핑 인용" in (v["m"] or "") for v in res.values())
     print(f"{today}: 확인 {len(res)}/{len(ts)} · 블로그탭 5위 안 {sum(0 < v['r'] <= 5 for v in res.values())} · AI 브리핑 인용 {cited}")
     if "--dry" not in sys.argv:
         push(f"블로그 검색 확인 {today}: {len(res)}개")
