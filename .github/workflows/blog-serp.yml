@@ -1,0 +1,33 @@
+name: blog-serp
+# 블로그 작업대 '추세' 키워드를 매일 네이버에서 확인한다: 블로그 탭 순위 · 통합검색 첫 화면 노출 · AI 브리핑 인용.
+#   네이버는 해외 IP에 다른 화면을 줄 수 있어 한국 사무실 PC(self-hosted, chehumdan-kr)에서 돈다.
+#   PC가 꺼져 있으면 켜질 때까지 대기열에 있다가 돈다.
+#   결과는 blog-data 브랜치 serp.json (blog/serp/run.py). 작업대 추세 탭이 이 파일을 읽는다.
+# 시크릿(선택): BLOG_PROXY, BLOG_SYNC_KEY — 넣으면 작업대 키워드를 자동으로 읽고, 없으면 blog/serp/keywords.json 을 쓴다.
+on:
+  schedule:
+    # KST 08:30 (09:00 오가닉 분석표 갱신 전에 끝나도록)
+    - cron: "30 23 * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: blog-serp
+  cancel-in-progress: false
+jobs:
+  check:
+    runs-on: [self-hosted, chehumdan-kr]
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: cmd
+    env:
+      PYTHONIOENCODING: utf-8
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - name: 네이버 확인 후 blog-data 에 올리기
+        env:
+          BLOG_PROXY: ${{ secrets.BLOG_PROXY }}
+          BLOG_SYNC_KEY: ${{ secrets.BLOG_SYNC_KEY }}
+        run: python blog\serp\run.py

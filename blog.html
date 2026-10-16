@@ -325,6 +325,14 @@
   }
   .src{margin-left:4px;padding:1px 6px;border-radius:3px;background:var(--sunk);color:var(--muted);font-size:10px}
   .src.hand{background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .src.auto{background:var(--sunk);color:var(--muted)}
+  .serp{display:flex;flex-direction:column;gap:3px;font-size:11.5px;white-space:nowrap}
+  .serp i{font-style:normal;color:var(--muted);display:inline-block;width:30px}
+  .serp b{padding:1px 6px;border-radius:3px;font-weight:600}
+  .serp b.cite{background:var(--ok-soft);color:var(--ok)}
+  .serp b.post{background:var(--accent-soft);color:var(--accent)}
+  .serp b.img{background:var(--warn-soft);color:var(--warn)}
+  .serp b.no{background:var(--sunk);color:var(--muted);font-weight:400}
   .rankin{
     width:62px;padding:5px 7px;text-align:right;
     font:600 13px var(--mono);font-variant-numeric:tabular-nums;background:var(--surface);
@@ -1101,7 +1109,7 @@ $('#board').onclick=e=>{
 };
 
 /* ── 추세: 직접 기록하는 키워드 순위 ── */
-// 순위는 사람이 매일 네이버에서 확인해 적는다. 이 탭은 그 기록이 어떻게 변하는지만 보여준다.
+// 순위는 매일 아침 자동으로 확인된다(loadSerp). 직접 적으면 그 값이 우선한다. 자동 확인은 블로그 탭 첫 화면 30위까지만 본다.
 const rkey=(ch,kw)=>JSON.stringify([ch,kw]);
 // 추적 대상 = 발행한 글의 메인키워드 + 직접 추가한 키워드(노리지 않았는데 걸린 것 등)
 function trendList(){
@@ -1123,7 +1131,27 @@ function trendList(){
     (a.manual-b.manual)||(b.date||'').localeCompare(a.date||'')||a.kw.localeCompare(b.kw,'ko'));
 }
 const rankVal=r=>r?r:101;               // 0(100위 밖)은 101로 두고 그린다
-const histOf=(ch,kw)=>ranks[rkey(ch,kw)]||[];
+// 매일 아침 자동 확인(GitHub Actions → blog-data 브랜치 serp.json): 블로그 탭 순위·통합검색 노출·AI 브리핑 인용.
+// 직접 적은 기록이 우선이고, 적지 않은 날은 자동 순위로 채워 보여준다(저장은 하지 않는다).
+const SERP_URL='https://raw.githubusercontent.com/sunnyu012-hub/lookbook/blog-data/serp.json';
+let serp=null;
+async function loadSerp(){
+  try{ const r=await fetch(SERP_URL,{cache:'no-store'}); if(r.ok){ serp=await r.json(); renderTrend() } }catch(e){}
+}
+const serpOf=(ch,kw)=>(serp&&serp.kw&&serp.kw[JSON.stringify([ch,kw])])||[];
+function histOf(ch,kw){
+  const man=ranks[rkey(ch,kw)]||[], days=new Set(man.map(x=>x.d));
+  const auto=serpOf(ch,kw).filter(x=>!days.has(x.d)).map(x=>({d:x.d,r:x.r,auto:true}));
+  return auto.length?man.concat(auto).sort((a,b)=>a.d.localeCompare(b.d)):man;
+}
+const SERP_CLS={'AI 브리핑 인용':'cite','첫 화면 노출':'post','이미지만':'img','없음':'no'};
+function serpCell(ch,kw){
+  const h=serpOf(ch,kw), x=h[h.length-1];
+  if(!x) return '<span class="none">'+(serp?'아직 없음':'—')+'</span>';
+  const tip=fmtD(x.d)+' 자동 확인'+(x.src&&x.src.length?' · AI 브리핑 출처: '+x.src.join(', '):'');
+  const b=(t,v)=>'<span><i>'+t+'</i><b class="'+(SERP_CLS[v]||'no')+'">'+esc(v)+'</b></span>';
+  return '<div class="serp" title="'+esc(tip)+'">'+b('모바일',x.m)+b('PC',x.pc)+'</div>';
+}
 const fmtD=d=>Number(d.slice(5,7))+'/'+Number(d.slice(8,10));
 
 // 스파크라인: 단일 계열, 순위가 낮을수록(1위) 위로. 가로는 날짜 간격대로 놓아 빠진 날이 드러나게 한다.
@@ -1172,16 +1200,16 @@ const trendDate=()=>$('#trendDate').value||TODAY;
 function renderTrend(){
   const rows=trendList(), d=trendDate();
   const filled=rows.filter(r=>histOf(r.ch,r.kw).some(x=>x.d===d)).length;
-  $('#trendCount').textContent=rows.length?(fmtD(d)+' 기록 '+filled+' / '+rows.length):'';
+  $('#trendCount').textContent=rows.length?(fmtD(d)+' 기록 '+filled+' / '+rows.length+(serp?' · 자동 확인 '+serp.updated.slice(5).replace('-','/'):'')):'';
   if(!rows.length){
     $('#trendTbl').innerHTML='<tr><td class="empty">추적할 키워드가 없습니다. 발행 상태로 저장한 글의 메인키워드가 자동으로 올라오고, 아래 칸에서 직접 추가할 수도 있습니다.</td></tr>';
     return;
   }
   $('#trendTbl').innerHTML=
-    '<tr><th style="width:28%">키워드</th><th>'+fmtD(d)+' 순위</th><th>직전 대비</th><th>시작 대비</th><th>최고</th><th>추이</th><th>기록</th><th></th></tr>'+
+    '<tr><th style="width:28%">키워드</th><th>'+fmtD(d)+' 순위</th><th>직전 대비</th><th>시작 대비</th><th>최고</th><th>추이</th><th>통합검색 (자동)</th><th>기록</th><th></th></tr>'+
     rows.map((r,idx)=>{
       const h=histOf(r.ch,r.kw);
-      const at=h.find(x=>x.d===d);
+      const hit=h.find(x=>x.d===d), at=hit&&!hit.auto?hit:null, autoAt=hit&&hit.auto?hit:null;
       const before=h.filter(x=>x.d<d).pop();
       const best=bestOf(h), last=h[h.length-1], open=openHist.has(rkey(r.ch,r.kw));
       return '<tr>'+
@@ -1190,19 +1218,20 @@ function renderTrend(){
             ? ' <span class="src hand">직접 추가</span>'+(r.date?' <span>'+fmtD(r.date)+' 추가</span>':'')
             : ' <span>발행 '+(r.date?fmtD(r.date):'날짜 없음')+(r.n>1?' · 글 '+r.n+'건':'')+'</span>')+volTag(r.kw)+'</div></td>'+
         '<td><input type="number" class="rankin" data-mr="'+idx+'" min="0" max="1000" '+
-          'value="'+(at?at.r:'')+'" placeholder="'+(before?(before.r||'밖'):'—')+'" '+
+          'value="'+(at?at.r:'')+'" placeholder="'+(autoAt?'자동 '+(autoAt.r||'밖'):(before?(before.r||'밖'):'—'))+'" '+
           'title="숫자 입력 후 Enter · 0 = 100위 밖 · 비우면 이 날 기록 삭제"></td>'+
         '<td>'+delta(h)+'</td>'+
         '<td>'+sinceStart(h)+'</td>'+
         '<td>'+(best?'<span class="rank">'+best+'위</span>':'<span class="none">—</span>')+'</td>'+
         '<td>'+(h.length?sparkline(h,chColor(r.ch)):'<span class="none">—</span>')+'</td>'+
+        '<td>'+serpCell(r.ch,r.kw)+'</td>'+
         '<td>'+(h.length
           ? '<button class="histbtn" data-hist="'+idx+'" type="button" aria-expanded="'+open+'">'+(open?'▾':'▸')+' 기록 '+h.length+'회</button>'+
             '<div class="sub">'+fmtD(h[0].d)+'~'+fmtD(last.d)+'</div>'
           : '<span class="sub">없음</span>')+'</td>'+
         '<td style="text-align:right">'+(r.manual?'<button class="mini" data-untrack="'+idx+'" type="button" title="추적 해제">×</button>':'')+'</td>'+
       '</tr>'+
-      (open?'<tr class="histrow"><td colspan="8">'+histDetail(h,idx)+'</td></tr>':'');
+      (open?'<tr class="histrow"><td colspan="9">'+histDetail(h,idx)+'</td></tr>':'');
     }).join('');
 }
 
@@ -1271,7 +1300,7 @@ const openHist=new Set();   // 펼친 키워드 (화면 상태라 저장하지 �
 function histDetail(h,idx){
   return '<div class="hist">'+h.map((x,i)=>
     '<button type="button" class="hc" data-jump="'+x.d+'" data-row="'+idx+'" title="'+x.d+' 기록 고치기">'+
-      '<span class="hd">'+fmtD(x.d)+'</span><b>'+(x.r?x.r+'위':'밖')+'</b>'+
+      '<span class="hd">'+fmtD(x.d)+(x.auto?' 자동':'')+'</span><b>'+(x.r?x.r+'위':'밖')+'</b>'+
       (i?cmp(h[i-1].r,x.r,true):'<span class="d0">시작</span>')+
     '</button>').join('')+'</div>';
 }
@@ -1562,5 +1591,12 @@ console.assert(volTag('__없는키워드__')==='','검색량 없으면 표시하
 console.assert(nvLinks('국회직공무원').includes('ssc=tab.blog.all&query=%EA%B5%AD')&&nvLinks('국회직공무원').includes('search.naver?query=%EA%B5%AD'),'네이버 바로가기 주소');
 console.assert(cmp(3,3,true).includes('—')&&cmp(0,0,true).includes('—')&&cmp(9,3,true).includes('▲ 6'),'펼친 기록의 짧은 등락 표기');
 console.assert((histDetail([{d:'2026-09-01',r:9},{d:'2026-09-02',r:3}],0).match(/class="hc"/g)||[]).length===2,'펼친 기록은 날짜마다 한 칸');
+loadSerp();
+// 자동 확인 병합: 직접 기록이 있는 날은 그 값, 없는 날만 자동 값
+serp={kw:{'["T","k"]':[{d:'2026-01-01',r:3,pc:'없음',m:'첫 화면 노출'},{d:'2026-01-02',r:5,pc:'AI 브리핑 인용',m:'없음'}]}};
+ranks['["T","k"]']=[{d:'2026-01-01',r:9}];
+console.assert(histOf('T','k').length===2&&histOf('T','k')[0].r===9&&histOf('T','k')[1].auto,'자동은 빈 날만 채운다');
+console.assert(serpCell('T','k').includes('AI 브리핑 인용')&&serpCell('T','x').includes('아직 없음'),'통합검색 칸 표시');
+delete ranks['["T","k"]']; serp=null;
 console.assert(normalizeProxy('p.workers.dev/')==='https://p.workers.dev'&&normalizeProxy('https://a.dev')==='https://a.dev'&&normalizeProxy('')==='','프록시 주소는 https:// 보정 + 끝 슬래시 제거');
 </script>
