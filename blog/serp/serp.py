@@ -8,13 +8,14 @@ from __future__ import annotations
 
 import html
 import re
+import subprocess
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
 
 UA = {
-    "pc": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/141 Safari/537.36",
+    "pc": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
     "mobile": "Mozilla/5.0 (Linux; Android 14; SM-S921N) AppleWebKit/537.36 Chrome/141 Mobile Safari/537.36",
 }
 HOST = {"pc": "https://search.naver.com", "mobile": "https://m.search.naver.com"}
@@ -24,15 +25,28 @@ DOMAIN = re.compile(r"https?://(?:www\.)?([a-z0-9.-]+\.[a-z]{2,})/")
 SKIP_HOST = ("naver.com", "naver.net", "pstatic.net", "navercorp.com", "w3.org", "realityripple.com")
 
 
+def curl(url: str, ua: str) -> str:
+    """파이썬 연결이 막혀도 curl 은 통하는 경우가 있어 대신 쓴다 (10/16 PC 화면에서 확인)."""
+    p = subprocess.run(["curl", "-s", "-f", "--max-time", "20", "-A", ua, url], capture_output=True)
+    if p.returncode:
+        raise RuntimeError(f"curl 실패 ({p.returncode})")
+    return p.stdout.decode("utf-8", "ignore")
+
+
 def fetch(query: str, device: str, blog_tab: bool = False) -> str:
     url = f"{HOST[device]}/search.naver?{'ssc=tab.blog.all&' if blog_tab else ''}query={urllib.parse.quote(query)}"
     req = urllib.request.Request(url, headers={"User-Agent": UA[device]})
-    for wait in (60, 180, 0):  # 짧은 시간에 많이 물으면 네이버가 403을 준다 → 쉬었다가 다시
+    for wait in (60, 180, 0):  # 짧은 시간에 많이 물으면 네이버가 403을 준다 → curl 로, 그래도 안 되면 쉬었다가 다시
         try:
             return urllib.request.urlopen(req, timeout=20).read().decode("utf-8", "ignore")
         except urllib.error.HTTPError as e:
-            if e.code != 403 or not wait:
+            if e.code != 403:
                 raise
+            try:
+                return curl(url, UA[device])
+            except RuntimeError:
+                if not wait:
+                    raise
             time.sleep(wait)
     raise RuntimeError("unreachable")
 
