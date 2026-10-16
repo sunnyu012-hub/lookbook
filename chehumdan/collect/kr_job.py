@@ -1,8 +1,9 @@
 """사무실 PC(Windows self-hosted runner) 수집 작업 — chehumdan-collect-kr 워크플로가 부른다.
 
 PC의 PowerShell 실행 정책(Restricted)과 상관없이 돌도록 단계 로직을 파이썬으로 둔다(워크플로는 shell: cmd).
-1) 할 일 정하기  2) playwright 준비  3) 수집(run.py) 또는 구조 확인(probe2.py)  4) 결과 커밋·push
-환경 변수: EVENT(github.event_name), IN_TASK, IN_SITES, GITHUB_REF_NAME
+1) 할 일 정하기  2) 지난 데이터 받기·playwright 준비  3) 수집(run.py) 또는 구조 확인(probe2.py)
+4) 결과를 chehumdan-data 브랜치에 올리기(data_sync.py — main 에는 커밋하지 않는다)
+환경 변수: EVENT(github.event_name), IN_TASK, IN_SITES
 """
 from __future__ import annotations
 
@@ -10,9 +11,9 @@ import os
 import re
 import subprocess
 import sys
-import time
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+import data_sync
 
 ROOT = Path(__file__).resolve().parents[2]
 CH = ROOT / "chehumdan"
@@ -71,39 +72,16 @@ def collect(sites: list[str]) -> int:
     return p.returncode
 
 
-def save() -> int:
-    """바뀐 결과를 커밋해 지금 브랜치에 올린다. 화면 캡처(png)는 계정이 보일 수 있어 올리지 않는다."""
-    git = lambda *a: sh("git", *a)  # noqa: E731
-    git("config", "user.name", "github-actions[bot]")
-    git("config", "user.email", "41898+github-actions[bot]@users.noreply.github.com")
-    git("add", "chehumdan/data/sites")
-    for d in ("_debug", "_probe2"):
-        if (CH / d).exists():
-            git("add", "-f", f"chehumdan/{d}")
-    git("rm", "--cached", "-q", "-r", "--ignore-unmatch", "--", "chehumdan/_debug/*.png")
-    if git("diff", "--cached", "--quiet") == 0:
-        print("바뀐 것 없음")
-        return 0
-    kst = datetime.now(timezone(timedelta(hours=9))).strftime("%m-%d %H:%M")
-    git("commit", "-q", "-m", f"체험단 다모아: 한국 PC 수집 {kst}")
-    ref = os.environ["GITHUB_REF_NAME"]
-    for i in range(1, 4):
-        if git("pull", "--rebase", "-q", "origin", ref) == 0 and git("push", "-q", "origin", f"HEAD:{ref}") == 0:
-            return 0
-        time.sleep(5 * i)
-    print("저장 실패")
-    return 1
-
-
 def main() -> int:
     task, sites = decide()
     print(f"작업: {task} / 사이트: {' '.join(sites)}", flush=True)
+    data_sync.pull()
     rc = 1
     try:
         prepare()
         rc = collect(sites) if task == "collect" else probe()
     finally:
-        rc = save() or rc
+        rc = data_sync.push(sites if task == "collect" else []) or rc
     return rc
 
 

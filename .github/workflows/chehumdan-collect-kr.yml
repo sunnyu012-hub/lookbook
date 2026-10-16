@@ -1,6 +1,7 @@
 name: chehumdan-collect-kr
 # 체험단 다모아: 한국 사무실 PC(Windows self-hosted runner)에서만 되는 사이트
-#   레뷰(부계정 로그인), 강남맛집(해외 IP 차단). 계정 보호를 위해 하루 두 번만 돈다.
+#   레뷰(부계정 로그인), 강남맛집·리뷰의민족·포블로그·클라우드리뷰(해외 IP 차단). 계정 보호를 위해 하루 두 번만 돈다.
+#   결과는 chehumdan-data 브랜치에 올린다(kr_job.py → data_sync.py).
 # 러너 라벨: chehumdan-kr / PC 준비: chehumdan/KR_PC.md
 on:
   schedule:
@@ -8,7 +9,7 @@ on:
     - cron: "40 23,9 * * *"
   # 개발 중 시험: 이 파일을 바꿔 올리면 PC에서 그 내용대로 한 번 돈다 (1줄: collect|probe, 2줄: 사이트)
   push:
-    branches: [claude/clever-dijkstra-0mvpvv]
+    branches: [main]
     paths: [chehumdan/scripts/kr-task.txt]
   workflow_dispatch:
     inputs:

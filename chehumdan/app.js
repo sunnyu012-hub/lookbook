@@ -285,8 +285,11 @@
 
   readHash();
   bind();
-  // 사이트마다 파일이 따로 있다: data/sites/<사이트>.json (없는 사이트는 건너뜀)
-  const loadSite = (k) => fetch(`data/sites/${k}.json`, { cache: "no-cache" })
+  // 사이트마다 파일이 따로 있다 (없는 사이트는 건너뜀). 공개 페이지는 수집기가 덮어쓰는 chehumdan-data 브랜치를 읽고,
+  // 이 PC에서 미리 볼 때(localhost)는 data_sync.py pull 로 받아 둔 data/sites/ 를 읽는다.
+  const DATA = /^(localhost|127\.0\.0\.1)$/.test(location.hostname)
+    ? "data/sites" : "https://raw.githubusercontent.com/sunnyu012-hub/lookbook/chehumdan-data/sites";
+  const loadSite = (k) => fetch(`${DATA}/${k}.json`, { cache: "no-cache" })
     .then((r) => (r.ok ? r.json() : null)).catch(() => null);
   const load = window.__CAMPAIGNS__
     ? Promise.resolve(window.__CAMPAIGNS__)
