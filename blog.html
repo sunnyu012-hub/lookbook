@@ -1233,7 +1233,8 @@ function bestOf(h){ const v=h.filter(x=>x.r).map(x=>x.r); return v.length?Math.m
 
 let trendCh=''; // 추세 채널 탭 — 들어올 때마다 전체보기
 function trendTabs(all){
-  const chs=[...new Set([...Object.keys(blogs),...all.map(r=>r.ch)])].filter(c=>all.some(r=>r.ch===c));
+  const chs=[...new Set([...Object.keys(blogs),...all.map(r=>r.ch)])].filter(c=>all.some(r=>r.ch===c))
+    .sort((x,y)=>all.filter(r=>r.ch===y).length-all.filter(r=>r.ch===x).length); // 키워드 많은 채널부터
   if(trendCh&&!chs.includes(trendCh)) trendCh='';
   return [['', '전체', all.length],...chs.map(c=>[c,c,all.filter(r=>r.ch===c).length])].map(([v,l,n])=>
     '<button type="button" role="tab" data-trch="'+esc(v)+'" aria-selected="'+(v===trendCh)+'">'+esc(l)+'<i>'+n+'</i></button>').join('');
