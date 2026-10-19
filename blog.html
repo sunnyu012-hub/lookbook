@@ -527,7 +527,6 @@
   <section id="v-trend" class="hide">
     <div class="phead"><h2>순위 추세</h2></div>
     <div class="trbar">
-      <label>기록 날짜 <input type="date" id="trendDate"></label>
       <span class="count" id="trendCount"></span>
       <button class="ghost" id="volTrend" type="button">검색량 갱신</button>
       <span class="state" id="trendMsg"></span>
@@ -540,8 +539,9 @@
         <button class="pri" id="tradd" type="button">추적 추가</button>
       </div>
     </div>
-    <p class="foot">매일 네이버에서 직접 확인한 순위를 적습니다. 숫자를 넣고 <b>Enter</b>를 누르면 다음 칸으로 넘어갑니다. <b>0</b>은 100위 밖, 칸을 비우면 그 날 기록이 지워집니다. 기록 날짜를 바꾸면 빠뜨린 날도 채울 수 있습니다.<br>
-    <b>발행</b> 상태 글의 메인키워드는 자동으로 올라오고, 그 밖의 키워드는 위 칸에서 채널을 골라 추가합니다. 줄은 <b>발행일 최신순</b>이고, 직접 추가한 키워드는 그 아래에 추가한 날짜 순으로 놓입니다. 키워드 옆 <b>월 검색량</b>은 <b>검색량 갱신</b>으로 불러오며(PC+모바일 합계, 마우스를 올리면 나눠서 보입니다), 키워드 탭에서 조회해둔 값이 있으면 그대로 씁니다.<br>키워드 옆 <b>통합</b> · <b>블로그</b>를 누르면 네이버 검색 결과가 새 탭으로 열립니다. <b>기록 N회</b>를 누르면 그동안의 날짜별 순위가 펼쳐지고, 날짜를 누르면 그 날 기록을 고칠 수 있습니다. <b>직전 대비</b>는 바로 앞 기록과, <b>시작 대비</b>는 첫 기록과 비교한 변동 폭입니다. 추이 그래프는 위로 갈수록 상위이며 날짜 간격대로 그려집니다.</p>
+    <p class="foot">순위는 <b>매일 아침 자동으로</b> 확인됩니다. <b>블로그탭 (자동)</b>은 네이버 블로그 탭 첫 화면 기준 순위이고, <b>통합검색 (자동)</b>은 모바일·PC 각각의 노출 상태(AI 브리핑 인용 · 첫 화면 노출 · 이미지만 · 없음)입니다. 숫자나 배지에 마우스를 올리면 확인한 날짜와 직전 결과가 보입니다.<br>
+    <b>발행</b> 상태 글의 메인키워드는 자동으로 올라오고, 그 밖의 키워드는 아래 칸에서 채널을 골라 추가합니다. 줄은 <b>발행일 최신순</b>이고, 직접 추가한 키워드는 그 아래에 추가한 날짜 순으로 놓입니다. 키워드 옆 <b>월 검색량</b>은 <b>검색량 갱신</b>으로 불러옵니다.<br>
+    <b>직전 대비</b>는 바로 앞 확인과, <b>시작 대비</b>는 첫 확인과 비교한 변동 폭입니다. <b>기록 N회</b>를 누르면 날짜별 순위가 모두 펼쳐지고, 추이 그래프는 위로 갈수록 상위이며 날짜 간격대로 그려집니다.</p>
   </section>
 
   <!-- ══ 키워드 보드 (아이디어) ══ -->
@@ -1166,7 +1166,7 @@ function tabCell(ch,kw){
 
 // 스파크라인: 단일 계열, 순위가 낮을수록(1위) 위로. 가로는 날짜 간격대로 놓아 빠진 날이 드러나게 한다.
 function sparkline(hist,color){
-  if(hist.length<2) return '<span class="none">기록 1회</span>';
+  if(hist.length<2) return '<span class="none">—</span>';   // 점 하나면 선을 못 그린다 (기록 횟수는 기록 칸에 있다)
   const W=120,H=28,pad=4;
   const vals=hist.map(h=>rankVal(h.r));
   const lo=Math.min(...vals), hi=Math.max(...vals);
@@ -1196,83 +1196,43 @@ const delta=h=>h.length<2?'<span class="d0">—</span>':cmp(h[h.length-2].r,h[h.
 const sinceStart=h=>h.length<2?'<span class="d0">—</span>':cmp(h[0].r,h[h.length-1].r);
 function bestOf(h){ const v=h.filter(x=>x.r).map(x=>x.r); return v.length?Math.min(...v):0 }
 
-// 하루 한 칸. 같은 날을 다시 적으면 바뀌고, 비우면(null) 그 날 기록이 지워진다.
-function setRecord(ch,kw,d,v){
-  const k=rkey(ch,kw);
-  const h=(ranks[k]||[]).filter(x=>x.d!==d);
-  if(v!==null) h.push({d,r:v});
-  h.sort((a,b)=>a.d.localeCompare(b.d));
-  if(h.length) ranks[k]=h.slice(-365); else delete ranks[k];   // 최근 1년치 보관
-  DB.set(P+'ranks',ranks);
-}
-const trendDate=()=>$('#trendDate').value||TODAY;
 
 function renderTrend(){
-  const rows=trendList(), d=trendDate();
-  const filled=rows.filter(r=>histOf(r.ch,r.kw).some(x=>x.d===d)).length;
-  $('#trendCount').textContent=rows.length?(fmtD(d)+' 기록 '+filled+' / '+rows.length+(serp?' · 자동 확인 '+serp.updated.slice(5).replace('-','/'):'')):'';
+  const rows=trendList();
+  $('#trendCount').textContent=rows.length
+    ? ('추적 '+rows.length+'개'+(serp?' · 자동 확인 '+serp.updated.slice(5).replace('-','/'):' · 자동 확인 기다리는 중'))
+    : '';
   if(!rows.length){
     $('#trendTbl').innerHTML='<tr><td class="empty">추적할 키워드가 없습니다. 발행 상태로 저장한 글의 메인키워드가 자동으로 올라오고, 아래 칸에서 직접 추가할 수도 있습니다.</td></tr>';
     return;
   }
   $('#trendTbl').innerHTML=
-    '<tr><th style="width:28%">키워드</th><th>'+fmtD(d)+' 순위</th><th>직전 대비</th><th>시작 대비</th><th>최고</th><th>추이</th><th>블로그탭 (자동)</th><th>통합검색 (자동)</th><th>기록</th><th></th></tr>'+
+    '<tr><th style="width:26%">키워드</th><th>블로그탭 (자동)</th><th>통합검색 (자동)</th>'+
+    '<th>직전 대비</th><th>시작 대비</th><th>최고</th><th>추이</th><th>기록</th><th></th></tr>'+
     rows.map((r,idx)=>{
       const h=histOf(r.ch,r.kw);
-      const hit=h.find(x=>x.d===d), at=hit&&!hit.auto?hit:null, autoAt=hit&&hit.auto?hit:null;
-      const before=h.filter(x=>x.d<d).pop();
       const best=bestOf(h), last=h[h.length-1], open=openHist.has(rkey(r.ch,r.kw));
       return '<tr>'+
         '<td><div class="kwline"><span class="kwc">'+esc(r.kw)+'</span>'+nvLinks(r.kw)+'</div><div class="sub">'+chBadge(r.ch)+
           (r.manual
             ? ' <span class="src hand">직접 추가</span>'+(r.date?' <span>'+fmtD(r.date)+' 추가</span>':'')
             : ' <span>발행 '+(r.date?fmtD(r.date):'날짜 없음')+(r.n>1?' · 글 '+r.n+'건':'')+'</span>')+volTag(r.kw)+'</div></td>'+
-        '<td><input type="number" class="rankin" data-mr="'+idx+'" min="0" max="1000" '+
-          'value="'+(at?at.r:'')+'" placeholder="'+(autoAt?'자동 '+(autoAt.r||'밖'):(before?(before.r||'밖'):'—'))+'" '+
-          'title="숫자 입력 후 Enter · 0 = 100위 밖 · 비우면 이 날 기록 삭제"></td>'+
+        '<td>'+tabCell(r.ch,r.kw)+'</td>'+
+        '<td>'+serpCell(r.ch,r.kw)+'</td>'+
         '<td>'+delta(h)+'</td>'+
         '<td>'+sinceStart(h)+'</td>'+
         '<td>'+(best?'<span class="rank">'+best+'위</span>':'<span class="none">—</span>')+'</td>'+
         '<td>'+(h.length?sparkline(h,chColor(r.ch)):'<span class="none">—</span>')+'</td>'+
-        '<td>'+tabCell(r.ch,r.kw)+'</td>'+
-        '<td>'+serpCell(r.ch,r.kw)+'</td>'+
         '<td>'+(h.length
           ? '<button class="histbtn" data-hist="'+idx+'" type="button" aria-expanded="'+open+'">'+(open?'▾':'▸')+' 기록 '+h.length+'회</button>'+
             '<div class="sub">'+fmtD(h[0].d)+'~'+fmtD(last.d)+'</div>'
           : '<span class="sub">없음</span>')+'</td>'+
         '<td style="text-align:right">'+(r.manual?'<button class="mini" data-untrack="'+idx+'" type="button" title="추적 해제">×</button>':'')+'</td>'+
       '</tr>'+
-      (open?'<tr class="histrow"><td colspan="10">'+histDetail(h,idx)+'</td></tr>':'');
+      (open?'<tr class="histrow"><td colspan="9">'+histDetail(h,idx)+'</td></tr>':'');
     }).join('');
 }
 
-// 표를 다시 그려도 입력 흐름이 끊기지 않게, 포커스를 같은 줄 번호로 되돌린다
-function rerenderKeepFocus(){
-  const a=document.activeElement;
-  const fi=a&&a.dataset&&a.dataset.mr!==undefined?a.dataset.mr:null;
-  renderTrend(); renderNav();
-  if(fi!==null){
-    const el=$('#trendTbl input[data-mr="'+fi+'"]');
-    if(el){ el.focus(); try{ el.select() }catch(e){} }
-  }
-}
-$('#trendTbl').addEventListener('change',e=>{
-  const inp=e.target.closest('input[data-mr]'); if(!inp) return;
-  const row=trendList()[+inp.dataset.mr]; if(!row) return;
-  const raw=inp.value.trim(), d=trendDate();
-  const v=raw===''?null:Math.max(0,Math.min(1000,parseInt(raw,10)||0));
-  setRecord(row.ch,row.kw,d,v);
-  $('#trendMsg').textContent='“'+row.kw+'” '+fmtD(d)+' → '+(v===null?'기록 삭제':v?v+'위':'100위 밖');
-  setTimeout(rerenderKeepFocus,0);
-});
-// Enter 로 다음 줄로 넘어가며 빠르게 채운다
-$('#trendTbl').addEventListener('keydown',e=>{
-  if(e.key!=='Enter') return;
-  const inp=e.target.closest('input[data-mr]'); if(!inp) return;
-  e.preventDefault();
-  const next=$('#trendTbl input[data-mr="'+(+inp.dataset.mr+1)+'"]');
-  if(next) next.focus(); else inp.blur();
-});
 $('#trendTbl').addEventListener('click',e=>{
   const b=e.target.closest('button[data-untrack]'); if(!b) return;
   const row=trendList()[+b.dataset.untrack]; if(!row) return;
@@ -1290,10 +1250,8 @@ $('#tradd').onclick=()=>{
   tracked.push({ch,kw,at:TODAY});
   DB.set(P+'tracked',tracked);
   $('#trkw').value=''; renderTrend(); renderNav();
-  $('#trendMsg').textContent='“'+kw+'” 추적을 시작했습니다. 오늘 순위를 적어 두세요.';
+  $('#trendMsg').textContent='“'+kw+'” 추적을 시작했습니다. 내일 아침 자동 확인부터 순위가 채워집니다.';
   if(proxyUrl()&&!volOf(kw)) refreshVols([{kw}]);
-  const i=trendList().findIndex(r=>r.ch===ch&&r.kw===kw);
-  const el=$('#trendTbl input[data-mr="'+i+'"]'); if(el) el.focus();
 };
 $('#trkw').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#tradd').click() });
 // 네이버 바로가기 — 매일 순위를 확인할 때 검색창에 키워드를 다시 칠 필요가 없다.
@@ -1310,10 +1268,10 @@ function nvLinks(kw){
 const openHist=new Set();   // 펼친 키워드 (화면 상태라 저장하지 않는다)
 function histDetail(h,idx){
   return '<div class="hist">'+h.map((x,i)=>
-    '<button type="button" class="hc" data-jump="'+x.d+'" data-row="'+idx+'" title="'+x.d+' 기록 고치기">'+
-      '<span class="hd">'+fmtD(x.d)+(x.auto?' 자동':'')+'</span><b>'+(x.r?x.r+'위':'밖')+'</b>'+
+    '<span class="hc" title="'+x.d+(x.auto?' 자동 확인':' 예전에 직접 적은 기록')+'">'+
+      '<span class="hd">'+fmtD(x.d)+(x.auto?'':' 수동')+'</span><b>'+(x.r?x.r+'위':'밖')+'</b>'+
       (i?cmp(h[i-1].r,x.r,true):'<span class="d0">시작</span>')+
-    '</button>').join('')+'</div>';
+    '</span>').join('')+'</div>';
 }
 $('#trendTbl').addEventListener('click',e=>{
   const t=e.target.closest('button[data-hist]');
@@ -1322,13 +1280,6 @@ $('#trendTbl').addEventListener('click',e=>{
     const k=rkey(row.ch,row.kw);
     openHist.has(k)?openHist.delete(k):openHist.add(k);
     renderTrend(); return;
-  }
-  const j=e.target.closest('button[data-jump]');
-  if(j){
-    $('#trendDate').value=j.dataset.jump; renderTrend();
-    const el=$('#trendTbl input[data-mr="'+j.dataset.row+'"]');
-    if(el){ el.focus(); try{ el.select() }catch(err){} }
-    $('#trendMsg').textContent=fmtD(j.dataset.jump)+' 기록을 고칠 수 있습니다. 다 고치면 기록 날짜를 오늘로 돌려두세요.';
   }
 });
 // 월간 검색량: 추세에서 불러온 값, 없으면 키워드 보드에서 이미 조회해둔 값을 쓴다
@@ -1356,8 +1307,7 @@ async function refreshVols(list){
   }catch(e){ msg('검색량 조회 실패: '+e.message) }
 }
 $('#volTrend').onclick=()=>refreshVols(trendList());
-$('#trendDate').value=TODAY;
-$('#trendDate').addEventListener('change',renderTrend);
+
 
 /* ── 채널 select 채우기 ── */
 function fillChannelSelects(){
@@ -1593,7 +1543,7 @@ console.assert(delta([{d:'1',r:9},{d:'2',r:4}]).includes('▲ 5'),'순위가 올
 console.assert(delta([{d:'1',r:4},{d:'2',r:0}]).includes('밖으로'),'100위 밖으로 밀리면 숫자 대신 이탈 표시');
 console.assert(delta([{d:'1',r:0},{d:'2',r:7}]).includes('진입'),'100위 안으로 들어오면 진입');
 console.assert(delta([{d:'1',r:0},{d:'2',r:0}]).includes('계속 밖'),'둘 다 밖이면 변화 없음');
-console.assert(sparkline([{d:'1',r:1}],'#000').includes('기록 1회'),'점 하나면 선을 안 그린다');
+console.assert(!sparkline([{d:'1',r:1}],'#000').includes('<svg'),'점 하나면 선을 안 그린다');
 console.assert(sparkline([{d:'1',r:1},{d:'2',r:50}],'#000').startsWith('<svg'),'두 점부터 스파크라인');
 console.assert(!sparkline([{d:'2026-09-01',r:5},{d:'2026-09-02',r:3},{d:'2026-09-10',r:9}],'#000').includes('NaN'),'날짜 간격 스파크라인에 NaN 없음');
 console.assert(sinceStart([{d:'a',r:20},{d:'b',r:9},{d:'c',r:4}]).includes('▲ 16'),'시작 대비는 첫 기록과 비교');
