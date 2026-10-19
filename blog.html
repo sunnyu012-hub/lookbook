@@ -308,7 +308,9 @@
     border-bottom:1px solid var(--line);text-align:left;
     font-size:10.5px;font-weight:700;letter-spacing:.05em;color:var(--muted);text-transform:uppercase;white-space:nowrap;
   }
-  .trend td{padding:9px 10px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+  .trend td{padding:11px 10px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+  .trend th:first-child,.trend td:first-child{padding-left:13px}
+  .trend th:last-child,.trend td:last-child{padding-right:13px}
   .trend tr:last-child td{border-bottom:0}
   .trend tbody tr:hover,.trend tr:hover{background:var(--sunk)}
   .trend .kwline{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
@@ -326,13 +328,30 @@
   .src{margin-left:4px;padding:1px 6px;border-radius:3px;background:var(--sunk);color:var(--muted);font-size:10px}
   .src.hand{background:var(--accent-soft);color:var(--accent);font-weight:700}
   .src.auto{background:var(--sunk);color:var(--muted)}
-  .serp{display:flex;flex-direction:column;gap:3px;font-size:11.5px;white-space:nowrap}
-  .serp i{font-style:normal;color:var(--muted);display:inline-block;width:30px}
-  .serp b{padding:1px 6px;border-radius:3px;font-weight:600}
-  .serp b.cite{background:var(--ok-soft);color:var(--ok)}
-  .serp b.post{background:var(--accent-soft);color:var(--accent)}
-  .serp b.img{background:var(--warn-soft);color:var(--warn)}
-  .serp b.no{background:var(--sunk);color:var(--muted);font-weight:400}
+  /* 노출 상태 — 색만으로 구분하지 않도록 점과 글자를 함께 쓴다. 강조 단계: 인용 > 첫 화면 > 이미지만 > 없음 */
+  .serp{display:flex;flex-direction:column;gap:4px}
+  .serprow{display:flex;align-items:center;gap:7px;white-space:nowrap}
+  .serprow i{font-style:normal;flex:0 0 32px;font-size:10.5px;color:var(--muted)}
+  .serpb{display:flex;gap:4px;flex-wrap:wrap}
+  .serpb b{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:999px;
+    border:1px solid transparent;font-size:10.5px;font-weight:600;line-height:1.5}
+  .serpb b em{flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:currentColor;font-style:normal}
+  .serpb b.cite{background:var(--accent);color:var(--on-accent)}
+  .serpb b.post{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-line)}
+  .serpb b.img{background:var(--warn-soft);color:var(--warn)}
+  .serpb b.no{background:var(--sunk);color:var(--muted);border-color:var(--line-soft);font-weight:500}
+  /* 블로그탭 순위 */
+  .rkcell{display:flex;align-items:baseline;gap:7px;white-space:nowrap}
+  .rkv{font:600 17px/1 var(--mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+  .rkv i{font-style:normal;margin-left:1px;font-size:11px;font-weight:500;color:var(--muted)}
+  .rkv.out{font-size:12px;font-weight:500;color:var(--muted)}
+  /* 추세 요약 */
+  .tstrip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s2);margin-bottom:var(--s3)}
+  @media(max-width:760px){.tstrip{grid-template-columns:repeat(2,1fr)}}
+  .tstrip .st{padding:9px 12px;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface)}
+  .tstrip .st .k{font-size:11px;font-weight:600;color:var(--muted)}
+  .tstrip .st .v{margin-top:3px;font:600 20px/1.1 var(--mono);font-variant-numeric:tabular-nums}
+  .tstrip .st .v i{margin-left:3px;font-style:normal;font-size:11.5px;font-weight:500;color:var(--muted)}
   .rankin{
     width:62px;padding:5px 7px;text-align:right;
     font:600 13px var(--mono);font-variant-numeric:tabular-nums;background:var(--surface);
@@ -347,7 +366,9 @@
     height:24px;padding:0 8px;border:1px solid var(--line);border-radius:4px;background:var(--surface);
     font:600 11px var(--mono);color:var(--ink-2);cursor:pointer;white-space:nowrap;
   }
+  .histbtn{transition:border-color .15s,color .15s,background .15s,scale .12s}
   .histbtn:hover,.histbtn[aria-expanded="true"]{border-color:var(--accent);color:var(--accent)}
+  .histbtn:active,.mini:active,.pri:active,.ghost:active{scale:.96}
   .trend tr.histrow td{padding:10px 12px;background:var(--sunk)}
   .hist{display:flex;flex-wrap:wrap;gap:5px;max-height:220px;overflow:auto}
   .hc{
@@ -531,6 +552,7 @@
       <button class="ghost" id="volTrend" type="button">검색량 갱신</button>
       <span class="state" id="trendMsg"></span>
     </div>
+    <div class="tstrip" id="trendStats"></div>
     <div class="card">
       <div class="trendwrap"><table class="trend" id="trendTbl"></table></div>
       <div class="tradd">
@@ -1151,23 +1173,27 @@ function serpCell(ch,kw){
   if(!x) return '<span class="none">'+(serp?'아직 없음':'—')+'</span>';
   const tip=fmtD(x.d)+' 자동 확인'+(x.src&&x.src.length?' · AI 브리핑 출처: '+x.src.join(', '):'');
   // 'AI 브리핑 인용 + 첫 화면 노출' 처럼 둘 다면 배지를 나란히
-  const b=(t,v)=>'<span><i>'+t+'</i>'+String(v).split(' + ').map(s=>'<b class="'+(SERP_CLS[s]||'no')+'">'+esc(s)+'</b>').join(' ')+'</span>';
+  const b=(t,v)=>'<div class="serprow"><i>'+t+'</i><span class="serpb">'+
+    String(v).split(' + ').map(s=>'<b class="'+(SERP_CLS[s]||'no')+'"><em></em>'+esc(s)+'</b>').join('')+'</span></div>';
   return '<div class="serp" title="'+esc(tip)+'">'+b('모바일',x.m)+b('PC',x.pc)+'</div>';
 }
 const fmtD=d=>Number(d.slice(5,7))+'/'+Number(d.slice(8,10));
 // 블로그탭 순위(자동): 매일 아침 실제 네이버 블로그탭 첫 화면(30개)에서 센 순위. 직접 적은 기록과 따로 보여준다.
 function tabCell(ch,kw){
   const h=serpOf(ch,kw).filter(x=>x.r!==undefined&&x.r!==null), x=h[h.length-1], p=h[h.length-2];
+  const depth=(serp&&serp.tabDepth)||30;
   if(!x) return '<span class="none">'+(serp?'아직 없음':'—')+'</span>';
-  const tip=fmtD(x.d)+' 자동 확인 · 블로그탭 첫 화면 '+((serp&&serp.tabDepth)||30)+'개 기준'+(p?' · 직전 '+fmtD(p.d)+' '+(p.r?p.r+'위':'밖'):'');
-  return '<span title="'+esc(tip)+'">'+(x.r?'<span class="rank">'+x.r+'위</span>':'<span class="none">'+((serp&&serp.tabDepth)||30)+'위 밖</span>')+
-    (p?' '+cmp(p.r,x.r,true):'')+'</span>';
+  const tip=fmtD(x.d)+' 자동 확인 · 블로그탭 첫 화면 '+depth+'개 기준'+(p?' · 직전 '+fmtD(p.d)+' '+(p.r?p.r+'위':'밖'):'');
+  return '<div class="rkcell" title="'+esc(tip)+'">'+
+    (x.r?'<span class="rkv">'+x.r+'<i>위</i></span>':'<span class="rkv out">'+depth+'위 밖</span>')+
+    (p?cmp(p.r,x.r,true):'')+'</div>';
 }
+
 
 // 스파크라인: 단일 계열, 순위가 낮을수록(1위) 위로. 가로는 날짜 간격대로 놓아 빠진 날이 드러나게 한다.
 function sparkline(hist,color){
   if(hist.length<2) return '<span class="none">—</span>';   // 점 하나면 선을 못 그린다 (기록 횟수는 기록 칸에 있다)
-  const W=120,H=28,pad=4;
+  const W=132,H=34,pad=5;
   const vals=hist.map(h=>rankVal(h.r));
   const lo=Math.min(...vals), hi=Math.max(...vals);
   const ts=hist.map(h=>Date.parse(h.d));
@@ -1175,15 +1201,18 @@ function sparkline(hist,color){
   const byDate=ts.every(Number.isFinite)&&t1>t0;
   const x=i=>pad+(byDate?(ts[i]-t0)/(t1-t0):i/(hist.length-1))*(W-2*pad);
   const y=v=>hi===lo?H/2:pad+((v-lo)/(hi-lo))*(H-2*pad);
-  const d=vals.map((v,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(v).toFixed(1)).join(' ');
+  const pts=vals.map((v,i)=>x(i).toFixed(1)+' '+y(v).toFixed(1));
+  const line='M'+pts.join(' L');
+  const area=line+' L'+x(vals.length-1).toFixed(1)+' '+(H-1)+' L'+x(0).toFixed(1)+' '+(H-1)+' Z';
   const li=vals.length-1;
   return '<svg class="spark" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="순위 추이 '+
-      esc(hist.map(h=>h.d+' '+(h.r?h.r+'위':'100위 밖')).join(', '))+'">'+
-    '<path d="'+d+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'+
-    '<circle cx="'+x(li).toFixed(1)+'" cy="'+y(vals[li]).toFixed(1)+'" r="3" fill="'+color+'"/>'+
+      esc(hist.map(h=>h.d+' '+(h.r?h.r+'위':'노출 밖')).join(', '))+'">'+
+    '<path d="'+area+'" fill="'+color+'" fill-opacity=".10"/>'+
+    '<path d="'+line+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'+
+    '<circle cx="'+x(li).toFixed(1)+'" cy="'+y(vals[li]).toFixed(1)+'" r="3.5" fill="'+color+'" stroke="var(--surface)" stroke-width="2"/>'+
     '<title>'+esc(hist.slice(-12).map(h=>fmtD(h.d)+' '+(h.r?h.r+'위':'밖')).join(' · '))+'</title></svg>';
 }
-// 두 기록 비교. 순위는 숫자가 작을수록 좋으므로 이전-현재가 양수면 상승이다.
+// 두 기록 바교. 순위는 숫자가 작을수록 좋으므로 이전-현재가 양수면 상승이다.
 function cmp(p,c,short){
   if(!p&&!c) return '<span class="d0">'+(short?'—':'계속 밖')+'</span>';
   if(!p) return '<span class="up">▲ 진입</span>';
@@ -1196,12 +1225,20 @@ const delta=h=>h.length<2?'<span class="d0">—</span>':cmp(h[h.length-2].r,h[h.
 const sinceStart=h=>h.length<2?'<span class="d0">—</span>':cmp(h[0].r,h[h.length-1].r);
 function bestOf(h){ const v=h.filter(x=>x.r).map(x=>x.r); return v.length?Math.min(...v):0 }
 
-
 function renderTrend(){
   const rows=trendList();
-  $('#trendCount').textContent=rows.length
-    ? ('추적 '+rows.length+'개'+(serp?' · 자동 확인 '+serp.updated.slice(5).replace('-','/'):' · 자동 확인 기다리는 중'))
-    : '';
+  $('#trendCount').textContent=serp?('자동 확인 '+serp.updated.slice(5).replace('-','/')):'자동 확인 기다리는 중';
+  // 요약 — 표를 읽기 전에 전체 상태부터 보이게
+  const latest=rows.map(r=>{const h=serpOf(r.ch,r.kw);return {r:r,x:h[h.length-1]}});
+  const ranked=latest.filter(o=>o.x&&o.x.r), top10=ranked.filter(o=>o.x.r<=10).length;
+  const shown=latest.filter(o=>o.x&&/첫 화면 노출|AI 브리핑 인용/.test(String(o.x.m||''))).length;
+  const cited=latest.filter(o=>o.x&&/AI 브리핑 인용/.test(String(o.x.m||''))).length;
+  $('#trendStats').innerHTML=[
+    ['추적 키워드',rows.length,'개'],
+    ['블로그탭 노출',ranked.length,'/ '+rows.length],
+    ['10위 안',top10,'개'],
+    ['모바일 첫 화면',shown,cited?'· 인용 '+cited:'개']
+  ].map(t=>'<div class="st"><div class="k">'+t[0]+'</div><div class="v">'+t[1]+'<i>'+t[2]+'</i></div></div>').join('');
   if(!rows.length){
     $('#trendTbl').innerHTML='<tr><td class="empty">추적할 키워드가 없습니다. 발행 상태로 저장한 글의 메인키워드가 자동으로 올라오고, 아래 칸에서 직접 추가할 수도 있습니다.</td></tr>';
     return;
