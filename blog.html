@@ -345,6 +345,11 @@
   .rkv{font:600 17px/1 var(--mono);font-variant-numeric:tabular-nums;color:var(--ink)}
   .rkv i{font-style:normal;margin-left:1px;font-size:11px;font-weight:500;color:var(--muted)}
   .rkv.out{font-size:12px;font-weight:500;color:var(--muted)}
+  /* 추세 채널 탭 */
+  .trtabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:var(--s2)}
+  .trtabs button{padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);font:inherit;font-size:13px;cursor:pointer}
+  .trtabs button i{font-style:normal;margin-left:4px;color:var(--muted);font-size:12px}
+  .trtabs button[aria-selected="true"]{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent);font-weight:600}
   /* 추세 요약 */
   .tstrip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s2);margin-bottom:var(--s3)}
   @media(max-width:760px){.tstrip{grid-template-columns:repeat(2,1fr)}}
@@ -552,6 +557,7 @@
       <button class="ghost" id="volTrend" type="button">검색량 갱신</button>
       <span class="state" id="trendMsg"></span>
     </div>
+    <div class="trtabs" id="trendTabs" role="tablist" aria-label="채널"></div>
     <div class="tstrip" id="trendStats"></div>
     <div class="card">
       <div class="trendwrap"><table class="trend" id="trendTbl"></table></div>
@@ -1225,8 +1231,17 @@ const delta=h=>h.length<2?'<span class="d0">—</span>':cmp(h[h.length-2].r,h[h.
 const sinceStart=h=>h.length<2?'<span class="d0">—</span>':cmp(h[0].r,h[h.length-1].r);
 function bestOf(h){ const v=h.filter(x=>x.r).map(x=>x.r); return v.length?Math.min(...v):0 }
 
+let trendCh=''; // 추세 채널 탭 — 들어올 때마다 전체보기
+function trendTabs(all){
+  const chs=[...new Set([...Object.keys(blogs),...all.map(r=>r.ch)])].filter(c=>all.some(r=>r.ch===c));
+  if(trendCh&&!chs.includes(trendCh)) trendCh='';
+  return [['', '전체', all.length],...chs.map(c=>[c,c,all.filter(r=>r.ch===c).length])].map(([v,l,n])=>
+    '<button type="button" role="tab" data-trch="'+esc(v)+'" aria-selected="'+(v===trendCh)+'">'+esc(l)+'<i>'+n+'</i></button>').join('');
+}
 function renderTrend(){
-  const rows=trendList();
+  const all=trendList();
+  $('#trendTabs').innerHTML=trendTabs(all);
+  const rows=all.map((r,i)=>Object.assign({idx:i},r)).filter(r=>!trendCh||r.ch===trendCh); // idx 는 전체 목록 기준 (기록 펼치기·추적 해제가 trendList()[idx] 를 씀)
   $('#trendCount').textContent=serp?('자동 확인 '+serp.updated.slice(5).replace('-','/')):'자동 확인 기다리는 중';
   // 요약 — 표를 읽기 전에 전체 상태부터 보이게
   const latest=rows.map(r=>{const h=serpOf(r.ch,r.kw);return {r:r,x:h[h.length-1]}});
@@ -1246,8 +1261,8 @@ function renderTrend(){
   $('#trendTbl').innerHTML=
     '<tr><th style="width:26%">키워드</th><th>블로그탭 (자동)</th><th>통합검색 (자동)</th>'+
     '<th>직전 대비</th><th>시작 대비</th><th>최고</th><th>추이</th><th>기록</th><th></th></tr>'+
-    rows.map((r,idx)=>{
-      const h=histOf(r.ch,r.kw);
+    rows.map(r=>{
+      const idx=r.idx, h=histOf(r.ch,r.kw);
       const best=bestOf(h), last=h[h.length-1], open=openHist.has(rkey(r.ch,r.kw));
       return '<tr>'+
         '<td><div class="kwline"><span class="kwc">'+esc(r.kw)+'</span>'+nvLinks(r.kw)+'</div><div class="sub">'+chBadge(r.ch)+
@@ -1279,6 +1294,11 @@ $('#trendTbl').addEventListener('click',e=>{
   DB.set(P+'tracked',tracked); DB.set(P+'ranks',ranks);
   renderTrend(); renderNav();
   $('#trendMsg').textContent='“'+row.kw+'” 추적을 해제했습니다.';
+});
+$('#trendTabs').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-trch]'); if(!b) return;
+  trendCh=b.dataset.trch; if(trendCh) $('#trch').value=trendCh;
+  renderTrend();
 });
 $('#tradd').onclick=()=>{
   const kw=$('#trkw').value.trim(), ch=$('#trch').value;
@@ -1596,6 +1616,7 @@ serp={kw:{'["T","k"]':[{d:'2026-01-01',r:3,pc:'없음',m:'첫 화면 노출'},{d
 ranks['["T","k"]']=[{d:'2026-01-01',r:9}];
 console.assert(histOf('T','k').length===2&&histOf('T','k')[0].r===9&&histOf('T','k')[1].auto,'자동은 빈 날만 채운다');
 console.assert(serpCell('T','k').includes('>AI 브리핑 인용</b> <b class="post">첫 화면 노출')&&serpCell('T','x').includes('아직 없음'),'통합검색 칸 표시');
+console.assert((trendTabs([{ch:'A',kw:'x'},{ch:'B',kw:'y'},{ch:'A',kw:'z'}]).match(/data-trch/g)||[]).length===3&&trendTabs([{ch:'A',kw:'x'}]).includes('aria-selected="true">전체'),'추세 채널 탭: 전체 + 채널별, 기본 전체');
 delete ranks['["T","k"]']; serp=null;
 console.assert(normalizeProxy('p.workers.dev/')==='https://p.workers.dev'&&normalizeProxy('https://a.dev')==='https://a.dev'&&normalizeProxy('')==='','프록시 주소는 https:// 보정 + 끝 슬래시 제거');
 </script>
