@@ -6,8 +6,8 @@ name: blog-serp
 # 시크릿(선택): BLOG_PROXY, BLOG_SYNC_KEY — 넣으면 작업대 키워드를 자동으로 읽고, 없으면 blog/serp/keywords.json 을 쓴다.
 on:
   schedule:
-    # KST 08:30 (09:00 오가닉 분석표 갱신 전에 끝나도록)
-    - cron: "30 23 * * *"
+    # KST 06:30 — GitHub 예약이 ~2시간 늦게 떠서 실제로는 8시 반쯤 돈다 (09:00 오가닉 분석표 갱신 전)
+    - cron: "30 21 * * *"
   workflow_dispatch:
 permissions:
   contents: write
