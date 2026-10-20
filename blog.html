@@ -545,7 +545,7 @@
       <span class="state" id="calMsg"></span>
     </div>
     <div class="cal" id="cal"></div>
-    <p class="foot">칩을 다른 날짜 칸으로 <b>끌어다 놓으면</b> 발행일이 바뀝니다. 잘못 옮겼으면 위쪽 <b>되돌리기</b>를 누르세요. 다른 달로 옮길 때는 글을 <b>불러오기</b> 해서 날짜를 고치면 됩니다. 터치 화면에서는 끌기가 동작하지 않습니다.</p>
+    <p class="foot">칩을 다른 날짜 칸으로 <b>끌어다 놓으면</b> 발행일이 바뀝니다. 잘못 옮겼으면 위쪽 <b>되돌리기</b>를 누르세요. 다른 달로 옮길 때는 글을 <b>불러오기</b> 해서 날짜를 고치면 됩니다. 터치 화면에서는 끌기가 동작하지 않습니다. 글을 지우려면 날짜 칸을 누르고 아래 목록에서 <b>삭제</b>를 누르세요.</p>
     <div class="card" id="dayPanel" style="margin-top:16px"></div>
   </section>
 
@@ -919,7 +919,8 @@ function renderDayPanel(){
       '<div class="post"><div><div class="t">'+esc(x.title)+'</div><div class="m">'+chBadge(x.ch)+
       '<span class="pill '+(x.status==='발행'?'done':x.status==='예정'?'plan':'')+'">'+esc(x.status)+'</span>'+
       '<span class="num">'+x.len+'자</span></div></div>'+
-      '<div class="btns"><button class="ghost" data-load="'+x.id+'" type="button">불러오기</button></div></div>').join('')+'</div>'
+      '<div class="btns"><button class="ghost" data-load="'+x.id+'" type="button">불러오기</button>'+
+      '<button class="danger" data-del="'+x.id+'" type="button">삭제</button></div></div>').join('')+'</div>'
       :'<div class="empty">이 날짜에 잡힌 글이 없습니다.</div>')+
     '<div class="actions"><button class="pri" id="newOnDay" type="button">이 날짜로 새 글 잡기</button></div>';
   $('#newOnDay').onclick=()=>{
@@ -940,6 +941,8 @@ $('#cal').onclick=e=>{
 $('#dayPanel').addEventListener('click',e=>{
   const b=e.target.closest('[data-load]');
   if(b) loadPost(b.dataset.load);
+  const d=e.target.closest('[data-del]');
+  if(d&&confirm('이 글을 삭제할까요? 보관함에서도 지워지고 되돌릴 수 없습니다.')) delPost(d.dataset.del);
 });
 // ── 칩을 다른 날짜로 끌어다 놓아 발행일 옮기기 ──
 let dragId=null, lastMove=null;
