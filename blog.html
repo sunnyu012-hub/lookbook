@@ -1167,6 +1167,8 @@ let serp=null;
 async function loadSerp(){
   try{ const r=await fetch(SERP_URL,{cache:'no-store'}); if(r.ok){ serp=await r.json(); renderTrend() } }catch(e){}
 }
+// 아침부터 열어 둔 탭은 그 사이 들어온 자동 확인을 못 본다 → 탭으로 돌아올 때마다 다시 받는다
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) loadSerp() });
 const serpOf=(ch,kw)=>(serp&&serp.kw&&serp.kw[JSON.stringify([ch,kw])])||[];
 function histOf(ch,kw){
   const man=ranks[rkey(ch,kw)]||[], days=new Set(man.map(x=>x.d));
