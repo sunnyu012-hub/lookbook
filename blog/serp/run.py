@@ -3,7 +3,7 @@
 키워드: 작업대 서버 저장소(BLOG_PROXY + BLOG_SYNC_KEY 시크릿)에서 발행 글 메인키워드 + 직접 추가 키워드를 읽는다.
        시크릿이 없으면 keywords.json(직접 관리) 을 쓴다.
 한 키워드마다: 블로그 탭 순위(첫 화면 30개 안) · 모바일 통합검색 노출(serp.py) · AI 브리핑 출처 상위 3.
-발행 7일 안 글은 매일, 그 뒤는 주 1회 (due). 네이버가 막지 않게 요청 수를 줄인 것 (10/22).
+발행 7일 지났고 30위 밖인 키워드만 주 1회, 나머지는 매일 (due). 네이버가 막지 않게 요청 수를 줄인 것 (10/22).
 결과는 키워드별 최근 120일만 남긴다. 작업대는 raw.githubusercontent.com/sunnyu012-hub/lookbook/blog-data/serp.json 을 읽는다.
 사용: python blog/serp/run.py            확인하고 올림
       python blog/serp/run.py --dry      확인만 하고 blog/data/serp.json 에 저장 (올리지 않음)
@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "blog" / "data" / "serp.json"
 BRANCH = "blog-data"
 KEEP_DAYS = 120
-WEEKLY_AFTER = 7  # 발행 후 이 날수가 지난 글은 주 1회만 확인 (10/22 사용자 결정)
+WEEKLY_AFTER = 7  # 발행 후 이 날수가 지났고 30위 밖이면 주 1회만 확인 (10/22 사용자 결정)
 BUDGET_MIN = 35  # 워크플로 timeout-minutes(45) 안에 올리기까지 끝나도록
 SKIP = set(filter(None, os.environ.get("SKIP_CHANNELS", "드리밍").split(",")))  # 드리밍: 10/16 운영 종료
 SITE: dict[str, str] = {}  # 블로그 글만 센다 (홈페이지 kcost.org 노출은 넣지 않음, 10/16 결정)
@@ -111,15 +111,17 @@ def key(t: dict) -> str:
 
 
 def due(ts: list[dict], old: dict, today: str) -> list[dict]:
-    """발행 7일 안 글은 매일, 그 뒤는 주 1회. 요일은 키워드마다 흩어 하루 요청 수를 고르게 한다.
+    """발행 7일 지났고 마지막 확인에서 블로그탭 30위 밖(r=0)인 키워드만 주 1회, 나머지는 매일.
+    주 1회 요일은 키워드마다 흩어 하루 요청 수를 고르게 한다.
     정해진 요일을 놓쳤으면(PC 꺼짐·차단) 마지막 확인이 7일 넘은 날 바로 다시 확인한다."""
     now = datetime.strptime(today, "%Y-%m-%d")
     week_ago = (now - timedelta(days=WEEKLY_AFTER)).strftime("%Y-%m-%d")
     hist = old.get("kw", {})
     out = []
     for t in ts:
-        last = max((x["d"] for x in hist.get(key(t), [])), default="")
-        if (t["date"] >= week_ago or last <= week_ago
+        h = sorted(hist.get(key(t), []), key=lambda x: x["d"])
+        last = h[-1] if h else {"d": ""}
+        if (t["date"] >= week_ago or last.get("r") != 0 or last["d"] <= week_ago
                 or zlib.crc32(t["kw"].encode()) % 7 == now.weekday()):
             out.append(t)
     return out
@@ -158,7 +160,7 @@ def main() -> int:
     today = datetime.now(KST).strftime("%Y-%m-%d")
     old, every = previous(), targets()
     ts = due(every, old, today)
-    print(f"오늘 확인 {len(ts)}개 (전체 {len(every)}개 중 · 발행 {WEEKLY_AFTER}일 지난 글은 주 1회)")
+    print(f"오늘 확인 {len(ts)}개 (전체 {len(every)}개 중 · 발행 {WEEKLY_AFTER}일 지나고 30위 밖은 주 1회)")
     res = check(ts)
     data = merge(old, today, res)
     OUT.parent.mkdir(parents=True, exist_ok=True)
