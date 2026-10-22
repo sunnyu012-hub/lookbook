@@ -1186,7 +1186,8 @@ function serpCell(ch,kw){
   // 'AI 브리핑 인용 + 첫 화면 노출' 처럼 둘 다면 배지를 나란히
   const b=(t,v)=>'<div class="serprow"><i>'+t+'</i><span class="serpb">'+
     String(v).split(' + ').map(s=>'<b class="'+(SERP_CLS[s]||'no')+'"><em></em>'+esc(s)+'</b>').join('')+'</span></div>';
-  return '<div class="serp" title="'+esc(tip)+'">'+b('모바일',x.m)+b('PC',x.pc)+'</div>';
+  // 10/22부터 PC 통합검색은 확인하지 않는다(요청 줄이기) → 옛 기록에만 PC 줄이 있다
+  return '<div class="serp" title="'+esc(tip)+'">'+b('모바일',x.m)+(x.pc?b('PC',x.pc):'')+'</div>';
 }
 const fmtD=d=>Number(d.slice(5,7))+'/'+Number(d.slice(8,10));
 // 블로그탭 순위(자동): 매일 아침 실제 네이버 블로그탭 첫 화면(30개)에서 센 순위. 직접 적은 기록과 따로 보여준다.

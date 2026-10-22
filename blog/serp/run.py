@@ -2,7 +2,8 @@
 
 키워드: 작업대 서버 저장소(BLOG_PROXY + BLOG_SYNC_KEY 시크릿)에서 발행 글 메인키워드 + 직접 추가 키워드를 읽는다.
        시크릿이 없으면 keywords.json(직접 관리) 을 쓴다.
-한 키워드마다: 블로그 탭 순위(첫 화면 30개 안) · PC/모바일 통합검색 노출(serp.py) · AI 브리핑 출처 상위 3.
+한 키워드마다: 블로그 탭 순위(첫 화면 30개 안) · 모바일 통합검색 노출(serp.py) · AI 브리핑 출처 상위 3.
+발행 7일 안 글은 매일, 그 뒤는 주 1회 (due). 네이버가 막지 않게 요청 수를 줄인 것 (10/22).
 결과는 키워드별 최근 120일만 남긴다. 작업대는 raw.githubusercontent.com/sunnyu012-hub/lookbook/blog-data/serp.json 을 읽는다.
 사용: python blog/serp/run.py            확인하고 올림
       python blog/serp/run.py --dry      확인만 하고 blog/data/serp.json 에 저장 (올리지 않음)
@@ -16,6 +17,7 @@ import sys
 import time
 import urllib.parse
 import urllib.request
+import zlib
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -26,6 +28,7 @@ ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "blog" / "data" / "serp.json"
 BRANCH = "blog-data"
 KEEP_DAYS = 120
+WEEKLY_AFTER = 7  # 발행 후 이 날수가 지난 글은 주 1회만 확인 (10/22 사용자 결정)
 BUDGET_MIN = 35  # 워크플로 timeout-minutes(45) 안에 올리기까지 끝나도록
 SKIP = set(filter(None, os.environ.get("SKIP_CHANNELS", "드리밍").split(",")))  # 드리밍: 10/16 운영 종료
 SITE: dict[str, str] = {}  # 블로그 글만 센다 (홈페이지 kcost.org 노출은 넣지 않음, 10/16 결정)
@@ -46,14 +49,18 @@ def targets() -> list[dict]:
         with urllib.request.urlopen(f"{proxy}/data?key={urllib.parse.quote(key)}", timeout=30) as r:
             data = json.load(r).get("data") or {}
         blogs = data.get("blogs") or {}
-        pairs = {(p["ch"], p["kw"]) for p in data.get("posts", []) if p.get("kw") and p.get("status") == "발행"}
-        pairs |= {(t["ch"], t["kw"]) for t in data.get("tracked", []) if t.get("kw")}
+        # (채널, 키워드) → 발행일(직접 추가한 키워드는 추가한 날). 같은 키워드 글이 여럿이면 최신 날짜
+        pairs: dict[tuple, str] = {}
+        rows = [(p["ch"], p["kw"], p.get("date")) for p in data.get("posts", []) if p.get("kw") and p.get("status") == "발행"]
+        rows += [(t["ch"], t["kw"], t.get("at")) for t in data.get("tracked", []) if t.get("kw")]
+        for ch, kw, d in rows:
+            pairs[(ch, kw)] = max(pairs.get((ch, kw), ""), (d or "")[:10])
         print(f"작업대에서 키워드 {len(pairs)}개")
     else:
         cfg = json.loads((Path(__file__).parent / "keywords.json").read_text(encoding="utf-8"))
-        blogs, pairs = cfg["blogs"], {(x["ch"], x["kw"]) for x in cfg["keywords"]}
+        blogs, pairs = cfg["blogs"], {(x["ch"], x["kw"]): "" for x in cfg["keywords"]}
         print(f"keywords.json 에서 키워드 {len(pairs)}개 (시크릿 없음)")
-    out = [{"ch": ch, "kw": kw, "blog": blog_id(blogs.get(ch, ""))} for ch, kw in sorted(pairs)]
+    out = [{"ch": ch, "kw": kw, "date": d, "blog": blog_id(blogs.get(ch, ""))} for (ch, kw), d in sorted(pairs.items())]
     return [t for t in out if t["blog"] and t["ch"] not in SKIP]
 
 
@@ -85,17 +92,37 @@ def check(ts: list[dict]) -> dict[str, dict]:
             break
         kw, blog, site = t["kw"], t["blog"], SITE.get(t["ch"])
         try:
-            pc, mo = (serp.analyze(page(kw, d), blog, site) for d in ("pc", "mobile"))
-            res[json.dumps([t["ch"], kw], ensure_ascii=False, separators=(",", ":"))] = {
+            # 통합검색은 모바일만 (PC 까지 물으면 요청이 1.5배라 네이버가 막는다, 10/22). 옛 기록의 pc 는 그대로 둔다
+            mo = serp.analyze(page(kw, "mobile"), blog, site)
+            res[key(t)] = {
                 "r": serp.blog_rank(page(kw, "pc", True), blog),
-                "pc": serp.label(pc), "m": serp.label(mo),
-                "src": (mo["sources"] or pc["sources"])[:3],
+                "m": serp.label(mo),
+                "src": mo["sources"][:3],
             }
             fails = 0
         except Exception as e:  # 한 키워드 실패로 전체를 멈추지 않는다
             fails += 1
             print(f"실패: {kw} — {e}")
     return res
+
+
+def key(t: dict) -> str:
+    return json.dumps([t["ch"], t["kw"]], ensure_ascii=False, separators=(",", ":"))
+
+
+def due(ts: list[dict], old: dict, today: str) -> list[dict]:
+    """발행 7일 안 글은 매일, 그 뒤는 주 1회. 요일은 키워드마다 흩어 하루 요청 수를 고르게 한다.
+    정해진 요일을 놓쳤으면(PC 꺼짐·차단) 마지막 확인이 7일 넘은 날 바로 다시 확인한다."""
+    now = datetime.strptime(today, "%Y-%m-%d")
+    week_ago = (now - timedelta(days=WEEKLY_AFTER)).strftime("%Y-%m-%d")
+    hist = old.get("kw", {})
+    out = []
+    for t in ts:
+        last = max((x["d"] for x in hist.get(key(t), [])), default="")
+        if (t["date"] >= week_ago or last <= week_ago
+                or zlib.crc32(t["kw"].encode()) % 7 == now.weekday()):
+            out.append(t)
+    return out
 
 
 def merge(old: dict, today: str, res: dict[str, dict]) -> dict:
@@ -128,14 +155,16 @@ def push(msg: str) -> None:
 
 
 def main() -> int:
-    ts = targets()
     today = datetime.now(KST).strftime("%Y-%m-%d")
+    old, every = previous(), targets()
+    ts = due(every, old, today)
+    print(f"오늘 확인 {len(ts)}개 (전체 {len(every)}개 중 · 발행 {WEEKLY_AFTER}일 지난 글은 주 1회)")
     res = check(ts)
-    data = merge(previous(), today, res)
+    data = merge(old, today, res)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    cited = sum("AI 브리핑 인용" in (v["pc"] or "") or "AI 브리핑 인용" in (v["m"] or "") for v in res.values())
-    print(f"{today}: 확인 {len(res)}/{len(ts)} · 블로그탭 5위 안 {sum(0 < v['r'] <= 5 for v in res.values())} · AI 브리핑 인용 {cited}")
+    cited = sum("AI 브리핑 인용" in (v["m"] or "") for v in res.values())
+    print(f"{today}: 확인 {len(res)}/{len(ts)} ·블로그탭 5위 안 {sum(0 < v['r'] <= 5 for v in res.values())} · AI 브리핑 인용 {cited}")
     if "--dry" not in sys.argv:
         push(f"블로그 검색 확인 {today}: {len(res)}개")
     return 0 if res or not ts else 1
