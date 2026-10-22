@@ -26,6 +26,7 @@ ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "blog" / "data" / "serp.json"
 BRANCH = "blog-data"
 KEEP_DAYS = 120
+BUDGET_MIN = 35  # 워크플로 timeout-minutes(45) 안에 올리기까지 끝나도록
 SKIP = set(filter(None, os.environ.get("SKIP_CHANNELS", "드리밍").split(",")))  # 드리밍: 10/16 운영 종료
 SITE: dict[str, str] = {}  # 블로그 글만 센다 (홈페이지 kcost.org 노출은 넣지 않음, 10/16 결정)
 KST = timezone(timedelta(hours=9))
@@ -70,12 +71,18 @@ def check(ts: list[dict]) -> dict[str, dict]:
     def page(kw: str, dev: str, tab: bool = False) -> str:
         k = (kw, dev, tab)
         if k not in pages:
-            time.sleep(3)  # 네이버 부담을 줄인다 (하루 한 번 · 키워드 52개면 약 8분)
+            time.sleep(5)  # 네이버 부담을 줄인다. 3초로 75개(요청 225번)를 물으니 중간부터 403 (10/22)
             pages[k] = serp.fetch(kw, dev, tab)
         return pages[k]
 
+    # 네이버가 막으면 요청마다 4분씩 재시도하다 잡 시간(45분)을 넘겨 확인분까지 다 잃었다 (10/22).
+    # 연속으로 막히거나 35분이 지나면 멈추고, 그때까지 확인한 것만 올린다.
+    deadline, fails = time.monotonic() + BUDGET_MIN * 60, 0
     res = {}
-    for t in ts:
+    for i, t in enumerate(ts):
+        if fails >= 2 or time.monotonic() > deadline:
+            print(f"중단: {'네이버가 막음' if fails >= 2 else f'{BUDGET_MIN}분 초과'} — {i}/{len(ts)}개까지만 확인")
+            break
         kw, blog, site = t["kw"], t["blog"], SITE.get(t["ch"])
         try:
             pc, mo = (serp.analyze(page(kw, d), blog, site) for d in ("pc", "mobile"))
@@ -84,7 +91,9 @@ def check(ts: list[dict]) -> dict[str, dict]:
                 "pc": serp.label(pc), "m": serp.label(mo),
                 "src": (mo["sources"] or pc["sources"])[:3],
             }
+            fails = 0
         except Exception as e:  # 한 키워드 실패로 전체를 멈추지 않는다
+            fails += 1
             print(f"실패: {kw} — {e}")
     return res
 

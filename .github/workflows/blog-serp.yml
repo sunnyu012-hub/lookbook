@@ -30,4 +30,4 @@ jobs:
         env:
           BLOG_PROXY: ${{ secrets.BLOG_PROXY }}
           BLOG_SYNC_KEY: ${{ secrets.BLOG_SYNC_KEY }}
-        run: python blog\serp\run.py
+        run: python -u blog\serp\run.py
