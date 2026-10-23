@@ -58,7 +58,7 @@ def targets() -> list[dict]:
         print(f"작업대에서 키워드 {len(pairs)}개")
     else:
         cfg = json.loads((Path(__file__).parent / "keywords.json").read_text(encoding="utf-8"))
-        blogs, pairs = cfg["blogs"], {(x["ch"], x["kw"]): "" for x in cfg["keywords"]}
+        blogs, pairs = cfg["blogs"], {(x["ch"], x["kw"]): x.get("date", "") for x in cfg["keywords"]}
         print(f"keywords.json 에서 키워드 {len(pairs)}개 (시크릿 없음)")
     out = [{"ch": ch, "kw": kw, "date": d, "blog": blog_id(blogs.get(ch, ""))} for (ch, kw), d in sorted(pairs.items())]
     return [t for t in out if t["blog"] and t["ch"] not in SKIP]
