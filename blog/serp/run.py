@@ -46,7 +46,9 @@ def targets() -> list[dict]:
     if proxy and key:
         if not proxy.startswith("http"):
             proxy = "https://" + proxy
-        with urllib.request.urlopen(f"{proxy}/data?key={urllib.parse.quote(key)}", timeout=30) as r:
+        # Cloudflare 가 파이썬 기본 User-Agent 를 봇으로 보고 403(오류 1010)을 준다 (10/23) → 브라우저 UA 로
+        req = urllib.request.Request(f"{proxy}/data?key={urllib.parse.quote(key)}", headers={"User-Agent": serp.UA["pc"]})
+        with urllib.request.urlopen(req, timeout=30) as r:
             data = json.load(r).get("data") or {}
         blogs = data.get("blogs") or {}
         # (채널, 키워드) → 발행일(직접 추가한 키워드는 추가한 날). 같은 키워드 글이 여럿이면 최신 날짜
