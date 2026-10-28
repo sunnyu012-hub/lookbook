@@ -16,6 +16,7 @@ import { TransferCard } from '@/components/sync/TransferCard'
 import { BackupNotice } from '@/components/sync/BackupNotice'
 import { FeedbackCard } from '@/components/settings/FeedbackCard'
 import { ResetCard } from '@/components/settings/ResetCard'
+import { PrivacySheet } from '@/components/settings/PrivacySheet'
 import { CategoryGrowthBar } from '@/components/profile/CategoryGrowthBar'
 import { WeeklyInsightCard } from '@/components/profile/WeeklyInsightCard'
 import { WeeklyGoalsCard } from '@/components/home/WeeklyGoalsCard'
@@ -67,6 +68,7 @@ export function MeScreen({
 }: MeScreenProps) {
   const { user, categoryStats, dailyLog } = state
   const [sheet, setSheet] = useState<'STATS' | 'SKILLS' | 'SETTINGS' | null>(null)
+  const [privacy, setPrivacy] = useState(false)
 
   const weekCompleted = useMemo(() => weekCompletedCount(dailyLog), [dailyLog])
   const insight = useMemo(() => weeklyInsight(dailyLog), [dailyLog])
@@ -269,13 +271,26 @@ export function MeScreen({
           />
         </div>
 
-        {/* 판 이름. "튕겨요" 라는 제보를 받았을 때 제일 먼저 물어야 할 것이고,
-            물어봤을 때 옮겨 적을 자리가 화면에 있어야 답이 온다.
-            눌리지도 않고 아무 일도 안 하는 한 줄이라 제일 아래에 둔다. */}
-        <p className="mt-8 pb-2 text-center text-[11px] text-inkfaint">
-          LITTLE LIFE · {buildLabel()}
-        </p>
+        {/* 기록에 대해. 설정 안쪽이 아니라 판 이름 옆에 둔다 —
+            찾으러 오는 사람은 "약관 어디 있지" 하고 맨 아래를 본다. */}
+        <div className="mt-8 flex items-center justify-center gap-2 pb-2 text-[11px] text-inkfaint">
+          <span>LITTLE LIFE · {buildLabel()}</span>
+          <span aria-hidden>·</span>
+          <button
+            type="button"
+            onClick={() => setPrivacy(true)}
+            className="underline underline-offset-2 active:opacity-60"
+          >
+            기록에 대해
+          </button>
+        </div>
       </BottomSheet>
+
+      <PrivacySheet
+        open={privacy}
+        cloudOn={sync.configured}
+        onClose={() => setPrivacy(false)}
+      />
     </div>
   )
 }

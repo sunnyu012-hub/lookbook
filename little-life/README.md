@@ -1264,12 +1264,31 @@ src/lib/discovery/companions.ts     meetingLabel() — 조건을 사람 말로
 안 켜면 예전과 똑같이 폰 안에만 저장한다 — 환경변수가 없으면
 설정 화면에 그 칸 자체가 안 나온다.
 
+### life-os 와 프로젝트를 같이 쓴다
+
+**이 앱은 Supabase 프로젝트를 따로 두지 않는다. life-os 것을 같이 쓴다.**
+
+무료 플랜이 프로젝트 둘까지인데 그 둘이 이미 차 있었다. 새로 만들 자리가
+없어서 합쳤고, 합쳐놓고 보니 원래 하고 싶던 것이기도 했다 — **계정
+(`auth.users`)이 하나라서 이메일 하나로 두 앱에 다 들어간다.**
+
+같이 써도 안 부딪히는 이유는 이름이 안 겹쳐서다. life-os 는
+`daily_checkins` · `weight_logs` · `daily_quests` 처럼 이름을 그대로 쓰고,
+이쪽은 전부 **`little_life_`** 로 시작한다. 접두사가 장식이 아니라
+**같은 데이터베이스에 남의 표가 스물다섯 개 있어서 붙은 것**이다.
+새 표를 만들 일이 생기면 이 접두사를 반드시 지킨다.
+
 ### 켜는 순서
 
-1. [supabase.com](https://supabase.com) 에서 프로젝트를 하나 만든다 (무료로 충분하다).
-2. SQL Editor 에 `supabase/schema.sql` 을 붙여넣고 실행한다.
-   여러 번 실행해도 안전하다.
-3. Settings › API 에서 **Project URL** 과 **anon public** 키를 복사한다.
+1. life-os 가 쓰는 Supabase 프로젝트를 연다.
+   어느 쪽인지 헷갈리면 Table Editor 에 `daily_checkins` 가 있는 쪽이다.
+2. SQL Editor 에 `supabase/schema.sql` 과 `supabase/feedback.sql` 을
+   붙여넣고 실행한다. 여러 번 실행해도 안전하다.
+   (`feedback.sql` 은 읽기 정책의 이메일 자리표를 바꾼 뒤에.)
+3. **Project URL** 과 **anon public** 키를 복사한다.
+   대시보드 UI 가 자주 바뀌는데, 위쪽 `Connect` 버튼 › App Frameworks 에
+   둘이 같이 나오는 게 제일 확실하다. Project URL 은 대시보드 주소의
+   `/project/<ref>` 부분으로 `https://<ref>.supabase.co` 라고 조립해도 된다.
 4. Vercel › Settings › Environment Variables 에 넣는다.
 
    ```
@@ -1278,10 +1297,15 @@ src/lib/discovery/companions.ts     meetingLabel() — 조건을 사람 말로
    ```
 
    로컬에서 쓰려면 `.env.example` 을 `.env.local` 로 복사해 같은 값을 넣는다.
-5. 다시 배포한다. 설정 화면 맨 아래에 "백업" 칸이 생긴다.
+   ⚠️ **Vercel 은 한 번 저장한 값을 다시 안 보여준다.** 다른 앱에 넣어둔 걸
+   꺼내 쓸 생각으로 두지 말고, 늘 Supabase 쪽에서 새로 가져온다.
+5. 다시 배포한다. **환경변수는 빌드할 때 번들에 박히기 때문에,
+   넣기만 하고 재배포를 안 하면 아무 일도 안 일어난다.**
+   설정 화면에 "백업" 칸이 생기면 된 것이다.
 
 anon 키는 앱 번들에 그대로 들어간다. 공개돼도 되는 키지만,
 **2번을 건너뛰면 안 된다** — 남의 줄을 막는 건 RLS 뿐이다.
+표를 안 만든 채로 백업을 누르면 "서버에 표가 아직 없어" 가 뜬다.
 
 ### 로그인
 
@@ -1300,7 +1324,29 @@ Supabase › Authentication › Email Templates › Magic Link 에서 한 줄 �
 <p>이 숫자를 앱에 넣어도 됩니다: <b>{{ .Token }}</b></p>
 ```
 
-Site URL 과 Redirect URLs 에는 배포 주소(`https://…vercel.app`)를 넣어둔다.
+**Site URL 은 건드리지 않는다.** 거기엔 life-os 주소가 들어 있고, 바꾸면
+life-os 로그인이 깨진다. 이쪽 주소는 **Redirect URLs 에 더한다**
+(`https://…vercel.app/**`, 끝의 `/**` 까지).
+
+⚠️ 앱은 `emailRedirectTo` 로 자기 주소를 제대로 보내는데, **Supabase 는
+허용 목록에 없는 주소면 그 요청을 조용히 무시하고 Site URL 로 보낸다.**
+그래서 이 등록을 빼먹으면 메일 링크를 눌렀을 때 life-os 첫 화면이 뜬다.
+앱 잘못처럼 보이지만 설정이다. 실제로 한 번 여기서 헤맸다.
+
+**메일은 시간당 몇 통이 한계다.** Supabase 기본 발송은 개발용이라
+금방 막히고, 막히면 링크도 숫자도 안 온다. 테스터에게 로그인을 시킬
+생각이면 커스텀 SMTP 가 먼저다 — 도메인이 없으면 Gmail 앱 비밀번호나
+Brevo 처럼 발신 주소 하나만 인증하는 쪽을 쓴다.
+
+메일이 막힌 채로 들어가야 하면 비밀번호를 직접 심는 길이 있다
+(대시보드 주인만 할 수 있는 우회로다):
+
+```sql
+update auth.users
+set encrypted_password = crypt('비밀번호', gen_salt('bf')),
+    email_confirmed_at = coalesce(email_confirmed_at, now())
+where email = '내-이메일';
+```
 
 ### 어느 쪽을 남길지
 

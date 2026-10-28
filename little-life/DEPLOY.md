@@ -35,22 +35,50 @@ Vercel 에 배포해서 아이폰 홈 화면에 앱처럼 두는 순서다. 10�
 - 비행기 모드로 바꾸고 앱을 열어도 화면이 그대로 뜬다 (오프라인 대응이 들어 있다)
 - 퀘스트 완료도 오프라인에서 된다. 데이터는 기기에 저장된다
 
-## 4. 의견함 켜기 (베타)
+## 4. 서버 붙이기 (백업 · 의견함)
 
-설정에 "의견 보내기" 가 뜨려면 Supabase 가 붙어 있어야 한다
-(`VITE_SUPABASE_URL` · `VITE_SUPABASE_ANON_KEY`, README 참고).
+**Supabase 프로젝트를 새로 만들지 않는다. life-os 것을 같이 쓴다.**
+무료 플랜이 둘까지라 자리가 없었고, 계정이 하나로 합쳐지는 게 원래
+하고 싶던 것이기도 했다. 어느 프로젝트인지 헷갈리면 Table Editor 에
+`daily_checkins` 가 있는 쪽이다.
 
-그다음 **한 번만**:
+1. 그 프로젝트의 **Project URL** 과 **anon public** 키를 복사한다.
+   (위쪽 `Connect` 버튼 › App Frameworks 에 둘이 같이 나온다.)
+2. Vercel › little-life › Settings › Environment Variables 에
+   `VITE_SUPABASE_URL` · `VITE_SUPABASE_ANON_KEY` 로 넣는다.
+   Production · Preview · Development 셋 다 체크.
+3. **재배포한다.** 환경변수는 빌드할 때 번들에 박혀서, 넣기만 하고
+   재배포를 안 하면 아무 일도 안 일어난다.
+4. Supabase › SQL Editor 에서 **두 파일을 다 실행**한다.
+   - `supabase/schema.sql` — 백업 표
+   - `supabase/feedback.sql` — 의견함. 붙여넣은 뒤 맨 아래
+     `REPLACE_WITH_YOUR_EMAIL` 을 **네 로그인 이메일**로 바꾸고 Run.
+     (이 파일은 공개 저장소에 있어서 실제 주소를 적어두지 않았다.
+      안 바꾸면 보내는 건 되고 읽는 것만 막힌다.)
+5. Authentication › URL Configuration › **Redirect URLs** 에
+   `https://<이 앱 주소>/**` 를 더한다. **Site URL 은 건드리지 않는다** —
+   life-os 주소가 들어 있어서 바꾸면 그쪽 로그인이 깨진다.
 
-1. Supabase 대시보드 › SQL Editor 를 연다.
-2. `supabase/feedback.sql` 을 붙여넣는다.
-3. 맨 아래 `REPLACE_WITH_YOUR_EMAIL` 을 **네 로그인 이메일**로 바꾼다.
-   (이 파일은 공개 저장소에 있어서 실제 주소를 적어두지 않았다.
-    안 바꾸면 아무도 못 읽는다 — 보내는 건 되고 읽는 것만 막힌다.)
-4. Run.
+되면 설정에 "백업" 칸과 "의견" 칸이 생긴다. 백업만 있고 의견이 없으면
+4번의 `feedback.sql` 을 안 돌린 것이다.
 
-받은 건 그 계정으로 로그인한 뒤 `배포주소/?dev=feedback` 에서 본다.
-빈 목록이 나오면 정말 안 온 것이거나, 이메일이 정책과 다른 것이다.
+받은 건 두 군데서 본다.
+
+- **Supabase › SQL Editor** — 로그인이 필요 없다. 대시보드는 RLS 를
+  건너뛰고 본다. 이쪽이 원본이다.
+
+  ```sql
+  select to_char(created_at at time zone 'Asia/Seoul', 'MM-DD HH24:MI') as 시각,
+         nickname, level, body, build_id, ua
+  from public.little_life_feedback
+  order by created_at desc;
+  ```
+
+- **`배포주소/?dev=feedback`** — 폰에서 편하게 보려고 만든 창.
+  읽기 정책에 적은 그 계정으로 **앱에 로그인한 상태**여야 한다.
+  빈 목록이 나오면 정말 안 온 것이거나, 로그인이 안 됐거나, 이메일이
+  정책과 다른 것이다 — 서버가 못 읽는 줄을 없는 것처럼 다뤄서 셋을
+  구분해 알려주지 못한다.
 
 베타가 끝나면 보내는 길을 닫는다:
 
