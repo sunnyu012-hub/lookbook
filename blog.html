@@ -581,7 +581,7 @@
     <div class="tstrip" id="perfStats"></div>
     <div class="card"><div class="trendwrap"><table class="trend" id="perfTbl"></table></div></div>
     <p class="foot"><b>업로드</b>는 네이버 블로그에 실제로 올라간 글 수, <b>이웃</b>은 그날 아침 이웃 수입니다. <b>블로그탭 30위 안 · 모바일 첫 화면 · AI 인용</b>은 그날 기준 추세 키워드마다 최근 7일 안의 마지막 자동 확인 결과로 셉니다(30위 밖 키워드는 주 1회만 확인하기 때문).<br>
-    방문 수는 브블·페니 방문자 카운터가 비공개라 받지 못합니다. 기록은 매일 아침 순위 확인 때 함께 쌓입니다.</p>
+    <b>방문 수</b>는 방문자 카운터를 공개한 블로그(페니)만 나오며, 오늘 값은 집계 중이라 어제까지 셉니다. 기록은 매일 아침 순위 확인 때 함께 쌓입니다.</p>
   </section>
 
   <!-- ══ 키워드 보드 (아이디어) ══ -->
@@ -1349,7 +1349,7 @@ function renderPerf(){
   }
   if(!chs.includes(perfCh)) perfCh=chs.includes(activeCh)?activeCh:chs[0];
   $('#perfTabs').innerHTML=chs.map(c=>'<button type="button" role="tab" data-pfch="'+esc(c)+'" aria-selected="'+(c===perfCh)+'">'+esc(c)+'</button>').join('');
-  const pf=pfs[perfCh], nb=pf.nb||{}, ups={};
+  const pf=pfs[perfCh], nb=pf.nb||{}, vis=pf.vis, ups={};   // vis: 방문자 카운터를 공개한 채널만 있다
   Object.values(pf.posts||{}).forEach(d=>ups[d]=(ups[d]||0)+1);
   const nbDays=Object.keys(nb).sort();
   const exDays=[...new Set(Object.entries(serp.kw||{}).filter(([k])=>JSON.parse(k)[0]===perfCh).flatMap(([,h])=>h.map(x=>x.d)))].sort();
@@ -1359,23 +1359,29 @@ function renderPerf(){
   const u7=sumIn(ups,dAdd(T,-6),T), u14=sumIn(ups,dAdd(T,-13),dAdd(T,-7)), um=sumIn(ups,ma,T), upm=sumIn(ups,pa,pb<pend?pb:pend);
   const nl=nbDays[nbDays.length-1], nw=nl&&lastOn(nbDays,dAdd(nl,-7)), nm=nl&&lastOn(nbDays,dAdd(nl,-30));
   const el=exDays[exDays.length-1], e=el&&expo(perfCh,el), ew=el&&lastOn(exDays,dAdd(el,-7)), ewE=ew&&expo(perfCh,ew);
+  // 방문 수: 오늘은 집계 중이라 어제까지. 비교 기간에 기록이 하루도 없으면 비교하지 않는다
+  const Y=dAdd(T,-1), has=(a,b)=>Object.keys(vis||{}).some(d=>d>=a&&d<=b);
+  const v7=vis&&sumIn(vis,dAdd(Y,-6),Y), vp7=has(dAdd(Y,-13),dAdd(Y,-7))?sumIn(vis,dAdd(Y,-13),dAdd(Y,-7)):null;
   const st=(k,v,unit,n)=>'<div class="st"><div class="k">'+k+'</div><div class="v">'+v+'<i>'+unit+'</i></div><div class="n">'+n+'</div></div>';
   $('#perfStats').innerHTML=
     st('업로드 · 최근 7일',u7,'개','앞 7일 대비 '+pdl(u7,u14,'개')+'<br>이번 달 '+um+'개 · 지난달 같은 기간 대비 '+pdl(um,upm,'개'))+
     st('이웃',nl?nf(nb[nl]):'—',nl?'명':'',nl?'1주 전 대비 '+pdl(nb[nl],nw?nb[nw]:null,'명')+'<br>한 달 전 대비 '+pdl(nb[nl],nm?nb[nm]:null,'명'):'')+
+    (vis?st('방문 수 · 어제까지 7일',nf(v7),'명','앞 7일 대비 '+pdl(v7,vp7,'명')):'')+
     st('블로그탭 30위 안',e?e.tab:'—',e?'/ '+e.n:'',e?'1주 전 대비 '+pdl(e.tab,ewE?ewE.tab:null,'개'):'')+
     st('모바일 첫 화면',e?e.all:'—',e?'/ '+e.n:'',e?'AI 브리핑 인용 '+e.ai+'개<br>1주 전 대비 '+pdl(e.all,ewE?ewE.all:null,'개'):'');
   // 첫 기록부터 오늘까지. 최근 30일만 펼치고 그 전은 접어 둔다 (글 발행일은 블로그 개설 때부터라 길다)
   const first=[...nbDays,...exDays,dAdd(T,-29)].sort()[0];
   const rows=[]; for(let d=T;d>=first;d=dAdd(d,-1)) rows.push(d);
   const old=rows.length-30, cell=v=>v==null?'<span class="none">—</span>':nf(v);
-  $('#perfTbl').innerHTML='<tr><th>날짜</th><th>업로드</th><th>이웃</th><th>블로그탭 30위 안</th><th>모바일 첫 화면</th><th>AI 인용</th></tr>'+
+  $('#perfStats').style.gridTemplateColumns=vis?'repeat(auto-fit,minmax(150px,1fr))':'';
+  $('#perfTbl').innerHTML='<tr><th>날짜</th><th>업로드</th><th>이웃</th>'+(vis?'<th title="블로그 방문자 카운터 (중복 포함)">방문 수</th>':'')+'<th>블로그탭 30위 안</th><th>모바일 첫 화면</th><th>AI 인용</th></tr>'+
     rows.slice(0,perfAll?rows.length:30).map((d,i)=>{
       const x=expo(perfCh,d), pn=lastOn(nbDays,dAdd(d,-1));
       return '<tr><td>'+fmtD(d)+(d===T?' <span class="sub">오늘</span>':'')+'</td><td>'+cell(ups[d]||0)+'</td>'+
         '<td>'+(nb[d]==null?cell(null):nf(nb[d])+(pn?' '+pdl(nb[d],nb[pn],''):''))+'</td>'+
+        (vis?'<td>'+(d===T?'<span class="none">집계 중</span>':cell(vis[d]))+'</td>':'')+
         '<td>'+(x?x.tab+' / '+x.n:cell(null))+'</td><td>'+(x?x.all:cell(null))+'</td><td>'+(x?x.ai:cell(null))+'</td></tr>'+
-        (i===29&&old>0?'<tr><td colspan="6"><button class="histbtn" id="perfFold" type="button" aria-expanded="'+perfAll+'">'+(perfAll?'▾ 이전 '+old+'일 접기':'▸ 이전 '+old+'일 펼치기')+'</button></td></tr>':'');
+        (i===29&&old>0?'<tr><td colspan="'+(vis?7:6)+'"><button class="histbtn" id="perfFold" type="button" aria-expanded="'+perfAll+'">'+(perfAll?'▾ 이전 '+old+'일 접기':'▸ 이전 '+old+'일 펼치기')+'</button></td></tr>':'');
     }).join('');
 }
 $('#perfTabs').addEventListener('click',e=>{ const b=e.target.closest('button[data-pfch]'); if(b){ perfCh=b.dataset.pfch; perfAll=false; renderPerf() } });
