@@ -118,7 +118,7 @@ def naver(url: str, blog: str) -> str:
 
 def perf(ts: list[dict], old: dict, today: str) -> dict:
     """성과 탭용: 채널마다 이웃 수(그날 값) · 글 발행일 전체 · 일별 방문자(최근 5일).
-    방문자는 카운터를 공개한 블로그만 받아진다 (10/30 페니 공개, 브블 비공개)."""
+    방문자는 카운터를 공개한 블로그만 받아진다 (10/30 페니·브블 공개)."""
     out = old.get("perf", {})
     for ch, blog in sorted({(t["ch"], t["blog"]) for t in ts}):
         try:
