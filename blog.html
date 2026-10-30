@@ -356,6 +356,8 @@
   .tstrip .st{padding:9px 12px;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface)}
   .tstrip .st .k{font-size:11px;font-weight:600;color:var(--muted)}
   .tstrip .st .v{margin-top:3px;font:600 20px/1.1 var(--mono);font-variant-numeric:tabular-nums}
+  .tstrip .st .n{margin-top:5px;font-size:11.5px;line-height:1.6;color:var(--muted)}
+  .tstrip .st .n .up,.tstrip .st .n .down,.tstrip .st .n .d0{font-size:11.5px}
   .tstrip .st .v i{margin-left:3px;font-style:normal;font-size:11.5px;font-weight:500;color:var(--muted)}
   .rankin{
     width:62px;padding:5px 7px;text-align:right;
@@ -570,6 +572,16 @@
     <p class="foot">순위는 <b>매일 아침 자동으로</b> 확인됩니다. <b>블로그탭 (자동)</b>은 네이버 블로그 탭 첫 화면 기준 순위이고, <b>통합검색 (자동)</b>은 모바일·PC 각각의 노출 상태(AI 브리핑 인용 · 첫 화면 노출 · 이미지만 · 없음)입니다. 숫자나 배지에 마우스를 올리면 확인한 날짜와 직전 결과가 보입니다.<br>
     <b>발행</b> 상태 글의 메인키워드는 자동으로 올라오고, 그 밖의 키워드는 아래 칸에서 채널을 골라 추가합니다. 줄은 <b>발행일 최신순</b>이고, 직접 추가한 키워드는 그 아래에 추가한 날짜 순으로 놓입니다. 키워드 옆 <b>월 검색량</b>은 <b>검색량 갱신</b>으로 불러옵니다.<br>
     <b>직전 대비</b>는 바로 앞 확인과, <b>시작 대비</b>는 첫 확인과 비교한 변동 폭입니다. <b>기록 N회</b>를 누르면 날짜별 순위가 모두 펼쳐지고, 추이 그래프는 위로 갈수록 상위이며 날짜 간격대로 그려집니다.</p>
+  </section>
+
+  <!-- ══ 성과 (매일 아침 자동 기록) ══ -->
+  <section id="v-perf" class="hide">
+    <div class="phead"><h2>성과</h2></div>
+    <div class="trtabs" id="perfTabs" role="tablist" aria-label="채널"></div>
+    <div class="tstrip" id="perfStats"></div>
+    <div class="card"><div class="trendwrap"><table class="trend" id="perfTbl"></table></div></div>
+    <p class="foot"><b>업로드</b>는 네이버 블로그에 실제로 올라간 글 수, <b>이웃</b>은 그날 아침 이웃 수입니다. <b>블로그탭 30위 안 · 모바일 첫 화면 · AI 인용</b>은 그날 기준 추세 키워드마다 최근 7일 안의 마지막 자동 확인 결과로 셉니다(30위 밖 키워드는 주 1회만 확인하기 때문).<br>
+    방문 수는 브블·페니 방문자 카운터가 비공개라 받지 못합니다. 기록은 매일 아침 순위 확인 때 함께 쌓입니다.</p>
   </section>
 
   <!-- ══ 키워드 보드 (아이디어) ══ -->
@@ -1168,7 +1180,7 @@ const rankVal=r=>r?r:101;               // 0(100위 밖)은 101로 두고 그린
 const SERP_URL='https://raw.githubusercontent.com/sunnyu012-hub/lookbook/blog-data/serp.json';
 let serp=null;
 async function loadSerp(){
-  try{ const r=await fetch(SERP_URL,{cache:'no-store'}); if(r.ok){ serp=await r.json(); renderTrend() } }catch(e){}
+  try{ const r=await fetch(SERP_URL,{cache:'no-store'}); if(r.ok){ serp=await r.json(); renderTrend(); if(!$('#v-perf').classList.contains('hide')) renderPerf() } }catch(e){}
 }
 // 아침부터 열어 둔 탭은 그 사이 들어온 자동 확인을 못 본다 → 탭으로 돌아올 때마다 다시 받는다
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden) loadSerp() });
@@ -1302,6 +1314,73 @@ $('#trendTbl').addEventListener('click',e=>{
   renderTrend(); renderNav();
   $('#trendMsg').textContent='“'+row.kw+'” 추적을 해제했습니다.';
 });
+/* ── 성과: 업로드 · 이웃 · 노출 키워드 (run.py 가 serp.json 의 perf 에 매일 기록) ── */
+const dAdd=(s,n)=>{ const d=new Date(s+'T00:00:00'); d.setDate(d.getDate()+n); return iso(d) };
+const sumIn=(map,a,b)=>Object.entries(map).filter(([d])=>d>=a&&d<=b).reduce((t,[,v])=>t+v,0);
+const lastOn=(days,d)=>days.filter(x=>x<=d).pop();      // d 또는 그 전 가장 가까운 기록일
+const nf=n=>Number(n).toLocaleString('ko-KR');
+// 그날 기준 이 채널 키워드의 마지막 자동 확인(7일 안) 중 블로그탭 30위 안 · 모바일 첫 화면(인용 포함) · AI 브리핑 인용
+// 30위 밖 키워드는 주 1회만 확인하므로 그날 확인한 것만 세면 날마다 대상 수가 출렁인다
+function expo(ch,d){
+  let n=0,tab=0,all=0,ai=0;
+  const from=dAdd(d,-6);
+  Object.entries((serp&&serp.kw)||{}).forEach(([k,h])=>{
+    if(JSON.parse(k)[0]!==ch) return;
+    const x=h.filter(x=>x.d>=from&&x.d<=d).pop(); if(!x) return;   // 기록은 날짜순으로 쌓인다
+    const m=String(x.m||'');
+    n++; if(x.r>0) tab++;
+    if(/첫 화면 노출|AI 브리핑 인용/.test(m)) all++;
+    if(/AI 브리핑 인용/.test(m)) ai++;
+  });
+  return n?{n,tab,all,ai}:null;
+}
+function pdl(c,p,unit){
+  if(p==null) return '<span class="d0">기록 쌓는 중</span>';
+  const d=c-p;
+  return d>0?'<span class="up">▲ '+nf(d)+unit+'</span>':d<0?'<span class="down">▼ '+nf(-d)+unit+'</span>':'<span class="d0">변동 없음</span>';
+}
+let perfCh='', perfAll=false;
+function renderPerf(){
+  const pfs=(serp&&serp.perf)||{}, chs=Object.keys(pfs);
+  if(!chs.length){
+    $('#perfTabs').innerHTML=''; $('#perfStats').innerHTML='';
+    $('#perfTbl').innerHTML='<tr><td class="empty">'+(serp?'아직 기록이 없습니다. 내일 아침 순위 확인 때부터 쌓입니다.':'자동 확인 기다리는 중')+'</td></tr>';
+    return;
+  }
+  if(!chs.includes(perfCh)) perfCh=chs.includes(activeCh)?activeCh:chs[0];
+  $('#perfTabs').innerHTML=chs.map(c=>'<button type="button" role="tab" data-pfch="'+esc(c)+'" aria-selected="'+(c===perfCh)+'">'+esc(c)+'</button>').join('');
+  const pf=pfs[perfCh], nb=pf.nb||{}, ups={};
+  Object.values(pf.posts||{}).forEach(d=>ups[d]=(ups[d]||0)+1);
+  const nbDays=Object.keys(nb).sort();
+  const exDays=[...new Set(Object.entries(serp.kw||{}).filter(([k])=>JSON.parse(k)[0]===perfCh).flatMap(([,h])=>h.map(x=>x.d)))].sort();
+  const T=TODAY;
+  // 업로드: 최근 7일 vs 앞 7일, 이번 달 vs 지난달 같은 기간
+  const ma=T.slice(0,8)+'01', pend=dAdd(ma,-1), pa=pend.slice(0,8)+'01', pb=pa.slice(0,8)+T.slice(8);
+  const u7=sumIn(ups,dAdd(T,-6),T), u14=sumIn(ups,dAdd(T,-13),dAdd(T,-7)), um=sumIn(ups,ma,T), upm=sumIn(ups,pa,pb<pend?pb:pend);
+  const nl=nbDays[nbDays.length-1], nw=nl&&lastOn(nbDays,dAdd(nl,-7)), nm=nl&&lastOn(nbDays,dAdd(nl,-30));
+  const el=exDays[exDays.length-1], e=el&&expo(perfCh,el), ew=el&&lastOn(exDays,dAdd(el,-7)), ewE=ew&&expo(perfCh,ew);
+  const st=(k,v,unit,n)=>'<div class="st"><div class="k">'+k+'</div><div class="v">'+v+'<i>'+unit+'</i></div><div class="n">'+n+'</div></div>';
+  $('#perfStats').innerHTML=
+    st('업로드 · 최근 7일',u7,'개','앞 7일 대비 '+pdl(u7,u14,'개')+'<br>이번 달 '+um+'개 · 지난달 같은 기간 대비 '+pdl(um,upm,'개'))+
+    st('이웃',nl?nf(nb[nl]):'—',nl?'명':'',nl?'1주 전 대비 '+pdl(nb[nl],nw?nb[nw]:null,'명')+'<br>한 달 전 대비 '+pdl(nb[nl],nm?nb[nm]:null,'명'):'')+
+    st('블로그탭 30위 안',e?e.tab:'—',e?'/ '+e.n:'',e?'1주 전 대비 '+pdl(e.tab,ewE?ewE.tab:null,'개'):'')+
+    st('모바일 첫 화면',e?e.all:'—',e?'/ '+e.n:'',e?'AI 브리핑 인용 '+e.ai+'개<br>1주 전 대비 '+pdl(e.all,ewE?ewE.all:null,'개'):'');
+  // 첫 기록부터 오늘까지. 최근 30일만 펼치고 그 전은 접어 둔다 (글 발행일은 블로그 개설 때부터라 길다)
+  const first=[...nbDays,...exDays,dAdd(T,-29)].sort()[0];
+  const rows=[]; for(let d=T;d>=first;d=dAdd(d,-1)) rows.push(d);
+  const old=rows.length-30, cell=v=>v==null?'<span class="none">—</span>':nf(v);
+  $('#perfTbl').innerHTML='<tr><th>날짜</th><th>업로드</th><th>이웃</th><th>블로그탭 30위 안</th><th>모바일 첫 화면</th><th>AI 인용</th></tr>'+
+    rows.slice(0,perfAll?rows.length:30).map((d,i)=>{
+      const x=expo(perfCh,d), pn=lastOn(nbDays,dAdd(d,-1));
+      return '<tr><td>'+fmtD(d)+(d===T?' <span class="sub">오늘</span>':'')+'</td><td>'+cell(ups[d]||0)+'</td>'+
+        '<td>'+(nb[d]==null?cell(null):nf(nb[d])+(pn?' '+pdl(nb[d],nb[pn],''):''))+'</td>'+
+        '<td>'+(x?x.tab+' / '+x.n:cell(null))+'</td><td>'+(x?x.all:cell(null))+'</td><td>'+(x?x.ai:cell(null))+'</td></tr>'+
+        (i===29&&old>0?'<tr><td colspan="6"><button class="histbtn" id="perfFold" type="button" aria-expanded="'+perfAll+'">'+(perfAll?'▾ 이전 '+old+'일 접기':'▸ 이전 '+old+'일 펼치기')+'</button></td></tr>':'');
+    }).join('');
+}
+$('#perfTabs').addEventListener('click',e=>{ const b=e.target.closest('button[data-pfch]'); if(b){ perfCh=b.dataset.pfch; perfAll=false; renderPerf() } });
+$('#perfTbl').addEventListener('click',e=>{ if(e.target.closest('#perfFold')){ perfAll=!perfAll; renderPerf() } });
+
 $('#trendTabs').addEventListener('click',e=>{
   const b=e.target.closest('button[data-trch]'); if(!b) return;
   trendCh=b.dataset.trch; if(trendCh) $('#trch').value=trendCh;
@@ -1512,7 +1591,7 @@ $('#syncNow').onclick=()=>{
 window.addEventListener('focus',()=>{ if(syncOn()) pull().catch(()=>{}) });
 
 /* ── 뷰 전환 ── */
-const VIEWS=[['check','검사기'],['archive','보관함'],['cal','캘린더'],['trend','추세'],['board','키워드']];
+const VIEWS=[['check','검사기'],['archive','보관함'],['cal','캘린더'],['trend','추세'],['perf','성과'],['board','키워드']];
 function show(v){
   VIEWS.forEach(([k])=>$('#v-'+k).classList.toggle('hide',k!==v));
   $$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
@@ -1520,6 +1599,7 @@ function show(v){
   if(v==='archive')renderArchive();
   if(v==='cal')renderCal();
   if(v==='trend')renderTrend();
+  if(v==='perf')renderPerf();
   if(v==='board')renderBoard();
 }
 const NAVICON={
@@ -1527,6 +1607,7 @@ const NAVICON={
   archive:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11h14V8"/><path d="M10 12h4"/></svg>',
   cal:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>',
   trend:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 7-7"/><path d="M14 8h6v6"/></svg>',
+  perf:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   board:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16"/></svg>'
 };
 function renderNav(){
@@ -1541,11 +1622,12 @@ $('#nav').onclick=e=>{const b=e.target.closest('button'); if(b) show(b.dataset.v
 
 function renderAll(){
   renderNav(); fillChannelSelects();
-  const v=$$('#v-archive,#v-cal,#v-trend,#v-board,#v-check').find(s=>!s.classList.contains('hide'));
+  const v=$$('#v-archive,#v-cal,#v-trend,#v-perf,#v-board,#v-check').find(s=>!s.classList.contains('hide'));
   $$('#nav button').forEach(b=>b.classList.toggle('on','v-'+b.dataset.v===(v&&v.id)));
   if(!$('#v-archive').classList.contains('hide'))renderArchive();
   if(!$('#v-cal').classList.contains('hide'))renderCal();
   if(!$('#v-trend').classList.contains('hide'))renderTrend();
+  if(!$('#v-perf').classList.contains('hide'))renderPerf();
   if(!$('#v-board').classList.contains('hide'))renderBoard();
 }
 
@@ -1585,7 +1667,7 @@ document.addEventListener('keydown',e=>{
     $('#save').click(); return;
   }
   if(typing||e.ctrlKey||e.metaKey||e.altKey||e.shiftKey) return;
-  const i=['1','2','3','4','5'].indexOf(e.key);
+  const i=['1','2','3','4','5','6'].indexOf(e.key);
   if(i>=0&&VIEWS[i]) show(VIEWS[i][0]);
 });
 FIELDS.concat('txt').forEach(f=>$('#'+f).addEventListener('input',run));

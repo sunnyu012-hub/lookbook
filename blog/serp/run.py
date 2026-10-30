@@ -108,6 +108,34 @@ def check(ts: list[dict]) -> dict[str, dict]:
     return res
 
 
+def naver(url: str, blog: str) -> str:
+    """블로그 정보는 검색과 달리 모바일 블로그에서 받는다 (이 PC에선 curl 이어야 막히지 않는다)."""
+    p = subprocess.run(["curl", "-s", "--max-time", "30", "-A", serp.UA["mobile"], "-H", f"Referer: https://m.blog.naver.com/{blog}", url],
+                       capture_output=True)
+    return p.stdout.decode("utf-8", "ignore")
+
+
+def perf(ts: list[dict], old: dict, today: str) -> dict:
+    """성과 탭용: 채널마다 이웃 수(그날 값) · 글 발행일 전체. 방문자 카운터는 브블·페니가 비공개라 받지 못한다 (10/30)."""
+    out = old.get("perf", {})
+    for ch, blog in sorted({(t["ch"], t["blog"]) for t in ts}):
+        try:
+            info = json.loads(naver(f"https://m.blog.naver.com/rego/BlogInfo.naver?blogId={blog}", blog).split("\n", 1)[1])["result"]  # 앞의 )]}', 줄을 뗀다
+            posts = {}
+            for page in range(1, 40):
+                items = json.loads(naver(f"https://m.blog.naver.com/api/blogs/{blog}/post-list?categoryNo=0&itemCount=30&page={page}", blog))["result"]["items"]
+                if not items:
+                    break
+                posts.update({str(it["logNo"]): datetime.fromtimestamp(it["addDate"] / 1000, KST).strftime("%Y-%m-%d") for it in items})
+            c = out.setdefault(ch, {})
+            c.setdefault("nb", {})[today] = info["subscriberCount"]
+            c["posts"] = posts
+            print(f"성과 {ch}: 이웃 {info['subscriberCount']} · 글 {len(posts)}개")
+        except Exception as e:  # 성과가 실패해도 순위 확인은 한다
+            print(f"성과 실패 {ch} — {e}")
+    return out
+
+
 def key(t: dict) -> str:
     return json.dumps([t["ch"], t["kw"]], ensure_ascii=False, separators=(",", ":"))
 
@@ -163,8 +191,9 @@ def main() -> int:
     old, every = previous(), targets()
     ts = due(every, old, today)
     print(f"오늘 확인 {len(ts)}개 (전체 {len(every)}개 중 · 발행 {WEEKLY_AFTER}일 지나고 30위 밖은 주 1회)")
+    pf = perf(every, old, today)
     res = check(ts)
-    data = merge(old, today, res)
+    data = {**merge(old, today, res), "perf": pf}
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     cited = sum("AI 브리핑 인용" in (v["m"] or "") for v in res.values())
