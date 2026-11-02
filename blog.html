@@ -1651,7 +1651,8 @@ const savedCfg=DB.get(P+'settings',null);
 activeCh=DB.get(P+'channel',null);
 if(!cfgOf(activeCh)) activeCh=Object.keys(PRESETS)[0];
 tabs();
-apply(savedCfg||cfgOf(activeCh));
+// 유의 단어 칸이 생기기 전의 임시 설정은 저장 기준으로 다시 채운다 (메인키워드만 유지)
+apply(savedCfg&&'caution' in savedCfg?savedCfg:{...cfgOf(activeCh),kw:savedCfg&&savedCfg.kw||''});
 $('#blogUrl').value=blogOf(activeCh);
 $('#pdate').value=TODAY;
 setEditing(null);
