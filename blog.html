@@ -229,6 +229,7 @@
   .chip b{font-family:var(--mono)}
   .chip.hit{background:var(--bad-soft);color:var(--bad);border-color:transparent}
   .chip.clear{background:var(--sunk);color:var(--muted);border-color:var(--line-soft)}
+  .chips .lab{flex:0 0 100%;font-size:11px;color:var(--muted);margin-top:4px}
   .chip.over{background:var(--warn-soft);color:var(--warn);border-color:transparent}
   #freq{width:100%;border-collapse:collapse;font-size:12.5px}
   #freq td{padding:4px 2px;border-bottom:1px solid var(--line-soft)}
@@ -501,8 +502,9 @@
           <div class="row"><label>키워드 횟수</label><input id="kwMin" type="number"><span class="sep">~</span><input id="kwMax" type="number"></div>
           <div class="row"><label>글자수</label><input id="lenMin" type="number"><span class="sep">~</span><input id="lenMax" type="number"></div>
           <div class="row"><label>금지어</label><input id="ban" placeholder="쉼표로 구분"></div>
-          <div class="row"><label>단어 상한</label><input id="cap" type="number"><span class="sep">회 초과 시 경고</span></div>
-          <div class="row"><label>주시 단어</label><input id="watch" placeholder="속기,자격증"></div>
+          <div class="row"><label>단어 상한</label><input id="cap" type="number"><span class="sep">회 이상이면 경고</span></div>
+          <div class="row"><label>유의 단어</label><input id="caution" placeholder="2회 이상이면 경고"></div>
+          <div class="row"><label>중복 주의</label><input id="watch" placeholder="속기,자격증"></div>
           <div class="row"><label>블로그 주소</label><input id="blogUrl" placeholder="blog.naver.com/아이디"></div>
           <div class="saverow">
             <button class="pri" id="psaveCur" type="button" style="flex:1">현재 채널 기준 저장</button>
@@ -514,11 +516,11 @@
           <p class="foot" id="pmsg">기본 채널 4개도 값을 고쳐 저장할 수 있습니다(수정하면 이름 옆에 * 표시). 되돌리려면 채널 이름 옆 × 를 누르세요. 메인키워드와 블로그 주소는 따로 관리되어 이 저장에 포함되지 않습니다.</p>
         </div>
         <div class="card"><h2>세부 수치</h2><div id="stats"></div></div>
-        <div class="card"><h2>금지어 · 주시 단어 <span style="color:var(--muted)">부분일치</span></h2><div class="chips" id="chips"></div></div>
+        <div class="card"><h2>금지어 · 유의 · 중복 주의 <span style="color:var(--muted)">부분일치</span></h2><div class="chips" id="chips"></div></div>
         <div class="card">
           <h2>단어 빈도 <span style="color:var(--muted)">상위 30</span></h2>
           <div class="freqwrap"><table id="freq"></table></div>
-          <p class="foot">조사만 떼어낸 근사 집계입니다. 정확한 횟수가 필요한 단어는 <b>주시 단어</b>에 등록하세요.</p>
+          <p class="foot">조사만 떼어낸 근사 집계입니다. 정확한 횟수가 필요한 단어는 <b>중복 주의</b>에 등록하세요.</p>
         </div>
       </div>
     </div>
@@ -627,15 +629,15 @@ const TODAY=iso(new Date());
 
 /* ── 채널 = 기준 설정 ── */
 const ALL_PRESETS={
-  '협회 브블':{kwMin:5,kwMax:6,lenMin:1500,lenMax:1700,ban:'가장,상담,무료,제일',cap:6,watch:'자격,자격증,속기,속기사'},
-  '개인블 페니':{kwMin:5,kwMax:6,lenMin:1500,lenMax:1600,ban:'제일,가장,상담,추천',cap:6,watch:'속기,속기사,다시,제가,시작'},
+  '협회 브블':{kwMin:5,kwMax:6,lenMin:1500,lenMax:1700,ban:'가장,상담,무료,제일,1위,병원,출산,화상,아다,고가,만기,무지,치열,위산,교정,에자,시다,한도,학교폭력,폭력,고자,가입,금액,주가,최대',cap:6,caution:'처음,첫번째,첫 번째,추천,한없이,운지,특히,진짜',watch:'자격,자격증,속기,속기사'},
+  '개인블 페니':{kwMin:5,kwMax:6,lenMin:1500,lenMax:1600,ban:'제일,가장,상담,추천,무료,1위,병원,출산,화상,아다,고가,만기,무지,치열,위산,교정,에자,시다,한도,학교폭력,폭력,고자,가입,금액,주가,최대',cap:6,caution:'처음,첫번째,첫 번째,한없이,운지,특히,진짜',watch:'속기,속기사,다시,제가,시작'},
   '드리밍':{kwMin:5,kwMax:6,lenMin:1400,lenMax:1700,ban:'제일,가장,상담,무료',cap:6,watch:'취업,자격증,속기'},
   '유링':{kwMin:4,kwMax:6,lenMin:1400,lenMax:1800,ban:'가장,제일',cap:6,watch:''}
 };
 const WS_CHANNELS={work:['협회 브블','개인블 페니','드리밍'],personal:['유링']};
 const PRESETS={};
 WS_CHANNELS[WS].forEach(n=>{PRESETS[n]=ALL_PRESETS[n]});
-const FIELDS=['kw','kwMin','kwMax','lenMin','lenMax','ban','cap','watch'];
+const FIELDS=['kw','kwMin','kwMax','lenMin','lenMax','ban','cap','caution','watch'];
 const SAVED=FIELDS.filter(f=>f!=='kw');   // 메인키워드는 글마다 달라서 제외
 // 블로그 주소는 기본 채널에도 넣을 수 있어야 하므로 프리셋이 아니라 채널명 → 주소 맵으로 따로 둔다
 const PALETTE=['#2f6fb0','#b8557d','#7a5cc4','#a8701c','#2a8a72','#a4483c','#4b7a2c','#8a5ab0'];
@@ -660,7 +662,7 @@ function chColor(n){
 const chBadge=n=>'<span class="ch" style="--c:'+chColor(n)+'"><i class="dot"></i>'+esc(n)+'</span>';
 
 /* ── 검사 로직 ── */
-// 조사만 떼는 근사 분석. 형태소 분석기 아님 — 정확한 횟수는 '주시 단어'(부분일치)로 확인.
+// 조사만 떼는 근사 분석. 형태소 분석기 아님 — 정확한 횟수는 '중복 주의'(부분일치)로 확인.
 // ponytail: 조사 목록 하드코딩. 어미까지 필요해지면 그때 형태소 분석기 붙이기
 const PARTICLES=['으로서','으로써','이라는','에게서','에서는','으로는','이라고','이라도','에서도','에게는','라는','으로','에서','에게','한테','부터','까지','처럼','보다','이나','든지','마다','조차','밖에','과의','와의','에는','에도','은','는','이','가','을','를','에','도','만','로','와','과','랑','의','께'];
 function countOf(text,word){
@@ -669,6 +671,9 @@ function countOf(text,word){
   while((i=text.indexOf(word,i))!==-1){n++;i+=word.length}
   return n;
 }
+// 금지어는 띄어쓰기와 상관없이 잡는다("사무 지원" → 무지)
+const looseRe=w=>new RegExp([...w.replace(/\s/g,'')].map(c=>c.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('\\s*'),'g');
+const countLoose=(text,w)=>w?(text.match(looseRe(w))||[]).length:0;
 function stem(w){
   w=w.replace(/[^가-힣]/g,'');
   if(w.length<2) return '';
@@ -684,12 +689,13 @@ function run(){
   const kw=$('#kw').value.trim();
   const bans=listOf($('#ban').value);
   const watches=listOf($('#watch').value);
+  const cautions=listOf($('#caution').value);
   const cap=+$('#cap').value||6;
   const n=noSpaceLen(text);
   const lenMin=+$('#lenMin').value, lenMax=+$('#lenMax').value;
   const kwN=countOf(text,kw), kwMin=+$('#kwMin').value, kwMax=+$('#kwMax').value;
   const first=text.split(/\n\s*\n/)[0]||'';
-  const banHits=bans.reduce((a,w)=>a+countOf(text,w),0);
+  const banHits=bans.reduce((a,w)=>a+countLoose(text,w),0);
   const lenS=state(n,lenMin,lenMax), kwS=kw?state(kwN,kwMin,kwMax):'';
 
   $('#summary').innerHTML=[
@@ -709,20 +715,23 @@ function run(){
     ['메인키워드 첫 문단',kw?(first.includes(kw)?'<b class="ok">포함</b>':'<b class="bad">누락</b>'):'<b style="color:var(--muted)">—</b>']
   ].map(p=>'<div class="stat"><span>'+p[0]+'</span><span>'+p[1]+'</span></div>').join('');
 
-  $('#chips').innerHTML=bans.map(w=>{const c=countOf(text,w);
-      return '<span class="chip '+(c?'hit':'clear')+'">'+esc(w)+' <b>'+c+'</b></span>'})
-    .concat(watches.map(w=>{const c=countOf(text,w);
-      return '<span class="chip '+(c>cap?'over':'')+'">'+esc(w)+' <b>'+c+'</b>'+(c>cap?' 초과':'')+'</span>'}))
-    .join('')||'<span class="empty">설정에서 금지어와 주시 단어를 등록하세요.</span>';
+  const warnChip=(w,limit)=>{const c=countOf(text,w);
+      return '<span class="chip '+(c>=limit?'over':'')+'">'+esc(w)+' <b>'+c+'</b>'+(c>=limit?' 경고':'')+'</span>'};
+  const group=(lab,chips)=>chips.length?['<span class="lab">'+lab+'</span>'].concat(chips):[];
+  $('#chips').innerHTML=group('금지어',bans.map(w=>{const c=countLoose(text,w);
+      return '<span class="chip '+(c?'hit':'clear')+'">'+esc(w)+' <b>'+c+'</b></span>'}))
+    .concat(group('유의 단어 (2회 이상 경고)',cautions.map(w=>warnChip(w,2))))
+    .concat(group('중복 주의 ('+cap+'회 이상 경고)',watches.map(w=>warnChip(w,cap))))
+    .join('')||'<span class="empty">설정에서 금지어와 유의 단어를 등록하세요.</span>';
 
   const m={};
   for(const w of text.match(/\S+/g)||[]){const s=stem(w);if(s)m[s]=(m[s]||0)+1}
   $('#freq').innerHTML=Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,30)
-    .map(e=>'<tr class="'+(e[1]>cap?'over':'')+'"><td>'+esc(e[0])+'</td><td>'+e[1]+'</td></tr>').join('')
+    .map(e=>'<tr class="'+(e[1]>=cap?'over':'')+'"><td>'+esc(e[0])+'</td><td>'+e[1]+'</td></tr>').join('')
     ||'<tr><td class="empty">본문 없음</td><td></td></tr>';
 
   let html=esc(text);
-  for(const w of bans) if(w) html=html.split(esc(w)).join('<mark class="b">'+esc(w)+'</mark>');
+  for(const w of bans) if(w) html=html.replace(looseRe(esc(w)),m=>'<mark class="b">'+m+'</mark>');
   if(kw) html=html.split(esc(kw)).join('<mark class="k">'+esc(kw)+'</mark>');
   $('#prev').innerHTML=html;
 
@@ -745,7 +754,7 @@ function dupCheck(kw){
 }
 
 /* ── 기준 설정(채널) 탭 ── */
-function apply(p){Object.keys(p).forEach(k=>{if($('#'+k))$('#'+k).value=p[k]});run()}
+function apply(p){p={caution:'',...p};Object.keys(p).forEach(k=>{if($('#'+k))$('#'+k).value=p[k]});run()}
 function msg(el,t){$(el).textContent=t}
 function storePresets(next){ if(!DB.set(P+'presets',next))return false; mine=next; return true }
 
@@ -1682,6 +1691,7 @@ run();
 
 /* ── self-check ── */
 console.assert(countOf('속기사 속기 속기사','속기')===3,'countOf');
+console.assert(countLoose('사무 지원','무지')===1&&countLoose('제한도','한도')===1&&countLoose('규정이','한도')===0,'금지어는 공백을 넘어 잡는다');
 console.assert(stem('속기사가')==='속기사'&&stem('자격증을')==='자격증'&&stem('의')==='','stem');
 console.assert(esc('<b>&"')==='&lt;b&gt;&amp;&quot;','esc');
 console.assert(state(5,5,6)==='ok'&&state(4,5,6)==='warn'&&state(7,5,6)==='bad','state');
