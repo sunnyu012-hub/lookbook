@@ -77,7 +77,7 @@ GitHub 서버 시험(10-15 18:57): 디너의여왕·체험뷰·놀러와·똑똑
 | 데일리뷰 dailyview.kr | `review_campaign_list.php?json=list&category_id=…&page=N` JSON(70건씩, `tanz_list.py`) | 417 |
 | 후기업 whogiup.com | `POST /api/list` type=region·product (쿠키+CSRF, 전체 한 번에). 전화번호는 저장 안 함 | 186 |
 | 키플랫 keyplat.net | 데일리뷰와 같은 솔루션 | 82 |
-| 미블 mrblog.net | 부계정 로그인 후 `/campaigns/region·delivery?page=N`(MRBLOG_ID·PW, 사용자 결정 11-04). 없거나 실패하면 첫 화면 카드만 | 첫 화면 30 |
+| 미블 mrblog.net | 네이버 부계정 쿠키(`mrblog_login.py`, 사용자 결정 11-04)로 `/xhr/campaigns?type=region·delivery&page=N`. 없거나 풀리면 첫 화면 카드만 | 첫 화면 30 |
 | 오늘도리뷰 reviewtoday.co.kr | `category.php?category=829·832·1019·1020·1200·1300&start=N` HTML(25건씩) | 25 |
 
 
@@ -91,6 +91,6 @@ robots 가 목록을 막지만 알고도 수집(사용자 결정 11-04) · 요�
 - 참고: 인플렉서는 자기 수집 서버(inflexer.net:5000)에 40여 개 플랫폼을 모아 두고 화면은 그 API만 읽는다.
 
 ## 다음 할 일
-1. 미블 부계정을 GitHub Secrets 에 넣기(사용자, KR_PC.md 4번) → 첫 수집 때 목록 구조 확인
+1. 미블 로그인 유지 기간 지켜보기(풀리면 KR_PC.md 5번)
 2. 이 브랜치를 main 에 병합 → Pages 공개 + 정기 수집 시작(정기 실행은 기본 브랜치에서만 돈다)
 3. 분류 규칙은 실제 데이터를 보며 `test_common.py` 에 사례를 추가하면서 다듬는다

@@ -42,13 +42,17 @@ PC 쪽에서 열어 둘 포트는 없다. PC가 GitHub에 먼저 접속해서 �
 1. GitHub 저장소 → **Settings → Secrets and variables → Actions → New repository secret**
    - Name `REVU_ID`, Secret: 부계정 이메일 → **Add secret**
    - Name `REVU_PW`, Secret: 부계정 비밀번호 → **Add secret**
-   - 미블도 같은 방법으로: Name `MRBLOG_ID`, `MRBLOG_PW` (이메일로 가입한 부계정). 없으면 미블은 첫 화면 공고만 모은다.
 2. 비밀번호는 채팅이나 파일에 적지 않는다. Secrets 값은 수집할 때만 꺼내 쓰이고 기록에는 가려진다.
 3. 수집기가 하루 두 번 이 계정으로 로그인해서 레뷰 목록을 읽는다.
 
 > SNS(네이버·카카오) 가입 계정을 쓸 때만: Secrets 대신 PowerShell(관리자 아님)에
 > `irm https://raw.githubusercontent.com/sunnyu012-hub/lookbook/claude/clever-dijkstra-0mvpvv/chehumdan/tools/revu-login.ps1 | iex`
 > 를 붙여넣고, 뜨는 크롬 창에서 한 번 로그인해 둔다(`C:\chehumdan\revu-state.json` 저장).
+
+## 5. 미블 네이버 부계정 로그인
+미블은 SNS 가입만 돼서 Secrets 를 쓰지 않는다. PC에서 아래를 실행하고, 뜨는 크롬 창에서 네이버 부계정으로 로그인한다.
+`python C:\work\lookbook\chehumdan\collect\mrblog_login.py`
+미블 쿠키만 `C:\chehumdan\mrblog-state.json` 에 저장된다. 로그인이 풀리면 미블은 첫 화면 공고만 모이니 다시 실행한다.
 
 ## 확인
 - 등록이 끝나면 대기 중이던 "chehumdan-collect-kr" 작업이 PC에서 바로 돈다(강남맛집 구조 확인).

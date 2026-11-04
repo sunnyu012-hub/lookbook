@@ -48,7 +48,5 @@ jobs:
           EVENT: ${{ github.event_name }}
           REVU_ID: ${{ secrets.REVU_ID }}
           REVU_PW: ${{ secrets.REVU_PW }}
-          MRBLOG_ID: ${{ secrets.MRBLOG_ID }}
-          MRBLOG_PW: ${{ secrets.MRBLOG_PW }}
           CHEHUMDAN_DEBUG: ${{ github.workspace }}/chehumdan/_debug
         run: python chehumdan\collect\kr_job.py

@@ -64,7 +64,7 @@ def collect(sites: list[str]) -> int:
                        encoding="utf-8", errors="replace")
     log = p.stdout + p.stderr
     print(log, flush=True)
-    for secret in (os.environ.get(k) for k in ("REVU_PW", "REVU_ID", "MRBLOG_PW", "MRBLOG_ID")):
+    for secret in (os.environ.get("REVU_PW"), os.environ.get("REVU_ID")):
         if secret:
             log = log.replace(secret, "[REDACTED]")
     (CH / "_debug").mkdir(exist_ok=True)
