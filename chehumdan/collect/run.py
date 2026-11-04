@@ -36,6 +36,14 @@ SITES = {
     "reviewplace": "site_reviewplace",
     "clipview": "site_clipview",
     "gugudas": "site_gugudas",
+    "keyplat": "site_keyplat",
+    "dailyview": "site_dailyview",
+    "whogiup": "site_whogiup",
+    "stylec": "site_stylec",
+    "reviewtoday": "site_reviewtoday",
+    "mrblog": "site_mrblog",
+    "gaboja": "site_gaboja",
+    "modublog": "site_modublog",
 }
 DATA = Path(__file__).resolve().parent.parent / "data" / "sites"
 SITE_TIMEOUT = 25 * 60  # 초. 포포몬·디너의여왕 7~9분

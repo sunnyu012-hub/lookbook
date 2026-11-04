@@ -42,6 +42,7 @@ PC 쪽에서 열어 둘 포트는 없다. PC가 GitHub에 먼저 접속해서 �
 1. GitHub 저장소 → **Settings → Secrets and variables → Actions → New repository secret**
    - Name `REVU_ID`, Secret: 부계정 이메일 → **Add secret**
    - Name `REVU_PW`, Secret: 부계정 비밀번호 → **Add secret**
+   - 미블도 같은 방법으로: Name `MRBLOG_ID`, `MRBLOG_PW` (이메일로 가입한 부계정). 없으면 미블은 첫 화면 공고만 모은다.
 2. 비밀번호는 채팅이나 파일에 적지 않는다. Secrets 값은 수집할 때만 꺼내 쓰이고 기록에는 가려진다.
 3. 수집기가 하루 두 번 이 계정으로 로그인해서 레뷰 목록을 읽는다.
 

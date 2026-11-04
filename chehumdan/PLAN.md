@@ -70,7 +70,20 @@ GitHub 서버 시험(10-15 18:57): 디너의여왕·체험뷰·놀러와·똑똑
 | 클립뷰 클립뷰.kr | 검색엔진 외 전체 | `cv_campaign_list.php?json=list&category_id=…&rows=100&page=N` JSON. 배송형은 거의 상시 모집(마감일 없음) | 4,921 |
 | 구구다스 99das.com | `/amz/list/` | `POST /amz/list/cmpnList.do` cmpnDcd=AMZ027.001~004·008, pageSize=100 | 139 |
 
-보류 — 로그인해야 목록이 보임: 미블(mrblog.net). 부계정을 쓸지 사용자 결정 대기
+### 11-04 추가 (사용자가 알려 준 사이트) — 모두 로그인 없음·robots 허용 · 한국 PC, 요청 사이 1초 이상
+| 사이트 | 목록 출처 | 건수(11-04) |
+|---|---|---|
+| 스타일씨 stylec.co.kr | `api2.stylec.co.kr:6439/v1/trial?order=default&page=N&count=100` JSON. 주소가 없어 방문형 지역은 제목 꼬리표로만 | 1,207 |
+| 데일리뷰 dailyview.kr | `review_campaign_list.php?json=list&category_id=…&page=N` JSON(70건씩, `tanz_list.py`) | 417 |
+| 후기업 whogiup.com | `POST /api/list` type=region·product (쿠키+CSRF, 전체 한 번에). 전화번호는 저장 안 함 | 186 |
+| 키플랫 keyplat.net | 데일리뷰와 같은 솔루션 | 82 |
+| 미블 mrblog.net | 부계정 로그인 후 `/campaigns/region·delivery?page=N`(MRBLOG_ID·PW, 사용자 결정 11-04). 없거나 실패하면 첫 화면 카드만 | 첫 화면 30 |
+| 오늘도리뷰 reviewtoday.co.kr | `category.php?category=829·832·1019·1020·1200·1300&start=N` HTML(25건씩) | 25 |
+
+
+robots 가 목록을 막지만 알고도 수집(사용자 결정 11-04) · 요청 사이 1초 이상:
+- 가보자체험단(`/cmp`·`/ajax` 막음): `POST /main/ajax/_ajax.cmpSubList.php` ct1, page, list=100
+- 모블(첫 화면 외 전체 막음): `POST /product_skin_ajax/ajax_list.php` list(시작 위치), list_num=32, deli·tht·short
 
 
 - 사무실 PC(Windows) 설정 방법: `KR_PC.md`(손으로) 또는 `OFFICE_PC_SESSION.md`(사무실 PC에서 Claude 세션을 열어 진행). 브랜치에서 시험할 때는 `scripts/kr-task.txt`(1줄 collect|probe, 2줄 사이트)를 바꿔 올린다.
@@ -78,6 +91,6 @@ GitHub 서버 시험(10-15 18:57): 디너의여왕·체험뷰·놀러와·똑똑
 - 참고: 인플렉서는 자기 수집 서버(inflexer.net:5000)에 40여 개 플랫폼을 모아 두고 화면은 그 API만 읽는다.
 
 ## 다음 할 일
-1. 미블(로그인 필요) 결정(사용자)
+1. 미블 부계정을 GitHub Secrets 에 넣기(사용자, KR_PC.md 4번) → 첫 수집 때 목록 구조 확인
 2. 이 브랜치를 main 에 병합 → Pages 공개 + 정기 수집 시작(정기 실행은 기본 브랜치에서만 돈다)
 3. 분류 규칙은 실제 데이터를 보며 `test_common.py` 에 사례를 추가하면서 다듬는다

@@ -16,6 +16,8 @@ class Region(unittest.TestCase):
         self.assertEqual(split_address("서울 강남구 역삼동 123"), ("서울", "강남구"))
         self.assertEqual(split_address("경기도 수원시 팔달구 인계동"), ("경기", "수원시"))
         self.assertEqual(split_address("세종특별자치시 한누리대로"), ("세종", None))
+        self.assertEqual(split_address("전남광주 북구 양산로 29"), ("광주", "북구"))
+        self.assertEqual(split_address("전남광주통합특별시 담양군 담양읍"), ("전남", "담양군"))
 
     def test_delivery_is_nationwide(self):
         it = make_item(site="x", sid=1, url="u", title="에어팟", ctype="delivery", sido="서울", sigungu="강남구")

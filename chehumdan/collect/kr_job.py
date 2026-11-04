@@ -27,7 +27,7 @@ def sh(*args, cwd=ROOT) -> int:
 
 def decide() -> tuple[str, list[str]]:
     task = os.environ.get("IN_TASK") or "collect"
-    sites = os.environ.get("IN_SITES") or "revu gangnam remin fourblog cloudreview odiya ringble seoulouba reviewplace clipview gugudas"
+    sites = os.environ.get("IN_SITES") or "revu gangnam remin fourblog cloudreview odiya ringble seoulouba reviewplace clipview gugudas keyplat dailyview whogiup stylec reviewtoday mrblog gaboja modublog"
     if os.environ.get("EVENT") == "push":
         lines = (CH / "scripts" / "kr-task.txt").read_text(encoding="utf-8-sig").splitlines()
         task = lines[0].strip()
@@ -64,7 +64,7 @@ def collect(sites: list[str]) -> int:
                        encoding="utf-8", errors="replace")
     log = p.stdout + p.stderr
     print(log, flush=True)
-    for secret in (os.environ.get("REVU_PW"), os.environ.get("REVU_ID")):
+    for secret in (os.environ.get(k) for k in ("REVU_PW", "REVU_ID", "MRBLOG_PW", "MRBLOG_ID")):
         if secret:
             log = log.replace(secret, "[REDACTED]")
     (CH / "_debug").mkdir(exist_ok=True)

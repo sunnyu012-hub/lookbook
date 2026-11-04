@@ -130,6 +130,8 @@ def split_address(addr: str | None) -> tuple[str | None, str | None]:
     parts = addr.replace(",", " ").split()
     if not parts:
         return None, None
+    if parts[0].startswith("전남광주"):  # 통합 이름 — 광주 5개 구면 광주, 아니면 전남
+        parts[0] = "광주" if len(parts) > 1 and full_sigungu("광주", parts[1]) else "전남"
     sido = norm_sido(parts[0])
     sgg = None
     if len(parts) > 1:
