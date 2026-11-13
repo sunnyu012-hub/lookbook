@@ -42,6 +42,9 @@ def blog_id(url: str) -> str:
     return url.rstrip("/").split("/")[-1] if url else ""
 
 
+BLOGS: dict[str, str] = {}  # 채널 → 블로그 ID. 키워드가 아직 없는 채널도 성과(이웃·방문자)는 모은다 (11/13 서브 계정)
+
+
 def targets() -> list[dict]:
     proxy, key = os.environ.get("BLOG_PROXY", "").rstrip("/"), os.environ.get("BLOG_SYNC_KEY", "")
     if proxy and key:
@@ -63,6 +66,7 @@ def targets() -> list[dict]:
         cfg = json.loads((Path(__file__).parent / "keywords.json").read_text(encoding="utf-8"))
         blogs, pairs = cfg["blogs"], {(x["ch"], x["kw"]): x.get("date", "") for x in cfg["keywords"]}
         print(f"keywords.json 에서 키워드 {len(pairs)}개 (시크릿 없음)")
+    BLOGS.update({ch: blog_id(u) for ch, u in blogs.items() if blog_id(u) and ch not in SKIP})
     out = [{"ch": ch, "kw": kw, "date": d, "blog": blog_id(blogs.get(ch, ""))} for (ch, kw), d in sorted(pairs.items())]
     return [t for t in out if t["blog"] and t["ch"] not in SKIP]
 
@@ -120,7 +124,7 @@ def perf(ts: list[dict], old: dict, today: str) -> dict:
     """성과 탭용: 채널마다 이웃 수(그날 값) · 글 발행일 전체 · 일별 방문자(최근 5일).
     방문자는 카운터를 공개한 블로그만 받아진다 (10/30 페니·브블 공개)."""
     out = old.get("perf", {})
-    for ch, blog in sorted({(t["ch"], t["blog"]) for t in ts}):
+    for ch, blog in sorted({(t["ch"], t["blog"]) for t in ts} | set(BLOGS.items())):
         try:
             info = json.loads(naver(f"https://m.blog.naver.com/rego/BlogInfo.naver?blogId={blog}", blog).split("\n", 1)[1])["result"]  # 앞의 )]}', 줄을 뗀다
             posts = {}

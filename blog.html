@@ -1259,8 +1259,9 @@ const sinceStart=h=>h.length<2?'<span class="d0">—</span>':cmp(h[0].r,h[h.leng
 function bestOf(h){ const v=h.filter(x=>x.r).map(x=>x.r); return v.length?Math.min(...v):0 }
 
 let trendCh=''; // 추세 채널 탭 — 들어올 때마다 전체보기
-function trendTabs(all){
-  const chs=[...new Set([...Object.keys(blogs),...all.map(r=>r.ch)])].filter(c=>all.some(r=>r.ch===c))
+function trendTabs(all,extra=[]){
+  // extra: 키워드가 아직 없어도 탭을 보여줄 채널 (블로그 주소를 등록한 채널, 11/13 서브 계정)
+  const chs=[...new Set([...extra,...all.map(r=>r.ch)])].filter(c=>extra.includes(c)||all.some(r=>r.ch===c))
     .sort((x,y)=>all.filter(r=>r.ch===y).length-all.filter(r=>r.ch===x).length); // 키워드 많은 채널부터
   if(trendCh&&!chs.includes(trendCh)) trendCh='';
   return [['', '전체', all.length],...chs.map(c=>[c,c,all.filter(r=>r.ch===c).length])].map(([v,l,n])=>
@@ -1268,7 +1269,7 @@ function trendTabs(all){
 }
 function renderTrend(){
   const all=trendList();
-  $('#trendTabs').innerHTML=trendTabs(all);
+  $('#trendTabs').innerHTML=trendTabs(all,Object.keys(blogs).filter(c=>blogOf(c)&&channels().includes(c)&&c!=='드리밍'));
   const rows=all.map((r,i)=>Object.assign({idx:i},r)).filter(r=>!trendCh||r.ch===trendCh); // idx 는 전체 목록 기준 (기록 펼치기·추적 해제가 trendList()[idx] 를 씀)
   $('#trendCount').textContent=serp?('자동 확인 '+serp.updated.slice(5).replace('-','/')):'자동 확인 기다리는 중';
   // 요약 — 표를 읽기 전에 전체 상태부터 보이게
@@ -1350,7 +1351,9 @@ function pdl(c,p,unit){
 }
 let perfCh='', perfAll=false;
 function renderPerf(){
-  const pfs=(serp&&serp.perf)||{}, chs=Object.keys(pfs);
+  const pfs=(serp&&serp.perf)||{};
+  // 블로그 주소를 등록한 채널은 아직 기록이 없어도 탭을 보여준다 (11/13 서브 계정)
+  const chs=[...new Set([...Object.keys(pfs),...Object.keys(blogs).filter(c=>blogOf(c)&&channels().includes(c)&&c!=='드리밍')])];
   if(!chs.length){
     $('#perfTabs').innerHTML=''; $('#perfStats').innerHTML='';
     $('#perfTbl').innerHTML='<tr><td class="empty">'+(serp?'아직 기록이 없습니다. 내일 아침 순위 확인 때부터 쌓입니다.':'자동 확인 기다리는 중')+'</td></tr>';
@@ -1358,6 +1361,11 @@ function renderPerf(){
   }
   if(!chs.includes(perfCh)) perfCh=chs.includes(activeCh)?activeCh:chs[0];
   $('#perfTabs').innerHTML=chs.map(c=>'<button type="button" role="tab" data-pfch="'+esc(c)+'" aria-selected="'+(c===perfCh)+'">'+esc(c)+'</button>').join('');
+  if(!pfs[perfCh]){
+    $('#perfStats').innerHTML='';
+    $('#perfTbl').innerHTML='<tr><td class="empty">이 채널은 아직 기록이 없습니다. 다음 아침 순위 확인 때부터 이웃·방문자·업로드가 쌓입니다.</td></tr>';
+    return;
+  }
   const pf=pfs[perfCh], nb=pf.nb||{}, vis=pf.vis, ups={};   // vis: 방문자 카운터를 공개한 채널만 있다
   Object.values(pf.posts||{}).forEach(d=>ups[d]=(ups[d]||0)+1);
   const nbDays=Object.keys(nb).sort();
