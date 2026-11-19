@@ -287,10 +287,12 @@
 
   /* ===== 캘린더 ===== */
   .calhead{display:flex;align-items:center;gap:var(--s2);margin-bottom:var(--s3)}
-  .calhead .mon{min-width:128px;font-size:14px;font-weight:700;letter-spacing:-.01em}
+  .calhead .mon{min-width:168px;font-size:14px;font-weight:700;letter-spacing:-.01em}
   #calMsg{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
   #calUndo{height:26px;padding:0 9px;font-size:11.5px}
   .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
+  .calmon{margin:var(--s3) 0 6px;font-size:13px;font-weight:700}
+  .calmon:first-child{margin-top:0}
   .cal .dow{padding:6px 0;background:var(--surface);text-align:center;font-size:11px;font-weight:600;color:var(--muted)}
   .cal .dow.sun{color:var(--bad)}
   .cell{
@@ -576,8 +578,8 @@
       <button class="ghost" id="todayB" type="button">오늘</button>
       <span class="state" id="calMsg"></span>
     </div>
-    <div class="cal" id="cal"></div>
-    <p class="foot">칩을 다른 날짜 칸으로 <b>끌어다 놓으면</b> 발행일이 바뀝니다. 잘못 옮겼으면 위쪽 <b>되돌리기</b>를 누르세요. 다른 달로 옮길 때는 글을 <b>불러오기</b> 해서 날짜를 고치면 됩니다. 터치 화면에서는 끌기가 동작하지 않습니다. 글을 지우려면 날짜 칸을 누르고 아래 목록에서 <b>삭제</b>를 누르세요.</p>
+    <div id="cal"></div>
+    <p class="foot">칩을 다른 날짜 칸으로 <b>끌어다 놓으면</b> 발행일이 바뀝니다. 잘못 옮겼으면 위쪽 <b>되돌리기</b>를 누르세요. 보이는 두 달 사이에서는 끌어서 옮길 수 있고, 그보다 먼 날짜는 글을 <b>불러오기</b> 해서 날짜를 고치면 됩니다. 터치 화면에서는 끌기가 동작하지 않습니다. 글을 지우려면 날짜 칸을 누르고 아래 목록에서 <b>삭제</b>를 누르세요.</p>
     <div class="card" id="dayPanel" style="margin-top:16px"></div>
   </section>
 
@@ -939,12 +941,16 @@ $('#plist').onclick=e=>{
 
 /* ── 캘린더 ── */
 function renderCal(){
-  const y=cur.getFullYear(), m=cur.getMonth();
-  $('#mon').textContent=y+'년 '+(m+1)+'월';
-  const start=new Date(y,m,1).getDay(), days=new Date(y,m+1,0).getDate();
   const byDate={};
   posts.forEach(p=>{(byDate[p.date]=byDate[p.date]||[]).push(p)});
-
+  // 두 달을 위아래로 이어 보여준다(이번 달 + 다음 달)
+  const nx=new Date(cur.getFullYear(),cur.getMonth()+1,1);
+  $('#mon').textContent=cur.getFullYear()+'년 '+(cur.getMonth()+1)+'월 – '+(nx.getFullYear()!==cur.getFullYear()?nx.getFullYear()+'년 ':'')+(nx.getMonth()+1)+'월';
+  $('#cal').innerHTML=[cur,nx].map(dt=>monthGrid(dt.getFullYear(),dt.getMonth(),byDate)).join('');
+  renderDayPanel();
+}
+function monthGrid(y,m,byDate){
+  const start=new Date(y,m,1).getDay(), days=new Date(y,m+1,0).getDate();
   let html=['일','월','화','수','목','금','토']
     .map((d,i)=>'<div class="dow'+(i===0?' sun':'')+'">'+d+'</div>').join('');
   for(let i=0;i<start;i++) html+='<div class="cell void"></div>';
@@ -956,8 +962,7 @@ function renderCal(){
     html+='<div class="cell'+(key===TODAY?' today':'')+(key===selDate?' sel':'')+'" data-date="'+key+'">'+
       '<span class="d">'+d+'</span>'+evs+'</div>';
   }
-  $('#cal').innerHTML=html;
-  renderDayPanel();
+  return '<h3 class="calmon">'+y+'년 '+(m+1)+'월</h3><div class="cal">'+html+'</div>';
 }
 function renderDayPanel(){
   const p=$('#dayPanel');
