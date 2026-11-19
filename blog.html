@@ -79,6 +79,20 @@
     .main{padding:var(--s3) var(--s3) 56px}
   }
 
+  /* 바로가기 (업무 채널) */
+  .quick{margin-top:var(--s4);padding-top:var(--s3);border-top:1px solid var(--line)}
+  .quick h3{margin:0 10px 6px;font:600 11px/1 var(--ui);color:var(--muted)}
+  .quick a{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:var(--r);font:600 12.5px/1.2 var(--ui);color:var(--ink-2);text-decoration:none}
+  .quick a:hover{background:var(--sunk);color:var(--ink)}
+  .quick a i{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:var(--c)}
+  .quick a small{margin-left:auto;font:500 10.5px/1 var(--mono);color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  @media(max-width:900px){
+    .quick{display:flex;gap:2px;overflow-x:auto;margin-top:var(--s2);padding-top:var(--s2)}
+    .quick h3{display:none}
+    .quick a{white-space:nowrap}
+    .quick a small{display:none}
+  }
+
   /* 사이드 내비 */
   nav{display:flex;flex-direction:column;gap:2px}
   nav button{
@@ -432,7 +446,18 @@
 </header>
 
 <div class="shell">
-  <aside class="side"><nav id="nav"></nav></aside>
+  <aside class="side"><nav id="nav"></nav>
+    <div class="quick" id="quick"><h3>바로가기</h3>
+      <a href="https://www.instagram.com/kcost_ai/" target="_blank" rel="noopener" style="--c:#2f6fe4"><i></i>인스타 메인<small>@kcost_ai</small></a>
+      <a href="https://www.instagram.com/kcost_typing/" target="_blank" rel="noopener" style="--c:#7b5cf0"><i></i>인스타 서브<small>@kcost_typing</small></a>
+      <a href="https://blog.naver.com/kcost77" target="_blank" rel="noopener" style="--c:#1f9d6b"><i></i>공식 블로그<small>kcost77</small></a>
+      <a href="https://blog.naver.com/dreaming596" target="_blank" rel="noopener" style="--c:#8a96a0"><i></i>드리밍<small>dreaming596</small></a>
+      <a href="https://blog.naver.com/jjyj3334" target="_blank" rel="noopener" style="--c:#e0709b"><i></i>페니<small>jjyj3334</small></a>
+      <a href="https://blog.naver.com/kcost10" target="_blank" rel="noopener" style="--c:#4f9bd9"><i></i>협회 서브1<small>kcost10</small></a>
+      <a href="https://blog.naver.com/kcost11" target="_blank" rel="noopener" style="--c:#e8743b"><i></i>커리어 온<small>kcost11</small></a>
+      <a href="https://alibizgroup.sharepoint.com/:x:/r/sites/sorizava1/_layouts/15/Doc.aspx?sourcedoc=%7B710b2956-55ce-4781-a46c-c1853a57f513%7D&amp;action=default" target="_blank" rel="noopener" style="--c:#1e6b3a"><i></i>성과 분석표<small>엑셀</small></a>
+    </div>
+  </aside>
   <main class="main">
 
   <div class="card hide" id="conn">
@@ -1676,7 +1701,8 @@ show(DB.get(P+'view','check'));
   const sw=$('#wsSwitch');
   if(work){ sw.classList.add('hide'); }
   else { sw.classList.remove('hide'); sw.textContent='업무 작업대 →'; sw.href=location.pathname; }
-  $('#sheetLink').classList.toggle('hide',!work);   // 분석표는 협회 업무용 — 개인 작업대에는 두지 않는다
+  $('#sheetLink').classList.toggle('hide',!work);
+  $('#quick').classList.toggle('hide',!work);   // 분석표·채널 바로가기는 협회 업무용 — 개인 작업대에는 두지 않는다
   document.title='블로그 작업대 · '+(work?'업무':'개인');
 })();
 $('#syncKey').value=syncKey();
