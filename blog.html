@@ -973,7 +973,8 @@ function renderDayPanel(){
       '<div class="post"><div><div class="t">'+esc(x.title)+'</div><div class="m">'+chBadge(x.ch)+
       '<span class="pill '+(x.status==='발행'?'done':x.status==='예정'?'plan':'')+'">'+esc(x.status)+'</span>'+
       '<span class="num">'+x.len+'자</span></div></div>'+
-      '<div class="btns"><button class="ghost" data-load="'+x.id+'" type="button">불러오기</button>'+
+      '<div class="btns">'+(x.status==='발행'?'':'<button class="pri" data-pub="'+x.id+'" type="button">발행 처리</button>')+
+      '<button class="ghost" data-load="'+x.id+'" type="button">불러오기</button>'+
       '<button class="danger" data-del="'+x.id+'" type="button">삭제</button></div></div>').join('')+'</div>'
       :'<div class="empty">이 날짜에 잡힌 글이 없습니다.</div>')+
     '<div class="actions"><button class="pri" id="newOnDay" type="button">이 날짜로 새 글 잡기</button></div>';
@@ -997,6 +998,14 @@ $('#dayPanel').addEventListener('click',e=>{
   if(b) loadPost(b.dataset.load);
   const d=e.target.closest('[data-del]');
   if(d&&confirm('이 글을 삭제할까요? 보관함에서도 지워지고 되돌릴 수 없습니다.')) delPost(d.dataset.del);
+  const pb=e.target.closest('[data-pub]');
+  if(pb){
+    const x=posts.find(q=>q.id===pb.dataset.pub); if(!x) return;
+    x.status='발행'; savePosts();   // 날짜는 그대로 — 실제 발행일이 다르면 칩을 끌어 옮긴다
+    if(editingId===x.id) $('#status').value='발행';
+    renderCal(); renderNav();
+    calMsg(esc(x.kw||x.title)+' · <b>발행</b>으로 바꿨습니다');
+  }
 });
 // ── 칩을 다른 날짜로 끌어다 놓아 발행일 옮기기 ──
 let dragId=null, lastMove=null;
